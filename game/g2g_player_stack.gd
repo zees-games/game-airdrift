@@ -225,11 +225,16 @@ func refresh_spawns() -> void:
 
 	_sites_from = game.maps.current.id if game.maps != null and game.maps.current != null else &""
 
-	# Every track the map could have: the main run and up to eight bonuses. A map with
-	# no bonus answers the origin for those, which is the skip below — reading
-	# DotTimerTrack's own range rather than guessing a count is what keeps this right
-	# when a map gains a ninth.
-	for track in range(DotTimerTrack.MAIN, DotTimerTrack.COUNT):
+	# Every track the map has a zone on, plus the main run (a map with no zones still
+	# answers its fallback spawn for it). Any track number, however many bonuses; a
+	# track with no spawn answers the origin, which is the skip below.
+	var tracks := PackedInt32Array([DotTimerTrack.MAIN])
+	var zones := map.timer_zones()
+	if zones != null:
+		for used in zones.used_tracks():
+			if not tracks.has(used):
+				tracks.append(used)
+	for track in tracks:
 		var at := map.spawn_for(track)
 
 		if at.is_equal_approx(Vector3.ZERO):

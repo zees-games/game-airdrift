@@ -14,7 +14,7 @@ extends "headless_net_maps.gd"
 ## server's. See the note in [method _build].
 const CLIENT_ENGINE_TICK_RATE := 60
 
-const CHECKS := 276
+const CHECKS := 281
 
 ## Sections entered against sections that ran to their last line, and against this. A
 ## runtime error inside a section aborts that function and nothing says so; a section that
@@ -312,14 +312,17 @@ func _test_hello_wire() -> void:
 	_check(G2GEvents.read_map_message(DotNetReader.new(garbage.to_bytes()), G2GEvents.MAP_REPLY_BYTES).is_empty(),
 		"and a reply that is not a JSON object reads as nothing, which dot-map ignores")
 	# A kind goes out in a fixed field the writer masks without a word, so one past it aliases a
-	# smaller kind: game-zombie-zone sent HURT and AMMO as HELLO and MAP that way. The track is
-	# dot-timer's number in dot-timer's width, which can grow under this game.
+	# smaller kind: game-zombie-zone sent HURT and AMMO as HELLO and MAP that way. The track has
+	# no field limit: dot-timer's escape carries any number, checked just below.
 	_check(G2GEvent.fits(), "every event kind fits the event's kind field",
 		"%d kinds in %d bits" % [G2GEvents.Kind.size(), G2GEvent.KIND_BITS])
 	_check(G2GRequest.fits(), "every request kind fits the request's kind field",
 		"%d kinds in %d bits" % [G2GEvents.Ask.size(), G2GRequest.KIND_BITS])
-	_check(G2GEvents.tracks_fit(), "every timer track fits JOIN's track field",
-		"%d tracks in %d bits" % [DotTimerTrack.COUNT, DotTimerTrack.BITS])
+	for joined_track in [0, 8, 14, 15, 40, 100000]:
+		var join_bytes := G2GEvents.write_join(1, 2, 3, "a", null, 0, joined_track)
+		var join_back := G2GEvents.read_join(DotNetReader.new(join_bytes))
+		_check(int(join_back["track"]) == joined_track,
+			"JOIN carries track %d unchanged (got %s)" % [joined_track, join_back["track"]])
 	_done()
 
 
@@ -846,7 +849,7 @@ func _test_style_and_track() -> void:
 	_check(_server_player().timer.track == DotTimerTrack.BONUS_FIRST, "a bonus track, on the server")
 	_check(_client_player().timer.track == DotTimerTrack.BONUS_FIRST, "and on the client")
 
-	_client_bridge.ask_track(99)
+	_client_bridge.ask_track(1 << DotTimerTrack.WIDE_BITS)
 	_exchange()
 	_check(_server_player().timer.track == DotTimerTrack.BONUS_FIRST, "an invalid track is ignored")
 

@@ -12,7 +12,7 @@ const G2GZoneOutlines := preload("g2g_zone_outlines.gd")
 ##
 ## [codeblock]
 ## 1..6        what to draw: start, end, stage, checkpoint, stop, pit
-## T           which track: main, bonus 1, bonus 2, ...
+## T           next track: main, bonus 1, bonus 2, ... (Shift+T goes back; there is no last one)
 ## [ and ]     the stage or checkpoint number
 ## PgUp/PgDn   the height, 16 units a press (128 by default: a jumping player)
 ## E or click  put a corner where you are aiming; the second one makes the zone
@@ -140,7 +140,7 @@ func handle_key(event: InputEventKey) -> bool:
 		kind_index = code - KEY_1
 		_first = null
 	elif code == KEY_T:
-		track = (track + 1) % DotTimerTrack.COUNT
+		track = maxi(DotTimerTrack.MAIN, track + (-1 if event.shift_pressed else 1))
 	elif code == KEY_BRACKETLEFT:
 		number = maxi(1, number - 1)
 	elif code == KEY_BRACKETRIGHT:

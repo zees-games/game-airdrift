@@ -236,13 +236,6 @@ static func read_hello(reader: DotNetReader) -> Dictionary:
 
 # --- JOIN / LEAVE ----------------------------------------------------------
 
-## Whether every [DotTimerTrack] fits in [code]DotTimerTrack.BITS[/code], the field JOIN carries
-## a track in. dot-timer owns both numbers, so a bonus added there can outgrow the field under
-## this game; headless_net reads this.
-static func tracks_fit() -> bool:
-	return DotTimerTrack.BONUS_LAST < (1 << DotTimerTrack.BITS)
-
-
 static func write_join(
 	player_id: int, peer_id: int, net_id: int, display_name: String,
 	avatar: DotAvatar, style_index: int, track: int
@@ -253,7 +246,7 @@ static func write_join(
 	writer.write_varint(net_id)
 	writer.write_string(display_name, NAME_BYTES)
 	writer.write_uint(style_index, DotTimerNet.STYLE_BITS)
-	writer.write_uint(track, DotTimerTrack.BITS)
+	DotTimerTrack.write_wire(writer, track)
 	var text := JSON.stringify(avatar.to_dict()) if avatar != null else ""
 	writer.write_string(text, AVATAR_BYTES)
 	return writer.to_bytes()
@@ -266,7 +259,7 @@ static func read_join(reader: DotNetReader) -> Dictionary:
 		"net_id": reader.read_varint(),
 		"name": reader.read_string(NAME_BYTES),
 		"style_index": reader.read_uint(DotTimerNet.STYLE_BITS),
-		"track": reader.read_uint(DotTimerTrack.BITS),
+		"track": DotTimerTrack.read_wire(reader),
 	}
 	var text := reader.read_string(AVATAR_BYTES)
 	out["avatar"] = null
