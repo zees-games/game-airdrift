@@ -4,7 +4,7 @@
 # --- Bunny-hopping
 # Hold jump to hop. The familiar sv_autobunnyhopping.
 # auto_bhop: true
-# Whether hopping may keep and build speed. sv_enablebunnyhopping.
+# Whether hopping may keep and build speed. sv_enablebunnyhopping. Off applies the landing cap (1.1 × max spe...
 # enable_bunnyhopping: true
 # Seconds before touchdown a jump press is still honoured. 0 is "on the tick". [0.0..0.2]
 # jump_buffer: 0.0
