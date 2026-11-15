@@ -1,6 +1,6 @@
 # Zee's Airdrift
 
-A 3D surf and bunny-hop timer game for [Godot 4](https://godotengine.org/), built on the [Dot collection](https://moddingcommunity.com/co/4-dot-assets) and [TMC's gaming platform](https://moddingcommunity.com/play). It is inspired by Source Engine movement and includes classic Surf and Bunny Hop maps from Counter-Strike: Source.
+A 3D surf and bunny-hop timer game for [Godot 4](https://godotengine.org/), built on the [Gamespice](https://gamespice.net) platform and addon collection. It is inspired by Source Engine movement and includes classic Surf and Bunny Hop maps from Counter-Strike: Source.
 
 ![Preview](https://github.com/zees-games/game-airdrift/blob/main/images/preview.gif?raw=true)
 
@@ -65,7 +65,7 @@ While you watch somebody, the list of others watching them is on the right. A se
 
 ## Getting started
 
-You need [Godot 4.7](https://godotengine.org/download). The game is built from many Dot addons, each in its own repository. The easiest way to get everything is [dot-bootstrap](https://github.com/gamespice-platform/bootstrap), which clones every project and links the addons in:
+You need [Godot 4.7](https://godotengine.org/download). The game is built from many Gamespice addons, each in its own repository. The easiest way to get everything is [dot-bootstrap](https://github.com/gamespice-platform/bootstrap), which clones every project and links the addons in:
 
 ```bash
 git clone https://github.com/gamespice-platform/bootstrap.git
