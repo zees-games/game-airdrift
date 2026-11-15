@@ -118,10 +118,9 @@ var _adj: Array = []
 var _linked: Array[Dictionary] = []
 
 
-## Starts the work for the map under [param root], whose physics are in [param world]: a body as
-## [param body] moves, from [param start] to [param goal] (metres). Spawns are the seeds that
-## decide which floors count. [param cache_dir] is where annotations are kept by key and the baked
-## mesh beside them under [param map_id] (empty is no mesh cache).
+## Starts the work for the map under [param root], whose physics are in [param world]: a body as [param body]
+## moves, from [param start] to [param goal] (metres). Spawns are the seeds that decide which floors count.
+## [param cache_dir] keeps annotations by key and the baked mesh under [param map_id] (empty is no mesh cache).
 func begin(root: Node3D, world: World3D, body: DotFpsTunables, start: Vector3, goal: Vector3,
 		seeds: PackedVector3Array, cache_dir: String, avoid: Callable = Callable(), map_id: String = "") -> void:
 	cancel()
