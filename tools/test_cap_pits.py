@@ -2,8 +2,27 @@
 """Deterministic check of bsp_import.cap_pits_under_blocks on synthetic data (no .bsp)."""
 import copy
 import os
+import subprocess
 import sys
 
+
+def _locate_converter():
+    """Find dot-map-convert when run from a git worktree outside ~/godot: it is a sibling of the main checkout."""
+    if os.environ.get("DOTBSP_PATH"):
+        return
+    here = os.path.dirname(os.path.abspath(__file__))
+    if os.path.isdir(os.path.join(here, "..", "..", "dot-map-convert")):
+        return
+    try:
+        common = subprocess.check_output(["git", "-C", here, "rev-parse", "--path-format=absolute", "--git-common-dir"], text=True).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return
+    cand = os.path.join(os.path.dirname(os.path.dirname(common)), "dot-map-convert")
+    if os.path.isdir(cand):
+        os.environ["DOTBSP_PATH"] = cand
+
+
+_locate_converter()
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bsp_import as bi  # noqa: E402
 
