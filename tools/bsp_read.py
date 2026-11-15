@@ -35,10 +35,11 @@ import sys
 
 
 def _shared():
-    here = os.path.dirname(os.path.abspath(__file__))
-    for p in (os.environ.get("DOTBSP_PATH", ""), os.path.join(here, "..", "..", "dot-map-convert")):
-        if p and os.path.isfile(os.path.join(p, "dotbsp", "reader.py")):
-            return os.path.abspath(p)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import dotbsp_path
+    p = dotbsp_path.find()
+    if os.path.isfile(os.path.join(p, "dotbsp", "reader.py")):
+        return p
     sys.exit("bsp_read: dot-map-convert's shared reader was not found. Clone dot-map-convert beside this "
              "repository (dot-bootstrap does) or set DOTBSP_PATH to dot-map-convert.")
 

@@ -2,7 +2,9 @@
 import os
 import sys
 
-_C = os.environ.get("DOTBSP_PATH") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "dot-map-convert")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import dotbsp_path  # noqa: E402
+_C = dotbsp_path.find()
 sys.path.insert(0, os.path.join(_C, "adapters"))
 import adapter_launch  # noqa: E402
 adapter_launch.run(globals(), "game-g2gfast", "stock_props_survey.py")
