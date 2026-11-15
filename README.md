@@ -6,7 +6,7 @@ A 3D surf and bunny-hop timer game for [Godot 4](https://godotengine.org/), buil
 
 *Play on the test server [here](https://moddingcommunity.com/g2gfast/s/g2gfast01/play).*
 
-The project and its assets are open source under the MIT license. Only the back-end web infrastructure is not; if you use your own authentication back end instead of TMC, you build that part yourself.
+The project and its assets are open source under the MIT license. Only the back-end web infrastructure is not; if you use your own authentication back end instead of Gamespice, you build that part yourself.
 
 **Please treat this as partially tested.** It was built with Claude Code and has a headless test suite that passes, but little of it has been in front of real players. Please report anything you run into.
 
@@ -184,7 +184,7 @@ Records are kept in files under `user://g2gfast/records` unless you give the ser
 }
 ```
 
-`points_formula` is `curve`, `tiered` or `placement`. If the database will not open, the server logs an error and uses files for that session. With `report_to_backbone` on, times and ranking points are published to the server's page on TMC.
+`points_formula` is `curve`, `tiered` or `placement`. If the database will not open, the server logs an error and uses files for that session. With `report_to_backbone` on, times and ranking points are published to the server's page on Gamespice.
 
 ### Admin commands
 
