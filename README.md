@@ -65,10 +65,10 @@ While you watch somebody, the list of others watching them is on the right. A se
 
 ## Getting started
 
-You need [Godot 4.7](https://godotengine.org/download). The game is built from many Dot addons, each in its own repository. The easiest way to get everything is [dot-bootstrap](https://github.com/modcommunity/dot-bootstrap), which clones every project and links the addons in:
+You need [Godot 4.7](https://godotengine.org/download). The game is built from many Dot addons, each in its own repository. The easiest way to get everything is [dot-bootstrap](https://github.com/gamespice-platform/bootstrap), which clones every project and links the addons in:
 
 ```bash
-git clone https://github.com/modcommunity/dot-bootstrap.git
+git clone https://github.com/gamespice-platform/bootstrap.git
 cd dot-bootstrap
 ./bootstrap.sh
 cd projects/game-g2gfast
@@ -86,7 +86,7 @@ On Windows, run `bootstrap.ps1` and open the project in Godot.
 | `./game.sh test` | Check every script and run every test suite |
 | `./game.sh help` | All options |
 
-`online` and `server` use [dot-server-deploy](https://github.com/modcommunity/dot-server-deploy), which bootstrap clones next to this project. Run its `./setup.sh` once first.
+`online` and `server` use [dot-server-deploy](https://github.com/gamespice-platform/server-deploy), which bootstrap clones next to this project. Run its `./setup.sh` once first.
 
 ## Running a server
 
@@ -119,7 +119,7 @@ Settings are cvars. Set them in the server config, on the command line, or live 
 | `g2g_zone_mark_max_height` | 4096 | Tallest zone `g2g_zone_mark x y z height` accepts; default 4096, 0 = unlimited. A taller request is refused, never shortened |
 | `mp_teamblock` / `mp_enemyblock` | 0 / 1 | dot-team block rules, with `!block` and `!noblock`. Runners are not solid to each other, so these matter only once players are made solid |
 
-A player killed in deathmatch or by a hunter falls as a ragdoll ([dot-player-char](https://github.com/modcommunity/dot-player-char)) until they are back at the start. `sv_ragdoll_style` picks ragdoll, stiff, topple or hide; `sv_ragdoll_time` and `sv_ragdoll_max` say how long and how many; `sv_ragdoll_reactions` weights the falls.
+A player killed in deathmatch or by a hunter falls as a ragdoll ([dot-player-char](https://github.com/gamespice-platform/player-char)) until they are back at the start. `sv_ragdoll_style` picks ragdoll, stiff, topple or hide; `sv_ragdoll_time` and `sv_ragdoll_max` say how long and how many; `sv_ragdoll_reactions` weights the falls.
 
 ### Every setting as a file, a cvar and a panel
 
@@ -167,7 +167,7 @@ When the map changes, every client is told first, downloads the map if it needs 
 
 ### Records
 
-Records are kept in files under `user://g2gfast/records` unless you give the server a database. SQLite needs the [godot-sqlite](https://github.com/2shady4u/godot-sqlite) extension. PostgreSQL and MySQL go through [dot-sql](https://github.com/modcommunity/dot-sql)'s HTTP gateway, which lets several servers share one leaderboard. In the server config:
+Records are kept in files under `user://g2gfast/records` unless you give the server a database. SQLite needs the [godot-sqlite](https://github.com/2shady4u/godot-sqlite) extension. PostgreSQL and MySQL go through [dot-sql](https://github.com/gamespice-platform/sql)'s HTTP gateway, which lets several servers share one leaderboard. In the server config:
 
 ```json
 {
@@ -188,11 +188,11 @@ Records are kept in files under `user://g2gfast/records` unless you give the ser
 
 ### Admin commands
 
-These come from [dot-moderation](https://github.com/modcommunity/dot-moderation): `!noclip`, `!freeze`, `!slay`, `!blind`, `!beacon` and the rest. Any run that noclip, speed or gravity touches is not saved. `burn` is turned off because there is nothing to burn on a course.
+These come from [dot-moderation](https://github.com/gamespice-platform/moderation): `!noclip`, `!freeze`, `!slay`, `!blind`, `!beacon` and the rest. Any run that noclip, speed or gravity touches is not saved. `burn` is turned off because there is nothing to burn on a course.
 
 ### The map vote
 
-The next-map vote is [dot-vote](https://github.com/modcommunity/dot-vote). The defaults (shown below) are in `game/g2g_vote.gd`. To change them, create `user://cfg/g2gfast_vote.json`, or use `DOT_VOTE_*` environment variables or `--vote-*` arguments:
+The next-map vote is [dot-vote](https://github.com/gamespice-platform/vote). The defaults (shown below) are in `game/g2g_vote.gd`. To change them, create `user://cfg/g2gfast_vote.json`, or use `DOT_VOTE_*` environment variables or `--vote-*` arguments:
 
 ```json
 { "end_vote": true, "vote_lead_sec": 120, "include_extend": true, "extend_seconds": 600, "max_extends": 3 }
