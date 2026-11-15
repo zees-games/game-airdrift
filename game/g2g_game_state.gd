@@ -70,10 +70,8 @@ signal player_removed(player_id: StringName)
 ## [method _ready] over [member config].
 var config_binder: DotGameConfigBinder = null
 
-## Whether players are solid to each other (`mp_solidplayers`, 1). Every player has a hull
-## (`g2g_player_bodies.gd`) and dot-team's block rules, on `pair_fn`, say which pairs stop:
-## runners pass through each other (the genre) until `mp_teamblock`, `mp_enemyblock` or `!block`
-## say otherwise. With no block rules (no dot-team in the build) nobody blocks.
+## Whether players are solid to each other (`mp_solidplayers`, 1). Every player has a hull (`g2g_player_bodies.gd`) and dot-team's block rules, on `pair_fn`, say which pairs stop:
+## runners pass through each other (the genre) until `mp_teamblock`, `mp_enemyblock` or `!block` say otherwise. With no block rules (no dot-team in the build) nobody blocks.
 var body_rules: DotPlayerBodyRules = _make_body_rules()
 
 ## dot-team's `DotTeamBlockRules` (`mp_teamblock`, `!block`, `!noblock`), set by the module or
@@ -212,10 +210,8 @@ var combat: G2GCombat = null
 ## Weapons lying in the world (both sides build it; the server simulates).
 var weapon_layer: G2GWeaponLayer = null
 
-## What a dead body does, and which death reactions the server allows: dot-player-char's
-## `sv_ragdoll*` cvars, bound by the module (REPLICATED) and followed by a client through its
-## link, because the client draws the bodies. On the game, not on [member combat]: a client
-## has no combat layer and still draws every fall.
+## What a dead body does, and which death reactions the server allows: dot-player-char's `sv_ragdoll*` cvars, bound by the module (REPLICATED) and followed by a client through its
+## link, because the client draws the bodies. On the game, not on [member combat]: a client has no combat layer and still draws every fall.
 var ragdoll_rules: DotPlayerRagdollRules = DotPlayerRagdollRules.new()
 
 ## Hunters on the course. Null unless `sv_hunters` built them.
@@ -338,9 +334,8 @@ func _adopt_descriptor_owner() -> void:
 
 ## Takes the map set from the descriptor's `maps:` list, when the server has one.
 ##
-## [b]The list used to be this game's own cvars[/b] -- `sv_content_maps` and an owner --
-## fetched at whatever version each pack's origin called latest, on whichever day a box
-## happened to boot. dot-server now carries a game's delivered maps as pinned
+## [b]Not this game's own cvars[/b] (`sv_content_maps` and an owner), which would fetch
+## whatever version each pack's origin calls latest, on whichever day a box boots. dot-server now carries a game's delivered maps as pinned
 ## `<owner>/<map id>@<version>` keys (DotGameDescriptor.maps), written by the installer
 ## that checked each one exists, so every server running one release of this game offers
 ## the same bytes. A server whose dot-server predates the field has no `maps` property;
@@ -515,7 +510,7 @@ func _build_boards() -> void:
 ##
 ## **Without this the reporter has no client, so nothing is ever sent**: `publish` was on and
 ## `report_to_backbone` was on, every record was queued, and the site had no board for any
-## g2gfast server (found on the dev end-to-end run, 2026-11-08). The stats and achievement
+## g2gfast server (the dev end-to-end run). The stats and achievement
 ## trackers find the client by themselves; the boards' reporter only has what it is given.
 ## Safe to call again: it binds once, and a client that registers later is picked up by the
 ## next call (a record being filed).

@@ -1,0 +1,209 @@
+extends DotGameCheckSuite
+
+## The shared state of [code]headless_client.gd[/code] (the client, the section counters and
+## the preloads) and its solo-session sections: Leave, the course list and the map collection.
+
+const G2GClient := preload("../game/g2g_client.gd")
+const G2GGame := preload("../game/g2g_game.gd")
+const G2GEvents := preload("../game/net/g2g_events.gd")
+const G2GNetBridge := preload("../game/net/g2g_net_bridge.gd")
+const G2GPlayer := preload("../game/g2g_player.gd")
+const G2GHud := preload("../game/g2g_hud.gd")
+const G2GSoloMaps := preload("../game/g2g_solo_maps.gd")
+const G2GRig := preload("../game/g2g_rig.gd")
+const G2GClientKillView := preload("../game/g2g_client_killview.gd")
+
+var _entered := 0
+var _completed := 0
+var _client: G2GClient = null
+
+
+## Stands in for the browser shell's solo session: a node under `dot_solo` with `leave()`.
+class FakeSolo extends Node:
+	var left := 0
+	var start_map: StringName = &""
+
+	func leave() -> void:
+		left += 1
+
+
+## Inside the shell's solo session Leave goes back to the shell's menu and M offers every
+## course the stock list names; outside it nothing changes.
+func _test_solo_in_the_shell() -> void:
+	_section("solo in the browser shell: Leave and the course list")
+	var before_label := _client.menu_leave_label()
+	_check(_client.game.offered_maps.is_empty() and G2GSoloMaps.session() == null,
+		"outside a solo session nothing is offered on M", str(_client.game.offered_maps.size()))
+
+	var solo := FakeSolo.new()
+	add_child(solo)
+	DotRegistry.register(G2GSoloMaps.SERVICE, solo)
+	_check(_client.menu_leave_label() == "Back to menu", "in a solo session Leave reads Back to menu",
+		_client.menu_leave_label())
+	_client._leave()
+	_check(solo.left == 1, "Leave in a solo session asks the shell to leave once", str(solo.left))
+
+	var first := _client.game.config.initial_map
+	solo.start_map = &"bhop_not_stock"
+	_client._offer_solo_maps()
+	_check(_client.game.config.initial_map == &"bhop_not_stock" and "bhop_not_stock" in _client.game.offered_maps,
+		"a solo session's start map is the first course and on M", str(_client.game.config.initial_map))
+	solo.start_map = &"../escape"
+	_client.game.config.initial_map = first
+	_client._offer_solo_maps()
+	_check(_client.game.config.initial_map == first, "a start map that is not a course id is ignored")
+	solo.start_map = &""
+	_client._offer_solo_maps()
+	# A checkout with the maps linked holds every stock course, so add one nothing holds.
+	var ghost := PackedStringArray(G2GSoloMaps.IDS)
+	ghost.append("zz_unfetched_course")
+	_client.game.offered_maps = ghost
+	var rows: Array = _client.game.map_rows()
+	var offered := PackedStringArray()
+	for row: Dictionary in rows:
+		if bool(row.get("download", false)):
+			offered.append(str(row["id"]))
+	# Linked imported maps are already held and need no download, so count what is missing.
+	var missing := PackedStringArray()
+	for id in G2GSoloMaps.IDS:
+		if not _client.game.maps.catalogue.has(StringName(id)):
+			missing.append(id)
+	missing.append("zz_unfetched_course")
+	# map_rows() sorts by id; with no maps linked (CI) every id is missing, so match the order.
+	missing.sort()
+	_check(offered == missing and "zz_unfetched_course" in offered and G2GSoloMaps.IDS.size() == 26,
+		"M offers every stock course the catalogue lacks", "%d offered, %d missing" % [offered.size(), missing.size()])
+	var held := 0
+	for row: Dictionary in rows:
+		if str(row["id"]) in G2GSoloMaps.IDS:
+			held += 1
+	_check(held == G2GSoloMaps.IDS.size(), "and every stock course is on the list, held or not", "%d" % held)
+	_check(_client.game.config.map_content_id(&"surf_kitsune") == "gamemann/surf_kitsune",
+		"a pick is fetched under the stock owner", _client.game.config.map_content_id(&"surf_kitsune"))
+	var shown: Array = G2GGame.menu_rows(rows)
+	var tagged := 0
+	for row: Dictionary in shown:
+		if "downloads when chosen" in (row["tags"] as Array):
+			tagged += 1
+	_check(tagged == offered.size(), "the menu says an unfetched course downloads when chosen")
+
+	_check_stock_course_list()
+
+	DotRegistry.unregister(G2GSoloMaps.SERVICE)
+	solo.queue_free()
+	_client.game.offered_maps = PackedStringArray()
+	_client.game.config.map_content_owner = ""
+	_check(_client.menu_leave_label() == before_label, "after the session ends Leave reads as before", _client.menu_leave_label())
+	_check(_client.game.map_rows().size() == rows.size() - offered.size(), "and the extra courses are gone from M")
+	_done()
+
+
+## The solo course list matches dot-server-deploy's stock content.yml, when that checkout is beside this one.
+func _check_stock_course_list() -> void:
+	# The list in dot-server-deploy's stock configuration, when that checkout is beside this one.
+	var stock := FileAccess.get_file_as_string(ProjectSettings.globalize_path("res://").path_join("../dot-server-deploy/cfg.example/content.yml"))
+	if stock == "":
+		_check(true, "(dot-server-deploy is not beside this checkout: drift not checked)")
+	else:
+		var block := stock.split("  game-g2gfast:")[1].split("\n  mg-")[0].split("\n  game-")[0]
+		var re := RegEx.new()
+		re.compile("-\\s+gamemann/([a-z0-9_]+)\\s*$")
+		var named := PackedStringArray()
+		for line in block.split("\n"):
+			var hit := re.search(line)
+			if hit != null:
+				named.append(hit.get_string(1))
+		var a := Array(named)
+		var b := Array(G2GSoloMaps.IDS)
+		a.sort()
+		b.sort()
+		_check(a == b, "the list is the stock content.yml's g2gfast list", "%d vs %d" % [a.size(), b.size()])
+
+
+## Stands in for dot-cloud's client: one origin, nothing fetched.
+class FakeCloud extends Node:
+	func resolved_http_base_urls() -> PackedStringArray:
+		return PackedStringArray(["https://origin.test/content/"])
+
+	func ensure(_id: StringName, _version: String = "") -> DotResult:
+		return DotResult.fail(DotError.CODE_HTTP, "not in this suite")
+
+
+## The fake origin's answers by URL; anything else is a 404.
+var _origin: Dictionary = {}
+
+
+func _fake_get_json(url: String) -> DotResult:
+	await get_tree().process_frame
+	if _origin.has(url):
+		return DotResult.success(_origin[url])
+	var err := DotResult.fail(DotError.CODE_HTTP, "404 for %s" % url)
+	return err
+
+
+## In a solo session M lists the airdrift-maps collection the origin publishes, not only the
+## stock 26: every pack it names, minus held maps, foreign owners, bad names and packs it 404s.
+func _test_the_collection_fills_m() -> void:
+	_section("solo in the browser shell: M lists the published map collection")
+	var game = _client.game
+	var held_id := String(game.maps.catalogue.available()[0].id)
+	var base := "https://origin.test/content"
+	var col := "%s/gamemann/airdrift-maps/collection.json" % base
+	_origin = {
+		col: {"format": 1, "id": "gamemann/airdrift-maps", "version": "1.2.10", "packs": [
+			"gamemann/zz_new_course", "gamemann/zz_lost_course", "someone/zz_foreign",
+			"gamemann/../escape", "gamemann/" + held_id, "gamemann/zz_new_course"]},
+		"%s/gamemann/zz_new_course/latest.json" % base: {"version": "1.2.10"},
+		"%s/gamemann/zz_stock_course/latest.json" % base: {"version": "1.2.6"},
+	}
+	var old_cloud: Object = DotRegistry.get_service(game.map_content_service)
+	var cloud := FakeCloud.new()
+	add_child(cloud)
+	DotRegistry.register(game.map_content_service, cloud)
+	game.json_fetch_fn = _fake_get_json
+
+	var res: DotResult = await game.offer_collection("gamemann/airdrift-maps",
+		PackedStringArray(["zz_stock_course", "zz_new_course", held_id]))
+	_check(res.ok and game.offered_maps == PackedStringArray(["zz_new_course", "zz_stock_course"]),
+		"M offers each published course it lacks, stock ones too, once, and hides a pack the origin 404s",
+		str(game.offered_maps))
+	_check(str(game._offered_versions.get(&"zz_new_course", "")) == "1.2.10",
+		"and a pick fetches the version latest.json names", str(game._offered_versions))
+	var tagged := PackedStringArray()
+	for row: Dictionary in G2GGame.menu_rows(game.map_rows()):
+		if "downloads when chosen" in (row["tags"] as Array):
+			tagged.append(str(row["id"]))
+	_check(tagged == PackedStringArray(["zz_new_course", "zz_stock_course"]), "the menu says it downloads when chosen", str(tagged))
+
+	var picked: DotResult = await game.ensure_map_content(&"zz_new_course")
+	_check(not picked.ok and not game.offered_maps.has("zz_new_course"),
+		"a course the origin then refuses leaves M", str(game.offered_maps))
+
+	game.offered_maps = PackedStringArray(G2GSoloMaps.IDS)
+	_origin = {col: {"format": 9, "id": "gamemann/airdrift-maps", "packs": []}}
+	res = await game.offer_collection("gamemann/airdrift-maps")
+	_check(not res.ok and game.offered_maps == PackedStringArray(G2GSoloMaps.IDS),
+		"an unreadable collection keeps the stock list", str(game.offered_maps.size()))
+	_origin = {}
+	res = await game.offer_collection("gamemann/airdrift-maps")
+	_check(not res.ok and game.offered_maps.size() == G2GSoloMaps.IDS.size(),
+		"and so does an origin that serves none", res.error.message if not res.ok else "ok")
+
+	game.json_fetch_fn = Callable()
+	game.offered_maps = PackedStringArray()
+	game._offered_versions.clear()
+	DotRegistry.unregister(game.map_content_service)
+	if old_cloud != null:
+		DotRegistry.register(game.map_content_service, old_cloud)
+	cloud.queue_free()
+	_done()
+
+
+func _section(title: String) -> void:
+	_entered += 1
+	print("")
+	print("-- " + title)
+
+
+func _done() -> void:
+	_completed += 1

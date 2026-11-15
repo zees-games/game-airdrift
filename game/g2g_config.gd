@@ -29,7 +29,6 @@ const G2GUnits := preload("g2g_units.gd")
 @export var auto_bhop: bool = true
 
 ## Whether hopping may keep and build speed. [code]sv_enablebunnyhopping[/code].
-##
 ## Off applies the landing cap (1.1 × max speed) those games added to [i]stop[/i]
 ## bunny-hopping. On a bhop server it is on.
 @export var enable_bunnyhopping: bool = true

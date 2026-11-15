@@ -1,9 +1,7 @@
 extends DotGamePerfBench
 
-## The windowed solo-client benchmark (dot-game's DotGamePerfBench; see that class and `tools/perf_bench.sh` for the flags).
-## The real offline client on `--map` (default `surf_mesa`, the offline default) with `--bots` route bots added through the
-## game's own bot layer. `--motor-tick 1|0` sets `DotFpsMotor.native_tick` before the client loads, so
-## `tools/perf_bench.sh --ab DIR::--motor-tick 0 DIR::--motor-tick 1 -n 3 --box staging02` prices dot-sim's native tick.
+## The windowed solo-client benchmark (dot-game's DotGamePerfBench; see that class and `tools/perf_bench.sh` for the flags). The real offline client on `--map` (default `surf_mesa`, the offline default) with `--bots` route bots added through the
+## game's own bot layer. `--motor-tick 1|0` sets `DotFpsMotor.native_tick` before the client loads, so `tools/perf_bench.sh --ab DIR::--motor-tick 0 DIR::--motor-tick 1 -n 3 --box staging02` prices dot-sim's native tick.
 ## The bots ride and fire nothing, so the inert check needs `PERF_BENCH_INERT_PER_TICK=0`.
 
 

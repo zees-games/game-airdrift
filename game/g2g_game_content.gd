@@ -142,10 +142,8 @@ func _latest_map_version(cloud: Object, content_id: String) -> String:
 	return version
 
 
-## Offers on M every map of [param collection] (`owner/name`) the origin publishes in its
-## `collection.json`, minus packs whose `latest.json` it does not serve (a pack the collection
-## names but the store lost). [param also] (the stock list) joins it, since the stock courses are
-## published packs a collection need not name. Keeps [member offered_maps] as it was when no base answers.
+## Offers on M every map of [param collection] (`owner/name`) the origin publishes in its `collection.json`, minus packs whose `latest.json` it does not serve (a pack the collection
+## names but the store lost). [param also] (the stock list) joins it, since the stock courses are published packs a collection need not name. Keeps [member offered_maps] as it was when no base answers.
 func offer_collection(collection: String, also: PackedStringArray = PackedStringArray()) -> DotResult:
 	var cloud: Object = DotRegistry.get_service(map_content_service)
 	if cloud == null or not cloud.has_method("resolved_http_base_urls"):

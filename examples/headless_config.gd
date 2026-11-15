@@ -103,6 +103,12 @@ func _run() -> void:
 	_section("shipped templates")
 	_templates(binder)
 	_done()
+	_check_workbench(binder)
+	_report_sections(_entered, _completed, SECTIONS, CHECKS)
+
+
+## The workbench lists every key of the binder's schema across its profile files.
+func _check_workbench(binder: DotGameConfigBinder) -> void:
 	_section("workbench")
 	var wb := DotGameWorkbench.new()
 	wb.panel_mode = 1
@@ -124,7 +130,6 @@ func _run() -> void:
 	_check(missing.is_empty() and binder.profile_sets().size() == 4, "the workbench lists every key over 4 files: " + ",".join(missing))
 	wb.free()
 	_done()
-	_report_sections(_entered, _completed, SECTIONS, CHECKS)
 
 
 ## Child process: loads the layers strictly over the test root and prints what the live config holds.

@@ -17,12 +17,11 @@ examples/headless_feel_base.gd::banner	3
 examples/headless_feel_base.gd::long_block	4
 examples/headless_link.gd::long_block	1
 examples/headless_maps.gd::banner	1
-examples/headless_maps.gd::history	2
 examples/headless_maps.gd::long_block	10
 examples/headless_mechanics.gd::history	3
 examples/headless_mechanics.gd::long_block	6
 examples/headless_net.gd::banner	1
-examples/headless_net.gd::long_block	14
+examples/headless_net.gd::long_block	9
 examples/headless_net_maps.gd::banner	2
 examples/headless_net_maps.gd::history	2
 examples/headless_net_maps.gd::long_block	8
@@ -62,7 +61,7 @@ game/g2g_bot_nav.gd::long_block	2
 game/g2g_bots.gd::long_block	2
 game/g2g_browser.gd::history	1
 game/g2g_browser.gd::long_block	7
-game/g2g_bsp_map.gd::long_block	16
+game/g2g_bsp_map.gd::long_block	12
 game/g2g_camera.gd::long_block	2
 game/g2g_client.gd::long_block	1
 game/g2g_client_boot.gd::history	1
@@ -72,8 +71,8 @@ game/g2g_client_extras.gd::history	2
 game/g2g_client_extras.gd::long_block	9
 game/g2g_client_netcode.gd::long_block	10
 game/g2g_combat.gd::banner	3
-game/g2g_combat.gd::history	3
-game/g2g_combat.gd::long_block	15
+game/g2g_combat.gd::history	2
+game/g2g_combat.gd::long_block	12
 game/g2g_config.gd::history	1
 game/g2g_config.gd::long_block	24
 game/g2g_effects.gd::long_block	5
@@ -85,7 +84,6 @@ game/g2g_game_build.gd::banner	5
 game/g2g_game_build.gd::history	1
 game/g2g_game_build.gd::long_block	15
 game/g2g_game_state.gd::banner	1
-game/g2g_game_state.gd::history	1
 game/g2g_game_state.gd::long_block	19
 game/g2g_geometry.gd::history	1
 game/g2g_geometry.gd::long_block	3
@@ -123,7 +121,7 @@ game/g2g_player.gd::banner	3
 game/g2g_player.gd::long_block	19
 game/g2g_player_stack.gd::banner	4
 game/g2g_player_stack.gd::history	1
-game/g2g_player_stack.gd::long_block	20
+game/g2g_player_stack.gd::long_block	19
 game/g2g_presentation.gd::banner	5
 game/g2g_presentation.gd::history	1
 game/g2g_presentation.gd::long_block	14
@@ -143,7 +141,7 @@ game/g2g_services.gd::banner	5
 game/g2g_services.gd::history	1
 game/g2g_services.gd::long_block	16
 game/g2g_solo_maps.gd::long_block	1
-game/g2g_spectate.gd::long_block	5
+game/g2g_spectate.gd::long_block	3
 game/g2g_stats.gd::banner	5
 game/g2g_stats.gd::long_block	3
 game/g2g_stock_substitutes.gd::history	1
@@ -152,7 +150,7 @@ game/g2g_surf_course.gd::long_block	5
 game/g2g_textures.gd::history	1
 game/g2g_textures.gd::long_block	14
 game/g2g_units.gd::long_block	5
-game/g2g_vote.gd::long_block	9
+game/g2g_vote.gd::long_block	5
 game/g2g_vote_map_source.gd::long_block	1
 game/g2g_zone_editor.gd::long_block	1
 game/g2g_zone_outlines.gd::long_block	1

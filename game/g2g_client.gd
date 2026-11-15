@@ -67,25 +67,7 @@ func _ready() -> void:
 	_build_ragdolls()
 	_build_killcam()
 
-	zone_outlines = G2GZoneOutlines.new()
-	zone_outlines.name = "ZoneOutlines"
-	add_child(zone_outlines)
-	game.map_ready.connect(func(_map: DotMapDef) -> void: zone_outlines.refresh(game.timers.zones))
-	# The first map may already be up: an offline game loads it inside its own _ready.
-	if game.maps != null and game.maps.current != null:
-		zone_outlines.refresh(game.timers.zones)
-
-	zone_editor = G2GZoneEditor.new()
-	zone_editor.name = "ZoneEditor"
-	zone_editor.game = game
-	zone_editor.client = self
-	zone_editor.outlines = zone_outlines
-	zone_editor.offline = _offline
-	zone_editor.send_line = func(line: String) -> void:
-		if link != null and link.has_method("send_chat"):
-			link.send_chat(line, false)
-	zone_editor.changed.connect(func() -> void: zone_outlines.refresh(game.timers.zones))
-	add_child(zone_editor)
+	_build_zone_tools()
 
 	if _offline:
 		for _i in range(60):
@@ -115,6 +97,29 @@ func _ready() -> void:
 
 	_grab_mouse()
 	set_process(true)
+
+
+## The zone outlines and the zone editor that draws on them, refreshed on every map.
+func _build_zone_tools() -> void:
+	zone_outlines = G2GZoneOutlines.new()
+	zone_outlines.name = "ZoneOutlines"
+	add_child(zone_outlines)
+	game.map_ready.connect(func(_map: DotMapDef) -> void: zone_outlines.refresh(game.timers.zones))
+	# The first map may already be up: an offline game loads it inside its own _ready.
+	if game.maps != null and game.maps.current != null:
+		zone_outlines.refresh(game.timers.zones)
+
+	zone_editor = G2GZoneEditor.new()
+	zone_editor.name = "ZoneEditor"
+	zone_editor.game = game
+	zone_editor.client = self
+	zone_editor.outlines = zone_outlines
+	zone_editor.offline = _offline
+	zone_editor.send_line = func(line: String) -> void:
+		if link != null and link.has_method("send_chat"):
+			link.send_chat(line, false)
+	zone_editor.changed.connect(func() -> void: zone_outlines.refresh(game.timers.zones))
+	add_child(zone_editor)
 
 
 func open_menu(page: StringName = &"") -> void:

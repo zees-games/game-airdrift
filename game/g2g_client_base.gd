@@ -233,10 +233,8 @@ func cycle_spectate(forward: bool) -> void:
 	bridge.ask_spectate(G2GEvents.SPECTATE_NEXT if forward else G2GEvents.SPECTATE_PREVIOUS)
 
 
-## Inside the browser shell's solo session (`dot_solo`), a pack's courses are named by the
-## stock list and fetched from the shell's origin on demand, under its owner. A no-op
-## anywhere else, so a desktop offline game lists what it holds. A session's start map (the
-## site's "Play map", `?map=`) replaces the first course; the game fetches it like a pick.
+## Inside the browser shell's solo session (`dot_solo`), a pack's courses are named by the stock list and fetched from the shell's origin on demand, under its owner. A no-op
+## anywhere else, so a desktop offline game lists what it holds. A session's start map (the site's "Play map", `?map=`) replaces the first course; the game fetches it like a pick.
 func _offer_solo_maps() -> void:
 	var solo := G2GSoloMaps.session()
 	if solo == null:

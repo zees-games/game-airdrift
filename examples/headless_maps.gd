@@ -46,7 +46,7 @@ const SECTIONS := 9
 ## `bhop_g2g_stages`' surf bonus is two 45° slabs, and this game's slope limit is
 ## 45.57°: a player stands on both, so the bonus is a walk down a pair of steep floors
 ## rather than surf. It is a scored track and reshaping it is Christian's call, not a
-## suite's (`[gate-sweep-2]`, 2026-09-27).
+## suite's (`[gate-sweep-2]`).
 ## Maps known to have a tilted slab a player can stand on. `bhop_g2g_stages`' surf bonus was
 ## two, until its slabs were steepened past 45.57 (`[stages-slabs-1]`); none now, and the
 ## check below fails the moment a map gains one.
@@ -308,7 +308,7 @@ func _test_rescan() -> void:
 
 
 ## A host asks for a map while the game's boot fetch is still downloading: the host's map is
-## the one the server ends on. The boot fetch used to finish later and switch it back.
+## the one the server ends on, even when the boot fetch finishes later.
 func _test_boot_race() -> void:
 	_section("boot race")
 	var config := G2GConfig.new()
@@ -374,8 +374,8 @@ func _test_rotation_file() -> void:
 
 func _test_client_config() -> void:
 	_section("client configuration")
-	# The client used to build a bare G2GConfig and never read a layer, so it was the
-	# one thing here that could not be configured. This asserts the layering runs at
+	# A client that built a bare G2GConfig would read no layer and could not be
+	# configured. This asserts the layering runs at
 	# all; which layer wins is DotConfig's own contract and is tested there.
 	var config := G2GConfig.new()
 	var before := config.initial_map

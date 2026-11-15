@@ -1,15 +1,8 @@
 extends RefCounted
 
-## Players solid to each other: the physics half of `mp_solidplayers`.
-##
-## [b]Both halves, or nothing changes.[/b] Each player gets a static hull on the layout's `player`
-## layer that rides its node (feet at the origin), and each controller sweeps against that
-## layer. [member DotPlayerBodyRules.pair_fn] (dot-team's block rules: `mp_teamblock`,
-## `mp_enemyblock`, `!block`, `!noblock`) then decides pair by pair, by leaving the other's hull
-## out of this player's sweep. The same call runs on both ends, so a client predicts against the
-## pairs the server decided. A hull is where its player's node is drawn, so a client meets a
-## remote where it is interpolated, not where the server has it; that is the cost of the
-## physics hull, and a pair that passes costs nothing.
+## Players solid to each other: the physics half of `mp_solidplayers`. [b]Both halves, or nothing changes.[/b] Each player gets a static hull on the layout's `player` layer that rides its node (feet at the origin), and each controller sweeps against that
+## layer. [member DotPlayerBodyRules.pair_fn] (dot-team's block rules: `mp_teamblock`, `mp_enemyblock`, `!block`, `!noblock`) then decides pair by pair, by leaving the other's hull out of this player's sweep. The same call runs on both ends, so a client predicts against the
+## pairs the server decided. A hull is where its player's node is drawn, so a client meets a remote where it is interpolated, not where the server has it; that is the cost of the physics hull, and a pair that passes costs nothing.
 
 const HULL_BODY := &"SolidHullBody"
 

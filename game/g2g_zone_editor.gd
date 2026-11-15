@@ -332,7 +332,7 @@ func _grow(by: float) -> void:
 
 
 func _refuse(message: String) -> void:
-	push_warning(message)
+	DotLog.warn("g2g.zone_editor", message)
 	_say(message)
 
 

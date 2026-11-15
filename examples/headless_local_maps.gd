@@ -5,13 +5,8 @@ const G2GConfig := preload("../game/g2g_config.gd")
 const G2GGame := preload("../game/g2g_game.gd")
 const G2GMapCatalogue := preload("../game/g2g_map_catalogue.gd")
 
-## Maps copied in by hand: a raw dot-map convert folder under `res://addons/maps/` or `user://maps/` is listed as
-## `<name>_local` only while `G2GMapCatalogue.list_local` is on (the offline client), and a game loads it with a spawn
-## that stands on its floor. The fixture runs everywhere; `-- --source=<a map's convert folder>` repeats it on a real map.
-##
-## [codeblock]
-## ./game.sh test headless_local_maps
-## ./game.sh test headless_local_maps -- --source=/path/to/gm_fork/convert
+## Maps copied in by hand: a raw dot-map convert folder under `res://addons/maps/` or `user://maps/` is listed as `<name>_local` only while `G2GMapCatalogue.list_local` is on (the offline client), and a game loads it with a spawn that stands on its floor. The fixture runs everywhere; `-- --source=<a map's convert folder>` repeats it on a real map.
+## [codeblock] ./game.sh test headless_local_maps ./game.sh test headless_local_maps -- --source=/path/to/gm_fork/convert
 ## [/codeblock]
 
 const FIXTURE_DIR := "res://examples/local_maps"

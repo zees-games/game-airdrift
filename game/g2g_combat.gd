@@ -1,8 +1,4 @@
-extends "g2g_combat_kit.gd"
-
-const G2GGame := preload("g2g_game.gd")
-const G2GPlayer := preload("g2g_player.gd")
-const G2GStats := preload("g2g_stats.gd")
+extends "g2g_combat_state.gd"
 
 ## The deathmatch half: dot-combat, dot-loadout and dot-match on a movement server.
 ##
@@ -63,22 +59,6 @@ signal hit_landed(by: StringName, victim: int, amount: float, point: Vector3, ki
 @export var enabled: bool = false
 
 @export_range(0, 500, 1) var score_limit: int = 40
-
-var game: G2GGame = null
-
-## The dot-combat manager.
-##
-## Named `manager` rather than `combat` because this node is what a game calls
-## `combat`, and `game.manager.combat` is a line nobody should have to read twice.
-var manager: DotCombatManager = null
-var loadouts: DotLoadoutManager = null
-var match_node: DotMatch = null
-
-## player id -> the components this layer hung off their node.
-var _kit: Dictionary = {}
-
-## The weapon definitions by id, for the death reaction a weapon asks for. Built on first use.
-var _weapon_defs: Dictionary = {}
 
 var _started: bool = false
 
@@ -753,41 +733,6 @@ func decide_death(player: G2GPlayer, damage: DotDamage) -> DotPlayerDeath:
 		DotPlayerDeath.seed_of(entity_for(player.player_id), game.current_tick()),
 		_weapon_defs.get(damage.weapon_id)
 	)
-
-
-## The combat entity id for a player, or 0 when they have no kit.
-##
-## Two id spaces meet here: this game keys players by [StringName] and dot-combat and
-## dot-effects both key by int. A caller that hashed the name instead would produce a
-## number that is stable, plausible and not the one the health, the hitboxes and the
-## kill feed use — which is why [DotEntityTable] stores the key rather than deriving it.
-func entity_for(player_id: StringName) -> int:
-	return game.entities.id_for_key(player_id) if game != null else 0
-
-
-## The other direction, and it is now a lookup rather than a scan.
-##
-## [b]Not `"u%d" % entity`.[/b] That would be a second spelling of one serialisation.
-## It used to walk every kit comparing ints, which was correct and O(n) on a call that
-## runs once per kill, once per respawn and once per hunter swipe; the table keeps the
-## reverse index that makes it one dictionary read.
-func player_id_for(entity_id: int) -> StringName:
-	return game.entities.key_for_id(entity_id) if game != null else &""
-
-
-func _kit_for_entity(entity_id: int) -> Dictionary:
-	var id := player_id_for(entity_id)
-	return _kit.get(id, {}) if id != &"" else {}
-
-
-func _player_for(entity_id: int) -> G2GPlayer:
-	var id := player_id_for(entity_id)
-	return game.players.get(id) if id != &"" else null
-
-
-func health_of(player_id: StringName) -> DotHealth:
-	var kit: Dictionary = _kit.get(player_id, {})
-	return kit.get("health") if not kit.is_empty() else null
 
 
 func describe() -> Dictionary:

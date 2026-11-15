@@ -4,8 +4,6 @@ extends Node
 ## own [DotFpsTouchSampler]. Nothing shows on a desktop; the server's `sv_mobile_*` cvars bound the rest.
 ## See docs/touch.md.
 
-const CHANNEL := "g2g.touch"
-
 ## Jump and crouch hold their command bits on the sampler, so a run sees a thumb exactly as it sees Space and Ctrl.
 const RESTART := &"restart"
 ## Held while a finger is on it; the client reads it where it reads the mouse button (see G2GClientNetcode.fire_wanted).

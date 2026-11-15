@@ -306,53 +306,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		bridge.ask_drop_weapon(false)
 		return
 
-	if _covered():
+	if _taken_before_player(event):
 		return
-
-	# [b]An open menu or help screen owns the keyboard[/b], ahead of everything below: its
-	# own controls have already had the event, and what reaches here is only ever a key to
-	# close it or a key that must NOT fall through to the run — R behind a menu is a restart
-	# nobody asked for.
-	if overlay_open():
-		return
-
-	# [b]The console first.[/b] This client reads bare letters -- F5, N, R, C, V, M --
-	# so without this, typing at the console reloads the map, opens the scoreboard and
-	# changes style at the same time. It is the line every game that ships a console
-	# forgets, and this project already lost a whole keyboard once to a guard in the
-	# wrong place.
-	if presentation != null and presentation.swallows_input():
-		return
-
-	# A finger is the touch overlay's, and so is the mouse Godot emulates from it: a tap neither captures the pointer
-	# (there is none to capture on a phone) nor turns the view twice. The first tap is the "click" that starts play.
-	if touch != null and touch.takes(event):
-		if _awaiting_click and event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
-			_awaiting_click = false
-			if hud != null:
-				hud.notice("")
-		return
-
-	# [b]Before the `player == null` guard, deliberately.[/b] A browser player clicks
-	# while the world is still loading more often than not, and a click swallowed
-	# because no player exists yet is a click that never captures the cursor — after
-	# which the only affordance the game offers is one it has already ignored.
-	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
-		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and click_may_capture():
-			_awaiting_click = false
-			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-			if hud != null:
-				hud.notice("")
-			return
-
-	# Escape closes the zone editor. Every other Escape, H, P and Tab is the menu's own
-	# (it sits under this node, so it hears them first), which is how they work with no
-	# player too: the menu is how somebody stuck on a loading map leaves it.
-	if event is InputEventKey and event.is_pressed() and not event.is_echo():
-		if (event as InputEventKey).physical_keycode == KEY_ESCAPE:
-			if zone_editor != null and zone_editor.is_open():
-				zone_editor.close()
-				return
 
 	if player == null:
 		return
@@ -393,6 +348,60 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	_press_action(event)
+
+
+## The guards that hold whether or not a player exists: the cover, an open menu, the console,
+## the touch overlay, the click that captures the pointer and Escape for the zone editor. True when one took the event.
+func _taken_before_player(event: InputEvent) -> bool:
+	if _covered():
+		return true
+
+	# [b]An open menu or help screen owns the keyboard[/b], ahead of everything below: its
+	# own controls have already had the event, and what reaches here is only ever a key to
+	# close it or a key that must NOT fall through to the run — R behind a menu is a restart
+	# nobody asked for.
+	if overlay_open():
+		return true
+
+	# [b]The console first.[/b] This client reads bare letters -- F5, N, R, C, V, M --
+	# so without this, typing at the console reloads the map, opens the scoreboard and
+	# changes style at the same time. It is the line every game that ships a console
+	# forgets, and this project already lost a whole keyboard once to a guard in the
+	# wrong place.
+	if presentation != null and presentation.swallows_input():
+		return true
+
+	# A finger is the touch overlay's, and so is the mouse Godot emulates from it: a tap neither captures the pointer
+	# (there is none to capture on a phone) nor turns the view twice. The first tap is the "click" that starts play.
+	if touch != null and touch.takes(event):
+		if _awaiting_click and event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
+			_awaiting_click = false
+			if hud != null:
+				hud.notice("")
+		return true
+
+	# [b]Before the `player == null` guard, deliberately.[/b] A browser player clicks
+	# while the world is still loading more often than not, and a click swallowed
+	# because no player exists yet is a click that never captures the cursor — after
+	# which the only affordance the game offers is one it has already ignored.
+	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
+		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and click_may_capture():
+			_awaiting_click = false
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+			if hud != null:
+				hud.notice("")
+			return true
+
+	# Escape closes the zone editor. Every other Escape, H, P and Tab is the menu's own
+	# (it sits under this node, so it hears them first), which is how they work with no
+	# player too: the menu is how somebody stuck on a loading map leaves it.
+	if event is InputEventKey and event.is_pressed() and not event.is_echo():
+		if (event as InputEventKey).physical_keycode == KEY_ESCAPE:
+			if zone_editor != null and zone_editor.is_open():
+				zone_editor.close()
+				return true
+
+	return false
 
 
 ## True when the zone editor or spectating took the event.
