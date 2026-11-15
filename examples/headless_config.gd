@@ -7,12 +7,13 @@ const G2GArsenal := preload("../game/g2g_arsenal.gd")
 const G2GConfig := preload("../game/g2g_config.gd")
 const G2GGame := preload("../game/g2g_game.gd")
 const G2GMapMechanics := preload("../game/g2g_map_mechanics.gd")
+const G2GZoneEditor := preload("../game/g2g_zone_editor.gd")
 ## One directory per suite process (the probe child is handed its parent's): user:// is shared by
 ## every copy of this project on a box, and two suites at once wrote and deleted each other's cfg files.
 const ROOT_ARG := "--cfgroot="
 var ROOT := _root()
 const GAME := "game-g2gfast"
-const CHECKS := 29
+const CHECKS := 37
 const SECTIONS := 4
 
 var _entered := 0
@@ -63,6 +64,21 @@ func _run() -> void:
 	_check(binder.diff_yaml().contains("respawn_delay: 4"), "the diff names the edit")
 	config.max_velocity = 10.0
 	_check(not config.validate().ok, "validate refuses a max_velocity below max_speed")
+	config.max_velocity = 3500.0
+	_check(config.zone_editor_max_number == 99 and config.zone_editor_max_height == 2048.0
+		and config.zone_mark_max_height == 4096.0, "the zone limits default to the old caps")
+	_check(config.validate().ok, "the defaults validate")
+	config.zone_editor_max_number = -1
+	_check(not config.validate().ok, "a negative stage limit is refused, not clamped")
+	config.zone_editor_max_number = 99
+	config.zone_editor_max_height = -16.0
+	_check(not config.validate().ok, "a negative height limit is refused, not clamped")
+	config.zone_editor_max_height = 2048.0
+	var at_cap := G2GZoneEditor.step_limited(99.0, 1.0, 99.0, "stage number")
+	_check(not at_cap.ok and at_cap.value == 99.0 and at_cap.message.contains("limit"), "past the limit the step fails loudly and keeps the value")
+	_check(G2GZoneEditor.step_limited(98.0, 1.0, 99.0, "stage number").value == 99.0, "up to the limit it steps")
+	_check(G2GZoneEditor.step_limited(99.0, 1.0, 0.0, "stage number").value == 100.0, "0 is unlimited: stage 100")
+	_check(G2GZoneEditor.step_limited(2048.0, 16.0, 0.0, "zone height").value == 2064.0, "0 is unlimited: height past 2048")
 	_check(binder.schema()[0]["description"].length() > 5, "doc comments reach the schema")
 	_check(binder.write_schema(ROOT + "_schema_check.json").ok, "write_schema works")
 	var fall := G2GGame.make_fall_rules()

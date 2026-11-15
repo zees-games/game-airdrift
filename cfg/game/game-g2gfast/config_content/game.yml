@@ -51,3 +51,9 @@
 # report_to_backbone: false
 # Whether the server counts per-player statistics and awards achievements.
 # keep_progress: true
+# The highest stage or checkpoint number the zone editor's ] key reaches. 0 is unlimited. At the limit the ke... [0..1000000]
+# zone_editor_max_number: 99
+# The tallest zone the editor's PgUp and wheel build, in genre units. 0 is unlimited; past it the editor refu... [0.0..1000000.0]
+# zone_editor_max_height: 2048.0
+# The tallest zone `g2g_zone_mark x y z height` accepts, in genre units. 0 is unlimited; a taller request is ... [0.0..1000000.0]
+# zone_mark_max_height: 4096.0

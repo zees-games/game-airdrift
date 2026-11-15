@@ -114,6 +114,9 @@ Settings are cvars. Set them in the server config, on the command line, or live 
 | `sv_props` | 0 | Players can place practice blocks |
 | `sv_ragdoll` | 1 | A dead player falls as a ragdoll; 0 is a quick fall |
 | `sv_map_rotation_file` | `cfg/maps.yml` | Which installed maps rotate |
+| `g2g_zone_editor_max_number` | 99 | Highest stage or checkpoint number the editor's **]** reaches; default 99, 0 = unlimited. Past it the key refuses with a notice |
+| `g2g_zone_editor_max_height` | 2048 | Tallest zone the editor builds, in units; default 2048, 0 = unlimited. Past it the editor refuses with a notice |
+| `g2g_zone_mark_max_height` | 4096 | Tallest zone `g2g_zone_mark x y z height` accepts; default 4096, 0 = unlimited. A taller request is refused, never shortened |
 | `mp_teamblock` / `mp_enemyblock` | 0 / 1 | dot-team block rules, with `!block` and `!noblock`. Runners are not solid to each other, so these matter only once players are made solid |
 
 A player killed in deathmatch or by a hunter falls as a ragdoll ([dot-player-char](https://github.com/modcommunity/dot-player-char)) until they are back at the start. `sv_ragdoll_style` picks ragdoll, stiff, topple or hide; `sv_ragdoll_time` and `sv_ragdoll_max` say how long and how many; `sv_ragdoll_reactions` weights the falls.
@@ -228,8 +231,8 @@ Zones are glowing boxes: green start, red finish, amber stages, cyan and magenta
 | --- | --- |
 | **1**-**6** | Start, end, stage, checkpoint, stop, pit |
 | **T** | Main track, bonus 1, bonus 2, ... |
-| **[** / **]** | Stage or checkpoint number |
-| **PgUp** / **PgDn**, or the wheel | Height, 16 units at a time (128 by default) |
+| **[** / **]** | Stage or checkpoint number (up to 99 by default; `g2g_zone_editor_max_number`, 0 = unlimited) |
+| **PgUp** / **PgDn**, or the wheel | Height, 16 units at a time (128 by default, up to 2048; `g2g_zone_editor_max_height`, 0 = unlimited) |
 | **E** or click | Put a corner; the box follows your aim until the second |
 | **Backspace** | Take the last zone back |
 | **Enter** | Save |

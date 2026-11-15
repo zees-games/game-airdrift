@@ -144,9 +144,13 @@ func handle_key(event: InputEventKey) -> bool:
 	elif code == KEY_BRACKETLEFT:
 		number = maxi(1, number - 1)
 	elif code == KEY_BRACKETRIGHT:
-		number = mini(99, number + 1)
+		var stepped := step_limited(float(number), 1.0, float(_max_number()), "stage number")
+		if stepped.ok:
+			number = int(stepped.value)
+		else:
+			_refuse(stepped.message)
 	elif code == KEY_PAGEUP:
-		height_units = minf(height_units + SNAP_UNITS, 2048.0)
+		_grow(SNAP_UNITS)
 	elif code == KEY_PAGEDOWN:
 		height_units = maxf(height_units - SNAP_UNITS, SNAP_UNITS)
 	elif code == KEY_E:
@@ -172,8 +176,10 @@ func handle_click(event: InputEventMouseButton) -> bool:
 		_update_text()
 		return true
 	if event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-		height_units = clampf(height_units + (SNAP_UNITS if event.button_index == MOUSE_BUTTON_WHEEL_UP
-			else -SNAP_UNITS), SNAP_UNITS, 2048.0)
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_grow(SNAP_UNITS)
+		else:
+			height_units = maxf(height_units - SNAP_UNITS, SNAP_UNITS)
 		_update_text()
 		return true
 	return false
@@ -295,6 +301,39 @@ func save() -> void:
 func _send(line: String) -> void:
 	if send_line.is_valid():
 		send_line.call(line)
+
+
+## One step of [param delta] from [param value] toward [param limit] (0 is no limit). Past the
+## limit nothing changes and the result says why: a refused key, never a silent clamp.
+static func step_limited(value: float, delta: float, limit: float, what: String) -> Dictionary:
+	var next := value + delta
+	if limit > 0.0 and next > limit:
+		return {"ok": false, "value": value,
+			"message": "The %s is at its limit (%s); raise zone_editor_max_* or set it to 0." % [what, limit]}
+	return {"ok": true, "value": next, "message": ""}
+
+
+func _max_number() -> int:
+	var c: Variant = game.get("config") if game != null else null
+	return int(c.zone_editor_max_number) if c != null else 99
+
+
+func _max_height() -> float:
+	var c: Variant = game.get("config") if game != null else null
+	return float(c.zone_editor_max_height) if c != null else 2048.0
+
+
+func _grow(by: float) -> void:
+	var stepped := step_limited(height_units, by, _max_height(), "zone height")
+	if stepped.ok:
+		height_units = stepped.value
+	else:
+		_refuse(stepped.message)
+
+
+func _refuse(message: String) -> void:
+	push_warning(message)
+	_say(message)
 
 
 func _say(text: String) -> void:

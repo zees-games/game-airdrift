@@ -311,6 +311,20 @@ func map_content_id(id: StringName) -> String:
 ## everybody's runs a second time.
 @export var keep_progress: bool = true
 
+## The highest stage or checkpoint number the zone editor's ] key reaches. [b]0 is
+## unlimited[/b]. At the limit the key refuses and says so; the number is never clamped
+## silently. The number is a float on the wire and in the zone files, so no value changes
+## the format.
+@export_range(0, 1000000, 1) var zone_editor_max_number: int = 99
+
+## The tallest zone the editor's PgUp and wheel build, in genre units. [b]0 is
+## unlimited[/b]; past it the editor refuses and says so.
+@export_range(0.0, 1000000.0, 16.0) var zone_editor_max_height: float = 2048.0
+
+## The tallest zone `g2g_zone_mark x y z height` accepts, in genre units. [b]0 is
+## unlimited[/b]; a taller request is refused with an error, not shortened.
+@export_range(0.0, 1000000.0, 16.0) var zone_mark_max_height: float = 4096.0
+
 @export_group("Modes")
 
 ## Whether players can shoot each other. `sv_deathmatch`.
@@ -414,6 +428,13 @@ func validate() -> DotResult:
 			DotError.CODE_INVALID,
 			"max_velocity must not be below max_speed.",
 			"%.0f vs %.0f u/s" % [max_velocity, max_speed]
+		)
+
+	if zone_editor_max_number < 0 or zone_editor_max_height < 0.0 or zone_mark_max_height < 0.0:
+		return DotResult.fail(
+			DotError.CODE_INVALID,
+			"The zone limits must not be negative (0 is unlimited).",
+			"%d, %.0f, %.0f" % [zone_editor_max_number, zone_editor_max_height, zone_mark_max_height]
 		)
 
 	# [b]Only an authoritative instance chooses a map.[/b] A client is told which map

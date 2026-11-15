@@ -639,7 +639,13 @@ func _cmd_zone_mark(ctx: DotCmdContext) -> void:
 			ctx.args[2].to_float()))
 		painter.padding = 0.0
 		if ctx.args.size() >= 4 and ctx.args[3].is_valid_float() and ctx.args[3].to_float() > 0.0:
-			painter.height = G2GUnits.to_metres(clampf(ctx.args[3].to_float(), 8.0, 4096.0))
+			var wanted_height := ctx.args[3].to_float()
+			var tallest: float = game.config.zone_mark_max_height
+			if tallest > 0.0 and wanted_height > tallest:
+				ctx.reply("A zone %.0f units tall is over zone_mark_max_height (%.0f); raise it or set it to 0." % [
+					wanted_height, tallest])
+				return
+			painter.height = G2GUnits.to_metres(maxf(wanted_height, 8.0))
 	var marked := painter.mark(at)
 	if not marked.ok:
 		ctx.reply_error(marked)
