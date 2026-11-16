@@ -184,10 +184,10 @@ func _bind_map_cvars() -> void:
 	# [member G2GConfig.map_sync_seconds] for why it is thirty and not dot-map's three
 	# hundred. Read by the next change; one in flight keeps the deadline it started with.
 	add_cvar("sv_map_sync_timeout", str(int(game.config.map_sync_seconds)),
-		"Seconds a map change waits for clients to have the map before going ahead without them."
-	).changed.connect(
+		"Seconds a map change waits for clients to have the map before going ahead without them (at least 1, no ceiling)."
+	).with_min(1.0).changed.connect(
 		func(_old: String, new_value: String) -> void:
-			game.config.map_sync_seconds = clampf(new_value.to_float(), 1.0, 3600.0)
+			game.config.map_sync_seconds = new_value.to_float()
 			if bridge != null and bridge.map_host != null:
 				bridge.map_host.sync_timeout_sec = game.config.map_sync_seconds
 	)
@@ -280,9 +280,9 @@ func _bind_mode_cvars() -> void:
 	)
 
 	add_cvar("mp_killcam_time", str(game.config.killcam_seconds),
-		"Seconds the final killcam plays when a deathmatch ends, added to the end's wait (0 for none)").changed.connect(
+		"Seconds the final killcam plays when a deathmatch ends, added to the end's wait (0 for none, no ceiling)").with_min(0.0).changed.connect(
 		func(_old: String, new_value: String) -> void:
-			game.config.killcam_seconds = clampf(new_value.to_float(), 0.0, 30.0)
+			game.config.killcam_seconds = new_value.to_float()
 			if game.combat != null:
 				game.combat.apply_killcam_wait()
 	)

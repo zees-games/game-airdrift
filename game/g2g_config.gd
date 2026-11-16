@@ -245,7 +245,7 @@ func map_content_id(id: StringName) -> String:
 ## follows the moment its download finishes, because the load it was sent is queued
 ## behind its own fetch rather than lost. So a short wait costs the slow client a few
 ## seconds on the wrong map and a long one costs everybody else the same seconds.
-@export_range(1.0, 3600.0, 1.0) var map_sync_seconds: float = 30.0
+@export_range(1.0, 3600.0, 1.0, "or_greater") var map_sync_seconds: float = 30.0
 
 @export_group("Records")
 
@@ -334,7 +334,7 @@ func map_content_id(id: StringName) -> String:
 @export var deathmatch: bool = false
 
 ## Seconds of the final killcam when a deathmatch ends, added to the end's wait. `mp_killcam_time`; 0 is off.
-@export_range(0.0, 30.0, 0.5) var killcam_seconds: float = 7.0
+@export_range(0.0, 30.0, 0.5, "or_greater") var killcam_seconds: float = 7.0
 
 ## Whether hunters walk the course. `sv_hunters`.
 ##
