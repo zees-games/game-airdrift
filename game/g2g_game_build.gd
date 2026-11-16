@@ -3,6 +3,9 @@ extends "g2g_game_state.gd"
 ## `sv_falldamage*` (dot-combat), explicitly off: a run is made of long drops and a landing must
 ## never cost the run or a life. No DotFallDamage is built, so only an edit here turns it on.
 var fall_rules: DotFallDamageRules = make_fall_rules()
+## Solo: dot-map's DotMapDropIntake (G2GMapDrop, API 26) every drop goes through, set by the client. Null on a server
+## and on older dot-map, where [method add_dropped_maps] copies through [method G2GMapCatalogue.accept_dropped].
+var map_drop: Node = null
 
 ## Moves aside every record filed under a [method is_legacy_key] player.
 ##
@@ -206,11 +209,13 @@ func rescan_maps() -> Dictionary:
 	return change
 
 
-## Offline: copies the dropped [param paths] into `user://maps` ([method G2GMapCatalogue.accept_dropped]) and rescans, so
-## each map joins M as "<title> (local)" at once. Returns the line to show: the maps added, and each path that is not a
-## map with its reason. A server never lists local maps, so a drop there adds nothing to its rotation.
-func add_dropped_maps(paths: PackedStringArray) -> String:
-	var result := G2GMapCatalogue.accept_dropped(paths)
+## Offline: copies the dropped [param paths] into `user://maps` and rescans, so each map joins M as "<title> (local)" at
+## once. With [member map_drop] (dot-map's DotMapDropIntake, API 26) set, every path goes through it, [param source] says
+## where it came from ("window", "command line") and a path holding no map is refused with what the game takes;
+## otherwise [method G2GMapCatalogue.accept_dropped]. Returns the line to show: the maps added, and each path that is not
+## a map with its reason. A server never lists local maps, so a drop there adds nothing to its rotation.
+func add_dropped_maps(paths: PackedStringArray, source := "window") -> String:
+	var result: Dictionary = map_drop.call(&"handle", paths, source) if map_drop != null else G2GMapCatalogue.accept_dropped(paths)
 	var titles := PackedStringArray()
 	if not (result.get("added", []) as Array).is_empty():
 		var _change := rescan_maps()

@@ -10,6 +10,7 @@ const G2GConfig := preload("g2g_config.gd")
 const G2GFlashlight := preload("g2g_flashlight.gd")
 const G2GGame := preload("g2g_game.gd")
 const G2GMapCatalogue := preload("g2g_map_catalogue.gd")
+const G2GMapDrop := preload("g2g_map_drop.gd")
 const G2GZoneEditor := preload("g2g_zone_editor.gd")
 const G2GZoneOutlines := preload("g2g_zone_outlines.gd")
 const G2GHud := preload("g2g_hud.gd")
@@ -250,16 +251,39 @@ func _offer_solo_maps() -> void:
 	game.offered_maps = offered
 
 
-## Solo only: a converted map folder or `.zip` dragged onto the window is copied into `user://maps` and offered in M as
-## "<title> (local)" ([method G2GGame.add_dropped_maps]); the HUD says what was added, or why a path is not a map. Never
-## online: a local map exists on this machine alone. Needs dot-map 24 ([method G2GMapCatalogue.can_drop]).
+## Solo only: a converted map folder or `.zip` dragged onto the window, dropped on the executable or named by
+## `--map-path=` is copied into `user://maps` and offered in M as "<title> (local)" ([method G2GGame.add_dropped_maps]);
+## the HUD says what was added, or why a path is not a map. Never online: a local map exists on this machine alone.
+## Needs dot-map 24 ([method G2GMapCatalogue.can_drop]); dot-map 26 adds the shared intake and the executable drop.
 func _watch_map_drops() -> void:
 	if not _offline or not is_inside_tree() or not G2GMapCatalogue.can_drop():
 		return
+	if game != null and game.map_drop == null and DotAddonApi.build_level("dot_map") >= G2GMapDrop.NEEDS_LEVEL:
+		game.map_drop = G2GMapDrop.make()
+		if game.map_drop != null:
+			add_child(game.map_drop)
 	get_window().files_dropped.connect(func(files: PackedStringArray) -> void:
-		var text: String = game.add_dropped_maps(files) if game != null else ""
-		if hud != null and text != "":
-			hud.notice(text))
+		_say_drop(game.add_dropped_maps(files) if game != null else ""))
+	if game != null and game.map_drop != null:
+		_take_cmdline_drops.call_deferred(G2GMapDrop.cmdline())
+
+
+## The maps dropped on the executable or named by `--map-path=` in [param args], added as a window drop is; returns the
+## line said ("" when [param args] name no path).
+func _take_cmdline_drops(args: PackedStringArray) -> String:
+	if game == null or game.map_drop == null:
+		return ""
+	var paths := G2GMapDrop.paths_in(game.map_drop, args)
+	if paths.is_empty():
+		return ""
+	var text: String = game.add_dropped_maps(paths, "command line")
+	_say_drop(text)
+	return text
+
+
+func _say_drop(text: String) -> void:
+	if hud != null and text != "":
+		hud.notice(text)
 
 
 ## Widens the stock list to the maps collection as the origin publishes it. Not awaited: M
