@@ -20,6 +20,7 @@ The game is **Zee's Airdrift** (it was G2G Fast; the repository was game-g2gfast
 | [docs/map-rendering.md](docs/map-rendering.md) | lighting, shaders, textures, skies, `bsp_preview` |
 | [docs/map-delivery.md](docs/map-delivery.md) | the catalogue, owners, pack versions, map changes, rotation |
 | [docs/netcode.md](docs/netcode.md) | `game/net/`, the tick rate, interpolation, wire rules |
+| `tools/visual_qa.gd` (run `tools/visual_qa_shot.sh`, dot-game `docs/visual-qa.md`) | changing a person's look or clips: one item per stock person, three cameras, 60 fps; read the sheets, ask "does this look like a real game?" |
 | [docs/client.md](docs/client.md) | camera, avatars, keys, menus, HUD, sound, chat |
 | [docs/services.md](docs/services.md) | admin tools, chat, voice, the vote, the browser |
 | [docs/modes.md](docs/modes.md) | deathmatch, the fire bit, hunters, practice blocks, effects, spectating |
