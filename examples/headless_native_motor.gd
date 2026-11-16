@@ -5,7 +5,7 @@ const G2GMovement := preload("../game/g2g_movement.gd")
 
 ## dot-sim's native motor held to the all-script motor on this game's own movement and maps, to the bit. [codeblock] godot --headless --path . res://examples/headless_native_motor.tscn [/codeblock] dot-player-controller's parity suites prove the library against the script on their own test world and tunables. This one replays seeded strafe-and-hop streams on the three maps built in code, with the
 ## movement `G2GMovement.tunables_for` gives a player (air acceleration 1000, auto-hop, the genre's gravity), at 128 Hz (the game's rate) and 64 Hz, four ways: all script; the native collision body (`DotFpsPhysicsBody.native_enabled`, the default wherever the library is linked); the native tick's start and end (`DotFpsMotor.native_tick` with `native_full` off); and the whole tick in the library (`native_tick` and `native_full`). Every tick's state and the motor's counters must be identical, because a web client runs the script while a native server and native clients run the library, and surf bots plan on
-## the same motor. The ladder (`G2GLadderMode`, a custom mode) always runs in script and is not replayed here. Nothing here touches hit registration or lag compensation. With no dot-sim library it says the native half was skipped and passes; `DOT_SIM_REQUIRE_NATIVE=1` fails instead. Armed by nudging one native run's spawn by a millimetre: the first tick differs and the check says so.
+## the same motor. The ladder (`G2GLadderMode`, a custom mode) always runs in script and is not replayed here. Nothing here touches hit registration or lag compensation. With no dot-sim library it says the native half was skipped and passes; `GS_SIM_REQUIRE_NATIVE=1` fails instead. Armed by nudging one native run's spawn by a millimetre: the first tick differs and the check says so.
 
 const MAPS: Array[String] = ["res://maps/bhop_g2g_intro.tscn", "res://maps/bhop_g2g_stages.tscn", "res://maps/surf_g2g_intro.tscn"]
 const RATES: Array[int] = [128, 64]
@@ -31,8 +31,8 @@ func _run() -> void:
 	var was_full := DotFpsMotor.native_full
 	if not DotFpsPhysicsBody.native_full_available():
 		print("SKIP: dot-sim's motor (motor_tick) is not loaded: the native half is skipped")
-		if OS.get_environment("DOT_SIM_REQUIRE_NATIVE") == "1":
-			_check(false, "the library is loaded (DOT_SIM_REQUIRE_NATIVE=1)")
+		if (OS.get_environment("GS_SIM_REQUIRE_NATIVE") if OS.has_environment("GS_SIM_REQUIRE_NATIVE") else OS.get_environment("DOT_SIM_REQUIRE_NATIVE")) == "1":
+			_check(false, "the library is loaded (GS_SIM_REQUIRE_NATIVE=1)")
 		_report_sections(0, 0, 0)
 		return
 	for path in MAPS:

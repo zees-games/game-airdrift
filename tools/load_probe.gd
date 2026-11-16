@@ -249,8 +249,8 @@ func _build_net(game: G2GGame, side: Node) -> DotNetManager:
 	# Set LOAD_STAGGER=1 to spread snapshots over the ticks between them (DotNetConfig.stagger_snapshots),
 	# so a row can be compared both ways.
 	nc.stagger_snapshots = OS.get_environment("LOAD_STAGGER") == "1"
-	# For DOT_NET_SNAPSHOT_WORKERS=n: the config is built here, so the layered environment is not read.
-	nc.snapshot_workers = int(OS.get_environment("DOT_NET_SNAPSHOT_WORKERS")) if OS.get_environment("DOT_NET_SNAPSHOT_WORKERS") != "" else 0
+	# For GS_NET_SNAPSHOT_WORKERS=n: the config is built here, so the layered environment is not read.
+	nc.snapshot_workers = int((OS.get_environment("GS_NET_SNAPSHOT_WORKERS") if OS.has_environment("GS_NET_SNAPSHOT_WORKERS") else OS.get_environment("DOT_NET_SNAPSHOT_WORKERS"))) if (OS.get_environment("GS_NET_SNAPSHOT_WORKERS") if OS.has_environment("GS_NET_SNAPSHOT_WORKERS") else OS.get_environment("DOT_NET_SNAPSHOT_WORKERS")) != "" else 0
 	net.config = nc
 	side.add_child(net)
 	net.setup()
