@@ -4,7 +4,7 @@
 # --- Modes
 # Whether players can shoot each other. `sv_deathmatch`.
 # deathmatch: false
-# Seconds of the final killcam when a deathmatch ends, added to the end's wait. `mp_killcam_time`; 0 is off. [0.0..30.0]
+# Seconds of the final killcam when a deathmatch ends, added to the end's wait. `mp_killcam_time`; 0 is off. [0.0..]
 # killcam_seconds: 7.0
 # Whether hunters walk the course. `sv_hunters`.
 # hunters: false

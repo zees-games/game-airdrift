@@ -20,7 +20,7 @@
 # offline_map_seconds: 0.0
 # The file that says which maps a server ROTATES: `cfg/maps.yml`, layered over the game's own shipped `res://...
 # map_rotation_file: "cfg/maps.yml"
-# Seconds a map change waits for every connected client to say it has the new map. `sv_map_sync_timeout`. [1.0..3600.0]
+# Seconds a map change waits for every connected client to say it has the new map. `sv_map_sync_timeout`. [1.0..]
 # map_sync_seconds: 30.0
 
 # --- Records

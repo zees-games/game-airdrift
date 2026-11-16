@@ -164,9 +164,9 @@ func _test_a_theme_is_every_screen() -> void:
 
 	var s := G2GPresentation.schema()
 	var themes := DotMenuThemes.stock()
-	_check(themes.size() == 7 and s.find(&"ui_theme") != null
+	_check(themes.size() == DotMenuThemes.STOCK.size() and themes.size() >= 7 and s.find(&"ui_theme") != null
 		and StringName(str(s.find(&"ui_theme").default_value)) == &"midnight",
-		"seven themes, offered by a setting whose default is the palette the menus always had")
+		"every stock theme (seven or more), offered by a setting whose default is the palette the menus always had")
 	var row := G2GBindings.make().row_for_action(&"g2g_theme_next")
 	_check(not row.is_empty() and str(row["default"]) == "P", "and a key that cycles them, P unless rebound")
 
