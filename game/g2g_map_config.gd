@@ -2,23 +2,23 @@ extends RefCounted
 
 ## Per-map movement settings: dot-game's [DotGameMapConfig] over the cvars a map may change.
 ##
-## `cfg/game/game-g2gfast/dot_map/map/<name>.yml` (a glob such as `surf_%.yml` covers a class of maps), overridable from `cfg/server/...`. Only the keys in [constant KEYS] are accepted; anything else a file says is logged and ignored. Never the auto-bhop cvar: that is the server's and the styles' call, not a map's.
+## `cfg/game/game-g2gfast/dot_map/map/<name>.yml` (a glob such as `surf_%.yml` covers a class of maps), overridable from `cfg/server/...`. Only the keys in [constant KEYS] are accepted; anything else a file says is logged and ignored. Never the auto-bhop cvar: that is the server's and the styles' call, not a map's. Keys have a `min` only (a value under it is refused with the key and value in the warning, never clamped); there is no arbitrary ceiling, and `sv_enablebunnyhopping` is a bool.
 
 const GAME_ID := "game-g2gfast"
 
 ## cvar -> its constraint.
 const KEYS := {
-	"sv_airaccelerate": {"type": "float", "min": 0.0, "max": 10000.0},
-	"sv_accelerate": {"type": "float", "min": 0.0, "max": 1000.0},
-	"sv_gravity": {"type": "float", "min": 100.0, "max": 5000.0},
-	"sv_friction": {"type": "float", "min": 0.0, "max": 100.0},
-	"sv_maxspeed": {"type": "float", "min": 50.0, "max": 5000.0},
-	"sv_maxvelocity": {"type": "float", "min": 100.0, "max": 100000.0},
-	"sv_airwishcap": {"type": "float", "min": 0.0, "max": 1000.0},
+	"sv_airaccelerate": {"type": "float", "min": 0.0},
+	"sv_accelerate": {"type": "float", "min": 0.0},
+	"sv_gravity": {"type": "float", "min": 100.0},
+	"sv_friction": {"type": "float", "min": 0.0},
+	"sv_maxspeed": {"type": "float", "min": 50.0},
+	"sv_maxvelocity": {"type": "float", "min": 100.0},
+	"sv_airwishcap": {"type": "float", "min": 0.0},
 	"sv_enablebunnyhopping": {"type": "bool"},
 	# The shared spellings (docs/movement.md); never sv_autohop, for the same reason as the auto-bhop cvar.
-	"sv_runspeed": {"type": "float", "min": 50.0, "max": 5000.0},
-	"sv_airwishspeed": {"type": "float", "min": 0.0, "max": 1000.0},
+	"sv_runspeed": {"type": "float", "min": 50.0},
+	"sv_airwishspeed": {"type": "float", "min": 0.0},
 }
 
 ## cvar -> the [G2GConfig] field behind it (a client has no console, only the config).

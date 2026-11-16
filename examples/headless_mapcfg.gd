@@ -7,7 +7,7 @@ const G2GMapConfig := preload("../game/g2g_map_config.gd")
 const G2GGame := preload("../game/g2g_game.gd")
 const G2GConfig := preload("../game/g2g_config.gd")
 
-const CHECKS := 17
+const CHECKS := 18
 const SECTIONS := 2
 
 var _entered := 0
@@ -31,6 +31,11 @@ func _run() -> void:
 	var air := console.find_cvar("sv_airaccelerate")
 
 	cfg.apply("surf_beginner")
+	var capped := []
+	for k: String in G2GMapConfig.KEYS:
+		if (G2GMapConfig.KEYS[k] as Dictionary).has("max"):
+			capped.append(k)
+	_check(capped.is_empty(), "no map key has an arbitrary max (%s)" % [capped])
 	_check(air.get_float() == 1000.0, "a surf map with no file of its own keeps the game default 1000 (%s)" % air.get_string())
 	cfg.apply("surf_thriller")
 	_check(air.get_float() == 100.0, "a map's own file beats the default")
