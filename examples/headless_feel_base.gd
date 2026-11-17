@@ -351,7 +351,7 @@ func _early_physics() -> void:
 
 func _late_physics() -> void:
 	# The control: the slip forgotten as soon as the clock counts it, which is the engine's
-	# fraction alone -- how every game but arena drew its own player before render_alpha.
+	# fraction alone -- how every game but FC drew its own player before render_alpha.
 	if _forget_slip and _client != null and _client.net != null:
 		_client.net.clock.set(&"_slip", 0.0)
 	if not _driving:

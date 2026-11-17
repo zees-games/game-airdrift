@@ -11,7 +11,7 @@ const G2GPlayer := preload("g2g_player.gd")
 ## spectator seat that is genuinely useful because watching a good run is the point, and
 ## a start zone that is a spawn by any other name.
 ##
-## So this stands up the same six addons `ArenaPlayerStack` does and binds them to what
+## So this stands up the same six addons `FcPlayerStack` does and binds them to what
 ## g2gfast actually has:
 ##
 ## [codeblock]
@@ -423,7 +423,7 @@ func refresh_spawn_rules() -> void:
 		if fighting and game.combat.match_node != null else 0.0
 	)
 	# Off for the reason game-fatal-contact's is: it is the behaviour a deathmatch wants and it
-	# can only be revoked in one of the two records of it. See `ArenaPlayerStack`.
+	# can only be revoked in one of the two records of it. See `FcPlayerStack`.
 	spawns.rules.protection_breaks_on_attack = false
 
 

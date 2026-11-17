@@ -373,7 +373,7 @@ func _test_live_tools() -> void:
 	# put them: a position on THIS map, which a change frees. The change is announced the
 	# way every change ends, on `DotMapSession.changed`, rather than made: `change_map`
 	# goes through the map-sync host, which waits on every peer and an adopted session has
-	# none (arena's first draft of this check hung there). Armed 2026-09-27: without the
+	# none (FC's first draft of this check hung there). Armed 2026-09-27: without the
 	# clear, `return One` put them back at the spot on the previous map.
 	var module: Object = server.modules.get_module("g2gfast")
 	var tools: DotModTools = (module.get("services") as G2GServices).mod_tools if module != null else null
@@ -473,7 +473,7 @@ func _test_blind_and_beacon() -> void:
 		not player.beacon and net.get("net_beacon") == false,
 		"`beacon One off` takes it off the entity"
 	)
-	# The arena's beaconed player is made always-relevant and put back when it goes off.
+	# FC's beaconed player is made always-relevant and put back when it goes off.
 	# Every runner here is always-relevant already, so copying that would CUT everybody
 	# whose beacon was turned off — this is the check that says it was not copied.
 	_check(

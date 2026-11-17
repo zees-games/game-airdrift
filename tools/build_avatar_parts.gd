@@ -128,7 +128,7 @@ func _write(source: Node, letter: String, head_only: bool, scale: float) -> int:
 	# aligned so its feet land on the floor. `G2GRig` mounts the body at 42% of the
 	# hull and the stock capsule is centred there, which leaves it floating about
 	# 13 cm -- invisible on a capsule, and a character standing in mid-air the moment
-	# the part has legs. The rig is not changed for this because arena mounts the same
+	# the part has legs. The rig is not changed for this because FC mounts the same
 	# way and its parts are still primitives; the art is what fits the rig.
 	var box := _bounds(root)
 	var centre := box.get_center()

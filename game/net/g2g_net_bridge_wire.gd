@@ -624,7 +624,7 @@ func _on_hunter_spawned(npc: DotNpcInstance) -> void:
 	identity.owner_peer_id = 0
 	identity.authority = DotNetIdentity.Authority.SERVER
 	# Relevant to everybody: a hunter is a threat a runner must see coming, and an interest
-	# radius would announce one and then never move it — arena's first version did exactly
+	# radius would announce one and then never move it — FC's first version did exactly
 	# that, a monster drawn frozen where it spawned.
 	identity.always_relevant = true
 	body.add_child(identity)

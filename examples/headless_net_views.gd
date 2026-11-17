@@ -305,7 +305,7 @@ func _test_blind_and_beacon() -> void:
 		not _client_player().blinded and not _client_player().beacon and not bea_here.player.beacon,
 		"and turning both off reaches this client"
 	)
-	# Every player here is always-relevant, so the arena's "relevant while beaconed" would
+	# Every player here is always-relevant, so FC's "relevant while beaconed" would
 	# cut Bea from everybody the moment her beacon went off.
 	_check(
 		_server_bridge.behaviour_for(8).identity.always_relevant,

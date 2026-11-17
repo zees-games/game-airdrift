@@ -6,7 +6,7 @@ const G2GModTools := preload("g2g_mod_tools.gd")
 
 ## Chat, voice and moderation on a dedicated timer server.
 ##
-## The same shape as game-fatal-contact's `ArenaServices`, and deliberately a second copy
+## The same shape as game-fatal-contact's `FcServices`, and deliberately a second copy
 ## rather than a shared file: nothing is shared between games in this family that is
 ## not an addon, and a helper living in one game and loaded by another would be a
 ## dependency neither declares. What differs is what a timer server wants, and it is
@@ -200,7 +200,7 @@ func _build_mod_tools() -> void:
 	# is a point on the map the change just freed, so without this `return One` after a
 	# `changelevel` put them where they had stood on a different course -- in mid-air, or
 	# inside the new map's geometry. `DotMapSession.changed` because every change ends at
-	# it, whoever asked for it (`[modtools-return-1]`; arena, playground, hungario and the
+	# it, whoever asked for it (`[modtools-return-1]`; FC, playground, hungario and the
 	# lobby do the same).
 	if not game.maps.changed.is_connected(_on_map_changed_for_mod_tools):
 		game.maps.changed.connect(_on_map_changed_for_mod_tools)

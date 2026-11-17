@@ -237,7 +237,7 @@ func _test_every_sound_has_a_voice() -> void:
 	# that stays silent for ever, and a recipe naming an id the catalogue does not have is
 	# a decision that reaches nothing. Neither is visible from any assertion about the
 	# catalogue on its own -- and a headless run cannot hear the result, so this is as
-	# close as an assertion gets. game-arena/tools/audio_probe.sh is the other half.
+	# close as an assertion gets. game-fatal-contact/tools/audio_probe.sh is the other half.
 	_section("Every sound this game declares has a noise to make")
 
 	var cat := G2GPresentation.sound_catalogue()

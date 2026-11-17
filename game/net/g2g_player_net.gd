@@ -138,7 +138,7 @@ func pull() -> void:
 	# [b]No relevance to change for a beacon, unlike game-fatal-contact.[/b] Every player entity
 	# here is `always_relevant` already (`G2GNetBridge._build_entity`), so a beaconed
 	# runner reaches every client however far away they are — and switching relevance
-	# with the flag, as the arena does, would CUT every runner the moment their beacon
+	# with the flag, as FC does, would CUT every runner the moment their beacon
 	# went off. `headless_net` asserts it stays on.
 
 

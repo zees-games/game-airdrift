@@ -712,7 +712,7 @@ var mouse_capture_override: Variant = null
 ## site, because that read cannot be tested here.[/b] The dummy display server pins the
 ## mode to `MOUSE_MODE_VISIBLE` and drops every write to it without erroring, so a suite
 ## can neither put a client into the state a player plays in nor out of it — which is
-## why arena's identical guard has never been exercised by anything.
+## why FC's identical guard has never been exercised by anything.
 func mouse_drives_view() -> bool:
 	if mouse_capture_override != null:
 		return bool(mouse_capture_override)

@@ -173,7 +173,7 @@ All eleven downloads are VBSP 20; the pages all state CC BY-NC-ND 4.0 and none s
 - [122002](https://gamebanana.com/mods/122002) `surf_ember` (Skar): start round `1ENTER`, finish at the teleports to `JAILTOP`; the round-timer teleports (`Timesup*`, `YOULOSE`) are dropped.
 - [126237](https://gamebanana.com/mods/126237) `bhop_training_fun` (Soapy Soap): a practice yard with no finish; credit only, and listed in `headless_imported`'s `NOT_COURSES`.
 
-Downloaded and sent to `inspirations/g2gfast/pending/` (reasons in its README): `surf_spectrum` (123037), `surf_gurus` (122228), `bhop_relinquished_fixx` (125839), `bhop_miku` (125530), `bhop_cw_journey` (124781), `bhop_communityjump` (124722). Not downloaded: `Surf_Elements_beta3` (121990), a team minigame map that belongs with the arena maps, and `surf_ny_exploder_prime` (122646), already on the arena surf list.
+Downloaded and sent to `inspirations/g2gfast/pending/` (reasons in its README): `surf_spectrum` (123037), `surf_gurus` (122228), `bhop_relinquished_fixx` (125839), `bhop_miku` (125530), `bhop_cw_journey` (124781), `bhop_communityjump` (124722). Not downloaded: `Surf_Elements_beta3` (121990), a team minigame map that belongs with the FC maps, and `surf_ny_exploder_prime` (122646), already on the FC surf list.
 
 ## Extended and imported 2026-10-23
 

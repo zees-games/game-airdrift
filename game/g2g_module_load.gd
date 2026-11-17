@@ -44,7 +44,7 @@ func _build_identity() -> DotResult:
 		return ready
 
 	if server.modules != null and not server.modules.has_module("platform"):
-		# Awaited: see the same call in arena. A module load is a coroutine.
+		# Awaited: see the same call in FC. A module load is a coroutine.
 		var loaded: DotResult = await server.modules.load_module(
 			PLATFORM_MODULE_PATH
 		)

@@ -21,7 +21,7 @@ const G2GUnits := preload("g2g_units.gd")
 ## grid is therefore sized in WORLD space, and one square is a fixed number of the
 ## genre's units on every surface in the game.
 ##
-## Deliberately duplicated from `ArenaMap.dev_texture` rather than shared: the family
+## Deliberately duplicated from `FcMap.dev_texture` rather than shared: the family
 ## rule is that only dot-core is ever a hard dependency, and these two games' texturing
 ## has already diverged — this one is keyed by role and looks for an external set.
 
