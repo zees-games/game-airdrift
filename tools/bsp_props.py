@@ -1,4 +1,4 @@
-"""Launcher: this script lives in dot-map-convert/adapters/game-g2gfast/bsp_props.py, the family's one converter repository."""
+"""Launcher: this script lives in dot-map-convert/adapters/game-airdrift/bsp_props.py, the family's one converter repository."""
 import os
 import sys
 
@@ -7,4 +7,4 @@ import dotbsp_path  # noqa: E402
 _C = dotbsp_path.find()
 sys.path.insert(0, os.path.join(_C, "adapters"))
 import adapter_launch  # noqa: E402
-adapter_launch.run(globals(), "game-g2gfast", "bsp_props.py")
+adapter_launch.run(globals(), dotbsp_path.adapter_repo(_C), "bsp_props.py")

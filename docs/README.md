@@ -37,7 +37,7 @@ One subject per file. [CLAUDE.md](../CLAUDE.md) has the rules in one line each; 
 | `game/airdrift_bsp_map.gd`, `airdrift_map_mechanics.gd`, `airdrift_lighting.gd`, `airdrift_stock_substitutes.gd`, `*.gdshader`, `airdrift_map_catalogue.gd` | imported maps, the catalogue (rotation is dot-map's `DotMapRotationFile`) |
 | `game/airdrift_client.gd`, `airdrift_hud.gd`, `airdrift_presentation.gd`, `airdrift_bindings.gd`, `ui/`, and the other client files | the client; never loaded by a server |
 | `game/net/` | the bridge (its ordering is the file), net classes, the `@rpc` link (identical on both ends), events and requests |
-| `maps/` | the three hand-built maps (+ generated `.zones.json`), `imported_map.tscn`, `imported/` (link to airdrift-maps, checked out as `../g2gfast-maps`), `zones/<id>.json` (hand-written; see its README), `routes/` (route files, recordings, surf caches) |
+| `maps/` | the three hand-built maps (+ generated `.zones.json`), `imported_map.tscn`, `imported/` (link to airdrift-maps, `../airdrift-maps`), `zones/<id>.json` (hand-written; see its README), `routes/` (route files, recordings, surf caches) |
 | `npcs/`, `props/`, `avatars/`, `textures/`, `scenes/` | hunters, practice blocks, avatar parts, prototype set and Kenney stand-ins, server scene and effect scenes |
 | `examples/`, `tools/` | the suites and the tools: [testing](testing.md) |
 

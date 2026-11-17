@@ -23,3 +23,11 @@ def find() -> str:
         return sibling
     cand = os.path.join(os.path.dirname(os.path.dirname(common)), "dot-map-convert")
     return cand if os.path.isdir(cand) else sibling
+
+
+def adapter_repo(converter: str) -> str:
+    """This game's adapter directory name in dot-map-convert/adapters: game-airdrift, or the old Airdrift repository name in a
+    dot-map-convert checkout from before its rename (a0ef1d9; newer ones also accept the old name through adapter_launch.FORMER)."""
+    if os.path.isdir(os.path.join(converter, "adapters", "game-airdrift")):
+        return "game-airdrift"
+    return "game-g2gfast"

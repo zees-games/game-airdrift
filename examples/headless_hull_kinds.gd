@@ -2,7 +2,7 @@ extends DotGameCheckSuite
 
 ## The importer's per-hull kinds reach the scene: a manifest with `collision.hull_kinds` tags those shapes (meta `hull_kind`) and an older manifest loads as all solid.
 ## Run: AIRDRIFT_HULL_KIND_DIR=<dir of migrated maps, <id>/<id>.json> (or a copy in .hull_kinds_local/, never committed) godot --headless --path . res://examples/headless_hull_kinds.tscn
-## The migrated maps are made locally by dot-map-convert/adapters/game-g2gfast/migrate_batch.py and never committed.
+## The migrated maps are made locally by dot-map-convert/adapters/game-airdrift/migrate_batch.py and never committed.
 
 const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
 const OLD := "res://maps/imported/bhop_eazy/bhop_eazy.json"
