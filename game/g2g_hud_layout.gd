@@ -1,5 +1,8 @@
 extends "g2g_hud_state.gd"
 
+## Pixels between the clock block and the key row under it; 4 left the row touching the panel's shadow.
+const KEYS_GAP := 12.0
+
 ## What the player chose to see: the four HUD switches in the menu's General page.
 ## The speed and splits are `DotTimerHud`'s own fields, so off removes the line rather than
 ## leaving a gap; the key display and the crosshair are this HUD's.
@@ -192,8 +195,8 @@ func place() -> void:
 		_put(_keys, _clamp_into(_centre_of(&"keys", area) - keys_size * 0.5, keys_size, area), keys_size)
 	else:
 		var clock := element_rect(&"timer")
-		var below := clock.position.y + clock.size.y + 4.0
-		var y := below if below + keys_size.y <= area.y - 8.0 else clock.position.y - keys_size.y - 4.0
+		var below := clock.position.y + clock.size.y + KEYS_GAP
+		var y := below if below + keys_size.y <= area.y - 8.0 else clock.position.y - keys_size.y - KEYS_GAP
 		if clock.size == Vector2.ZERO:
 			y = area.y - 80.0
 		var x := clock.get_center().x - keys_size.x * 0.5 if clock.size != Vector2.ZERO \
