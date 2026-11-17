@@ -96,6 +96,15 @@ var _course_map: StringName = &""
 ## The cache's lookup, loaded once a map and shared by every bot's pilot.
 var _cache: DotBotSurfPilot = null
 var _route_points: Array[Dictionary] = []
+## dot-sim's `DotSimRouteBots` for this map (every route bot of a tick in one native call), or null.
+var _native_routes: Object = null
+## The route points [member _native_route_id] was written from.
+var _native_points: Array[Dictionary] = []
+var _native_route_id := -1
+## Route bots waiting for this tick's one native call: `[player, rider, route]` each.
+var _batch: Array = []
+var _batch_space: PhysicsDirectSpaceState3D = null
+var _batch_tunables: DotFpsTunables = null
 ## The planner for this map, or null (off, no dot-npc-ai, or the map has a route file).
 var nav: RefCounted = null
 ## Whether the route is still being planned; the bots stand until it is.
@@ -156,31 +165,119 @@ func drive(step: float) -> void:
 				rider["stuck"] = int(rider["stuck"]) + 1
 			else:
 				rider["fell"] = int(rider["fell"]) + 1
+			_flush_routes(step)  # the rays queued so far see the world before this teleport, as the script's did
 			_put_back(player, rider)
 
-		var began := Time.get_ticks_usec()
-		var command: DotFpsCommand = null
 		var pilot: DotBotSurfPilot = rider["pilot"]
 		var route: AirdriftRouteBot = rider["route"]
+		if pilot == null and route != null and route.native != null and route.native == _native_routes \
+				and AirdriftRouteBot.native_route:
+			var space := player.get_world_3d().direct_space_state
+			var tunables: DotFpsTunables = player.controller.tunables
+			if space != _batch_space or tunables != _batch_tunables:
+				_flush_routes(step)
+				_batch_space = space
+				_batch_tunables = tunables
+			_batch.append([player, rider, route])
+			continue
+		var began := Time.get_ticks_usec()
+		var command: DotFpsCommand = null
 		if pilot != null:
 			command = pilot.command(player.controller.state)
 		elif route != null:
+			route.pull()
 			command = route.command(player.controller.state, player.get_world_3d().direct_space_state,
 				player.controller.tunables, step)
 		else:
 			command = DotFpsCommand.new()
 		var spent := Time.get_ticks_usec() - began
-		rider["usec"] = int(rider["usec"]) + spent
-		rider["worst_usec"] = maxi(int(rider["worst_usec"]), spent)
-		rider["driven"] = int(rider["driven"]) + 1
-		rider["ticks"] = int(rider["ticks"]) + 1
-		player.controller.apply_command(command)
-		# The farthest from the start a ride got, as the crow flies, in metres: what a map nobody
-		# can finish is measured by, and what `bot_nav` is judged on.
-		var away := player.controller.state.position.distance_to(course.start)
-		if away > float(rider["far_ride"]):
-			rider["far_ride"] = away
-			rider["far"] = maxf(float(rider["far"]), away)
+		if route != null and pilot == null:
+			route._push()  # the script drove it (native_route off): its twin follows
+		_finish(player, rider, command, spent)
+	_flush_routes(step)
+
+
+## The bookkeeping after a bot's command, and the command applied.
+func _finish(player: AirdriftPlayer, rider: Dictionary, command: DotFpsCommand, spent: int) -> void:
+	rider["usec"] = int(rider["usec"]) + spent
+	rider["worst_usec"] = maxi(int(rider["worst_usec"]), spent)
+	rider["driven"] = int(rider["driven"]) + 1
+	rider["ticks"] = int(rider["ticks"]) + 1
+	player.controller.apply_command(command)
+	# The farthest from the start a ride got, as the crow flies, in metres: what a map nobody
+	# can finish is measured by, and what `bot_nav` is judged on.
+	var away := player.controller.state.position.distance_to(course.start)
+	if away > float(rider["far_ride"]):
+		rider["far_ride"] = away
+		rider["far"] = maxf(float(rider["far"]), away)
+
+
+## Drives the queued route bots in one native call, in the order they were queued (the script's,
+## so the rays are cast in the same order), then applies their commands. With
+## [member AirdriftRouteBot.route_verify] each is re-run in script beside it and compared; a
+## difference is an error and the script's answer wins.
+func _flush_routes(step: float) -> void:
+	if _batch.is_empty():
+		return
+	var n := _batch.size()
+	var slots := PackedInt32Array()
+	var positions := PackedVector3Array()
+	var velocities := PackedVector3Array()
+	var grounded := PackedByteArray()
+	slots.resize(n)
+	positions.resize(n)
+	velocities.resize(n)
+	grounded.resize(n)
+	for i in n:
+		var player: AirdriftPlayer = _batch[i][0]
+		var state := player.controller.state
+		slots[i] = (_batch[i][2] as AirdriftRouteBot).native_slot
+		positions[i] = state.position
+		velocities[i] = state.velocity
+		grounded[i] = 1 if state.is_grounded() else 0
+	var verify := AirdriftRouteBot.route_verify
+	if verify:
+		for entry: Array in _batch:
+			(entry[2] as AirdriftRouteBot).pull()  # the script's fields as the twin starts this tick
+	var t := _batch_tunables
+	var began := Time.get_ticks_usec()
+	var out: PackedFloat64Array = _native_routes.drive(slots, positions, velocities, grounded, _batch_space,
+		PackedFloat64Array([t.max_slope_angle, t.gravity, t.max_speed, t.air_accelerate, t.max_air_wish_speed]), step)
+	var each := (Time.get_ticks_usec() - began) / n
+	var ok := out.size() == n * 4
+	if ok:
+		AirdriftRouteBot.native_driven += n
+	for i in n:
+		var player: AirdriftPlayer = _batch[i][0]
+		var rider: Dictionary = _batch[i][1]
+		var route: AirdriftRouteBot = _batch[i][2]
+		var spent := each
+		var command := DotFpsCommand.new()
+		if ok:
+			command.yaw = out[i * 4]
+			command.move = Vector2(out[i * 4 + 1], out[i * 4 + 2])
+			command.buttons = int(out[i * 4 + 3])
+		if verify or not ok:
+			# The script on the same state (pulled above under verify; else from the twin, which a
+			# failed call left as it was).
+			var from := Time.get_ticks_usec()
+			if not verify:
+				route.pull()
+			var script := route.command(player.controller.state, _batch_space, _batch_tunables, step)
+			var mine := route.state_vector()
+			if ok:
+				var theirs: PackedFloat64Array = _native_routes.get_state(route.native_slot)
+				AirdriftRouteBot.verify_checked += 1
+				if script.yaw != command.yaw or script.move != command.move or script.buttons != command.buttons \
+						or mine != theirs:
+					AirdriftRouteBot.verify_mismatches += 1
+					push_error("route_verify: %s: script %s %s %d %s, native %s %s %d %s" % [player.name,
+						script.yaw, script.move, script.buttons, mine, command.yaw, command.move, command.buttons, theirs])
+			_native_routes.set_state(route.native_slot, mine)
+			command = script
+			spent += Time.get_ticks_usec() - from
+		_finish(player, rider, command, spent)
+	_batch.clear()
 
 
 ## Whether the bot has stayed within SETTLE_RADIUS of one spot for SETTLE_SECONDS.
@@ -208,6 +305,9 @@ func _ensure_course() -> void:
 	mode = &""
 	_cache = null
 	_route_points = []
+	_native_routes = null
+	_native_points = []
+	_native_route_id = -1
 	_end_nav()
 
 	var data := _stage_data(id)
@@ -353,7 +453,34 @@ func _put_back(player: AirdriftPlayer, rider: Dictionary) -> void:
 		rider["route"] = null
 	else:
 		rider["pilot"] = null
-		rider["route"] = AirdriftRouteBot.new(_route_points, course.goal_centre)
+		var route := AirdriftRouteBot.new(_route_points, course.goal_centre)
+		rider["route"] = route
+		_bind_native(route)
+
+
+## Gives [param route] a slot in this map's native route bots, writing the route there first when
+## it is new (dot-sim's `route` module; without it, or with `native_route` off, the script drives).
+func _bind_native(route: AirdriftRouteBot) -> void:
+	if not AirdriftRouteBot.native_route or not DotSim.has(&"route"):
+		return
+	if _native_routes == null:
+		_native_routes = ClassDB.instantiate(&"DotSimRouteBots")
+		_native_route_id = -1
+	if _native_route_id < 0 or not is_same(_native_points, _route_points):
+		var at := PackedVector3Array()
+		var radius := PackedFloat64Array()
+		var cap := PackedFloat64Array()
+		var flags := PackedInt32Array()
+		for p: Dictionary in _route_points:
+			at.append(p["at"])
+			radius.append(float(p["radius"]))
+			cap.append(float(p.get("max", AirdriftRouteBot.DEFAULT_MAX)))
+			flags.append((1 if bool(p.get("walk", false)) else 0) | (2 if bool(p.get("hop", false)) else 0)
+				| (4 if bool(p["land"]) else 0) | (8 if bool(p["door"]) else 0)
+				| (16 if bool(p.get("launch", false)) else 0) | (32 if bool(p.get("slide", false)) else 0))
+		_native_route_id = _native_routes.add_route(at, radius, cap, flags, course.goal_centre)
+		_native_points = _route_points
+	route.bind_native(_native_routes, _native_route_id)
 
 
 ## Per bot, what it rode and what it cost: the pilot's (or route bot's) own time per driven
@@ -375,6 +502,7 @@ func describe() -> Dictionary:
 			entry["pilot"] = pilot.describe()
 		var route: AirdriftRouteBot = r.get("route")
 		if route != null:
+			route.pull()
 			entry["route"] = {"index": route.index, "points": route.points.size(), "target": route.target()}
 			var player: AirdriftPlayer = game.players.get(id)
 			if player != null:

@@ -86,6 +86,64 @@ var _held := 0.0
 var _unstick_left := 0.0
 var _unstick_turn := 0.0
 
+## The native twin (dot-sim's `DotSimRouteBots`, `rustport-airdrift-tick-1`): with it, AirdriftBots.drive
+## runs every route bot of a tick in one native call, the same commands to the bit, and this
+## script's fields above are stale until [method pull]. Off (or no dot-sim `route`), this script drives.
+static var native_route := true
+## Every native tick re-run in this script beside it and compared; a difference is an error
+## and the script's answer wins (the native state is set from it). Keeps the fields current.
+static var route_verify := false
+## Counted by AirdriftBots: bots driven natively, of those re-run under [member route_verify], and
+## the re-runs that differed (`headless_native_route` reads them).
+static var native_driven := 0
+static var verify_checked := 0
+static var verify_mismatches := 0
+## The `DotSimRouteBots` this bot holds a slot in, or null.
+var native: Object = null
+var native_slot := -1
+
+
+## Takes a slot on route [param route_id] of [param bots] (a `DotSimRouteBots`), from this bot's state.
+func bind_native(bots: Object, route_id: int) -> void:
+	native_slot = bots.add(route_id) if route_id >= 0 else -1
+	native = bots if native_slot >= 0 else null
+	if native != null:
+		native.set_state(native_slot, state_vector())
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and native != null and native_slot >= 0:
+		native.remove(native_slot)
+
+
+## The fields as `DotSimRouteBots.get_state` lays them out.
+func state_vector() -> PackedFloat64Array:
+	return PackedFloat64Array([index, surfed, _side, _leg_from.x, _leg_from.y, _leg_from.z, unstuck,
+		_anchor.x, _anchor.y, _anchor.z, _held, _unstick_left, _unstick_turn])
+
+
+## The fields from the native twin (a no-op without one).
+func pull() -> void:
+	if native == null:
+		return
+	var s: PackedFloat64Array = native.get_state(native_slot)
+	if s.size() != 13:
+		return
+	index = int(s[0])
+	surfed = int(s[1])
+	_side = s[2]
+	_leg_from = Vector3(s[3], s[4], s[5])
+	unstuck = int(s[6])
+	_anchor = Vector3(s[7], s[8], s[9])
+	_held = s[10]
+	_unstick_left = s[11]
+	_unstick_turn = s[12]
+
+
+func _push() -> void:
+	if native != null:
+		native.set_state(native_slot, state_vector())
+
 
 ## The route file for [param id], or an empty array (no file, or unreadable -- said why
 ## in [param why]).
@@ -126,21 +184,30 @@ func _init(route: Array[Dictionary] = [], finish_centre: Vector3 = Vector3.INF) 
 
 ## Start over from the first point (after a pit put the player back at the start).
 func restart() -> void:
+	pull()
 	index = 0
 	_leg_from = Vector3.INF
 	_anchor = Vector3.INF
 	_unstick_left = 0.0
+	_push()
 
 
 ## A door moved the player: the door point it was walking into is passed.
 func teleported() -> void:
+	pull()
 	if index < points.size() and bool(points[index]["door"]):
 		index += 1
 	_leg_from = Vector3.INF
+	_push()
 
 
 ## The point aimed at now, in metres.
 func target() -> Vector3:
+	pull()
+	return _target()
+
+
+func _target() -> Vector3:
 	return points[index]["at"] if index < points.size() else finish
 
 
@@ -151,7 +218,7 @@ func command(state: DotFpsState, space: PhysicsDirectSpaceState3D, tunables: Dot
 	if _leg_from == Vector3.INF:
 		_leg_from = at
 	_advance(at, state.is_grounded())
-	var goal := target()
+	var goal := _target()
 	if _watch_progress(at, delta):
 		return _unstick(state, goal)
 	var point: Dictionary = points[index] if index < points.size() else {}
