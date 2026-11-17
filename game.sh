@@ -235,7 +235,7 @@ do_test() {
         local tc
         for tc in tools/test_*.py; do
             [ -f "$tc" ] || continue
-            if out="$(python3 -P "$tc" 2>&1)"; then
+            if out="$(python3 -I "$tc" 2>&1)"; then
                 printf '  %sok%s   %s  %s\n' "$GRN" "$OFF" "$tc" "$(printf '%s' "$out" | tail -1)"
             else
                 printf '  %sFAIL%s %s\n%s\n' "$RED" "$OFF" "$tc" "$out"
