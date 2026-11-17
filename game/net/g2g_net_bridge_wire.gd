@@ -651,7 +651,7 @@ func _forget_hunter(instance_id: int) -> void:
 	if behaviour == null or behaviour.identity == null or net == null:
 		return
 
-	var net_id := behaviour.identity.net_id
+	var net_id: int = behaviour.identity.net_id
 	net.registry.unregister(net_id)
 	_broadcast(G2GEvents.Kind.NPC_GONE, G2GEvents.write_npc_gone(net_id))
 
