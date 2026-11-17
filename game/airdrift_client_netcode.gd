@@ -138,7 +138,7 @@ var _use_was_down: bool = false
 func _use_key_frame(delta: float) -> void:
 	if game.weapon_layer == null or player == null or bridge == null or hud == null:
 		return
-	var down := Input.is_action_pressed(&"g2g_use") and InputMap.has_action(&"g2g_use")
+	var down := Input.is_action_pressed(&"airdrift_use") and InputMap.has_action(&"airdrift_use")
 	if down != _use_was_down:
 		_use_was_down = down
 		bridge.ask_use_key(down)
@@ -302,7 +302,7 @@ func _drive_free_camera(camera: Camera3D) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	# The release goes first and past every cover: a menu opened mid-hold must not leave the key down on the server.
-	if bridge != null and event.is_action_released(&"g2g_drop_weapon"):
+	if bridge != null and event.is_action_released(&"airdrift_drop_weapon"):
 		bridge.ask_drop_weapon(false)
 		return
 
@@ -430,29 +430,29 @@ func _editor_or_spectate_input(event: InputEvent) -> bool:
 
 ## Actions rather than keycodes, so each is the player's own key (a mouse button too).
 func _press_action(event: InputEvent) -> void:
-	if event.is_action_pressed(&"g2g_servers"):
+	if event.is_action_pressed(&"airdrift_servers"):
 		show_servers()
-	elif event.is_action_pressed(&"g2g_roam"):
+	elif event.is_action_pressed(&"airdrift_roam"):
 		toggle_roam()
-	elif event.is_action_pressed(&"g2g_third_person"):
+	elif event.is_action_pressed(&"airdrift_third_person"):
 		if player.camera != null and not player.camera.toggle():
 			hud.notice(game.view_rules.refusal() if game.view_rules.refusal() != "" else "Third person is not allowed on this server.")
-	elif event.is_action_pressed(&"g2g_flashlight"):
+	elif event.is_action_pressed(&"airdrift_flashlight"):
 		toggle_flashlight()
-	elif event.is_action_pressed(&"g2g_hide_others"):
+	elif event.is_action_pressed(&"airdrift_hide_others"):
 		toggle_hide_others()
-	elif event.is_action_pressed(&"g2g_style_next"):
+	elif event.is_action_pressed(&"airdrift_style_next"):
 		var styles := game.timers.styles_in_order()
 		_style_index = (_style_index + 1) % styles.size()
 		menu_choose_style(styles[_style_index].id)
-	elif event.is_action_pressed(&"g2g_restart"):
+	elif event.is_action_pressed(&"airdrift_restart"):
 		_restart_key()
-	elif event.is_action_pressed(&"g2g_drop_weapon"):
+	elif event.is_action_pressed(&"airdrift_drop_weapon"):
 		bridge.ask_drop_weapon(true)
-	elif event.is_action_pressed(&"g2g_zones"):
+	elif event.is_action_pressed(&"airdrift_zones"):
 		if zone_editor != null:
 			zone_editor.toggle()
-	elif event.is_action_pressed(&"g2g_checkpoint_save"):
+	elif event.is_action_pressed(&"airdrift_checkpoint_save"):
 		if not _offline:
 			bridge.ask_checkpoint(0)
 		else:
@@ -460,13 +460,13 @@ func _press_action(event: InputEvent) -> void:
 			var saved := game.timers.checkpoints_for(&"local").save(
 				s.position, s.velocity, s.yaw, s.pitch, s.is_grounded(), s.is_crouched())
 			hud.notice("Checkpoint saved" if saved.ok else saved.error.message)
-	elif event.is_action_pressed(&"g2g_checkpoint_load"):
+	elif event.is_action_pressed(&"airdrift_checkpoint_load"):
 		if not _offline:
 			bridge.ask_checkpoint(1)
 		else:
 			var cp := game.timers.checkpoints_for(&"local").load_current()
 			if cp == null:
-				hud.notice("No checkpoints. %s saves one." % presentation.bindings.key_for(&"g2g_checkpoint_save"))
+				hud.notice("No checkpoints. %s saves one." % presentation.bindings.key_for(&"airdrift_checkpoint_save"))
 			else:
 				player.teleport(cp.position, cp.yaw)
 				player.controller.state.velocity = cp.velocity
@@ -573,14 +573,14 @@ func _build_overlays() -> void:
 	menu.settings = presentation.settings if presentation != null else null
 	menu.bindings = presentation.bindings if presentation != null else AirdriftBindings.make()
 	var config := DotMenuConfig.new()
-	config.brand_mark = "g2g"
-	config.brand_name = "fast"
+	config.brand_mark = "air"
+	config.brand_name = "drift"
 	config.leave_text = "Quit game"
 	var _layered := config.load_layered()
 	menu.config = config
-	menu.help_action = &"g2g_help"
-	menu.theme_action = &"g2g_theme_next"
-	menu.scoreboard_action = &"g2g_scoreboard"
+	menu.help_action = &"airdrift_help"
+	menu.theme_action = &"airdrift_theme_next"
+	menu.scoreboard_action = &"airdrift_scoreboard"
 	# The console has the keyboard while it is open, and so does the zone editor's Escape.
 	menu.busy = func() -> bool:
 		return (presentation != null and presentation.swallows_input()) \

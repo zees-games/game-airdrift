@@ -123,10 +123,10 @@ func _test_vote_commands(module: Object) -> void:
 		"`!rtv` is the ballot's rock-the-vote, with the ballot's own delay (%s)" % str(replies)
 	)
 	replies.clear()
-	server.console.execute("g2g_rtv", ctx)
+	server.console.execute("airdrift_rtv", ctx)
 	_check(
 		replies.size() == 1 and replies[0].contains("rock the vote in"),
-		"and so is `g2g_rtv` (%s)" % str(replies)
+		"and so is `airdrift_rtv` (%s)" % str(replies)
 	)
 	var _released := server.release_session(session.peer_id)
 
@@ -141,7 +141,7 @@ func _test_vote_commands(module: Object) -> void:
 	)
 
 
-## `g2g_status`'s "time left" is the vote's clock, and an extend moves it.
+## `airdrift_status`'s "time left" is the vote's clock, and an extend moves it.
 ##
 ## [b]It read the map session's clock after the vote had taken the map's end over[/b], so
 ## an operator asking how long was left was shown a limit an extend had already moved —
@@ -267,16 +267,16 @@ func _test_status_clock(vote: AirdriftVote) -> void:
 	clock.start()
 
 	var session_before := game.maps.time_limit.formatted_remaining()
-	var before := _status_seconds(_run_command("g2g_status"))
+	var before := _status_seconds(_run_command("airdrift_status"))
 	_check(
 		absf(before - clock.remaining) <= 1.0,
-		"`g2g_status` reports the vote's time left (%d s, the vote's is %.0f s)" % [
+		"`airdrift_status` reports the vote's time left (%d s, the vote's is %.0f s)" % [
 			before, clock.remaining
 		]
 	)
 
 	_check(clock.extend(), "the vote extends the map")
-	var after := _status_seconds(_run_command("g2g_status"))
+	var after := _status_seconds(_run_command("airdrift_status"))
 	_check(
 		after - before == int(rules.extend_seconds)
 			and game.maps.time_limit.formatted_remaining() == session_before,
@@ -289,7 +289,7 @@ func _test_status_clock(vote: AirdriftVote) -> void:
 	rules.duration_sec = 0.0
 	rules.trigger = DotVoteRules.Trigger.RTV_ONLY
 	clock.start()
-	var status := _run_command("g2g_status")
+	var status := _run_command("airdrift_status")
 	_check(
 		_said(status, "time left    no limit"),
 		"a vote with no clock is reported as no limit, not as the session's (%s)" % _status_line(status)
@@ -308,7 +308,7 @@ func _status_line(lines: PackedStringArray) -> String:
 	return ""
 
 
-## Seconds on `g2g_status`'s time-left line, or -1 when it is not an m:ss.
+## Seconds on `airdrift_status`'s time-left line, or -1 when it is not an m:ss.
 func _status_seconds(lines: PackedStringArray) -> int:
 	var parts := _status_line(lines).trim_prefix("time left").strip_edges().split(" ")[0].split(":")
 	if parts.size() != 2 or not parts[0].is_valid_int() or not parts[1].is_valid_int():
@@ -571,7 +571,7 @@ func _modes_fire_starved(fire: DotWeaponCommand) -> void:
 	game.tick_once(game.current_tick() + 1)
 	var shooter: AirdriftPlayer = game.players.get(&"u4242")
 	_check(
-		shooter != null and not shooter.has_meta("g2g_fire"),
+		shooter != null and not shooter.has_meta("airdrift_fire"),
 		"and a trigger is read once, so a lost packet is not a held trigger"
 	)
 

@@ -30,7 +30,7 @@ const AirdriftPlayer := preload("airdrift_player.gd")
 
 const CHANNEL := "g2g.stack"
 
-const SERVICE := &"g2g_player_stack"
+const SERVICE := &"airdrift_player_stack"
 
 @export var register_service: bool = true
 
@@ -130,7 +130,7 @@ func _build_physics() -> DotResult:
 	if not apply_physics:
 		return DotResult.success(null)
 
-	return physics.setup().wrap("g2gfast's physics profile")
+	return physics.setup().wrap("Airdrift's physics profile")
 
 
 func _build_roster() -> void:
@@ -271,7 +271,7 @@ func _build_spectate() -> void:
 	spectate.round_live_fn = func() -> bool: return false
 
 	# [b]The manager this game already has, rather than a second one.[/b] AirdriftSpectate
-	# wraps a DotSpectatorManager with g2gfast's own rules and its own pose lookup;
+	# wraps a DotSpectatorManager with Airdrift's own rules and its own pose lookup;
 	# building another would give the server two spectator systems disagreeing about
 	# who is watching whom.
 	if game.spectate != null and game.spectate.manager != null:

@@ -3,7 +3,7 @@ extends DotGameNetchaosServer
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 
-## g2gfast's side of `tools/netchaos.sh` (dot-game's DotGameNetchaosServer): a timer server, no bots.
+## Airdrift's side of `tools/netchaos.sh` (dot-game's DotGameNetchaosServer): a timer server, no bots.
 
 var _game: AirdriftGame = null
 

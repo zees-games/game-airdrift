@@ -83,13 +83,13 @@ func _test_the_menu_is_a_view_of_the_settings() -> void:
 	_check(keys.size() == AirdriftBindings.ROWS.size() + 2, "the Controls page has a key per action (plus the wheel's two) (%d)" % keys.size())
 
 	# Flashlight onto R: R was Restart, so Restart gets F rather than nothing.
-	var _r := p.bindings.rebind(p.bindings.row_for_action(&"g2g_flashlight"), "R", p.settings)
-	_check(DotInputBinding.describe_action(&"g2g_flashlight") == "R"
-		and DotInputBinding.describe_action(&"g2g_restart") == "F",
+	var _r := p.bindings.rebind(p.bindings.row_for_action(&"airdrift_flashlight"), "R", p.settings)
+	_check(DotInputBinding.describe_action(&"airdrift_flashlight") == "R"
+		and DotInputBinding.describe_action(&"airdrift_restart") == "F",
 		"binding a key that is taken swaps the two, so nothing is left unbound")
 	p.bindings.reset_all(p.settings)
-	_check(DotInputBinding.describe_action(&"g2g_flashlight") == "F"
-		and DotInputBinding.describe_action(&"g2g_restart") == "R",
+	_check(DotInputBinding.describe_action(&"airdrift_flashlight") == "F"
+		and DotInputBinding.describe_action(&"airdrift_restart") == "R",
 		"and Reset puts every key back")
 
 	var changes: Array = []
@@ -122,7 +122,7 @@ func _test_help_lists_what_it_is_told() -> void:
 	await get_tree().process_frame
 	var shown: PackedStringArray = texts.call()
 	_check(menu.help.visible and shown.has("!spec") and shown.has("!wr"), "online, it lists the commands the server sent")
-	_check(shown.has("Flashlight") and shown.has(p.bindings.key_for(&"g2g_flashlight")) and shown.has("Scoreboard (hold)"),
+	_check(shown.has("Flashlight") and shown.has(p.bindings.key_for(&"airdrift_flashlight")) and shown.has("Scoreboard (hold)"),
 		"and every key, as it is bound now")
 	_check(not shown.has("Ctrl + W"), "the browser's tips are for a browser, and this is not one")
 
@@ -135,7 +135,7 @@ func _test_help_lists_what_it_is_told() -> void:
 
 	# The family's rule since the first play test: H is help, nothing else is on H, the help
 	# says what the game is, and the Escape menu has Help & commands and Leave.
-	_check(p.bindings.key_for(&"g2g_help") == "H" and p.bindings.defaults_on("H").size() == 1
+	_check(p.bindings.key_for(&"airdrift_help") == "H" and p.bindings.defaults_on("H").size() == 1
 		and p.bindings.key_for(DotMenuBindings.MAPS_ACTION) == "M" and p.bindings.defaults_on("M").size() == 1,
 		"help is on H and the map menu on M, and nothing else in the table is on either",
 		str(p.bindings.defaults_on("H").map(func(r: Dictionary) -> String: return str(r["label"]))))
@@ -167,7 +167,7 @@ func _test_a_theme_is_every_screen() -> void:
 	_check(themes.size() == DotMenuThemes.STOCK.size() and themes.size() >= 7 and s.find(&"ui_theme") != null
 		and StringName(str(s.find(&"ui_theme").default_value)) == &"midnight",
 		"every stock theme (seven or more), offered by a setting whose default is the palette the menus always had")
-	var row := AirdriftBindings.make().row_for_action(&"g2g_theme_next")
+	var row := AirdriftBindings.make().row_for_action(&"airdrift_theme_next")
 	_check(not row.is_empty() and str(row["default"]) == "P", "and a key that cycles them, P unless rebound")
 
 	var p := _make()

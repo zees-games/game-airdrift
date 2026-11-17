@@ -529,11 +529,11 @@ func tick(delta: float) -> void:
 
 			# has_meta first: a null default is an ERROR with a backtrace, once a tick per armed player.
 		# Consumed so a dropped packet does not replay the last trigger; `previous` stays put.
-		if not player.has_meta("g2g_fire"):
+		if not player.has_meta("airdrift_fire"):
 			continue
 
-		var command: DotWeaponCommand = player.get_meta("g2g_fire")
-		player.remove_meta("g2g_fire")
+		var command: DotWeaponCommand = player.get_meta("airdrift_fire")
+		player.remove_meta("airdrift_fire")
 
 		if command == null:
 			continue
@@ -553,10 +553,10 @@ func tick(delta: float) -> void:
 		ctx.crouched = state.is_crouched()
 		ctx.authority = game.authoritative
 
-		var previous: DotWeaponCommand = player.get_meta("g2g_fire_previous") \
-			if player.has_meta("g2g_fire_previous") else null
+		var previous: DotWeaponCommand = player.get_meta("airdrift_fire_previous") \
+			if player.has_meta("airdrift_fire_previous") else null
 		var outcome := arsenal.simulate_tick(command, ctx, previous)
-		player.set_meta("g2g_fire_previous", command.duplicate_command())
+		player.set_meta("airdrift_fire_previous", command.duplicate_command())
 
 		shots.append_array(outcome.shots)
 
@@ -604,7 +604,7 @@ func set_fire_command(player_id: StringName, command: DotWeaponCommand) -> void:
 	var player: AirdriftPlayer = game.players.get(player_id)
 
 	if player != null:
-		player.set_meta("g2g_fire", command)
+		player.set_meta("airdrift_fire", command)
 
 
 # --- Events ----------------------------------------------------------------

@@ -69,7 +69,7 @@ func retire_legacy_records() -> int:
 
 
 ## Reads maps.yml and applies it. Called at boot and by [method rescan_maps], so an operator
-## who edits the file runs `g2g_maps_reload`.
+## who edits the file runs `airdrift_maps_reload`.
 ##
 ## Two layers, weakest first: the game's own shipped `res://maps.yml` and the server's
 ## [member AirdriftConfig.map_rotation_file]. The merge, the wildcards and the rules for what a

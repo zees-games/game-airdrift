@@ -43,7 +43,7 @@ static func install(menu: DotMenu, client: Node) -> void:
 	var hud := DotMenuPage.make(&"hud", "HUD & theme",
 		"The colours, the timer's lines, and where everything goes. Saved to your account.")
 	hud.section("Theme").add(DotMenuRow.select(&"ui_theme", "Theme", "", menu.themes.options())
-		.described_by(func() -> String: return "The menus and the HUD. %s cycles through them." % key_for.call(&"g2g_theme_next")))
+		.described_by(func() -> String: return "The menus and the HUD. %s cycles through them." % key_for.call(&"airdrift_theme_next")))
 	var layout := hud.section("Layout")
 	layout.add(DotMenuRow.live_select("Start from", "Sets every switch below at once; change anything after.",
 		[[&"", "Choose…"]] + (client.call("menu_layout_presets") as Array),
@@ -101,7 +101,7 @@ static func _add_gameplay_page(menu: DotMenu, client: Node, key_for: Callable) -
 		.described_by(func() -> String:
 			if not bool(client.call("menu_flashlight_allowed")):
 				return "This server has turned flashlights off (sv_flashlight 0)."
-			return "Only you see it. %s toggles it." % key_for.call(&"g2g_flashlight")))
+			return "Only you see it. %s toggles it." % key_for.call(&"airdrift_flashlight")))
 	view.add(DotMenuRow.live_toggle("Third person", "",
 		func() -> bool: return bool(client.call("menu_third_person_on")),
 		func(on: bool) -> void: client.call("menu_set_third_person", on))
@@ -110,12 +110,12 @@ static func _add_gameplay_page(menu: DotMenu, client: Node, key_for: Callable) -
 		.described_by(func() -> String:
 			if not bool(client.call("menu_third_person_allowed")):
 				return "This server keeps everybody in first person."
-			return "Cosmetic — the run is the same movement either way. %s switches." % key_for.call(&"g2g_third_person")))
+			return "Cosmetic — the run is the same movement either way. %s switches." % key_for.call(&"airdrift_third_person")))
 	view.add(DotMenuRow.toggle(&"show_own_body", "Your own body",
 		"Draw your character's body in first person. The head is never drawn."))
 	gameplay.section("Other players").add(DotMenuRow.toggle(&"hide_others", "Hide other players", "")
 		.described_by(func() -> String:
-			return "Hides every other runner, the record's ghost, and everything about them — beacons, their pings. %s toggles it." % key_for.call(&"g2g_hide_others")))
+			return "Hides every other runner, the record's ghost, and everything about them — beacons, their pings. %s toggles it." % key_for.call(&"airdrift_hide_others")))
 	gameplay.section("Comfort") \
 		.add(DotMenuRow.slider(&"shake_scale", "Camera shake", "Zero by default: a shaken camera on a ramp is a lost run.")
 			.formatted(DotMenuRow.FORMAT_PERCENT_OR_OFF)) \
@@ -152,13 +152,13 @@ static func fill_help(help: DotMenuHelp, client: Node, key_for: Callable) -> voi
 	help.title_text = "How to play Zee's Airdrift"
 	help.about = "Get from the start zone to the end zone as fast as you can. Hop by jumping as you land and steering with the mouse while you hold a strafe key; surf by holding into a ramp. The timer starts when you leave the start and stops in the end zone."
 	help.add_text("Runs", "%s restarts your run. Stages and bonuses have zones of their own, and every stage is timed against your best and the record. %s saves a checkpoint and %s goes back to it; a run that used one is practice, not a record." % [
-		key_for.call(&"g2g_restart"), key_for.call(&"g2g_checkpoint_save"), key_for.call(&"g2g_checkpoint_load")])
+		key_for.call(&"airdrift_restart"), key_for.call(&"airdrift_checkpoint_save"), key_for.call(&"airdrift_checkpoint_load")])
 	var names: Array = []
 	if client != null and client.has_method(&"menu_styles"):
 		for style in (client.call(&"menu_styles") as Array):
 			names.append(str(style["name"]))
 	if not names.is_empty():
-		help.add_text("Styles", "%s. A style changes the rules of a run (which keys count, the gravity, a hop before the start) and keeps its own records; %s picks the next one." % [", ".join(names), key_for.call(&"g2g_style_next")])
+		help.add_text("Styles", "%s. A style changes the rules of a run (which keys count, the gravity, a hop before the start) and keeps its own records; %s picks the next one." % [", ".join(names), key_for.call(&"airdrift_style_next")])
 
 
 ## The style list, as an option button that asks the client for the style it picks. Built

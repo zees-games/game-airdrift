@@ -17,7 +17,7 @@ const LOCAL_ID_BASE := 1 << 40
 var _local_ids := {}
 
 
-## Gives [param host] g2gfast's skip keys, cull layer and body hooks.
+## Gives [param host] Airdrift's skip keys, cull layer and body hooks.
 func configure(host: DotKillcamHost, game: Node) -> void:
 	host.name = "FinalKillcam"
 	host.log_channel = "g2g.killcam"

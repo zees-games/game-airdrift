@@ -1,5 +1,14 @@
 extends "airdrift_module_cvars.gd"
 
+## Every console name the game registers starts with [constant NAME_PREFIX]; [constant OLD_NAME_PREFIX] is
+## the old Airdrift name of each, still answered ([method _add_old_names]) so a server cfg, an admin's
+## habit, a bind and a client older than the rename keep working. Listings and help show the new names.
+const NAME_PREFIX := "airdrift_"
+const OLD_NAME_PREFIX := "g2g_"
+
+## The cvar aliases [method _add_old_names] set; the console is not the module's, so unload takes them back.
+var _old_cvar_names: PackedStringArray = PackedStringArray()
+
 func _module_load() -> DotResult:
 	game = DotRegistry.get_node_service(AirdriftGame.SERVICE) as AirdriftGame
 	if game == null:
@@ -40,7 +49,7 @@ func _module_load() -> DotResult:
 			return {"header": {"": "Time left %s" % game.time_left_text()}})
 	hook_post("client_spawn", _on_client_spawn)
 	hook_post("player_avatar_changed", _on_avatar_changed)
-	add_command("g2g_net", func(ctx: DotCmdContext) -> void: ctx.reply_lines(net.describe_lines()), "Netcode state", "")
+	add_command("airdrift_net", func(ctx: DotCmdContext) -> void: ctx.reply_lines(net.describe_lines()), "Netcode state", "")
 	_register_games()
 
 	# What a server browser sees. Registered through the module so it goes away with
@@ -69,11 +78,13 @@ func _module_load() -> DotResult:
 	DotLog.result(CHANNEL, "the vote", voted)
 
 	_add_server_commands()
+	_add_old_names()
 	log_info("Airdrift loaded", {"autobhop": game.config.auto_bhop, "tick_rate": game.tick_rate})
 	return DotResult.success(null)
 
 
 func _module_unload() -> void:
+	_remove_old_names()
 	if game != null and game.progress != null and DotRegistry.get_service(DotGameStatsFeed.SERVICE) == game.progress.stats:
 		DotRegistry.unregister_instance(DotGameStatsFeed.SERVICE, game.progress.stats)
 	# The link and the runtime hold each other through broadcast.
@@ -105,13 +116,55 @@ func _module_unload() -> void:
 	# [b]The platform module goes with the identity that loaded it[/b], as dot-game's does: it
 	# holds the hub AirdriftIdentity registered, which a game change frees. Left loaded, every game
 	# after this one found "platform" already there, loaded none of its own, and kept asking
-	# g2gfast's freed hub (dot-game's history: signal 11 on the next spawn).
+	# Airdrift's freed hub (dot-game's history: signal 11 on the next spawn).
 	if _loaded_platform and server != null and server.modules != null \
 			and server.modules.has_module("platform"):
 		server.modules.unload_module("platform")
 	_loaded_platform = false
 	_painters.clear()
 	_joined.clear()
+
+
+## The old name of each `airdrift_*` command becomes a hidden copy of it (the same handler, permission,
+## chat and RCON gates, usage and completer, so quoted arguments survive and `cmdlist` stays clean), removed
+## with the module like the command. The old name of each `airdrift_*` cvar becomes a console alias, so
+## `<old>_respawn_delay 3` sets the new cvar; an alias joins its arguments with spaces, so a value with a
+## space in it needs the new name. A name something else already holds is left alone.
+func _add_old_names() -> void:
+	if console == null:
+		return
+	for command_name: String in _registered_commands.duplicate():
+		if not command_name.begins_with(NAME_PREFIX):
+			continue
+		var old_name := OLD_NAME_PREFIX + command_name.substr(NAME_PREFIX.length())
+		var current: DotConCommand = console.find_command(command_name)
+		if current == null or console.has_name(old_name):
+			continue
+		var copy := add_command(old_name, current.handler, "Old name of %s." % command_name, current.permission)
+		if copy == null:
+			continue
+		copy.usage = current.usage
+		copy.min_args = current.min_args
+		copy.max_args = current.max_args
+		copy.rcon_allowed = current.rcon_allowed
+		copy.chat_policy = current.chat_policy
+		copy.completer = current.completer
+		copy.hidden = true
+	for cvar_name: String in _registered_cvars:
+		if not cvar_name.begins_with(NAME_PREFIX):
+			continue
+		var old_name := OLD_NAME_PREFIX + cvar_name.substr(NAME_PREFIX.length())
+		if console.has_name(old_name):
+			continue
+		console.set_alias(old_name, cvar_name)
+		_old_cvar_names.append(old_name)
+
+
+func _remove_old_names() -> void:
+	if console != null:
+		for old_name: String in _old_cvar_names:
+			console.remove_alias(old_name)
+	_old_cvar_names.clear()
 
 
 ## The manager and the bridge. The module drives the tick, because the game's tick
@@ -308,7 +361,7 @@ func _make_workbench() -> DotResult:
 	return DotResult.success(null)
 
 
-## The config as cvars (`g2g_<field>`), commands, the workbench and the block rules.
+## The config as cvars (`airdrift_<field>`), commands, the workbench and the block rules.
 func _bind_config() -> DotResult:
 	var binder := game.config_binder
 	var made := _noblock_made
@@ -319,7 +372,7 @@ func _bind_config() -> DotResult:
 
 	var covered := PackedStringArray()
 	for field: String in HAND_CVARS:
-		covered.append("g2g_%s" % field)
+		covered.append("airdrift_%s" % field)
 	binder.bind_cvars(add_cvar, DotConVar.FLAG_ARCHIVE,
 		func(name: String) -> bool: return covered.has(name) or console.has_name(name))
 	binder.bind_commands(add_command)

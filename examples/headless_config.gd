@@ -29,7 +29,7 @@ func _root() -> String:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with(ROOT_ARG):
 			return a.substr(ROOT_ARG.length())
-	return "user://g2g_cfgtest_%d" % OS.get_process_id()
+	return "user://airdrift_cfgtest_%d" % OS.get_process_id()
 
 
 func _run() -> void:
@@ -48,13 +48,13 @@ func _run() -> void:
 	var console := DotConsole.new()
 	add_child(console)
 	binder.bind_cvars(console.cvar, DotConVar.FLAG_ARCHIVE, console.has_name)
-	_check(console.get_int("g2g_score_limit") == 40 and console.get_int("g2g_max_players") == 64, "cvars start at the defaults")
-	console.set_cvar("g2g_max_players", "300")
+	_check(console.get_int("airdrift_score_limit") == 40 and console.get_int("airdrift_max_players") == 64, "cvars start at the defaults")
+	console.set_cvar("airdrift_max_players", "300")
 	_check(config.max_players == 300, "max_players is not capped at the old 128")
-	console.set_cvar("g2g_max_players", "64")
+	console.set_cvar("airdrift_max_players", "64")
 	var cap_src := FileAccess.get_file_as_string("res://game/airdrift_module.gd") + FileAccess.get_file_as_string("res://game/airdrift_client.gd")
 	_check(not cap_src.contains("max_entities_per_snapshot = 64"), "no 64-entity snapshot cap on server or client")
-	console.set_cvar("g2g_respawn_delay", "4")
+	console.set_cvar("airdrift_respawn_delay", "4")
 	_check(config.respawn_delay == 4.0 and binder.source_of("respawn_delay") == "cvar", "a cvar writes the field")
 	var rules := AirdriftArsenal.match_rules(config.score_limit, config.respawn_delay, config.spawn_protection)
 	_check(rules.respawn_delay_sec == 4.0 and rules.spawn_protection_sec == 2.0, "the match rules read the config")
@@ -144,7 +144,7 @@ func _probe() -> void:
 	binder.bind_cvars(console.cvar, DotConVar.FLAG_ARCHIVE, console.has_name)
 	print("PROBE ok=%s grav=%s grav_src=%s score=%s score_src=%s cvar=%s delay=%s delay_src=%s" % [
 		loaded.ok, config.gravity, binder.source_of("gravity"), config.score_limit, binder.source_of("score_limit"),
-		console.find_cvar("g2g_score_limit").get_string(), config.respawn_delay, binder.source_of("respawn_delay")])
+		console.find_cvar("airdrift_score_limit").get_string(), config.respawn_delay, binder.source_of("respawn_delay")])
 	get_tree().quit(0)
 
 

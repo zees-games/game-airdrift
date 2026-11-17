@@ -6,9 +6,9 @@ extends RefCounted
 
 ## Shared name -> {field: the AirdriftConfig field, Airdrift: the cvar that has always driven it}.
 const RENAMES := {
-	"sv_runspeed": {"field": "max_speed", "g2g": "sv_maxspeed"},
-	"sv_airwishspeed": {"field": "air_wish_cap", "g2g": "sv_airwishcap"},
-	"sv_autohop": {"field": "auto_bhop", "g2g": "sv_autobunnyhopping"},
+	"sv_runspeed": {"field": "max_speed", "airdrift": "sv_maxspeed"},
+	"sv_airwishspeed": {"field": "air_wish_cap", "airdrift": "sv_airwishcap"},
+	"sv_autohop": {"field": "auto_bhop", "airdrift": "sv_autobunnyhopping"},
 }
 
 ## Shared names with no Airdrift meaning, left unbound. `sv_maxspeed` is the shared wish-speed ceiling, and Airdrift's `sv_maxspeed` is the run speed: they are different quantities, so it must never be forwarded.
@@ -33,7 +33,7 @@ func cvar_specs() -> Array[Dictionary]:
 		var current: Variant = game.config.get(field)
 		out.append({
 			"name": shared, "value": (1.0 if current else 0.0) if current is bool else snappedf(float(current), 0.0001),
-			"member": field, "description": "Same as %s." % RENAMES[shared]["g2g"],
+			"member": field, "description": "Same as %s." % RENAMES[shared]["airdrift"],
 		})
 	return out
 

@@ -1,8 +1,8 @@
 extends RefCounted
 
-## What g2gfast's ambience is: the cvar defaults the client's director plays (`g2g_ambient*`).
+## What Airdrift's ambience is: the cvar defaults the client's director plays (`airdrift_ambient*`).
 
-const PREFIX := "g2g"
+const PREFIX := "airdrift"
 ## A timer game: the layer is felt, not heard, so a landing stays the loudest thing.
 const LEVEL := 0.15
 const RATE := 0.4

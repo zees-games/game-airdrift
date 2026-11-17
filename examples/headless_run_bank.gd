@@ -685,7 +685,7 @@ func _test_ghost() -> void:
 
 func _ghost_persistence(map_id: StringName, replay: DotTimerReplay, record: DotTimerRecord) -> void:
 	# Persistence: a second keeper over the same directory finds it.
-	var dir := "user://g2gfast-test-replays-%d" % Time.get_ticks_usec()
+	var dir := "user://airdrift-test-replays-%d" % Time.get_ticks_usec()
 	var keeper := AirdriftReplays.new()
 	_check(keeper.setup(dir).ok, "a keeper opens a directory")
 	record.time = 3.0

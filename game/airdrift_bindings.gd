@@ -37,28 +37,28 @@ const ROWS: Array[Dictionary] = [
 	{"action": &"dot_fps_jump", "setting": &"bind_jump", "label": "Jump", "default": "Space", "group": "Movement"},
 	{"action": &"dot_fps_crouch", "setting": &"bind_duck", "label": "Duck", "default": "Ctrl", "group": "Movement"},
 
-	{"action": &"g2g_restart", "setting": &"bind_restart", "label": "Restart run", "default": "R", "group": "Running"},
-	{"action": &"g2g_checkpoint_save", "setting": &"bind_checkpoint_save", "label": "Save checkpoint", "default": "C", "group": "Running"},
-	{"action": &"g2g_checkpoint_load", "setting": &"bind_checkpoint_load", "label": "Go to checkpoint", "default": "V", "group": "Running"},
-	{"action": &"g2g_style_next", "setting": &"bind_style_next", "label": "Next style", "default": "N", "group": "Running"},
+	{"action": &"airdrift_restart", "setting": &"bind_restart", "label": "Restart run", "default": "R", "group": "Running"},
+	{"action": &"airdrift_checkpoint_save", "setting": &"bind_checkpoint_save", "label": "Save checkpoint", "default": "C", "group": "Running"},
+	{"action": &"airdrift_checkpoint_load", "setting": &"bind_checkpoint_load", "label": "Go to checkpoint", "default": "V", "group": "Running"},
+	{"action": &"airdrift_style_next", "setting": &"bind_style_next", "label": "Next style", "default": "N", "group": "Running"},
 	# M is dot-menu's map menu (`dot_menu_maps`), still stored as `bind_map_next` so a key a
 	# player moved stays moved.
 	{"action": &"dot_menu_maps", "setting": &"bind_map_next", "label": "Change map", "default": "M", "group": "Running"},
-	{"action": &"g2g_zones", "setting": &"bind_zones", "label": "Zone editor (offline, or an admin)", "default": "Z", "group": "Running"},
+	{"action": &"airdrift_zones", "setting": &"bind_zones", "label": "Zone editor (offline, or an admin)", "default": "Z", "group": "Running"},
 
-	{"action": &"g2g_drop_weapon", "setting": &"bind_drop_weapon", "label": "Drop weapon (deathmatch)", "default": "Q", "group": "Running"},
+	{"action": &"airdrift_drop_weapon", "setting": &"bind_drop_weapon", "label": "Drop weapon (deathmatch)", "default": "Q", "group": "Running"},
 
-	{"action": &"g2g_use", "setting": &"bind_use", "label": "Pick up weapon (hold to replace)", "default": "E", "group": "Running"},
+	{"action": &"airdrift_use", "setting": &"bind_use", "label": "Pick up weapon (hold to replace)", "default": "E", "group": "Running"},
 
-	{"action": &"g2g_flashlight", "setting": &"bind_flashlight", "label": "Flashlight", "default": "F", "group": "View"},
-	{"action": &"g2g_hide_others", "setting": &"bind_hide_others", "label": "Hide other players", "default": "O", "group": "View"},
+	{"action": &"airdrift_flashlight", "setting": &"bind_flashlight", "label": "Flashlight", "default": "F", "group": "View"},
+	{"action": &"airdrift_hide_others", "setting": &"bind_hide_others", "label": "Hide other players", "default": "O", "group": "View"},
 	# Only a spectator's key: it sends the free-camera request while somebody is watching, and
 	# does nothing otherwise. G was free on every screen.
-	{"action": &"g2g_roam", "setting": &"bind_roam", "label": "Free camera (spectating)", "default": "G", "group": "View"},
-	{"action": &"g2g_third_person", "setting": &"bind_third_person", "label": "First / third person", "default": "F5", "group": "View"},
+	{"action": &"airdrift_roam", "setting": &"bind_roam", "label": "Free camera (spectating)", "default": "G", "group": "View"},
+	{"action": &"airdrift_third_person", "setting": &"bind_third_person", "label": "First / third person", "default": "F5", "group": "View"},
 
-	{"action": &"g2g_chat", "setting": &"chat_open_key", "label": "Chat", "default": "Y", "group": "Communication", "scope": ACCOUNT},
-	{"action": &"g2g_chat_team", "setting": &"chat_team_key", "label": "Team chat", "default": "U", "group": "Communication", "scope": ACCOUNT},
+	{"action": &"airdrift_chat", "setting": &"chat_open_key", "label": "Chat", "default": "Y", "group": "Communication", "scope": ACCOUNT},
+	{"action": &"airdrift_chat_team", "setting": &"chat_team_key", "label": "Team chat", "default": "U", "group": "Communication", "scope": ACCOUNT},
 	# dot-voice's action (DotVoiceManager.TALK_ACTION), so dot-menu's table sees the game has a talk
 	# key and adds none; the setting stays bind_voice, so nobody's stored key is reset. K, because
 	# V is Go to checkpoint here.
@@ -67,10 +67,10 @@ const ROWS: Array[Dictionary] = [
 	{"action": &"voice_gag", "setting": &"bind_voice_gag", "label": "Look at a player: stop (or resume) hearing them", "default": "J", "group": "Communication"},
 	{"action": &"voice_mute", "setting": &"bind_voice_mute", "label": "Look at a player: mute (or unmute) their voice and chat", "default": "L", "group": "Communication"},
 
-	{"action": &"g2g_scoreboard", "setting": &"bind_scoreboard", "label": "Scoreboard (hold)", "default": "Tab", "group": "Interface"},
-	{"action": &"g2g_help", "setting": &"bind_help", "label": "Help", "default": "H", "group": "Interface"},
-	{"action": &"g2g_servers", "setting": &"bind_servers", "label": "Server list", "default": "F3", "group": "Interface"},
-	{"action": &"g2g_theme_next", "setting": &"bind_theme_next", "label": "Next HUD theme", "default": "P", "group": "Interface"},
+	{"action": &"airdrift_scoreboard", "setting": &"bind_scoreboard", "label": "Scoreboard (hold)", "default": "Tab", "group": "Interface"},
+	{"action": &"airdrift_help", "setting": &"bind_help", "label": "Help", "default": "H", "group": "Interface"},
+	{"action": &"airdrift_servers", "setting": &"bind_servers", "label": "Server list", "default": "F3", "group": "Interface"},
+	{"action": &"airdrift_theme_next", "setting": &"bind_theme_next", "label": "Next HUD theme", "default": "P", "group": "Interface"},
 ]
 
 

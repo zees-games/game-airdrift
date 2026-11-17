@@ -30,8 +30,8 @@ const Accounts := preload("dedicated_accounts.gd")
 ## aborts that function; the section counter sees it, and the checks it never reached are
 ## what the total sees when the section had already announced itself. See
 ## docs/testing.md: this suite had neither until 2026-09-24.
-const SECTIONS := 23
-const CHECKS := 284
+const SECTIONS := 24
+const CHECKS := 289
 
 ## Everything this run writes, and it is deleted on the way in and on the way out.
 ##
@@ -40,7 +40,7 @@ const CHECKS := 284
 ## log at their defaults, so every run appended to all of them: 290 punishments in the store
 ## a real server enforces, and a gag against the same test uid every time. docs/testing.md
 ## has the two suites that began failing on an unchanged tree over exactly this.
-const SERVER_DIR := "user://g2g_dedicated"
+const SERVER_DIR := "user://airdrift_dedicated"
 
 var _entered := 0
 var _completed := 0
@@ -48,7 +48,7 @@ var _completed := 0
 ##
 ## Unique and lowercase because the site already made it so. Display only — a
 ## listing prints it to say which game this is, and nothing treats it as proof.
-const APP_URL := "g2gfast"
+const APP_URL := "airdrift"
 
 var server: DotServer = null
 var query_host: DotQueryHost = null

@@ -196,7 +196,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## owners still serves.
 @export var map_content_owner: String = ""
 
-## Draw an imported map from its dot-map world document (`worlds/<id>`, written by `bsp.py regen`) when one exists, instead of the legacy manifest's surfaces. Zones, spawns and collision still come from the manifest. `g2g_global_worlds`.
+## Draw an imported map from its dot-map world document (`worlds/<id>`, written by `bsp.py regen`) when one exists, instead of the legacy manifest's surfaces. Zones, spawns and collision still come from the manifest. `airdrift_global_worlds`.
 @export var global_worlds: bool = false
 
 ## The cvar that sets [member map_content_owner]. One spelling for the module that registers
@@ -222,7 +222,7 @@ func map_content_id(id: StringName) -> String:
 ## [member map_seconds] for a game played OFFLINE: by yourself, with nobody waiting for
 ## the next map. 0, no limit, by default -- a clock that changes the map under a player
 ## alone on it is a clock that interrupts practice and serves nobody. Set it (JSON, env or
-## `--g2g-offline-map-seconds`) for an offline session that should still rotate.
+## `--airdrift-offline-map-seconds`) for an offline session that should still rotate.
 @export_range(0.0, 86400.0, 30.0) var offline_map_seconds: float = 0.0
 
 ## The file that says which maps a server ROTATES: `cfg/maps.yml`, layered over the game's own
@@ -321,7 +321,7 @@ func map_content_id(id: StringName) -> String:
 ## unlimited[/b]; past it the editor refuses and says so.
 @export_range(0.0, 1000000.0, 16.0) var zone_editor_max_height: float = 2048.0
 
-## The tallest zone `g2g_zone_mark x y z height` accepts, in genre units. [b]0 is
+## The tallest zone `airdrift_zone_mark x y z height` accepts, in genre units. [b]0 is
 ## unlimited[/b]; a taller request is refused with an error, not shortened.
 @export_range(0.0, 1000000.0, 16.0) var zone_mark_max_height: float = 4096.0
 
@@ -408,7 +408,7 @@ static func register_ids() -> void:
 ## The binder every entry point uses: [param config] layered, one cfg file per [constant CFG_FILES] entry.
 static func make_binder(config: DotConfig, json_path := "") -> DotGameConfigBinder:
 	register_ids()
-	var b := DotGameConfigBinder.create(config, "game-g2gfast", "g2g", json_path)
+	var b := DotGameConfigBinder.create(config, "game-g2gfast", "airdrift", json_path)
 	b.grouped = true
 	b.group_files = CFG_FILES
 	return b

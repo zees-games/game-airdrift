@@ -164,7 +164,7 @@ func _test_discovery() -> void:
 ## would not prove the sort compares text.
 func _test_scan_order() -> void:
 	_section("scan order")
-	var root := "user://g2g_scan_order_%d" % OS.get_process_id()
+	var root := "user://airdrift_scan_order_%d" % OS.get_process_id()
 	DirAccess.make_dir_recursive_absolute(root)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20261011

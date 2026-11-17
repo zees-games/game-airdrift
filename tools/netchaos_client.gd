@@ -1,6 +1,6 @@
 extends DotGameNetchaosClient
 
-## g2gfast's side of `tools/netchaos.sh` (dot-game's DotGameNetchaosClient). No weapons: the pilot only runs, strafes and jumps.
+## Airdrift's side of `tools/netchaos.sh` (dot-game's DotGameNetchaosClient). No weapons: the pilot only runs, strafes and jumps.
 
 
 func _configure() -> void:

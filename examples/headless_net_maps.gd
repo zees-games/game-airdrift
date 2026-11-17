@@ -154,17 +154,17 @@ class SlowCloud:
 		return real.is_mounted(content_id, version)
 
 
-const SYNC_FIXTURE := &"g2g_sync_fixture"
-const DELIVERED_FIXTURE := &"g2g_delivered_fixture"
-const OWNED_FIXTURE := &"g2g_owned_fixture"
-const REPUB_FIXTURE := &"g2g_repub_fixture"
+const SYNC_FIXTURE := &"airdrift_sync_fixture"
+const DELIVERED_FIXTURE := &"airdrift_delivered_fixture"
+const OWNED_FIXTURE := &"airdrift_owned_fixture"
+const REPUB_FIXTURE := &"airdrift_repub_fixture"
 
 ## The signing key the delivered-map section made, which the content client trusts.
 var _fixture_keys: Dictionary = {}
 ## One directory per process: user:// is shared by every copy of this project on a box, and
 ## two suites at once (the fleet runs several per box) published, mounted and then deleted each
 ## other's fixtures, which read as failures in the republish and delivered-map sections.
-var SYNC_FIXTURE_ROOT := "user://g2g_headless_net_sync_%d" % OS.get_process_id()
+var SYNC_FIXTURE_ROOT := "user://airdrift_headless_net_sync_%d" % OS.get_process_id()
 const SYNC_TIMEOUT := 1.0
 ## Must outlast the server's swap (timeout plus the map load, over 2 s on a slow box), or the client has caught up.
 const SLOW_FETCH := 5.0
@@ -672,16 +672,16 @@ func _test_map_refused() -> void:
 	# rule dot-map exists to enforce, now enforced over a real wire.
 	var stages := _server_game.maps.catalogue.get_map(&"bhop_g2g_stages")
 	var server_only := DotMapDef.from_dictionary(stages.to_dictionary())
-	server_only.id = &"g2g_server_only"
+	server_only.id = &"airdrift_server_only"
 	_server_game.maps.catalogue.add(server_only)
 
 	var before: StringName = _client_game.maps.current.id
-	var outcome := await _change_and_pump(&"g2g_server_only", SYNC_TIMEOUT + 3.0)
+	var outcome := await _change_and_pump(&"airdrift_server_only", SYNC_TIMEOUT + 3.0)
 
-	_check(bool(outcome["ok"]) and _server_game.maps.current.id == &"g2g_server_only",
+	_check(bool(outcome["ok"]) and _server_game.maps.current.id == &"airdrift_server_only",
 		"the server changes anyway", str(outcome["reason"]))
 	_check(timed_out == [CLIENT_PEER], "timing out the client, which never said ready", str(timed_out))
-	_check(refused.size() == 1 and refused[0].begins_with("g2g_server_only: A host may not send a map that is not delivered content"),
+	_check(refused.size() == 1 and refused[0].begins_with("airdrift_server_only: A host may not send a map that is not delivered content"),
 		"the client refuses a map that is neither its own nor delivered", str(refused))
 	_check(_client_game.maps.current.id == before,
 		"and stays where it was rather than load a scene the host named out of its own build",
@@ -705,7 +705,7 @@ func _test_map_refused() -> void:
 	# And a refusal wedges nothing: the next change to a map both have is an ordinary one.
 	_server_game.maps.catalogue.remove(&"bhop_g2g_stages")
 	_server_game.maps.catalogue.add(stages)
-	_server_game.maps.catalogue.remove(&"g2g_server_only")
+	_server_game.maps.catalogue.remove(&"airdrift_server_only")
 	host.sync_timeout_sec = 5.0
 	var back := await _change_and_pump(&"surf_g2g_intro", 8.0)
 	_check(bool(back["ok"]) and int(back["ms"]) < 5000

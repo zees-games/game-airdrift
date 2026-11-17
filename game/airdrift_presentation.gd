@@ -39,7 +39,7 @@ var audio: DotAudioManager = null
 ## beds, CC0; the addon's stock/CREDITS.md). Under the landing and the timer, never over them.
 var steps: DotAudioFootsteps = null
 var ambience: DotAudioAmbience = null
-## The mood layer over the bed: a mood per map, indoors under a roof, the server's `g2g_ambient*` times the player's sliders.
+## The mood layer over the bed: a mood per map, indoors under a roof, the server's `airdrift_ambient*` times the player's sliders.
 var ambient: DotAmbienceDirector = null
 var fx: DotFxManager = null
 ## The player's console, built by [method build_console] once the client has a menu.
@@ -120,7 +120,7 @@ func _build_settings() -> DotResult:
 
 	var res := settings.setup()
 	if not res.ok:
-		return res.wrap("g2gfast's settings")
+		return res.wrap("Airdrift's settings")
 
 	# dot-menu's applier pushes the stock settings and the keys; what is this game's —
 	# the body, the chat box and its two keys — is the handler below, on the same signal.
@@ -165,7 +165,7 @@ func _build_audio() -> DotResult:
 
 	var res := audio.setup()
 	if not res.ok:
-		return res.wrap("g2gfast's audio")
+		return res.wrap("Airdrift's audio")
 
 	steps = DotAudioFootsteps.new()
 	steps.name = "Footsteps"
@@ -222,7 +222,7 @@ func _build_fx() -> DotResult:
 
 	var res := fx.setup()
 	if not res.ok:
-		return res.wrap("g2gfast's effects")
+		return res.wrap("Airdrift's effects")
 
 	# [b]Said out loud, because a missing scene is otherwise a DEBUG line.[/b] Until
 	# 2026-09-27 neither gate scene existed, and every start and finish was refused for it
@@ -327,8 +327,8 @@ func _build_chat() -> void:
 
 	chat_window = DotChatWindow.new()
 	chat_window.name = "ChatWindow"
-	chat_window.open_action = &"g2g_chat"
-	chat_window.team_action = &"g2g_chat_team"
+	chat_window.open_action = &"airdrift_chat"
+	chat_window.team_action = &"airdrift_chat_team"
 	# [b]An outline, because the floors are pale.[/b] Light-blue names and white text over
 	# light grey tiles were a log the players asked, in that log, to be able to read. dot-ui
 	# outlines rather than panels on purpose (see `DotFeedView`): a backing box is a grey
@@ -723,7 +723,7 @@ func on_server_clamps(request: Dictionary) -> PackedStringArray:
 
 func describe_lines() -> PackedStringArray:
 	var out := PackedStringArray()
-	out.append("g2gfast's presentation layer")
+	out.append("Airdrift's presentation layer")
 	out.append_array(settings.describe_lines())
 	out.append_array(audio.describe_lines())
 	out.append_array(fx.describe_lines())

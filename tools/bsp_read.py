@@ -4,13 +4,13 @@
 [b]The reader itself is dot-map-convert's shared one[/b] (`dot-map-convert/dotbsp/reader.py`), which
 every game's converter uses, so a fix to how the format is read reaches all of them. This file
 keeps the names this repository's tools import (`from bsp_read import Bsp, ...`) and the
-g2gfast-specific dump below. dot-map-convert is found as a sibling checkout (`../dot-map-convert`, where
+Airdrift-specific dump below. dot-map-convert is found as a sibling checkout (`../dot-map-convert`, where
 dot-bootstrap clones it) or at `$DOTBSP_PATH`.
 
 Point it at a surf or bhop map and it writes an .obj of the world geometry and a .json of
 the entities that become timer zones and spawns:
 
-    tools/bsp_read.py ../inspirations/g2gfast/surf_kitsune.bsp out/
+    tools/bsp_read.py ../inspirations/airdrift/surf_kitsune.bsp out/
 
 Why this is only a reader and not an importer: what a *map* is here is a `AirdriftMap` subclass
 with `_build()` and `timer_zones()` (see maps/surf_g2g_intro.gd), and the interesting

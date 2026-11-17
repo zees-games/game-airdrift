@@ -352,7 +352,7 @@ func set_player_style(id: StringName, style_id: StringName) -> bool:
 func _on_map_changed(map: DotMapDef, loaded: Node) -> void:
 	if weapon_layer != null:
 		weapon_layer.clear()
-	var g2g_map := loaded as AirdriftMap
+	var airdrift_map := loaded as AirdriftMap
 
 	# An imported map learns its data here, before `timer_zones()` below: the zones come out of
 	# the manifest, and an unbuilt map returns an empty set without erroring.
@@ -361,9 +361,9 @@ func _on_map_changed(map: DotMapDef, loaded: Node) -> void:
 		bsp.global_worlds = config != null and config.global_worlds
 		bsp.build_from(map)
 
-	var zones: DotTimerZoneSet = g2g_map.timer_zones() if g2g_map != null else null
+	var zones: DotTimerZoneSet = airdrift_map.timer_zones() if airdrift_map != null else null
 
-	# Zones somebody drew in-game (Z offline, `g2g_zone_save` on a server) win over the
+	# Zones somebody drew in-game (Z offline, `airdrift_zone_save` on a server) win over the
 	# map's own. They were saved to this path from the day the console could draw a zone
 	# and read from nowhere, so a saved zone set lasted until the next map change.
 	# The authority's only: a client mirrors the server's zones, and a file it drew

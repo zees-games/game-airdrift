@@ -31,7 +31,7 @@ const CHECKS := 25
 ## holds for a checkout with airdrift-maps linked.
 var _skipped_checks := 0
 
-const SERVER_DIR := "user://g2g_bots"
+const SERVER_DIR := "user://airdrift_bots"
 const SURF_MAP := &"surf_beginner"
 ## Rides on surf_beginner's stage 1 take about four seconds; three arrivals inside this many
 ## is a pilot that rides, and a stuck one runs out of it.
@@ -52,7 +52,7 @@ const NAV_PLAN_TICKS := 20000
 const NAV_STEP_LIMIT_MS := 150.0
 ## Annotations are kept between runs here (by their own key, so a changed setting is a new file),
 ## which a cold run of the biggest of those maps would otherwise spend half a minute making.
-const NAV_CACHE := "user://g2g_bots_nav_cache"
+const NAV_CACHE := "user://airdrift_bots_nav_cache"
 
 var server: DotServer = null
 var game: AirdriftGame = null
@@ -179,7 +179,7 @@ func _test_surf_cache_layouts() -> void:
 		_done()
 		return
 	var shipped: Dictionary = AirdriftSurfCourse.read_cache(SURF_MAP)
-	var tmp := "user://g2g_surf_layouts"
+	var tmp := "user://airdrift_surf_layouts"
 	DotPaths.remove_tree(tmp)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(tmp))
 	# The single-file layout, written from what is shipped, then split.

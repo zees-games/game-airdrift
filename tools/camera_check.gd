@@ -55,9 +55,9 @@ func _run() -> void:
 	if DisplayServer.get_name() != "headless":
 		DirAccess.make_dir_recursive_absolute("screenshots/cameras")
 		var _first := camera.set_mode(AirdriftCamera.Mode.FIRST_PERSON)
-		await _shot(me, "g2gfast_view_first")
+		await _shot(me, "airdrift_view_first")
 		var _third := camera.set_mode(AirdriftCamera.Mode.THIRD_PERSON)
-		await _shot(me, "g2gfast_view_third")
+		await _shot(me, "airdrift_view_third")
 
 	print("all passed" if not _failed else "FAILED")
 	quit(1 if _failed else 0)

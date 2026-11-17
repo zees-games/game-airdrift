@@ -71,6 +71,6 @@ func _run() -> void:
 		var reveal: Object = client.get("winner_reveal")
 		print("t=%.1f state=%d killcam=%s reveal=%s" % [at_sec, int(combat.match_node.state),
 			str(kc.call(&"is_playing")), str(reveal.call(&"is_active"))])
-		var path := ProjectSettings.globalize_path("%s/g2g%s_%03d.png" % [OUT_DIR, "_calm" if _calm else "", int(at_sec * 10.0)])
+		var path := ProjectSettings.globalize_path("%s/airdrift%s_%03d.png" % [OUT_DIR, "_calm" if _calm else "", int(at_sec * 10.0)])
 		root.get_texture().get_image().save_png(path)
 	quit(0)

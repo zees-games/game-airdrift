@@ -30,7 +30,7 @@ extends "res://addons/dot_npc_ai/runtime/dot_npc_ai_brain.gd"
 const KEY_HURT_BY := &"g2g.hurt_by"
 
 ## Where a brain reaches the game. See [AirdriftHunters].
-const HUNTERS_SERVICE := &"g2g_hunters"
+const HUNTERS_SERVICE := &"airdrift_hunters"
 
 var _last_attack: float = -999.0
 

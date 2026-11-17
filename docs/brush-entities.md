@@ -4,7 +4,7 @@ Every brush entity the genre's level editor offers, and what `tools/bsp_import.p
 
 "Counted" below means the class is read and left out on purpose, and the manifest's numbers or the import log say how many there were. A class that is in no list is left non-solid and printed at import, because an invisible wall nobody can explain is worse than a note.
 
-Counts are over the 42 maps in `../inspirations/g2gfast/` on 2026-10-08.
+Counts are over the 42 maps in `../inspirations/airdrift/` on 2026-10-08.
 
 ## Triggers
 

@@ -20,7 +20,7 @@ const AirdriftGame := preload("../game/airdrift_game.gd")
 const AirdriftNetLink := preload("../game/net/airdrift_net_link.gd")
 
 var PORT := AirdriftTestPorts.free_port()
-const DATA := "user://g2g_link"
+const DATA := "user://airdrift_link"
 const MODULE := "res://game/airdrift_module.gd"
 const MAP := &"bhop_g2g_intro"
 const SECTIONS := 3

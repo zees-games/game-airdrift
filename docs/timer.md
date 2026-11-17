@@ -23,7 +23,7 @@ Taint is dot-timer's own "assisted" mark (`DotTimerRun.tainted`): the run still 
 
 The server record's replay runs the map as a `AirdriftPlayer` with `replay` set and no timer. It draws through the same rig, replicates through the same bridge (a client, browser included, sees the run without decoding a replay), and counts as a bot in the server query.
 
-- `sv_replay_bot` turns it on and off live; off takes the ghost away now. `g2g_ghost` says whose record is running.
+- `sv_replay_bot` turns it on and off live; off takes the ghost away now. `airdrift_ghost` says whose record is running.
 - `AirdriftReplays` keeps the fastest replay per map, track and style, in memory and on disk beside the records, in `DotTimerReplay`'s own format, so a replay set at 64 Hz plays on a 128 Hz server. **A replay is kept only with an accepted record**, never with a merely faster run: an assisted or tainted run must not become the ghost everybody chases.
 - The bridge adopts any player the game made itself (`player_added`) as an entity with no peer, and `ensure_game_ticked` applies received commands **only to players that have a peer**: an empty command applied on top of a replay stands the ghost still.
 - The ghost is not armed, not a voter (`AirdriftVote._player_count` excludes it, or a one-player server passes a quorum of two), not a session, and not on the online board.
@@ -44,7 +44,7 @@ The server record's replay runs the map as a `AirdriftPlayer` with `replay` set 
 - **The leaderboard boards' `publish` follows `report_to_backbone`**; an unpublished board is skipped by the reporter, which is how nothing once reached the site.
 - **`AirdriftGame.standing_changed`** (`{pb, wr, rank, total}`, on every spawn, style change and filing) drives the HUD's standing line and `DotTimerHud.set_comparisons`. On a client it arrives as the `STANDING` event, because a client has no store.
 - **What a finish says** is `AirdriftGame.announced`: a new record to everybody (`RECORD`), a personal best or a miss to the finisher, a refused run with the place it would have taken.
-- **The commands are phrasing only.** `!pb`, `!rank`, `!players`, `!rr`, `!profile`, `!mapsdone`, `!mapsleft`, `!wrcp`, `!prinfo`, `!tier`, `!end`, `!pause`, `!unpause`, `!autorestart`, `!restore` and the admin `g2g_settier`, `g2g_rescore`, `g2g_deleterecord`, `g2g_wipeplayer` call dot-timer's manager and store, so two games' `!rank` cannot disagree about what a rank is.
+- **The commands are phrasing only.** `!pb`, `!rank`, `!players`, `!rr`, `!profile`, `!mapsdone`, `!mapsleft`, `!wrcp`, `!prinfo`, `!tier`, `!end`, `!pause`, `!unpause`, `!autorestart`, `!restore` and the admin `airdrift_settier`, `airdrift_rescore`, `airdrift_deleterecord`, `airdrift_wipeplayer` call dot-timer's manager and store, so two games' `!rank` cannot disagree about what a rank is.
 
 ## Statistics are read, not counted a second time
 

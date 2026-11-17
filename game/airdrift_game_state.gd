@@ -24,7 +24,7 @@ const AirdriftWeaponLayer := preload("airdrift_weapon_layer.gd")
 
 ## The registry name a dot-server module finds this under.
 const CONFIG_GAME_ID := "game-g2gfast"
-const SERVICE := &"g2g_game"
+const SERVICE := &"airdrift_game"
 
 ## The ghost's player id. Session ids are dot-server userids, which never get
 ## this large; the bridge treats it as a session like any other.
@@ -144,7 +144,7 @@ var rotation_source: String = ""
 ## client, in every suite that runs a game without a network. [method change_map] goes
 ## through it when it is set, so a map change is ANNOUNCED, waited on and then made,
 ## rather than made here and reported afterwards. Every way a map changes on a server —
-## `map`, `g2g_map`, the vote, the rotation's clock — already calls [method change_map],
+## `map`, `airdrift_map`, the vote, the rotation's clock — already calls [method change_map],
 ## which is why this is the one line that needed to know.
 var map_sync: DotMapSyncHost = null
 
@@ -163,7 +163,7 @@ var rotation_ends_maps: bool = true
 ## [b]A Callable rather than the vote, because the game does not know the vote exists[/b]
 ## — the module builds it, over this game, and a game holding the thing built on top of it
 ## is the dependency pointing the wrong way. It is read by [method time_left_text], which
-## is what `g2g_status` says: that line read the map session's clock after the vote had
+## is what `airdrift_status` says: that line read the map session's clock after the vote had
 ## taken the map's end over, so an operator was shown a limit an extend had already moved,
 ## and under `trigger: rtv_only` a limit the server did not have at all.
 var clock_fn: Callable = Callable()

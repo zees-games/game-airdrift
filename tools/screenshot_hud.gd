@@ -29,9 +29,9 @@ const AirdriftPresentation := preload("../game/airdrift_presentation.gd")
 ## [/codeblock]
 ##
 ## [b]`--fx` renders the two gate effects instead[/b] (`tools/screenshot_hud.sh --fx`):
-## `g2gfast_fx_start` and `g2gfast_fx_finish`, each drawn by the real presentation layer's
+## `airdrift_fx_start` and `airdrift_fx_finish`, each drawn by the real presentation layer's
 ## `on_run_started` / `on_run_finished` at a point on the floor three metres in
-## front of the camera, and `g2gfast_fx_both` with the two side by side. The particles are
+## front of the camera, and `airdrift_fx_both` with the two side by side. The particles are
 ## slowed to a tenth of real speed and captured at a fixed point in the effect's own time,
 ## because a software renderer under xvfb is slower than the effect and a capture on the
 ## Nth frame would be a different moment of it on every machine. `--debug` prints where each
@@ -380,9 +380,9 @@ func _stage_fx() -> void:
 	)
 
 	_shots = [
-		{"name": "g2gfast_fx_start", "arrange": _arrange_fx.bind([&"start"]), "arranged": false, "fx": true},
-		{"name": "g2gfast_fx_finish", "arrange": _arrange_fx.bind([&"finish"]), "arranged": false, "fx": true},
-		{"name": "g2gfast_fx_both", "arrange": _arrange_fx.bind([&"start", &"finish"]), "arranged": false, "fx": true},
+		{"name": "airdrift_fx_start", "arrange": _arrange_fx.bind([&"start"]), "arranged": false, "fx": true},
+		{"name": "airdrift_fx_finish", "arrange": _arrange_fx.bind([&"finish"]), "arranged": false, "fx": true},
+		{"name": "airdrift_fx_both", "arrange": _arrange_fx.bind([&"start", &"finish"]), "arranged": false, "fx": true},
 	]
 
 

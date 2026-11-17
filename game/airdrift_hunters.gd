@@ -42,7 +42,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 const CHANNEL := "g2g.hunters"
 
 ## The registry name a brain reaches this through. See `airdrift_hunter_brain.gd`.
-const SERVICE := &"g2g_hunters"
+const SERVICE := &"airdrift_hunters"
 
 const STALKER := &"g2g_stalker"
 const SPRINTER := &"g2g_sprinter"

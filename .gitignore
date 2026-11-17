@@ -100,7 +100,7 @@ screenshots/
 addons/maps/
 /addons/dot_sql
 
-# Converted worlds (dot-map regen, `g2g_global_worlds`) and the art stores they name (licence.pbr_store ../pbr-library): links to airdrift-maps.
+# Converted worlds (dot-map regen, `airdrift_global_worlds`) and the art stores they name (licence.pbr_store ../pbr-library): links to airdrift-maps.
 # bootstrap-link: g2gfast-maps/worlds
 /worlds
 /pbr-library

@@ -79,9 +79,9 @@ func _menu_for(p: AirdriftPresentation, host: Node) -> DotMenu:
 	menu.config = DotMenuConfig.new()
 	menu.config.escape_grace_ms = 0
 	menu.manage_pointer = false
-	menu.help_action = &"g2g_help"
-	menu.theme_action = &"g2g_theme_next"
-	menu.scoreboard_action = &"g2g_scoreboard"
+	menu.help_action = &"airdrift_help"
+	menu.theme_action = &"airdrift_theme_next"
+	menu.scoreboard_action = &"airdrift_scoreboard"
 	add_child(menu)
 	var _set := menu.setup()
 	AirdriftMenuPages.install(menu, host)

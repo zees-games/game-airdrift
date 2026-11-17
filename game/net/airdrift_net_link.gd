@@ -70,7 +70,7 @@ var is_server: bool = false
 ## instead. Unset — which is every real deployment — every send goes out as an RPC.
 var loopback: Callable = Callable()
 
-## Counters, for `g2g_net` and for the self-test.
+## Counters, for `airdrift_net` and for the self-test.
 var snapshots_sent: int = 0
 var snapshots_received: int = 0
 var events_sent: int = 0

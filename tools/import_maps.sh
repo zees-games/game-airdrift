@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Import every .bsp in a directory into maps/imported/, skipping what is up to date.
 #
-#   tools/import_maps.sh                        # ../inspirations/g2gfast -> maps/imported
+#   tools/import_maps.sh                        # ../inspirations/airdrift -> maps/imported
 #   tools/import_maps.sh <src-dir> [out-dir]
 #   tools/import_maps.sh --prune                # also delete imports whose .bsp is gone
 #   tools/import_maps.sh --force                # re-import everything
@@ -26,7 +26,7 @@ for arg in "$@"; do
         *) if [ -z "$src" ]; then src="$arg"; else out="$arg"; fi ;;
     esac
 done
-[ -z "$src" ] && src="$here/../inspirations/g2gfast"
+[ -z "$src" ] && src="$here/../inspirations/airdrift"
 
 if [ ! -d "$src" ]; then
     echo "no such directory: $src" >&2

@@ -413,7 +413,7 @@ func _cmd_tier(ctx: DotCmdContext) -> void:
 
 func _cmd_set_tier(ctx: DotCmdContext) -> void:
 	if ctx.args.is_empty() or not ctx.args[0].is_valid_int():
-		ctx.reply("Usage: g2g_settier <1-10>")
+		ctx.reply("Usage: airdrift_settier <1-10>")
 		return
 	var res: DotResult = await game.timers.set_map_tier(ctx.args[0].to_int())
 	if not res.ok:
@@ -479,7 +479,7 @@ func _cmd_delete_record(ctx: DotCmdContext) -> void:
 	if _no_records(ctx):
 		return
 	if ctx.args.is_empty():
-		ctx.reply("Usage: g2g_deleterecord <name or id> [track] [style]")
+		ctx.reply("Usage: airdrift_deleterecord <name or id> [track] [style]")
 		return
 	var who := _find_player(ctx, ctx.args[0])
 	var board := _board_of(ctx)
@@ -503,7 +503,7 @@ func _cmd_delete_record(ctx: DotCmdContext) -> void:
 
 func _cmd_wipe_player(ctx: DotCmdContext) -> void:
 	if game.timers.store == null or ctx.args.is_empty():
-		ctx.reply("Usage: g2g_wipeplayer <player id>")
+		ctx.reply("Usage: airdrift_wipeplayer <player id>")
 		return
 	var id := StringName(ctx.args[0])
 	# Every map they were on is re-scored, not only this one: a wiped record holder's time
@@ -565,7 +565,7 @@ func _cmd_rtv(ctx: DotCmdContext) -> void:
 	if id == &"":
 		ctx.reply("Only a player can rock the vote.")
 		return
-	# `g2g_rtv` with a ballot is the ballot's rock-the-vote, the same one `rtv` is.
+	# `airdrift_rtv` with a ballot is the ballot's rock-the-vote, the same one `rtv` is.
 	if vote != null:
 		var res := vote.rock_the_vote(id)
 		ctx.reply("Rocked the vote." if res.ok else res.error.message)
@@ -590,7 +590,7 @@ func _cmd_zone(ctx: DotCmdContext) -> void:
 		ctx.reply("This map has no zone set.")
 		return
 	if ctx.args.is_empty():
-		ctx.reply("g2g_zone <start|end|stage|respawn|stop|teleport> [track] [number]")
+		ctx.reply("airdrift_zone <start|end|stage|respawn|stop|teleport> [track] [number]")
 		return
 	var kinds := {"start": DotTimerZone.Kind.START, "end": DotTimerZone.Kind.END,
 		"stage": DotTimerZone.Kind.STAGE, "respawn": DotTimerZone.Kind.RESPAWN,
@@ -620,7 +620,7 @@ func _cmd_zone(ctx: DotCmdContext) -> void:
 	if not began.ok:
 		ctx.reply_error(began)
 		return
-	ctx.reply("Drawing a %s zone on %s. Stand on one corner and run g2g_zone_mark, then the other." % [
+	ctx.reply("Drawing a %s zone on %s. Stand on one corner and run airdrift_zone_mark, then the other." % [
 		wanted, DotTimerTrack.name_of(track)])
 
 
@@ -630,7 +630,7 @@ func _cmd_zone_mark(ctx: DotCmdContext) -> void:
 		ctx.reply("This map has no zone set.")
 		return
 	var at := _mark_position(ctx)
-	# `g2g_zone_mark x y z [height]` in genre units is the corner the client's zone editor
+	# `airdrift_zone_mark x y z [height]` in genre units is the corner the client's zone editor
 	# aimed at (Z): exact, so no padding, and the height the editor showed. Standing on
 	# the corner and marking without numbers is what it always was.
 	if ctx.args.size() >= 3 and ctx.args[0].is_valid_float() and ctx.args[1].is_valid_float() \

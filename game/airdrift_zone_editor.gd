@@ -24,9 +24,11 @@ const AirdriftZoneOutlines := preload("airdrift_zone_outlines.gd")
 ## [b]Offline it edits the game's own zone set[/b] and saves to `user://zones/<map>.json`,
 ## which [method AirdriftGame._on_map_changed] reads in preference to the map's own zones the
 ## next time the map loads. [b]Online it is a pen, not the paper:[/b] each step is sent as
-## the server's own zone command in chat (`/g2g_zone`, `/g2g_zone_mark x y z`,
-## `/g2g_zone_save`), which the server refuses unless the player holds the changemap
-## flag. The box is drawn here either way, so the admin sees what they are about to send.
+## the server's own zone command in chat (`airdrift_zone`, `airdrift_zone_mark x y z`,
+## `airdrift_zone_save`), which the server refuses unless the player holds the changemap
+## flag. It sends them under their old names, which every server still answers, so an editor
+## newer than the server it plays on still works (see [constant OLD_COMMAND_PREFIX]).
+## The box is drawn here either way, so the admin sees what they are about to send.
 
 signal changed()
 
@@ -37,6 +39,10 @@ const KINDS := [
 ]
 
 ## The grid an aim point snaps to, in genre units.
+## The chat form of the server's zone commands, under the old Airdrift name: the server registers
+## `airdrift_zone*` and keeps the old names as hidden copies, and a server older than this editor
+## knows only those. Switch to "/airdrift_" once no server older than the rename is left.
+const OLD_COMMAND_PREFIX := "/g2g_"
 const SNAP_UNITS := 16.0
 
 ## How far an aim reaches for a floor, in genre units.
@@ -254,9 +260,9 @@ func commit(a: Vector3, b: Vector3) -> DotResult:
 		return DotResult.success(zone)
 	var u_a := AirdriftUnits.vector_to_units(box.position)
 	var u_b := AirdriftUnits.vector_to_units(Vector3(box.end.x, box.position.y, box.end.z))
-	_send("/g2g_zone %s %d %d" % [kind_name(), track, number if numbered else 0])
-	_send("/g2g_zone_mark %.0f %.0f %.0f 0" % [u_a.x, u_a.y, u_a.z])
-	_send("/g2g_zone_mark %.0f %.0f %.0f %.0f" % [u_b.x, u_b.y, u_b.z, height_units])
+	_send((OLD_COMMAND_PREFIX + "zone %s %d %d") % [kind_name(), track, number if numbered else 0])
+	_send((OLD_COMMAND_PREFIX + "zone_mark %.0f %.0f %.0f 0") % [u_a.x, u_a.y, u_a.z])
+	_send((OLD_COMMAND_PREFIX + "zone_mark %.0f %.0f %.0f %.0f") % [u_b.x, u_b.y, u_b.z, height_units])
 	if numbered:
 		number += 1
 	_say("Sent %s on %s to the server." % [kind_name(), DotTimerTrack.name_of(track)])
@@ -265,7 +271,7 @@ func commit(a: Vector3, b: Vector3) -> DotResult:
 
 func undo() -> void:
 	if not offline:
-		_send("/g2g_zone_undo")
+		_send(OLD_COMMAND_PREFIX + "zone_undo")
 		return
 	var zones: DotTimerZoneSet = game.timers.zones
 	if zones == null or zones.zones.is_empty():
@@ -280,7 +286,7 @@ func undo() -> void:
 
 func save() -> void:
 	if not offline:
-		_send("/g2g_zone_save")
+		_send(OLD_COMMAND_PREFIX + "zone_save")
 		return
 	var zones: DotTimerZoneSet = game.timers.zones
 	if zones == null:

@@ -150,9 +150,9 @@ def teleports(mid, root, d):
     are), else the manifest's TELEPORT zones. A staged map is a graph: a gate moves the player
     from one section to the next, a pit back to a lane start."""
     out = []
-    # needs inspirations/g2gfast/<id>.bsp directly under ~/godot (or the maps link target), or AIRDRIFT_BSP (old: G2G_BSP)
+    # needs inspirations/airdrift/<id>.bsp directly under ~/godot (or the maps link target), or AIRDRIFT_BSP (old: G2G_BSP)
     linked = os.path.realpath(os.path.join(root, 'maps', 'imported', '..', '..'))
-    bsp = os.environ.get('AIRDRIFT_BSP') or os.environ.get('G2G_BSP') or next((p for p in (os.path.join(r, 'inspirations', 'g2gfast', mid + '.bsp') for r in (
+    bsp = os.environ.get('AIRDRIFT_BSP') or os.environ.get('G2G_BSP') or next((p for p in (os.path.join(r, 'inspirations', 'airdrift', mid + '.bsp') for r in (
         os.path.join(root, '..'), linked)) if os.path.isfile(p)), '')
     if os.path.isfile(bsp):
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

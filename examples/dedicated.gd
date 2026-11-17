@@ -33,6 +33,7 @@ func _run() -> void:
 		_test_stagger_cvar()
 		_test_stats_report()
 		_test_config_and_noblock()
+		_test_old_names()
 		_test_commands()
 		_test_replay_bot_cvar()
 		_test_query_and_chat()
@@ -95,7 +96,7 @@ func _boot() -> void:
 	var cfg_path := "%s/server.cfg" % SERVER_DIR
 	var cfg := FileAccess.open(cfg_path, FileAccess.WRITE)
 	cfg.store_line("sv_tickrate 100")
-	cfg.store_line("hostname \"g2gfast test\"")
+	cfg.store_line("hostname \"airdrift test\"")
 	cfg.close()
 
 	var config := DotServerConfig.new()
@@ -193,7 +194,7 @@ func _boot() -> void:
 		"%d records" % int(moderation.call("count")) if moderation != null else "no moderation")
 	_check(server.console.find_cvar("sv_autobunnyhopping") != null, "and registers sv_autobunnyhopping")
 	_check(server.console.find_cvar("sv_airaccelerate") != null, "and sv_airaccelerate")
-	_check(server.console.find_cvar("sv_tickrate") != null and server.console.find_cvar("g2g_tickrate") == null,
+	_check(server.console.find_cvar("sv_tickrate") != null and server.console.find_cvar("airdrift_tickrate") == null,
 		"and does not duplicate sv_tickrate")
 	_done()
 

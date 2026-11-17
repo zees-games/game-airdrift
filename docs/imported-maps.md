@@ -3,7 +3,7 @@
 `tools/bsp_import.py` turns a compiled `.bsp` from the genre's maps into a map this game loads: geometry, the textures the file carried, the lighting its compiler baked, its start line, finish, stages, bonus tracks, pits, static props and what its brush entities do. An imported map is **content**: it is read, not rebuilt. How it is drawn is in [map-rendering.md](map-rendering.md), how it reaches a server and a client in [map-delivery.md](map-delivery.md), and every brush entity class and its handling in [brush-entities.md](brush-entities.md). The zones-file format is `maps/zones/README.md`.
 
 ```bash
-cp somewhere/surf_whatever.bsp ../inspirations/g2gfast/
+cp somewhere/surf_whatever.bsp ../inspirations/airdrift/
 tools/import_maps.sh            # imports what is new or whose zones file is newer, skips what is current
 tools/import_maps.sh --prune    # and deletes imports whose .bsp is gone
 tools/bsp_preview.sh            # renders every one of them from its spawn (xvfb-run)
@@ -132,9 +132,9 @@ Needs numpy, scipy and trimesh, and refuses a map whose zones file has no attrib
 - **No author textures and no baked light.** Surfaces are `prototype` and tinted by a palette keyed on material name (`PALETTE`); the lightmap is a white patch. CS2's `irradiance.exr` is not decoded: a known gap. The stand-in materials are listed `none` in `textures/stock/substitutes.json`.
 - **glTF de-duplicates material names with a counter** (`side_rail_ramp_mat_66`); `material_of` strips it.
 
-## Pilot: drawing through dot-map's world document (`g2g_global_worlds`, default off)
+## Pilot: drawing through dot-map's world document (`airdrift_global_worlds`, default off)
 
-`bhop_training_fun`, `bhop_eazy` and ten more (aztec, bunnyhop_pro, amor, eazy_v2, grove, eclipse, year3000, greensway, beginner, kitsune) are also converted by `bsp.py regen g2g/<id> --out worlds/<id>` into airdrift-maps' `worlds/` (checked out as `../g2gfast-maps/worlds/`) (the layout mg-wipeout-maps uses; `worlds`, `pbr-library` and `model-library` are gitignored links here). With `g2g_global_worlds 1`, `AirdriftBspMap` builds a `DotMapWorld` (drawn, no collision) in place of the manifest's surfaces and hides those; collision, zones, spawns, lighting and dressing are still the manifest's. `examples/headless_global_worlds.tscn` checks it; `PREVIEW_WORLDS=1 tools/bsp_preview.sh <id> spawn` renders it. The plan for every map is the nightly item `g2g-global-migrate-1`.
+`bhop_training_fun`, `bhop_eazy` and ten more (aztec, bunnyhop_pro, amor, eazy_v2, grove, eclipse, year3000, greensway, beginner, kitsune) are also converted by `bsp.py regen g2g/<id> --out worlds/<id>` into airdrift-maps' `worlds/` (checked out as `../g2gfast-maps/worlds/`) (the layout mg-wipeout-maps uses; `worlds`, `pbr-library` and `model-library` are gitignored links here). With `airdrift_global_worlds 1`, `AirdriftBspMap` builds a `DotMapWorld` (drawn, no collision) in place of the manifest's surfaces and hides those; collision, zones, spawns, lighting and dressing are still the manifest's. `examples/headless_global_worlds.tscn` checks it; `PREVIEW_WORLDS=1 tools/bsp_preview.sh <id> spawn` renders it. The plan for every map is the nightly item `g2g-global-migrate-1`.
 
 ## Maps copied in by hand
 

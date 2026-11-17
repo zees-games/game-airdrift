@@ -8,7 +8,7 @@ GameBanana's search API (`Util/Search/Results`) ranks by relevance, not populari
 
 **Skipped as a newer engine version (VBSP 21 and later): 0.** Both categories belong to game 2, every one of the 307 records says so, and all twelve archives downloaded so far held a VBSP 19 or 20 file. The newer releases have their own sections on the site, which this list never reads.
 
-"Have it" means a `maps/zones/<id>.json` whose attribution names that page, or a .bsp of that name under `inspirations/g2gfast/`. A page that matches only by a near name is called a variant.
+"Have it" means a `maps/zones/<id>.json` whose attribution names that page, or a .bsp of that name under `inspirations/airdrift/`. A page that matches only by a near name is called a variant.
 
 ## Top 50 by views
 
@@ -116,7 +116,7 @@ No map in the batch spawned a player in solid, and every one passes `headless_im
 
 ## Downloaded and not yet imported
 
-In `inspirations/g2gfast/pending/` with their archives in `inspirations/g2gfast/`, and no credit file yet:
+In `inspirations/airdrift/pending/` with their archives in `inspirations/airdrift/`, and no credit file yet:
 
 - `surf_lt_omnific` ([122470](https://gamebanana.com/mods/122470), nyro, qr and checkem): a skill course in three authors' sections, each of t1..t6, and like `surf_kitsune` it steers progression with `AddOutput targetname` and filters rather than labels. Needs its teleport graph read the way kitsune's was.
 - `surf_legends` ([122424](https://gamebanana.com/mods/122424), SintaxError): combat surf (jails, weapon spawner buttons). Credit-only import, like the rest of this batch.
@@ -132,7 +132,7 @@ The thirteen most-liked maps outside the top 50 by views (gb-maps-2). Twelve imp
 - **Courses, timed from the map's own start to its own finish:** `bhop_overthinker` (labels its zones `mod_zone_start` / `mod_zone_end`, plus a bonus), `surf_lt_unicorn` (labels six stages as `stage_startzone_NN`, a finish and three bonuses), `bhop_crash_egypt` (32 sections; the finish is the warp sphere past the last one), `bhop_lego3` (the end figure's finish animation), `bhop_ocean` (the spawn teleports to a start island; the finish is the island with the ending song), `bhop_badges2` (the confetti trigger), `bhop_frotinity2` (eight mappers' stages, finished at `finishend`; no stage lines yet).
 - **Combat or race rounds, credit only and `kind: arena`:** `surf_ny_advance`, `surf_pavilion`, `surf_torque2`, `surf_velocity` (team spawns, equipment, jails, scored levels).
 - **A spawn and no finish:** `kz_bhop_lucid`, a hub of four coloured routes whose finish opens when a counter reaches four, which this game does not run.
-- **Not imported:** `bhop_lost_world` (in `inspirations/g2gfast/pending/`): an adventure map whose route runs through timed doors ("You have 8 seconds before door closes"), button-enabled teleports and dream sequences, all of them the map's logic.
+- **Not imported:** `bhop_lost_world` (in `inspirations/airdrift/pending/`): an adventure map whose route runs through timed doors ("You have 8 seconds before door closes"), button-enabled teleports and dream sequences, all of them the map's logic.
 
 What the importer learned from them: boosters (a thin `trigger_multiple` whose OnEndTouch sets `basevelocity`) are pushes given on leaving, which ten maps use and none was reading; `stage_startzone_NN` and the `mod_` prefix are labels; `ignore_labels` leaves a labelled zone unread with a reason (unicorn's bonus 1, a collectables challenge); and a pit trimmed back off an arrival keeps a tick's depth.
 
@@ -173,11 +173,11 @@ All eleven downloads are VBSP 20; the pages all state CC BY-NC-ND 4.0 and none s
 - [122002](https://gamebanana.com/mods/122002) `surf_ember` (Skar): start round `1ENTER`, finish at the teleports to `JAILTOP`; the round-timer teleports (`Timesup*`, `YOULOSE`) are dropped.
 - [126237](https://gamebanana.com/mods/126237) `bhop_training_fun` (Soapy Soap): a practice yard with no finish; credit only, and listed in `headless_imported`'s `NOT_COURSES`.
 
-Downloaded and sent to `inspirations/g2gfast/pending/` (reasons in its README): `surf_spectrum` (123037), `surf_gurus` (122228), `bhop_relinquished_fixx` (125839), `bhop_miku` (125530), `bhop_cw_journey` (124781), `bhop_communityjump` (124722). Not downloaded: `Surf_Elements_beta3` (121990), a team minigame map that belongs with the FC maps, and `surf_ny_exploder_prime` (122646), already on the FC surf list.
+Downloaded and sent to `inspirations/airdrift/pending/` (reasons in its README): `surf_spectrum` (123037), `surf_gurus` (122228), `bhop_relinquished_fixx` (125839), `bhop_miku` (125530), `bhop_cw_journey` (124781), `bhop_communityjump` (124722). Not downloaded: `Surf_Elements_beta3` (121990), a team minigame map that belongs with the FC maps, and `surf_ny_exploder_prime` (122646), already on the FC surf list.
 
 ## Extended and imported 2026-10-23
 
-The likes list above had no Bunny Hop course left that we did not hold, so chk-maps re-read category 5568 (Bunny Hop) sorted by most liked, pages 1-2 at 50 a page, against the zones files, `inspirations/g2gfast/` and `pending/`. Every page is game 2, every file downloaded VBSP 20; CS:GO/CS2 skipped: 0. Every page states CC BY-NC-ND 4.0; each was read for anything against porting before downloading.
+The likes list above had no Bunny Hop course left that we did not hold, so chk-maps re-read category 5568 (Bunny Hop) sorted by most liked, pages 1-2 at 50 a page, against the zones files, `inspirations/airdrift/` and `pending/`. Every page is game 2, every file downloaded VBSP 20; CS:GO/CS2 skipped: 0. Every page states CC BY-NC-ND 4.0; each was read for anything against porting before downloading.
 
 Not held, in like order, and what became of each:
 

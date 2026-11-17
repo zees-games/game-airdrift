@@ -110,17 +110,17 @@ func _bind_rule_cvars() -> void:
 
 ## Course commands and dot-map's map commands.
 func _add_course_commands() -> void:
-	add_command("g2g_status", _cmd_status, "What this server is doing", "").with_chat()
-	add_command("g2g_restart", _cmd_restart, "Back to the start", "").with_chat()
-	add_command("g2g_style", _cmd_style, "List styles, or switch", "").with_chat()
-	add_command("g2g_track", _cmd_track, "main, or bonus <n>", "").with_chat()
-	add_command("g2g_stage", _cmd_stage, "To the start of stage <n>, or of this stage", "").with_chat()
-	add_command("g2g_top", _cmd_top, "Fastest times here", "").with_chat()
+	add_command("airdrift_status", _cmd_status, "What this server is doing", "").with_chat()
+	add_command("airdrift_restart", _cmd_restart, "Back to the start", "").with_chat()
+	add_command("airdrift_style", _cmd_style, "List styles, or switch", "").with_chat()
+	add_command("airdrift_track", _cmd_track, "main, or bonus <n>", "").with_chat()
+	add_command("airdrift_stage", _cmd_stage, "To the start of stage <n>, or of this stage", "").with_chat()
+	add_command("airdrift_top", _cmd_top, "Fastest times here", "").with_chat()
 	# Not `.with_chat()` yet reachable from chat: CHANGEMAP decides, so a player without the flag is refused.
-	add_command("g2g_map", _cmd_map, "Change map, or list them", DotAdminFlags.CHANGEMAP)
+	add_command("airdrift_map", _cmd_map, "Change map, or list them", DotAdminFlags.CHANGEMAP)
 
 	# `map`, `maps` and `mapinfo` come from dot-map; dot-server's `map` changed the GAME and is
-	# `changelevel` now. `allow_chat_change` stays ON, matching `g2g_map`: CHANGEMAP decides.
+	# `changelevel` now. `allow_chat_change` stays ON, matching `airdrift_map`: CHANGEMAP decides.
 	# `change_fn` rather than the session, because `AirdriftGame.change_map` resets the timer, zones and styles.
 	var map_commands := DotMapCommands.new()
 	map_commands.session = game.maps
@@ -136,7 +136,7 @@ func _add_course_commands() -> void:
 	map_commands.spec_fn = func() -> Dictionary:
 		return game.rotation_file.commands() if game.rotation_file != null else {}
 	map_commands.bind(self)
-	add_command("g2g_maps_reload", _cmd_maps_reload,
+	add_command("airdrift_maps_reload", _cmd_maps_reload,
 		"Re-read maps/ from disk, picking up anything dropped in", DotAdminFlags.CHANGEMAP)
 
 
@@ -149,7 +149,7 @@ func _bind_map_cvars() -> void:
 	#
 	# Set live as well as at load. The sweep is in the background either way, so an
 	# operator adding a map id to a running server gets it without a restart, which is
-	# the same promise `g2g_maps_reload` makes for the disk.
+	# the same promise `airdrift_maps_reload` makes for the disk.
 	add_cvar(AirdriftConfig.MAP_CONTENT_OWNER_CVAR, game.config.map_content_owner,
 		"Whose namespace maps are fetched from: gamemann makes surf_mesa gamemann/surf_mesa."
 	).changed.connect(
@@ -171,7 +171,7 @@ func _bind_map_cvars() -> void:
 		game.fetch_content_maps()
 
 	# Which installed maps rotate: cfg/maps.yml. Changing
-	# it re-reads the file now, as `g2g_maps_reload` does.
+	# it re-reads the file now, as `airdrift_maps_reload` does.
 	add_cvar("sv_map_rotation_file", game.config.map_rotation_file,
 		"maps.yml: the maps that rotate, in named rotations. Unlisted maps stay installed."
 	).changed.connect(
@@ -191,7 +191,7 @@ func _bind_map_cvars() -> void:
 			if bridge != null and bridge.map_host != null:
 				bridge.map_host.sync_timeout_sec = game.config.map_sync_seconds
 	)
-	add_command("g2g_rtv", _cmd_rtv, "Rock the vote", "").with_chat()
+	add_command("airdrift_rtv", _cmd_rtv, "Rock the vote", "").with_chat()
 
 	# What twenty years of bhop servers taught everybody's fingers: `!r`, `!wr`,
 	# `!style`. Aliases of the commands above, chat-enabled, nothing else.
@@ -207,12 +207,12 @@ func _add_chat_commands() -> void:
 	add_command("s", _cmd_stage, "To the start of stage <n> (alias)", "").with_chat()
 	add_command("stage", _cmd_stage, "To the start of stage <n> (alias)", "").with_chat()
 	add_command("rs", _cmd_stage, "To the start of this stage (alias)", "").with_chat()
-	add_command("g2g_zone", _cmd_zone, "Draw a zone: g2g_zone <kind> [track] [number]", DotAdminFlags.CHANGEMAP)
-	add_command("g2g_zone_mark", _cmd_zone_mark, "Mark a corner where you stand, or at x y z [height] (units)", DotAdminFlags.CHANGEMAP)
-	add_command("g2g_zone_save", _cmd_zone_save, "Write the zones to disk", DotAdminFlags.CHANGEMAP)
-	add_command("g2g_zone_undo", _cmd_zone_undo, "Remove the last zone", DotAdminFlags.CHANGEMAP)
-	add_command("g2g_zone_list", _cmd_zone_list, "List the zones", DotAdminFlags.CHANGEMAP)
-	add_command("g2g_ghost", _cmd_ghost, "What the record ghost is running", "").with_chat()
+	add_command("airdrift_zone", _cmd_zone, "Draw a zone: airdrift_zone <kind> [track] [number]", DotAdminFlags.CHANGEMAP)
+	add_command("airdrift_zone_mark", _cmd_zone_mark, "Mark a corner where you stand, or at x y z [height] (units)", DotAdminFlags.CHANGEMAP)
+	add_command("airdrift_zone_save", _cmd_zone_save, "Write the zones to disk", DotAdminFlags.CHANGEMAP)
+	add_command("airdrift_zone_undo", _cmd_zone_undo, "Remove the last zone", DotAdminFlags.CHANGEMAP)
+	add_command("airdrift_zone_list", _cmd_zone_list, "List the zones", DotAdminFlags.CHANGEMAP)
+	add_command("airdrift_ghost", _cmd_ghost, "What the record ghost is running", "").with_chat()
 
 	#
 	# The questions a timer server is asked all evening. The answers are dot-timer's
@@ -235,10 +235,10 @@ func _add_chat_commands() -> void:
 	add_command("resume", _cmd_unpause, "Resume a paused run (alias)", "").with_chat()
 	add_command("autorestart", _cmd_auto_restart, "Restart whenever you fall behind your best", "").with_chat()
 	add_command("restore", _cmd_restore, "Take back the run you dropped", "").with_chat()
-	add_command("g2g_settier", _cmd_set_tier, "Set this map's tier (1-10) and re-score it", DotAdminFlags.CHANGEMAP)
-	add_command("g2g_deleterecord", _cmd_delete_record, "Remove a player's time: <name> [track] [style]", DotAdminFlags.BAN)
-	add_command("g2g_wipeplayer", _cmd_wipe_player, "Remove every record of a player id", DotAdminFlags.BAN)
-	add_command("g2g_rescore", _cmd_rescore, "Re-score every board on this map", DotAdminFlags.CHANGEMAP)
+	add_command("airdrift_settier", _cmd_set_tier, "Set this map's tier (1-10) and re-score it", DotAdminFlags.CHANGEMAP)
+	add_command("airdrift_deleterecord", _cmd_delete_record, "Remove a player's time: <name> [track] [style]", DotAdminFlags.BAN)
+	add_command("airdrift_wipeplayer", _cmd_wipe_player, "Remove every record of a player id", DotAdminFlags.BAN)
+	add_command("airdrift_rescore", _cmd_rescore, "Re-score every board on this map", DotAdminFlags.CHANGEMAP)
 	add_command("thirdperson", _cmd_thirdperson, "Third-person view", "").with_chat()
 	add_command("firstperson", _cmd_firstperson, "First-person view", "").with_chat()
 

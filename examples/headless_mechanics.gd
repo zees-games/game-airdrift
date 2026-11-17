@@ -33,7 +33,7 @@ const AirdriftUnits := preload("../game/airdrift_units.gd")
 const SAMPLE := 12
 
 ## Maps whose trap blocks still lie inside a pit slab because the source .bsp is no longer
-## in inspirations/g2gfast, so the importer cannot rebuild them (a ratchet: only down).
+## in inspirations/airdrift, so the importer cannot rebuild them (a ratchet: only down).
 ## kz_bhop_lucid, bhop_fury, bhop_training_fun: the mapper's own tiny sheet sits on the platform top inside
 ## a respawn volume taller than a player, which the cap leaves alone (Source respawns there).
 const BLOCKS_IN_PIT := {"bhop_platformer_fxd": 1, "kz_bhop_lucid": 6, "bhop_fury": 1, "bhop_training_fun": 1}

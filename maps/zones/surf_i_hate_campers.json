@@ -1,7 +1,7 @@
 {
  "id": "surf_i_hate_campers",
  "kind": "arena",
- "kind_why": "A combat surf map: buyzones and bomb sites, 14 spawns a side, every teleport back to a spawn or the top of the course. 'arena' keeps it out of g2gfast's rotation, vote and nominations and marks it for game-fatal-contact's deathmatch.",
+ "kind_why": "A combat surf map: buyzones and bomb sites, 14 spawns a side, every teleport back to a spawn or the top of the course. 'arena' keeps it out of Airdrift's rotation, vote and nominations and marks it for game-fatal-contact's deathmatch.",
  "sealed_teleports": {
   "targets": [
    "ct_spawn",

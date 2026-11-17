@@ -179,7 +179,7 @@ func _build_vote() -> DotResult:
 	# vote it no longer decides anything.
 	game.rotation_ends_maps = false
 
-	# And the clock `g2g_status` reports, for the same reason: the session's is no longer
+	# And the clock `airdrift_status` reports, for the same reason: the session's is no longer
 	# the one that ends the map.
 	game.clock_fn = vote.clock_state
 
@@ -204,36 +204,36 @@ func _add_server_commands() -> void:
 		if menu_half is Object:
 			(menu_half as Object).set(&"change_fn", game.change_map)
 			(menu_half as Object).set(&"rows_fn", func(_rows: Array) -> Array: return AirdriftGame.menu_rows(game.map_rows()))
-		add_command("g2g_vote", _cmd_open_vote, "Open a vote now", DotAdminFlags.VOTE)
+		add_command("airdrift_vote", _cmd_open_vote, "Open a vote now", DotAdminFlags.VOTE)
 	else:
 		# No ballot, so `rtv` is the map session's own tally — the one rock-the-vote this
 		# server has, under the name players type.
 		add_command("rtv", _cmd_rtv, "Rock the vote (alias)", "").with_chat()
 
 	if services != null:
-		add_command("g2g_services", _cmd_services,
+		add_command("airdrift_services", _cmd_services,
 			"Chat, voice and moderation", DotAdminFlags.GENERIC)
 
 	if identity != null:
-		add_command("g2g_identity", _cmd_identity,
+		add_command("airdrift_identity", _cmd_identity,
 			"The platform layer", DotAdminFlags.GENERIC)
 
 	if game.progress != null:
 		add_command("stats", _cmd_stats, "Your numbers on this server", "").with_chat()
 
 	if game.hunters != null:
-		add_command("g2g_hunt", _cmd_hunt,
-			"Show, clear, or place one: g2g_hunt [clear|spawn <id>]",
+		add_command("airdrift_hunt", _cmd_hunt,
+			"Show, clear, or place one: airdrift_hunt [clear|spawn <id>]",
 			DotAdminFlags.GENERIC)
 
 	if game.props != null:
-		add_command("g2g_place", _cmd_place,
+		add_command("airdrift_place", _cmd_place,
 			"Place a block where you are looking", DotAdminFlags.CHANGEMAP)
-		add_command("g2g_place_undo", _cmd_place_undo,
+		add_command("airdrift_place_undo", _cmd_place_undo,
 			"Take the last block back", DotAdminFlags.CHANGEMAP)
-		add_command("g2g_place_clear", _cmd_place_clear,
+		add_command("airdrift_place_clear", _cmd_place_clear,
 			"Clear every placed block", DotAdminFlags.CHANGEMAP)
-		add_command("g2g_nudge", _cmd_nudge,
+		add_command("airdrift_nudge", _cmd_nudge,
 			"Grab the block you are looking at, or drop the one you hold",
 			DotAdminFlags.CHANGEMAP)
 
@@ -320,7 +320,7 @@ func _cmd_place(ctx: DotCmdContext) -> void:
 	)
 
 	# Where they are looking, four metres out. The same "mark where you stand" idea
-	# `g2g_zone_mark` uses, one step in front so the block is not inside the admin.
+	# `airdrift_zone_mark` uses, one step in front so the block is not inside the admin.
 	var at := player.eye_position() + player.aim_direction() * 4.0
 	var made := game.props.place(_caller_id(ctx), which, at, true)
 
@@ -644,7 +644,7 @@ func _movement_cvar(cvar_name: String, field: String, description: String) -> vo
 ## Registers the shared movement names that differ from Airdrift's (`sv_runspeed`, `sv_airwishspeed`, `sv_autohop`) over AirdriftConfig, through the same binder dot-game's `bind_movement_cvars` uses (this module is a DotModule, not a DotGameModule). The names spelled alike are Airdrift's own cvars already.
 func _bind_shared_movement_names() -> void:
 	var adapter := AirdriftMovementNames.new(game)
-	adapter.changed_fn = _mirror_to_g2g_cvar
+	adapter.changed_fn = _mirror_to_game_cvar
 	_shared_names = DotFpsCvars.new().add_target(adapter)
 	var _made := _shared_names.bind_cvars(Callable(self, "add_cvar"), DotConVar.FLAG_ARCHIVE | DotConVar.FLAG_NOTIFY)
 
@@ -661,10 +661,10 @@ func _bind_stats_report() -> void:
 
 
 ## The config field changed (or a shared-name write was refused): both spellings show what AirdriftConfig holds.
-func _mirror_to_g2g_cvar(field: String) -> void:
+func _mirror_to_game_cvar(field: String) -> void:
 	for shared: String in AirdriftMovementNames.RENAMES:
 		if AirdriftMovementNames.RENAMES[shared]["field"] == field:
-			_set_cvar_text(AirdriftMovementNames.RENAMES[shared]["g2g"], field)
+			_set_cvar_text(AirdriftMovementNames.RENAMES[shared]["airdrift"], field)
 			_set_cvar_text(shared, field)
 
 

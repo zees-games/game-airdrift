@@ -28,10 +28,10 @@ One subject per file. [CLAUDE.md](../CLAUDE.md) has the rules in one line each; 
 | --- | --- |
 | `game/airdrift_units.gd`, `airdrift_config.gd`, `airdrift_movement.gd` | the unit ratio (the ONLY place), every cvar in genre units, the one boundary into metres |
 | `game/airdrift_game.gd` | the simulation: maps, timers, boards, players; headless |
-| `game/g2g_player*.gd`, `airdrift_rig.gd`, `airdrift_camera.gd`, `airdrift_avatars.gd`, `airdrift_ladder_mode.gd`, `airdrift_effects.gd` | the player, its stack, body, camera, climbing, effects |
+| `game/airdrift_player*.gd`, `airdrift_rig.gd`, `airdrift_camera.gd`, `airdrift_avatars.gd`, `airdrift_ladder_mode.gd`, `airdrift_effects.gd` | the player, its stack, body, camera, climbing, effects |
 | `game/airdrift_replays.gd`, `airdrift_stats.gd`, `airdrift_awards.gd`, `airdrift_progress.gd` | replays, statistics, achievements |
 | `game/airdrift_module.gd`, `airdrift_services.gd`, `airdrift_mod_tools.gd`, `airdrift_vote.gd`, `airdrift_identity.gd`, `airdrift_query.gd`, `airdrift_party.gd` | the server side |
-| `game/airdrift_combat.gd`, `airdrift_arsenal.gd`, `g2g_hunter*.gd`, `airdrift_props.gd`, `airdrift_spectate.gd` | the layers over the timer |
+| `game/airdrift_combat.gd`, `airdrift_arsenal.gd`, `airdrift_hunter*.gd`, `airdrift_props.gd`, `airdrift_spectate.gd` | the layers over the timer |
 | `game/airdrift_bots.gd`, `airdrift_bot_nav.gd`, `airdrift_surf_course.gd`, `airdrift_route_bot.gd` | the server's bots (`bot_quota`), the stage they ride read from the zones, the rule-based fallback and the route planned for it from dot-npc-ai's links (`tools/nav_probe.tscn` prints a map's links and timings); the simulator, planner and pilot are dot-player-controller's and dot-bot's |
 | `game/airdrift_map.gd`, `airdrift_geometry.gd`, `airdrift_textures.gd`, `airdrift_reach.gd`, `airdrift_map_survey.gd` | hand-built maps |
 | `game/airdrift_bsp_map.gd`, `airdrift_map_mechanics.gd`, `airdrift_lighting.gd`, `airdrift_stock_substitutes.gd`, `*.gdshader`, `airdrift_map_catalogue.gd` | imported maps, the catalogue (rotation is dot-map's `DotMapRotationFile`) |

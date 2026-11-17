@@ -376,8 +376,8 @@ class _LoadingGames extends RefCounted:
 func _test_boot_map_owner() -> void:
 	_section("booting: the first map comes from the owner the game descriptor names")
 	const MISSING := &"surf_not_in_this_build"
-	const CLOUD := &"g2g_headless_run_cloud"
-	const GAMES := &"g2g_headless_run_games"
+	const CLOUD := &"airdrift_headless_run_cloud"
+	const GAMES := &"airdrift_headless_run_games"
 
 	var cloud := _RecordingCloud.new()
 	var games := _LoadingGames.new()
@@ -392,7 +392,7 @@ func _test_boot_map_owner() -> void:
 	failed.scene = "res://not_this_game/missing.tscn"
 	failed.cvars = {AirdriftConfig.MAP_CONTENT_OWNER_CVAR: "the_failed_game"}
 	var restored := DotGameDescriptor.new()
-	restored.scene = "res://g2g_restored_by_headless_run.tscn"
+	restored.scene = "res://airdrift_restored_by_headless_run.tscn"
 	restored.cvars = {AirdriftConfig.MAP_CONTENT_OWNER_CVAR: "restored"}
 
 	# Fourth: a descriptor that names its maps (DotGameDescriptor.maps), pinned by the
@@ -450,7 +450,7 @@ func _boot_owner_cases(games: _LoadingGames, cloud_service: StringName, games_se
 		var g := AirdriftGame.new()
 		g.config = config
 		g.map_content_service = cloud_service
-		g.game_manager_service = games_service if with_descriptor else &"g2g_headless_run_nothing"
+		g.game_manager_service = games_service if with_descriptor else &"airdrift_headless_run_nothing"
 		if case == "restore":
 			g.scene_file_path = restored.scene
 		add_child(g)

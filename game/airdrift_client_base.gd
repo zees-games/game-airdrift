@@ -208,7 +208,7 @@ func _refresh_spectator_hud() -> void:
 		return
 	var key := ""
 	if can_roam() and presentation != null and presentation.bindings != null:
-		key = str(presentation.bindings.key_for(&"g2g_roam"))
+		key = str(presentation.bindings.key_for(&"airdrift_roam"))
 	hud.set_spectating(spectating, _spectate_name, key, roaming)
 
 

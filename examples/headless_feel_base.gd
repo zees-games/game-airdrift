@@ -41,7 +41,7 @@ const Relay := preload("res://addons/dot_net/testing/dot_net_udp_relay.gd")
 ## the docs': docs/netcode.md "What a connected player sees" says what each fix was for.
 
 var PORT := AirdriftTestPorts.free_port(2)
-const DATA := "user://g2g_feel"
+const DATA := "user://airdrift_feel"
 const MAP := &"bhop_g2g_intro"
 const BOT_SESSION := 900001
 
@@ -187,7 +187,7 @@ func _boot() -> bool:
 	config.enet_share_udp_port = false
 	config.stdin_console_enabled = false
 	config.log_level = "info" if _verbose else "error"
-	# What g2gfast's server.cfg sets. dot-server's own default is not the genre's rate, and
+	# What Airdrift's server.cfg sets. dot-server's own default is not the genre's rate, and
 	# a server left on it would measure a different game.
 	config.tickrate = 128
 

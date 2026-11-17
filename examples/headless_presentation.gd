@@ -144,7 +144,7 @@ func _test_the_ambience_director() -> void:
 		p.queue_free()
 		_done()
 		return
-	_check(a.rules.prefix == "g2g", "its server rules are the g2g_ambient* cvars")
+	_check(a.rules.prefix == "airdrift", "its server rules are the airdrift_ambient* cvars")
 	_check(a.ambient.get_parent() != null, "the layer is in the tree")
 	p.on_map_changed(&"surf_mesa")
 	_check(a.mood_for_map().mood == &"snow_wind", "a surf map is wind")
@@ -540,12 +540,12 @@ func _test_every_key_is_the_players() -> void:
 		"Duck is Ctrl, the genre's, and the text form of it round-trips")
 
 	p.settings.set_value(&"bind_flashlight", "G")
-	_check(DotInputBinding.describe_action(&"g2g_flashlight") == "G"
-		and InputMap.action_get_events(&"g2g_flashlight").size() == 1,
+	_check(DotInputBinding.describe_action(&"airdrift_flashlight") == "G"
+		and InputMap.action_get_events(&"airdrift_flashlight").size() == 1,
 		"rebinding moves the action, and leaves one key rather than two")
 
 	p.settings.set_value(&"bind_flashlight", "Qwerty")
-	_check(DotInputBinding.describe_action(&"g2g_flashlight") == "F",
+	_check(DotInputBinding.describe_action(&"airdrift_flashlight") == "F",
 		"a binding that names no key falls back to the default rather than unbinding")
 
 	var escape := false
@@ -553,8 +553,8 @@ func _test_every_key_is_the_players() -> void:
 		if str(row["default"]) == "Escape":
 			escape = true
 	_check(not escape, "and nothing is on Escape, which is the menu and the browser's own")
-	_check(DotInputBinding.describe_action(&"g2g_scoreboard") == "Tab"
-		and DotInputBinding.describe_action(&"g2g_style_next") == "N",
+	_check(DotInputBinding.describe_action(&"airdrift_scoreboard") == "Tab"
+		and DotInputBinding.describe_action(&"airdrift_style_next") == "N",
 		"Tab holds the scoreboard, as in every game here, and the next style is N")
 
 	# A document from before stores "Tab" for the next style, because a document stores

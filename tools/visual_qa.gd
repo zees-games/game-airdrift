@@ -1,6 +1,6 @@
 extends DotGameVisualQaCapture
 
-## g2gfast's visual QA capture (the loop is dot-game's docs/visual-qa.md). One item per stock person, recorded frame by frame
+## Airdrift's visual QA capture (the loop is dot-game's docs/visual-qa.md). One item per stock person, recorded frame by frame
 ## at --fps in three views (f a rival's eye 2.5 m in front, t behind-right, o an opponent in front):
 ##   person_<letter>  one of the Kenney stock characters (the body and head parts AirdriftAvatars.stock draws) as the game's
 ##                    DotHumanoidFigure, idling, walking, running, crouching and jumping.

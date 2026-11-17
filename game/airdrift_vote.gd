@@ -20,7 +20,7 @@ const AirdriftVoteMapSource := preload("airdrift_vote_map_source.gd")
 ## [b]`begin_on_apply` is off, and getting it wrong halves every cooldown.[/b] The
 ## director can announce a change it just made, and so can the host through the map
 ## session's own `changed` — which is the one that has to be connected, because it also
-## fires for an admin typing `g2g_map`. Both firing means two entries in the play
+## fires for an admin typing `airdrift_map`. Both firing means two entries in the play
 ## history for one play, and a "not in the last five maps" cooldown that is quietly two
 ## or three. dot-vote found that by running inside a real host, which is the only place
 ## it is visible.

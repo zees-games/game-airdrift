@@ -164,8 +164,8 @@ func _test_autobhop_live() -> void:
 		await get_tree().physics_frame
 	_check(player.controller.stats.jumps >= 3, "and a held key chains hops", "%d" % player.controller.stats.jumps)
 
-	var status := _run_command("g2g_status")
-	_check(_said(status, "autobhop     on"), "g2g_status says so", str(status))
+	var status := _run_command("airdrift_status")
+	_check(_said(status, "autobhop     on"), "airdrift_status says so", str(status))
 	_done()
 
 
@@ -203,12 +203,12 @@ func _test_config_and_noblock() -> void:
 	var module := server.modules.get_module("g2gfast")
 	var binder: DotGameConfigBinder = game.config_binder
 	_check(binder != null and binder.diff().is_empty(), "the config binder is built and the defaults hold no diff")
-	_check(server.console.find_cvar("g2g_score_limit") != null and server.console.get_int("g2g_max_players") == 64,
-		"the deathmatch and server fields are g2g_ cvars")
-	_check(server.console.find_cvar("g2g_gravity") == null, "a field with an sv_ cvar of its own does not get a second one")
-	_run_command("g2g_respawn_delay 3")
-	_check(game.config.respawn_delay == 3.0 and binder.source_of("respawn_delay") == "cvar", "a g2g_ cvar writes the field")
-	_run_command("g2g_respawn_delay 1")
+	_check(server.console.find_cvar("airdrift_score_limit") != null and server.console.get_int("airdrift_max_players") == 64,
+		"the deathmatch and server fields are airdrift_ cvars")
+	_check(server.console.find_cvar("airdrift_gravity") == null, "a field with an sv_ cvar of its own does not get a second one")
+	_run_command("airdrift_respawn_delay 3")
+	_check(game.config.respawn_delay == 3.0 and binder.source_of("respawn_delay") == "cvar", "an airdrift_ cvar writes the field")
+	_run_command("airdrift_respawn_delay 1")
 	var edit: Variant = module.workbench.api.handle(DotGameWorkbench.LOCAL_ACTOR, {"op": "set", "kind": "config_movement", "id": binder.profile_id, "key": "gravity", "value": 700})
 	_check(edit is DotResult and edit.ok and game.config.gravity == 700.0 and server.console.get_int("sv_gravity") == 700,
 		"a workbench edit of a hand-bound field reaches the field and its sv_ cvar")
@@ -236,12 +236,38 @@ func _test_config_and_noblock() -> void:
 	_done()
 
 
+## [b]Both names answer.[/b] The console names moved to `airdrift_*` and the old Airdrift name of each
+## still works, so a server cfg, an admin's habit and an older client's chat command do not break.
+func _test_old_names() -> void:
+	_section("the old console names")
+	var module := server.modules.get_module("g2gfast")
+	var old: String = module.OLD_NAME_PREFIX
+	var status: DotConCommand = server.console.find_command("airdrift_status")
+	var old_status: DotConCommand = server.console.find_command(old + "status")
+	_check(status != null and old_status != null and old_status.handler == status.handler,
+		"the old name of airdrift_status runs the same handler")
+	_check(old_status != null and old_status.hidden and not status.hidden,
+		"and only the new name is listed")
+	var zone: DotConCommand = server.console.find_command("airdrift_zone_mark")
+	var old_zone: DotConCommand = server.console.find_command(old + "zone_mark")
+	_check(old_zone != null and old_zone.permission == zone.permission and old_zone.chat_policy == zone.chat_policy
+			and old_zone.usage == zone.usage and old_zone.min_args == zone.min_args,
+		"the old zone command keeps the new one's permission, chat gate and usage")
+	_check(server.console.aliases().get(old + "respawn_delay", "") == "airdrift_respawn_delay",
+		"the old name of a config cvar is an alias of the new one")
+	_run_command(old + "respawn_delay 4")
+	_check(game.config.respawn_delay == 4.0 and server.console.get_float("airdrift_respawn_delay") == 4.0,
+		"and setting it sets the new cvar and the field")
+	_run_command("airdrift_respawn_delay 1")
+	_done()
+
+
 func _test_commands() -> void:
 	_section("commands")
-	_check(_said(_run_command("g2g_map"), "bhop_g2g_intro"), "g2g_map lists the maps")
+	_check(_said(_run_command("airdrift_map"), "bhop_g2g_intro"), "airdrift_map lists the maps")
 	# The map menu's server half (M): every map this server has, a player offered a vote, staff
 	# (the default sv_map_menu_flag) the change; and the older client's own map list answers
-	# to the same flag. The change itself is game.change_map, which `g2g_map` drives above.
+	# to the same flag. The change itself is game.change_map, which `airdrift_map` drives above.
 	var airdrift := server.modules.get_module("g2gfast")
 	var vote_node: Object = airdrift.get("vote") if airdrift != null else null
 	var menu_half: Object = vote_node.get("commands").get("map_menu") if vote_node != null and vote_node.get("commands") != null else null
@@ -256,43 +282,43 @@ func _test_commands() -> void:
 		and bool((menu_half.call("offer", staff) as Dictionary)["allowed"]),
 		"M lists every map; a player is offered a vote and staff the change",
 		str((offer["maps"] as Array).size()))
-	_check(_said(_run_command("g2g_style"), "sideways"), "g2g_style lists the styles")
-	_check(_said(_run_command("g2g_top"), "nobody"), "g2g_top answers with no records")
+	_check(_said(_run_command("airdrift_style"), "sideways"), "airdrift_style lists the styles")
+	_check(_said(_run_command("airdrift_top"), "nobody"), "airdrift_top answers with no records")
 	_check(_said(_run_command("thirdperson"), "only a player"), "thirdperson needs a player")
 	# `[stage-yaw-1]`: `!s <n>` did not exist, so no stage destination was reachable.
 	var stage_names: Array[String] = []
-	for name in ["g2g_stage", "s", "stage", "rs"]:
+	for name in ["airdrift_stage", "s", "stage", "rs"]:
 		if server.console.find_command(name) != null and _said(_run_command(name + " 1"), "only a player"):
 			stage_names.append(name)
-	_check(stage_names.size() == 4, "g2g_stage, !s, !stage and !rs are commands, and need a player",
+	_check(stage_names.size() == 4, "airdrift_stage, !s, !stage and !rs are commands, and need a player",
 		str(stage_names))
 
 	var before := game.timers.zones.zones.size()
-	_run_command("g2g_zone stage main 4")
-	_run_command("g2g_zone_mark")
-	_run_command("g2g_zone_mark")
+	_run_command("airdrift_zone stage main 4")
+	_run_command("airdrift_zone_mark")
+	_run_command("airdrift_zone_mark")
 	_check(game.timers.zones.zones.size() == before + 1, "the sm_zones workflow draws a stage")
-	_check(_said(_run_command("g2g_zone_undo"), "removed"), "and undoes it")
+	_check(_said(_run_command("airdrift_zone_undo"), "removed"), "and undoes it")
 
 	# What the client's zone editor (Z) sends when it is online: the same commands, with
 	# the corners it aimed at in units and the height it showed, and no padding.
 	before = game.timers.zones.zones.size()
-	_run_command("g2g_zone stage 0 5")
-	_run_command("g2g_zone_mark 100 64 -456 0")
-	_run_command("g2g_zone_mark 356 64 -200 128")
+	_run_command("airdrift_zone stage 0 5")
+	_run_command("airdrift_zone_mark 100 64 -456 0")
+	_run_command("airdrift_zone_mark 356 64 -200 128")
 	var drawn: DotTimerZone = game.timers.zones.zones.back() if game.timers.zones.zones.size() == before + 1 else null
 	var lo := AirdriftUnits.vector_to_units(drawn.from).round() if drawn != null else Vector3.ZERO
 	var hi := AirdriftUnits.vector_to_units(drawn.to).round() if drawn != null else Vector3.ZERO
 	_check(drawn != null and lo == Vector3(100, 64, -456) and hi == Vector3(356, 192, -200) and int(drawn.number) == 5,
 		"the zone editor's aimed corners draw exactly that box, at its height", "%s..%s" % [lo, hi])
-	var _undone := _run_command("g2g_zone_undo")
+	var _undone := _run_command("airdrift_zone_undo")
 	var unreachable := PackedStringArray()
-	for name in ["g2g_zone", "g2g_zone_mark", "g2g_zone_undo", "g2g_zone_save"]:
+	for name in ["airdrift_zone", "airdrift_zone_mark", "airdrift_zone_undo", "airdrift_zone_save"]:
 		var c: DotConCommand = server.console.find_command(name)
 		if c == null or not c.allows_chat(server.console.chat_commands_are_open()):
 			unreachable.append(name)
 	_check(unreachable.is_empty(), "and every command the editor sends is reachable from chat", ", ".join(unreachable))
-	var zone_cmd: DotConCommand = server.console.find_command("g2g_zone")
+	var zone_cmd: DotConCommand = server.console.find_command("airdrift_zone")
 	_check(zone_cmd != null and zone_cmd.permission == DotAdminFlags.CHANGEMAP, "zone drawing needs changemap")
 	_done()
 
@@ -318,11 +344,11 @@ func _test_replay_bot_cvar() -> void:
 	# (see _on_record_accepted) or with the next map, not with a no-op console line.
 	_run_command("sv_replay_bot 0")
 	_check(game.ghost() == null, "sv_replay_bot 0 takes the ghost away now, not next map")
-	_check(_said(_run_command("g2g_ghost"), "off"), "which g2g_ghost reports")
+	_check(_said(_run_command("airdrift_ghost"), "off"), "which airdrift_ghost reports")
 
 	_run_command("sv_replay_bot 1")
 	_check(game.ghost() != null, "and 1 puts it back")
-	_check(_said(_run_command("g2g_ghost"), "Ghost"), "g2g_ghost names whose record it is running")
+	_check(_said(_run_command("airdrift_ghost"), "Ghost"), "airdrift_ghost names whose record it is running")
 	_done()
 
 
@@ -356,14 +382,14 @@ func _test_query_and_chat() -> void:
 		var row: Dictionary = fields_fn.call(DotClientSession.new(int(String(keyed[0]).trim_prefix("u"))))
 		_check(row.has("best") and row.has("rank") and str(row.get("style", "")) == who.timer_style.display_name,
 			"each runner's style, best time and rank on this map", str(row))
-	for name in ["r", "wr", "top", "style", "track", "rtv", "g2g_restart"]:
+	for name in ["r", "wr", "top", "style", "track", "rtv", "airdrift_restart"]:
 		var command: DotConCommand = server.console.find_command(name)
 		_check(command != null and command.chat_allowed, "!%s works from chat" % name)
 	# It used to read "and changing the map does not", and that was a refusal pointed at the
 	# operator holding CHANGEMAP rather than at a player: the chat gate ran before the
 	# permission check and never asked who was typing. What the flag refuses, it refuses on
 	# every source alike; what `sv_chat_commands` decides is only whether typing is a way in.
-	var map_command: DotConCommand = server.console.find_command("g2g_map")
+	var map_command: DotConCommand = server.console.find_command("airdrift_map")
 	_check(
 		map_command != null
 			and map_command.permission == DotAdminFlags.CHANGEMAP
@@ -383,7 +409,7 @@ func _test_query_and_chat() -> void:
 	_check(
 		plain_map.chat_policy == DotConCommand.ChatPolicy.DEFAULT
 			and plain_map.allows_chat(server.console.chat_commands_are_open()),
-		"and carries the same policy as g2g_map: the permission decides, not the prefix"
+		"and carries the same policy as airdrift_map: the permission decides, not the prefix"
 	)
 	# The knob that puts the old behaviour back, checked rather than described: an operator
 	# who wants a map change to cost a trip to the console has one line of config for it.

@@ -114,16 +114,16 @@ Settings are cvars. Set them in the server config, on the command line, or live 
 | `sv_props` | 0 | Players can place practice blocks |
 | `sv_ragdoll` | 1 | A dead player falls as a ragdoll; 0 is a quick fall |
 | `sv_map_rotation_file` | `cfg/maps.yml` | Which installed maps rotate |
-| `g2g_zone_editor_max_number` | 99 | Highest stage or checkpoint number the editor's **]** reaches; default 99, 0 = unlimited. Past it the key refuses with a notice |
-| `g2g_zone_editor_max_height` | 2048 | Tallest zone the editor builds, in units; default 2048, 0 = unlimited. Past it the editor refuses with a notice |
-| `g2g_zone_mark_max_height` | 4096 | Tallest zone `g2g_zone_mark x y z height` accepts; default 4096, 0 = unlimited. A taller request is refused, never shortened |
+| `airdrift_zone_editor_max_number` | 99 | Highest stage or checkpoint number the editor's **]** reaches; default 99, 0 = unlimited. Past it the key refuses with a notice |
+| `airdrift_zone_editor_max_height` | 2048 | Tallest zone the editor builds, in units; default 2048, 0 = unlimited. Past it the editor refuses with a notice |
+| `airdrift_zone_mark_max_height` | 4096 | Tallest zone `airdrift_zone_mark x y z height` accepts; default 4096, 0 = unlimited. A taller request is refused, never shortened |
 | `mp_teamblock` / `mp_enemyblock` | 0 / 1 | dot-team block rules, with `!block` and `!noblock`. Runners are not solid to each other, so these matter only once players are made solid |
 
 A player killed in deathmatch or by a hunter falls as a ragdoll ([dot-player-char](https://github.com/gamespice-platform/player-char)) until they are back at the start. `sv_ragdoll_style` picks ragdoll, stiff, topple or hide; `sv_ragdoll_time` and `sv_ragdoll_max` say how long and how many; `sv_ragdoll_reactions` weights the falls.
 
 ### Every setting as a file, a cvar and a panel
 
-Each field of the server configuration (`game/airdrift_config.gd`, with its description and range) is also a `g2g_<field>` cvar, unless it already has an `sv_` one. Layers, weakest first:
+Each field of the server configuration (`game/airdrift_config.gd`, with its description and range) is also an `airdrift_<field>` cvar, unless it already has an `sv_` one. Layers, weakest first:
 
 1. the code default
 2. `cfg/game/game-g2gfast/config/game.yml`
@@ -132,11 +132,11 @@ Each field of the server configuration (`game/airdrift_config.gd`, with its desc
 5. `--airdrift-*` arguments (the old `--g2g-*` likewise)
 6. live cvars and the workbench
 
-A dedicated server refuses to start on an unknown key or a bad value. Per-map movement lives in `cfg/game/game-g2gfast/dot_map/map/<map>.yml`. `g2g_config_dump` lists every field with the layer it came from; `g2g_config_diff save` writes what you changed as a file to copy into the defaults. The dot-workbench tuning panel (F9 in debug builds; `workbench http` for a loopback page when `workbench.enabled` is set in `cfg/server.yml`) edits the same fields. An exported build needs `*.html` in the preset's `include_filter`.
+A dedicated server refuses to start on an unknown key or a bad value. Per-map movement lives in `cfg/game/game-g2gfast/dot_map/map/<map>.yml`. `airdrift_config_dump` lists every field with the layer it came from; `airdrift_config_diff save` writes what you changed as a file to copy into the defaults. The dot-workbench tuning panel (F9 in debug builds; `workbench http` for a loopback page when `workbench.enabled` is set in `cfg/server.yml`) edits the same fields. An exported build needs `*.html` in the preset's `include_filter`.
 
 ### Which maps rotate
 
-List the maps you want in `cfg/maps.yml` (named rotations, wildcards and `sv_map_rotation <name>`; see dot-map `docs/rotation.md`). A map you leave out stays installed: `g2g_map <id>` still loads it and **M** lists it as "not in rotation", but it never comes round on its own and is not offered in votes.
+List the maps you want in `cfg/maps.yml` (named rotations, wildcards and `sv_map_rotation <name>`; see dot-map `docs/rotation.md`). A map you leave out stays installed: `airdrift_map <id>` still loads it and **M** lists it as "not in rotation", but it never comes round on its own and is not offered in votes.
 
 ```yaml
 mode: random          # or sequential
@@ -147,7 +147,7 @@ maps:
   - surf_mesa
 ```
 
-`.yaml`, `.json` (`{"maps": [...]}` or a plain list) and one-map-per-line `.txt`, `.cfg` or `.ini` files also work. With no file every map rotates, except combat surf maps. `g2g_maps_reload` re-reads it. Played offline alone, a map has no time limit; `--g2g-offline-map-seconds 1800` sets one.
+`.yaml`, `.json` (`{"maps": [...]}` or a plain list) and one-map-per-line `.txt`, `.cfg` or `.ini` files also work. With no file every map rotates, except combat surf maps. `airdrift_maps_reload` re-reads it. Played offline alone, a map has no time limit; `--airdrift-offline-map-seconds 1800` sets one.
 
 When the map changes, every client is told first, downloads the map if it needs to, and the server switches once everybody is ready (or after `sv_map_sync_timeout`).
 
@@ -155,15 +155,17 @@ When the map changes, every client is told first, downloads the map if it needs 
 
 | Command | What it does |
 | --- | --- |
-| `g2g_status` | What the server is doing |
-| `g2g_map <id>` | Change the map, or list them with no id |
-| `g2g_maps_reload` | Pick up maps added to `maps/` without a restart |
-| `g2g_top` | Fastest times on this map |
-| `g2g_ghost` | What the record ghost is running |
-| `g2g_vote` | Open a map vote now |
-| `g2g_hunt [clear\|spawn <id>]` | Show, clear or place hunters |
-| `g2g_place_clear` | Clear every placed block |
-| `g2g_settier`, `g2g_rescore`, `g2g_deleterecord <name> [track] [style]`, `g2g_wipeplayer <id>` | Admin: record management |
+| `airdrift_status` | What the server is doing |
+| `airdrift_map <id>` | Change the map, or list them with no id |
+| `airdrift_maps_reload` | Pick up maps added to `maps/` without a restart |
+| `airdrift_top` | Fastest times on this map |
+| `airdrift_ghost` | What the record ghost is running |
+| `airdrift_vote` | Open a map vote now |
+| `airdrift_hunt [clear\|spawn <id>]` | Show, clear or place hunters |
+| `airdrift_place_clear` | Clear every placed block |
+| `airdrift_settier`, `airdrift_rescore`, `airdrift_deleterecord <name> [track] [style]`, `airdrift_wipeplayer <id>` | Admin: record management |
+
+Every command and cvar had an older `g2g_` name, and that name still works: an old command runs the same handler (it is not listed), and an old cvar is an alias of the new one, so an existing `server.cfg` keeps working. Use the `airdrift_` names in new configs; an old cvar name cannot take a value with spaces in it.
 
 ### Records
 
@@ -204,14 +206,14 @@ The next-map vote is [dot-vote](https://github.com/gamespice-platform/vote). The
 
 ### Importing a map
 
-The importer reads BSP version 20 maps. Put the `.bsp` files in `../inspirations/g2gfast/` and run:
+The importer reads BSP version 20 maps. Put the `.bsp` files in `../inspirations/airdrift/` and run:
 
 ```bash
 tools/import_maps.sh      # imports anything new, skips what is current
 tools/bsp_preview.sh      # renders each map from its spawn
 ```
 
-Imported maps land in `maps/imported/`, a link to the airdrift-maps checkout. A running server picks up new ones with `g2g_maps_reload`.
+Imported maps land in `maps/imported/`, a link to the airdrift-maps checkout. A running server picks up new ones with `airdrift_maps_reload`.
 
 Collision comes from the map's brushes, so invisible player clips and surf ramp clips work as the mapper meant. Surfaces are coloured by angle: standable, slidey and wall each look different.
 
@@ -231,8 +233,8 @@ Zones are glowing boxes: green start, red finish, amber stages, cyan and magenta
 | --- | --- |
 | **1**-**6** | Start, end, stage, checkpoint, stop, pit |
 | **T** | Main track, bonus 1, bonus 2, ... |
-| **[** / **]** | Stage or checkpoint number (up to 99 by default; `g2g_zone_editor_max_number`, 0 = unlimited) |
-| **PgUp** / **PgDn**, or the wheel | Height, 16 units at a time (128 by default, up to 2048; `g2g_zone_editor_max_height`, 0 = unlimited) |
+| **[** / **]** | Stage or checkpoint number (up to 99 by default; `airdrift_zone_editor_max_number`, 0 = unlimited) |
+| **PgUp** / **PgDn**, or the wheel | Height, 16 units at a time (128 by default, up to 2048; `airdrift_zone_editor_max_height`, 0 = unlimited) |
 | **E** or click | Put a corner; the box follows your aim until the second |
 | **Backspace** | Take the last zone back |
 | **Enter** | Save |
@@ -241,14 +243,14 @@ Zones are glowing boxes: green start, red finish, amber stages, cyan and magenta
 Offline it saves to `user://zones/<map>.json`, which the game loads in place of the map's own zones. On a server it sends the server's zone commands for you (these need the changemap flag). The console works too:
 
 ```
-g2g_zone start          // start drawing a start zone
-g2g_zone_mark           // stand on one corner
-g2g_zone_mark           // then the other
-g2g_zone stage main 1   // the next zone: stage 1 of the main track
-g2g_zone_save           // write them to disk
+airdrift_zone start          // start drawing a start zone
+airdrift_zone_mark           // stand on one corner
+airdrift_zone_mark           // then the other
+airdrift_zone stage main 1   // the next zone: stage 1 of the main track
+airdrift_zone_save           // write them to disk
 ```
 
-`g2g_zone_undo` removes the last one and `g2g_zone_list` lists them.
+`airdrift_zone_undo` removes the last one and `airdrift_zone_list` lists them.
 
 ## Testing
 
