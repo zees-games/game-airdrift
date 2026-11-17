@@ -19,6 +19,22 @@
 # frame of nothing, which is worse than no screenshot because it looks like one.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+# A map takes 30+ minutes per frame on llvmpipe (a machine with no GPU). `heavy` already offers this
+# script to a GPU box, but when both boxes are busy for its 90 s window it runs the script right here,
+# and a QA run was killed after 30 minutes that way. So a host with no render node hands itself to
+# `gpu.sh shot` (which waits GPU_SHOT_WAIT, default 1 h here, for a box and carries frames back), and a
+# second arrival without a GPU stops loudly instead of crawling. PREVIEW_ALLOW_CPU=1 renders here anyway.
+if ! ls /dev/dri/renderD* /dev/nvidiactl >/dev/null 2>&1 && [ -z "${PREVIEW_ALLOW_CPU:-}" ]; then
+    gpu_sh="${GPU_SH:-$(command -v gpu.sh || echo "$HOME/godot/dot-bootstrap/tools/gpu.sh")}"
+    if [ -z "${PREVIEW_VIA_GPU:-}" ] && [ -n "$gpu_sh" ] && [ -x "$gpu_sh" ]; then
+        export PREVIEW_VIA_GPU=1 SHOT_DIR="$PWD" GPU_SHOT_WAIT="${GPU_SHOT_WAIT:-3600}" GPU_SHOT_TIMEOUT="${GPU_SHOT_TIMEOUT:-3600}"
+        exec "$gpu_sh" shot "$(basename "$PWD")" tools/bsp_preview.sh "$@"
+    fi
+    echo "bsp_preview: no GPU here (llvmpipe takes 30+ minutes a map) and no GPU box took the job." >&2
+    echo "  Set GPU_SH to gpu.sh or run it through heavy; PREVIEW_ALLOW_CPU=1 renders here anyway." >&2
+    exit 75
+fi
 mkdir -p screenshots
 
 ids=()
