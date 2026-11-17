@@ -1,14 +1,14 @@
 """Booster flight model for route_plan.py: what a launch off a jump pad reaches.
 
-Mirrors the game, not a formula: `G2GMapMechanics` adds a `leave` push to the velocity when the hull leaves
+Mirrors the game, not a formula: `AirdriftMapMechanics` adds a `leave` push to the velocity when the hull leaves
 the trigger, the player jumped on the pad (JUMP_V up) so the flight starts at JUMP_V plus the push, gravity is
 `sv_gravity` per tick, and the air is `DotFpsMotor.accelerate` with `sv_airaccelerate` and the air wish cap.
-The strafe is the route bot's: it alternates sides at right angles to its velocity (`G2GRouteBot._air`), the
+The strafe is the route bot's: it alternates sides at right angles to its velocity (`AirdriftRouteBot._air`), the
 most any wish adds, so the flight gains speed while it falls. Units are game units (u, u/s), as the planner's.
 """
 import math
 
-TICK = 128.0         # sv tick rate (G2GGameState.tick_rate)
+TICK = 128.0         # sv tick rate (AirdriftGameState.tick_rate)
 AIR_ACCEL = 1000.0   # sv_airaccelerate
 AIR_CAP = 30.0       # sv_maxairwishspeed
 WISH = 250.0         # the wish speed of a full move (sv_maxspeed)

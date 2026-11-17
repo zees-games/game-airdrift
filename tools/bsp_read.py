@@ -12,13 +12,13 @@ the entities that become timer zones and spawns:
 
     tools/bsp_read.py ../inspirations/g2gfast/surf_kitsune.bsp out/
 
-Why this is only a reader and not an importer: what a *map* is here is a `G2GMap` subclass
+Why this is only a reader and not an importer: what a *map* is here is a `AirdriftMap` subclass
 with `_build()` and `timer_zones()` (see maps/surf_g2g_intro.gd), and the interesting
 decisions -- which volume is the START, which of thirty materials is a ramp, what a stage
 is -- are judgement calls that differ per map.
 
 [b]Units.[/b] The map stores coordinates in the units this game is authored in --
-`G2GUnits.METRES_PER_UNIT` is 0.01905, 0.75 inch per unit -- so nothing is scaled here. Only
+`AirdriftUnits.METRES_PER_UNIT` is 0.01905, 0.75 inch per unit -- so nothing is scaled here. Only
 the axes are swapped, because the map is Z-up and Godot is Y-up:
 
     godot = (src.x, src.z, -src.y)
@@ -84,7 +84,7 @@ def write_obj(bsp, out_path):
             body.append("f %d %d %d" % (a, b, c))
     with open(out_path, "w") as fh:
         fh.write("# %s -- world geometry in GENRE UNITS, Godot axes\n" % os.path.basename(bsp.path))
-        fh.write("# multiply by G2GUnits.METRES_PER_UNIT for metres\n")
+        fh.write("# multiply by AirdriftUnits.METRES_PER_UNIT for metres\n")
         for v in verts:
             fh.write("v %.4f %.4f %.4f\n" % v)
         fh.write("\n".join(body) + "\n")

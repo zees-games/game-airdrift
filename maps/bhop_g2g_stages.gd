@@ -1,7 +1,7 @@
 extends "bhop_g2g_stages_shapes.gd"
 func _build() -> void:
 	tier = 4
-	G2GGeometry.sun(self)
+	AirdriftGeometry.sun(self)
 
 	var course := _course()
 
@@ -10,14 +10,14 @@ func _build() -> void:
 	# The start pad. Long, because this genre's runs begin with a prestrafe: a player
 	# holding jump from a standstill creeps at the air cap for ever, so the pad has to
 	# be long enough to walk up to speed on before crossing the line.
-	var bodies: Array = [G2GGeometry.box(
+	var bodies: Array = [AirdriftGeometry.box(
 		self, Vector3(0.0, FLOOR_Y - BLOCK_THICKNESS * 0.5, START_Z),
 		Vector3(BLOCK_WIDTH + 128.0, BLOCK_THICKNESS, 640.0),
-		G2GGeometry.ROLE_START
+		AirdriftGeometry.ROLE_START
 	)]
 
 	for block: Dictionary in course:
-		bodies.append(G2GGeometry.box(
+		bodies.append(AirdriftGeometry.box(
 			self,
 			Vector3(
 				float(block["x"]),
@@ -28,7 +28,7 @@ func _build() -> void:
 			# The last block of each stage is drawn in the finish colour, so a player
 			# can SEE where the split is rather than only being told after crossing it.
 			# A stage line the player cannot see is a split they cannot aim at.
-			G2GGeometry.ROLE_END if bool(block["stage_end"]) else G2GGeometry.ROLE_PLATFORM,
+			AirdriftGeometry.ROLE_END if bool(block["stage_end"]) else AirdriftGeometry.ROLE_PLATFORM,
 			Basis(Vector3.UP, deg_to_rad(float(block["yaw"])))
 		))
 
@@ -49,11 +49,11 @@ func _build() -> void:
 	# blocks -- applied to the one place that was still doing the arithmetic twice.
 	var end_at := _pad_centre(last)
 
-	bodies.append(G2GGeometry.box(
+	bodies.append(AirdriftGeometry.box(
 		self,
 		Vector3(end_at.x, end_at.y - BLOCK_THICKNESS * 0.5, end_at.z),
 		Vector3(BLOCK_WIDTH + 128.0, BLOCK_THICKNESS, 512.0),
-		G2GGeometry.ROLE_END,
+		AirdriftGeometry.ROLE_END,
 		Basis(Vector3.UP, deg_to_rad(float(last["yaw"])))
 	))
 
@@ -64,7 +64,7 @@ func _build() -> void:
 	# every `!s<n>` destination, because a stage a player restarts from a standstill is
 	# a chain that begins at run speed rather than at whatever the stages before it
 	# built. The surf bonus declares nothing: it is a drop onto a bank, not a jump.
-	add_course("main", DotTimerTrack.MAIN, G2GReach.Kind.CHAIN, bodies)
+	add_course("main", DotTimerTrack.MAIN, AirdriftReach.Kind.CHAIN, bodies)
 
 	_build_bonus()
 	_build_ridge()
@@ -74,82 +74,82 @@ func _build() -> void:
 
 ## Bonus 2, `the ridge`. See [constant RIDGE_SECTIONS].
 func _build_ridge() -> void:
-	var bodies: Array = [G2GGeometry.box(
+	var bodies: Array = [AirdriftGeometry.box(
 		self, Vector3(RIDGE_X, FLOOR_Y - BLOCK_THICKNESS * 0.5, START_Z),
-		Vector3(256.0, BLOCK_THICKNESS, RIDGE_PAD_LENGTH), G2GGeometry.ROLE_START
+		Vector3(256.0, BLOCK_THICKNESS, RIDGE_PAD_LENGTH), AirdriftGeometry.ROLE_START
 	)]
 
 	for block: Dictionary in ridge_blocks():
-		bodies.append(G2GGeometry.box(
+		bodies.append(AirdriftGeometry.box(
 			self,
 			Vector3(RIDGE_X, float(block["y"]) - BLOCK_THICKNESS * 0.5,
 				float(block["near"]) - BLOCK_LENGTH * 0.5),
 			Vector3(float(block["width"]), BLOCK_THICKNESS, BLOCK_LENGTH),
 			# The first block of each section after the first carries a stage line and is
 			# drawn in the finish colour, as the main route's are: a split a player can see.
-			G2GGeometry.ROLE_END if bool(block["stage_line"]) else G2GGeometry.ROLE_BONUS
+			AirdriftGeometry.ROLE_END if bool(block["stage_line"]) else AirdriftGeometry.ROLE_BONUS
 		))
 
 	var pad := ridge_pad()
-	bodies.append(G2GGeometry.box(
+	bodies.append(AirdriftGeometry.box(
 		self, Vector3(RIDGE_X, pad.y - BLOCK_THICKNESS * 0.5, pad.z),
-		Vector3(256.0, BLOCK_THICKNESS, 384.0), G2GGeometry.ROLE_END
+		Vector3(256.0, BLOCK_THICKNESS, 384.0), AirdriftGeometry.ROLE_END
 	))
 
 	# RUN: every gap is a jump from the lip at run speed, which is what the route
 	# promises and what `headless_run` drives a bot along to prove it.
-	add_course("the ridge", DotTimerTrack.of_bonus(2), G2GReach.Kind.RUN, bodies)
+	add_course("the ridge", DotTimerTrack.of_bonus(2), AirdriftReach.Kind.RUN, bodies)
 
 
 ## Bonus 3, `the weave`. See [constant WEAVE_SECTIONS].
 func _build_weave() -> void:
-	var bodies: Array = [G2GGeometry.box(
+	var bodies: Array = [AirdriftGeometry.box(
 		self, Vector3(WEAVE_X, FLOOR_Y - BLOCK_THICKNESS * 0.5, START_Z),
-		Vector3(256.0, BLOCK_THICKNESS, RIDGE_PAD_LENGTH), G2GGeometry.ROLE_START
+		Vector3(256.0, BLOCK_THICKNESS, RIDGE_PAD_LENGTH), AirdriftGeometry.ROLE_START
 	)]
 
 	for block: Dictionary in weave_blocks():
 		var centre: Vector3 = block["centre"]
 		var extent: Vector2 = block["extent"]
-		bodies.append(G2GGeometry.box(
+		bodies.append(AirdriftGeometry.box(
 			self, Vector3(centre.x, centre.y - BLOCK_THICKNESS * 0.5, centre.z),
 			Vector3(extent.x, BLOCK_THICKNESS, extent.y),
-			G2GGeometry.ROLE_END if bool(block["stage_line"]) else G2GGeometry.ROLE_BONUS
+			AirdriftGeometry.ROLE_END if bool(block["stage_line"]) else AirdriftGeometry.ROLE_BONUS
 		))
 
 	var pad := weave_pad()
-	bodies.append(G2GGeometry.box(
+	bodies.append(AirdriftGeometry.box(
 		self, Vector3(pad.x, pad.y - BLOCK_THICKNESS * 0.5, pad.z),
-		Vector3(256.0, BLOCK_THICKNESS, 384.0), G2GGeometry.ROLE_END
+		Vector3(256.0, BLOCK_THICKNESS, 384.0), AirdriftGeometry.ROLE_END
 	))
 
-	add_course("the weave", DotTimerTrack.of_bonus(3), G2GReach.Kind.RUN, bodies)
+	add_course("the weave", DotTimerTrack.of_bonus(3), AirdriftReach.Kind.RUN, bodies)
 
 
 ## Bonus 4, `the bend`. See [constant BEND_SECTIONS].
 func _build_bend() -> void:
-	var bodies: Array = [G2GGeometry.box(
+	var bodies: Array = [AirdriftGeometry.box(
 		self, Vector3(BEND_X, FLOOR_Y - BLOCK_THICKNESS * 0.5, START_Z),
-		Vector3(256.0, BLOCK_THICKNESS, RIDGE_PAD_LENGTH), G2GGeometry.ROLE_START
+		Vector3(256.0, BLOCK_THICKNESS, RIDGE_PAD_LENGTH), AirdriftGeometry.ROLE_START
 	)]
 
 	for block: Dictionary in bend_blocks():
 		var centre: Vector3 = block["centre"]
-		bodies.append(G2GGeometry.box(
+		bodies.append(AirdriftGeometry.box(
 			self, Vector3(centre.x, centre.y - BLOCK_THICKNESS * 0.5, centre.z),
 			Vector3(float(block["width"]), BLOCK_THICKNESS, BEND_BLOCK_LENGTH),
-			G2GGeometry.ROLE_END if bool(block["stage_line"]) else G2GGeometry.ROLE_BONUS,
+			AirdriftGeometry.ROLE_END if bool(block["stage_line"]) else AirdriftGeometry.ROLE_BONUS,
 			Basis(Vector3.UP, deg_to_rad(float(block["yaw"])))
 		))
 
 	var pad := bend_pad()
-	bodies.append(G2GGeometry.box(
+	bodies.append(AirdriftGeometry.box(
 		self, Vector3(pad["centre"].x, pad["centre"].y - BLOCK_THICKNESS * 0.5, pad["centre"].z),
-		Vector3(256.0, BLOCK_THICKNESS, 384.0), G2GGeometry.ROLE_END,
+		Vector3(256.0, BLOCK_THICKNESS, 384.0), AirdriftGeometry.ROLE_END,
 		Basis(Vector3.UP, deg_to_rad(float(pad["yaw"])))
 	))
 
-	add_course("the bend", DotTimerTrack.of_bonus(4), G2GReach.Kind.RUN, bodies)
+	add_course("the bend", DotTimerTrack.of_bonus(4), AirdriftReach.Kind.RUN, bodies)
 
 
 ## The bonus: a two-ramp surf descent onto a pad.
@@ -166,16 +166,16 @@ func _build_bonus() -> void:
 	# player on the MAIN track sees is the bonus. A bonus is a thing you go and find.
 	var x := BONUS_X
 
-	G2GGeometry.box(
+	AirdriftGeometry.box(
 		self, Vector3(x, FLOOR_Y + 1024.0 - BLOCK_THICKNESS * 0.5, START_Z),
-		Vector3(512.0, BLOCK_THICKNESS, 512.0), G2GGeometry.ROLE_BONUS
+		Vector3(512.0, BLOCK_THICKNESS, 512.0), AirdriftGeometry.ROLE_BONUS
 	)
 
 	# Two ramps facing each other, which is what a surf section is: a player rides the
 	# face of one, crosses, and rides the other.
 	for i in range(2):
 		var side := 1.0 if i == 0 else -1.0
-		G2GGeometry.ramp(
+		AirdriftGeometry.ramp(
 			self,
 			Vector3(x + side * 384.0, FLOOR_Y + 320.0, START_Z - 1536.0),
 			Vector3(64.0, 1536.0, 2560.0),
@@ -183,12 +183,12 @@ func _build_bonus() -> void:
 			# is a 40-degree turn (45 was both, which is how it came to be standable).
 			side * (90.0 - BONUS_RAMP_PITCH),
 			Vector3.FORWARD,
-			G2GGeometry.ROLE_RAMP
+			AirdriftGeometry.ROLE_RAMP
 		)
 
-	G2GGeometry.box(
+	AirdriftGeometry.box(
 		self, Vector3(x, FLOOR_Y - 384.0 - BLOCK_THICKNESS * 0.5, START_Z - 3072.0),
-		Vector3(768.0, BLOCK_THICKNESS, 768.0), G2GGeometry.ROLE_END
+		Vector3(768.0, BLOCK_THICKNESS, 768.0), AirdriftGeometry.ROLE_END
 	)
 
 

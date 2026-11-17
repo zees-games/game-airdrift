@@ -5,11 +5,11 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("g2gfast — imported map")
+	print("Airdrift — imported map")
 	print("")
 
 	# Every map under maps/imported/, not one this file names. A suite with its own
-	# copy of the list is the bug the discovery in G2GGame exists to avoid.
+	# copy of the list is the bug the discovery in AirdriftGame exists to avoid.
 	var ids := _imported_ids()
 	if ids.is_empty():
 		print("nothing in maps/imported/ — nothing to check")
@@ -49,12 +49,12 @@ func _run() -> void:
 
 func _test_loads(manifest_path: String) -> void:
 	_section("loading")
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = _map_id
 
-	game = G2GGame.new()
+	game = AirdriftGame.new()
 	game.config = config
 	add_child(game)
 	for _i in range(120):
@@ -82,14 +82,14 @@ func _test_pits_land_at_their_destination() -> void:
 		_check(true, "a listed gated course is finished by walking its gates", "no run to time")
 		_done()
 		return
-	var bot: G2GPlayer = game.players.get(&"bot")
+	var bot: AirdriftPlayer = game.players.get(&"bot")
 	if bot == null:
 		bot = game.add_player(&"bot", "Bot", true)
 		bot.sampler = null
 	var timer := bot.timer
 	var pits: Array[DotTimerZone] = []
 	for pit in zones.of_kind(DotTimerZone.Kind.RESPAWN, DotTimerTrack.MAIN):
-		if pit.payload.has(G2GBspMap.SENDS_TO):
+		if pit.payload.has(AirdriftBspMap.SENDS_TO):
 			pits.append(pit)
 	var landed: Array = []
 	var hook := func(pid: StringName, zone: DotTimerZone) -> void:
@@ -121,7 +121,7 @@ func _test_pits_land_at_their_destination() -> void:
 		# A pit whose middle lies in another pit's volume fires whichever the index finds first; that overlap is the map's,
 		# so the sample says only that SOME destination-carrying pit took the player exactly where it aims.
 		if landed.is_empty() or landed[0][0] != pit:
-			if landed.is_empty() or not (landed[0][0] as DotTimerZone).payload.has(G2GBspMap.SENDS_TO):
+			if landed.is_empty() or not (landed[0][0] as DotTimerZone).payload.has(AirdriftBspMap.SENDS_TO):
 				continue
 		sampled += 1
 		var why := ""
@@ -138,8 +138,8 @@ func _test_pits_land_at_their_destination() -> void:
 					held.append("start %d" % z2.track)
 			why = "stopped the run %s %s" % [held, reasons]
 		if why != "":
-			bad.append("%s -> %s: %s" % [str(G2GUnits.vector_to_units(pit.centre()).round()),
-				str(G2GUnits.vector_to_units(pit.destination).round()), why])
+			bad.append("%s -> %s: %s" % [str(AirdriftUnits.vector_to_units(pit.centre()).round()),
+				str(AirdriftUnits.vector_to_units(pit.destination).round()), why])
 	timer.run_stopped.disconnect(on_stop)
 	_check(bad.is_empty(), "a sampled pit lands at its destination with the run kept",
 		"%d of %d: %s" % [bad.size(), sampled, "; ".join(bad.slice(0, 3))])
@@ -207,7 +207,7 @@ const ROUTE_SECONDS := 300.0
 
 ## A bot runs the map from its main spawn to its finish on the imported collision, following the route in `maps/routes/<id>.json` (`g2g-maps-1`).
 ## The one check about the whole way: the zone checks can pass with a block missing, a gap nobody can clear, or a solid not where it is drawn.
-## No put-back by a pit on the way; a map with no route file says so and passes (see game/g2g_route_bot.gd and `tools/route_plan.py`).
+## No put-back by a pit on the way; a map with no route file says so and passes (see game/airdrift_route_bot.gd and `tools/route_plan.py`).
 func _test_runs_its_route() -> void:
 	_section("route")
 	# The route bot lands on a block and runs to its lip, and the recording is that bot's: a sinking block (a door, or a
@@ -231,7 +231,7 @@ func _test_runs_its_route() -> void:
 		_done()
 		return
 
-	var bot: G2GPlayer = game.players.get(&"bot")
+	var bot: AirdriftPlayer = game.players.get(&"bot")
 	if bot == null:
 		bot = game.add_player(&"bot", "Bot", true)
 		bot.sampler = null
@@ -245,7 +245,7 @@ func _test_runs_its_route() -> void:
 		match zone.kind:
 			DotTimerZone.Kind.RESPAWN, DotTimerZone.Kind.SLAY:
 				if put_back.is_empty():
-					put_back.append(str(G2GUnits.vector_to_units(bot.global_position).round()))
+					put_back.append(str(AirdriftUnits.vector_to_units(bot.global_position).round()))
 			DotTimerZone.Kind.TELEPORT:
 				router.teleported.call_deferred()
 	var on_finish := func(run: DotTimerRun) -> void:
@@ -267,7 +267,7 @@ func _test_runs_its_route() -> void:
 	game.timers.effect_requested.disconnect(on_effect)
 	bot.timer.run_finished.disconnect(on_finish)
 
-	var at := str(G2GUnits.vector_to_units(bot.controller.state.position).round())
+	var at := str(AirdriftUnits.vector_to_units(bot.controller.state.position).round())
 	if not finished.is_empty():
 		print("        finished in %.2f s over %d points, %d ticks surfing" % [finished[0], points.size(), router.surfed])
 	_check(not finished.is_empty() and put_back.is_empty(), "a bot runs it start to finish on its route",
@@ -301,7 +301,7 @@ func _test_follows_its_recording() -> void:
 		_check(true, "and a recording it cannot follow is reported where it leaves the line", why[0])
 		_done()
 		return
-	var bot: G2GPlayer = game.players.get(&"bot")
+	var bot: AirdriftPlayer = game.players.get(&"bot")
 	if bot == null:
 		bot = game.add_player(&"bot", "Bot", true)
 		bot.sampler = null
@@ -313,7 +313,7 @@ func _test_follows_its_recording() -> void:
 
 	var lifted := DotTimerReplay.from_bytes(replay.to_bytes()).value as DotTimerReplay
 	for i in range(LIFT_FROM_FRAME, lifted.frames.size()):
-		lifted.frames[i].position.y += G2GUnits.to_metres(LIFT_UNITS)
+		lifted.frames[i].position.y += AirdriftUnits.to_metres(LIFT_UNITS)
 	var off: Dictionary = await ReplayFollow.drive(game, bot, lifted, replay.duration() * 1.2)
 	var left: Dictionary = off["left_at"]
 	print("        lifted from frame %d: %s" % [LIFT_FROM_FRAME, ReplayFollow.summary(off)])
@@ -336,13 +336,13 @@ const SURF_PERTURBED_ARRIVING := 3
 ## A map with no cache passes both; a failure after a movement or collision change is a stale cache: re-run `tools/surf_plan.gd`.
 func _test_surfs_from_its_cache() -> void:
 	_section("surf bot")
-	var path := G2GSurfCourse.cache_dir(_map_id)
-	if not G2GSurfCourse.has_cache(_map_id):
+	var path := AirdriftSurfCourse.cache_dir(_map_id)
+	if not AirdriftSurfCourse.has_cache(_map_id):
 		_check(true, "the surf simulator is the motor", "no surf cache")
 		_check(true, "a surf bot rides a stage from its cache into the next", "no surf cache")
 		_done()
 		return
-	var stages: Dictionary = G2GSurfCourse.read_cache(_map_id).get("stages", {})
+	var stages: Dictionary = AirdriftSurfCourse.read_cache(_map_id).get("stages", {})
 	var numbers: Array = stages.keys().map(func(k: String) -> int: return int(k))
 	numbers.sort()
 	if numbers.is_empty():
@@ -353,7 +353,7 @@ func _test_surfs_from_its_cache() -> void:
 	var number: int = numbers[0]
 	var data: Dictionary = stages[str(number)]
 	var why: Array = []
-	var course: DotBotSurfCourse = G2GSurfCourse.for_stage(game, number, why)
+	var course: DotBotSurfCourse = AirdriftSurfCourse.for_stage(game, number, why)
 	if course == null:
 		_check(false, "the surf simulator is the motor", why[0])
 		_check(false, "a surf bot rides a stage from its cache into the next", why[0])
@@ -361,7 +361,7 @@ func _test_surfs_from_its_cache() -> void:
 		return
 	if game.mechanics != null:
 		game.mechanics.blocks.clear()
-	var bot: G2GPlayer = game.players.get(&"bot")
+	var bot: AirdriftPlayer = game.players.get(&"bot")
 	if bot == null:
 		bot = game.add_player(&"bot", "Bot", true)
 		bot.sampler = null
@@ -378,7 +378,7 @@ func _test_surfs_from_its_cache() -> void:
 		"" if bad.is_empty() else "; ".join(bad.map(func(c: Array) -> String: return "%s %s" % [c[1], c[2]])))
 
 	var pilot := DotBotSurfPilot.new()
-	pilot.load_stage(data, G2GUnits.METRES_PER_UNIT)
+	pilot.load_stage(data, AirdriftUnits.METRES_PER_UNIT)
 	pilot.sim = sim
 	pilot.score = course.score
 	var result: Dictionary = await SurfPlan.ride_live(game, bot, course, pilot, base, 1 + SURF_PERTURBED, 7000 + number, true)
@@ -399,7 +399,7 @@ func _test_surfs_from_its_cache() -> void:
 func _test_geometry() -> void:
 	_section("geometry")
 	var node := game.current_map_node()
-	_check(node is G2GBspMap, "the map node is a G2GBspMap")
+	_check(node is AirdriftBspMap, "the map node is a AirdriftBspMap")
 	var mi := node.get_node_or_null("World") as MeshInstance3D
 	_check(mi != null and mi.mesh != null, "it built a mesh")
 	if mi == null or mi.mesh == null:
@@ -418,7 +418,7 @@ func _test_geometry() -> void:
 				or String(child.name).begins_with("Sky")) \
 				and (child as MeshInstance3D).mesh != null:
 			drawn += (child as MeshInstance3D).mesh.get_surface_count()
-	var listed: int = (node as G2GBspMap).manifest.get("surfaces", []).size()
+	var listed: int = (node as AirdriftBspMap).manifest.get("surfaces", []).size()
 	_check(drawn == listed, "and every surface the manifest lists is drawn",
 		"%d of %d" % [drawn, listed])
 	_geometry_floors(node)
@@ -433,8 +433,8 @@ func _geometry_floors(node: Node) -> void:
 	# and Godot's front face is clockwise from the viewer, a cross product pointing AWAY from them.
 	var upside_down := PackedStringArray()
 	var world_surfaces: Array[Dictionary] = []
-	for s: Dictionary in (node as G2GBspMap).manifest.get("surfaces", []):
-		if G2GBspMap._family(s) == "World" and int(s.get("index_count", 0)) > 0 \
+	for s: Dictionary in (node as AirdriftBspMap).manifest.get("surfaces", []):
+		if AirdriftBspMap._family(s) == "World" and int(s.get("index_count", 0)) > 0 \
 				and int(s.get("vertex_count", 0)) > 0:
 			world_surfaces.append(s)
 	var at := 0
@@ -468,7 +468,7 @@ func _geometry_floors(node: Node) -> void:
 func _geometry_props_and_sky(node: Node) -> void:
 	# Static props are drawn: 17 of the 26 maps place them. The count DRAWN is from the models read,
 	# the count PLACED from the lump; props placed and none drawn is an importer that stopped reading them.
-	var manifest_props: Dictionary = (node as G2GBspMap).manifest.get("static_props", {})
+	var manifest_props: Dictionary = (node as AirdriftBspMap).manifest.get("static_props", {})
 	var carried := int(manifest_props.get("placed", 0)) - int(manifest_props.get("stock_models", 0))
 	var prop_surfaces := 0
 	for child in node.get_children():
@@ -490,11 +490,11 @@ func _geometry_props_and_sky(node: Node) -> void:
 	# [b]And a 3D skybox is a backdrop, not a miniature.[/b] Ten maps have one;
 	# its faces were drawn at a sixteenth of their size where they were compiled and no
 	# backdrop at all. Drawn, they are their own `Sky` instances, scaled about the camera.
-	var sky: Variant = (node as G2GBspMap).manifest.get("skybox", null)
+	var sky: Variant = (node as AirdriftBspMap).manifest.get("skybox", null)
 	var sky_node := node.get_node_or_null("Sky") as MeshInstance3D
 	# "Has one" is read from the lighting block's sky_camera, a second code path, so a
 	# skybox the importer stopped handling at all is a failure and not a map without one.
-	var has_camera := ((node as G2GBspMap).manifest.get("lighting", {}) as Dictionary) \
+	var has_camera := ((node as AirdriftBspMap).manifest.get("lighting", {}) as Dictionary) \
 		.has("sky_camera")
 	var told_off := sky is Dictionary and (not bool((sky as Dictionary).get("drawn", true))
 		or int((sky as Dictionary).get("faces", 0)) == 0)
@@ -519,7 +519,7 @@ func _geometry_props_and_sky(node: Node) -> void:
 	if sky is Dictionary and bool((sky as Dictionary).get("drawn", true)) and sky_things > 0:
 		var reach: Array = (sky as Dictionary).get("reach_units", [])
 		var drawn_scale := float((sky as Dictionary).get("drawn_scale", INF))
-		visible = reach.size() == 2 and G2GUnits.to_metres(float(reach[0])) <= 4000.0 \
+		visible = reach.size() == 2 and AirdriftUnits.to_metres(float(reach[0])) <= 4000.0 \
 			and drawn_scale <= float((sky as Dictionary).get("scale", 0.0))
 		reach_detail = "reach %s u at %s x (the mapper's %s)" % [
 			str(reach), str(drawn_scale), str((sky as Dictionary).get("scale"))]
@@ -540,7 +540,7 @@ func _geometry_size(mi: MeshInstance3D, mesh: Mesh) -> void:
 	_check(has_uv2, "and a second UV set on every surface, for the baked lighting")
 
 	var aabb := mi.get_aabb()
-	var units := aabb.size / G2GUnits.METRES_PER_UNIT
+	var units := aabb.size / AirdriftUnits.METRES_PER_UNIT
 	# Source's limit is +/-16384 units, so a map is at most 32768 across; ten times that means the unit
 	# ratio was applied twice or not at all. The LONGEST side, not x: bhop_grove is one corridor 704
 	# across and 32,192 long.

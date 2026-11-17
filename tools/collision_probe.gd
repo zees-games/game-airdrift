@@ -1,7 +1,7 @@
 extends Node3D
 
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 
 ## Drops the player's own hull onto an imported map, everywhere, and counts what it
 ## falls through.
@@ -60,7 +60,7 @@ func _ready() -> void:
 		FileAccess.open("%s/%s.bin" % [dir, id], FileAccess.WRITE).store_buffer(blob)
 		path = "%s/%s.json" % [dir, id]
 
-	var map := G2GBspMap.new()
+	var map := AirdriftBspMap.new()
 	add_child(map)
 	map.build_from_path(path)
 
@@ -69,9 +69,9 @@ func _ready() -> void:
 
 	var points := _sample_points(map)
 	var space := get_viewport().world_3d.direct_space_state
-	var radius := G2GUnits.to_metres(HULL_RADIUS_UNITS)
-	var height := G2GUnits.to_metres(HULL_HEIGHT_UNITS)
-	var drop := G2GUnits.to_metres(DROP_UNITS)
+	var radius := AirdriftUnits.to_metres(HULL_RADIUS_UNITS)
+	var height := AirdriftUnits.to_metres(HULL_HEIGHT_UNITS)
+	var drop := AirdriftUnits.to_metres(DROP_UNITS)
 
 	var shape := CapsuleShape3D.new()
 	shape.radius = radius
@@ -121,7 +121,7 @@ func _ready() -> void:
 ##
 ## Upward-facing because a player stands on those, and they are exactly the surfaces
 ## whose solidity is a thing a player finds out about at speed.
-func _sample_points(map: G2GBspMap) -> Array:
+func _sample_points(map: AirdriftBspMap) -> Array:
 	var mi := map.get_node_or_null("World") as MeshInstance3D
 	if mi == null or mi.mesh == null:
 		return []

@@ -2,21 +2,21 @@ extends "headless_presentation_stubs.gd"
 
 ## Preloads, state and helpers shared by the presentation suite files.
 
-const G2GParty := preload("../game/g2g_party.gd")
-const G2GWeaponIcons := preload("../game/g2g_weapon_icons.gd")
-const G2GPresentation := preload("../game/g2g_presentation.gd")
-const G2GVote := preload("../game/g2g_vote.gd")
-const G2GRig := preload("../game/g2g_rig.gd")
-const G2GCamera := preload("../game/g2g_camera.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GHud := preload("../game/g2g_hud.gd")
-const G2GMapCatalogue := preload("../game/g2g_map_catalogue.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
-const G2GBindings := preload("../game/g2g_bindings.gd")
-const G2GFlashlight := preload("../game/g2g_flashlight.gd")
-const G2GMenuPages := preload("../game/ui/g2g_menu_pages.gd")
-const G2GClient := preload("../game/g2g_client.gd")
+const AirdriftParty := preload("../game/airdrift_party.gd")
+const AirdriftWeaponIcons := preload("../game/airdrift_weapon_icons.gd")
+const AirdriftPresentation := preload("../game/airdrift_presentation.gd")
+const AirdriftVote := preload("../game/airdrift_vote.gd")
+const AirdriftRig := preload("../game/airdrift_rig.gd")
+const AirdriftCamera := preload("../game/airdrift_camera.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftHud := preload("../game/airdrift_hud.gd")
+const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
+const AirdriftBindings := preload("../game/airdrift_bindings.gd")
+const AirdriftFlashlight := preload("../game/airdrift_flashlight.gd")
+const AirdriftMenuPages := preload("../game/ui/airdrift_menu_pages.gd")
+const AirdriftClient := preload("../game/airdrift_client.gd")
 
 ## Checks a section declined to run, counted so the total still adds up to [constant CHECKS].
 var _skipped := 0
@@ -24,8 +24,8 @@ var _entered := 0
 var _completed := 0
 
 
-func _make() -> G2GPresentation:
-	var p := G2GPresentation.new()
+func _make() -> AirdriftPresentation:
+	var p := AirdriftPresentation.new()
 	p.name = "P%d" % _entered
 	add_child(p)
 	p.setup()
@@ -72,7 +72,7 @@ func _drawn_by(node: Node, mask: int) -> int:
 
 
 ## The real menu as the client builds it: dot-menu's, with this game's keys and pages.
-func _menu_for(p: G2GPresentation, host: Node) -> DotMenu:
+func _menu_for(p: AirdriftPresentation, host: Node) -> DotMenu:
 	var menu := DotMenu.new()
 	menu.settings = p.settings
 	menu.bindings = p.bindings
@@ -84,7 +84,7 @@ func _menu_for(p: G2GPresentation, host: Node) -> DotMenu:
 	menu.scoreboard_action = &"g2g_scoreboard"
 	add_child(menu)
 	var _set := menu.setup()
-	G2GMenuPages.install(menu, host)
+	AirdriftMenuPages.install(menu, host)
 	return menu
 
 

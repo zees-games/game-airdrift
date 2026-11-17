@@ -2,16 +2,16 @@ extends DotGameCheckSuite
 
 ## Constants, state and the lighting section of headless_imported.
 
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GLighting := preload("../game/g2g_lighting.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
-const G2GStockSubstitutes := preload("../game/g2g_stock_substitutes.gd")
-const RouteBot := preload("../game/g2g_route_bot.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftLighting := preload("../game/airdrift_lighting.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
+const AirdriftStockSubstitutes := preload("../game/airdrift_stock_substitutes.gd")
+const RouteBot := preload("../game/airdrift_route_bot.gd")
 const ReplayFollow := preload("../tools/replay_follow.gd")
-const G2GSurfCourse := preload("../game/g2g_surf_course.gd")
+const AirdriftSurfCourse := preload("../game/airdrift_surf_course.gd")
 const SurfPlan := preload("../tools/surf_plan.gd")
 
 ## Checks a map imported from a Source .bsp: it loads, it is the right size, it is lit, and a player put on it stays on it.
@@ -47,7 +47,7 @@ const FALLING_ARRIVALS := {"surf_rookie": ["stage 2"]}
 ## Asserted both ways: a listed map must report exactly these tracks, an unlisted map none.
 const BONUSES_WITHOUT_PITS := {}
 
-## The least share of a map's triangles drawn in a real texture (its pakfile's, or a Kenney stand-in from `G2GStockSubstitutes`), for the maps whose stand-ins have been chosen and looked at (`[g2g-maps-stock-1]`).
+## The least share of a map's triangles drawn in a real texture (its pakfile's, or a Kenney stand-in from `AirdriftStockSubstitutes`), for the maps whose stand-ins have been chosen and looked at (`[g2g-maps-stock-1]`).
 const STOCK_DRAWN := {
 	"bhop_aztec": 0.66,  # 69.5% on 2026-10-09; 0% before: sandstone courses, looked at along the route
 	"surf_beginner2": 0.89,  # 94.7% on 2026-10-09; 2.6% before: planks, rock, sand, looked at along the route
@@ -170,7 +170,7 @@ var _map_id: StringName = &""
 
 var _entered := 0
 var _completed := 0
-var game: G2GGame = null
+var game: AirdriftGame = null
 
 
 func _section(title: String) -> void:
@@ -203,7 +203,7 @@ func _imported_ids() -> Array[StringName]:
 
 func _test_lighting() -> void:
 	_section("lighting")
-	var node := game.current_map_node() as G2GBspMap
+	var node := game.current_map_node() as AirdriftBspMap
 	var lm: Dictionary = node.manifest.get("lightmap", {})
 	var path: String = "res://maps/imported/%s/%s" % [_map_id, lm.get("file", "")]
 	_check(ResourceLoader.exists(path), "the baked lightmap atlas is an imported resource", path)
@@ -234,7 +234,7 @@ func _test_lighting() -> void:
 	# And what a player sees from the spawn is lit. No headless run can render, so this estimates the frame: rays from the eye
 	# through the drawn meshes, each hit what the shader would draw there (albedo, baked light, ambient), each miss the sky.
 	# See [constant DARK_SPAWNS]. An estimate cannot tell bhop_badges' dark spawn room from its lit black-walled sections, so its zones file names the start.
-	var view := _spawn_view_luminance(node as G2GBspMap, world)
+	var view := _spawn_view_luminance(node as AirdriftBspMap, world)
 	var listed_dark := DARK_SPAWNS.has(String(_map_id))
 	print("  spawn view %s: %.3f (display %.0f of 255)" % [_map_id, view, pow(view, 1.0 / 2.2) * 255.0])
 	_check((view >= SPAWN_VIEW_FLOOR) != listed_dark,
@@ -246,7 +246,7 @@ func _test_lighting() -> void:
 
 
 ## Painted colours, and brush entities drawn.
-func _light_prototype(node: G2GBspMap) -> void:
+func _light_prototype(node: AirdriftBspMap) -> void:
 	# A texture the map did not carry is painted its own measured colour, not a role grey.
 	# Most of a map is such surfaces, so a regression turns every map back into four greys, which no other
 	# check sees (a grey surface is a correctly configured material). Most, not all: a light panel vrad measured as black keeps its role colour.
@@ -270,7 +270,7 @@ func _light_prototype(node: G2GBspMap) -> void:
 
 
 ## Own textures and Kenney stand-ins; returns [share, floor_share, slashed].
-func _light_textures(node: G2GBspMap) -> Array:
+func _light_textures(node: AirdriftBspMap) -> Array:
 	# A texture the pakfile carried is drawn, not replaced by the prototype grid.
 	# Two spellings were unread (a leading `/`, and a `$basetexture` with a space) and nothing said so, since a prototype surface is a correctly configured material.
 	# A name with the slash still on it fails every map; the share is asserted for the maps in [constant OWN_TEXTURES].
@@ -296,7 +296,7 @@ func _light_textures(node: G2GBspMap) -> Array:
 	for entry: Dictionary in node.manifest.get("surfaces", []):
 		if bool(entry.get("prop", false)) or not bool(entry.get("prototype", false)):
 			continue
-		if not G2GStockSubstitutes.for_material(str(entry.get("material", ""))).is_empty():
+		if not AirdriftStockSubstitutes.for_material(str(entry.get("material", ""))).is_empty():
 			stood_in += int(entry.get("index_count", 0)) / 3
 	var drawn := float(own + stood_in) / float(maxi(tris, 1))
 	var drawn_floor: float = STOCK_DRAWN.get(String(_map_id), 0.0)
@@ -308,7 +308,7 @@ func _light_textures(node: G2GBspMap) -> Array:
 
 
 ## Nothing on the grid without a reason, and untextured water drawn as water.
-func _light_unlisted_and_water(node: G2GBspMap) -> void:
+func _light_unlisted_and_water(node: AirdriftBspMap) -> void:
 	# And what is still on the grid is there for a written reason: every triangle with no texture, not water, no stand-in
 	# and no `none` entry in textures/stock/substitutes.json is a material nobody looked at, under
 	# [constant UNLISTED_LIMIT] of the map. A new unknown material family fails here, not on somebody's screen.
@@ -321,9 +321,9 @@ func _light_unlisted_and_water(node: G2GBspMap) -> void:
 		if entry.get("texture", null) is String and not str(entry["texture"]).is_empty():
 			continue
 		var material := str(entry.get("material", ""))
-		if G2GBspMap.is_water_material(material) \
-				or not G2GStockSubstitutes.for_material(material).is_empty() \
-				or G2GStockSubstitutes.is_listed(material):
+		if AirdriftBspMap.is_water_material(material) \
+				or not AirdriftStockSubstitutes.for_material(material).is_empty() \
+				or AirdriftStockSubstitutes.is_listed(material):
 			continue
 		unlisted += n
 		worst[material] = int(worst.get(material, 0)) + n
@@ -334,14 +334,14 @@ func _light_unlisted_and_water(node: G2GBspMap) -> void:
 		"and nothing it did not carry is on the grid without a reason",
 		"%.1f%% of triangles unlisted, under %.0f%% wanted; most: %s"
 			% [unlisted_share * 100.0, UNLISTED_LIMIT * 100.0, names.slice(0, 4)])
-	# [b]Water that shipped no texture is drawn as water[/b], see g2g_bsp_water.gdshader:
+	# [b]Water that shipped no texture is drawn as water[/b], see airdrift_bsp_water.gdshader:
 	# every such surface in the manifest has the water material on the mesh, and nothing
-	# else does. Armed by skipping the water branch in G2GBspMap._material_for.
+	# else does. Armed by skipping the water branch in AirdriftBspMap._material_for.
 	var water_wanted := 0
 	for entry: Dictionary in node.manifest.get("surfaces", []):
 		if bool(entry.get("prop", false)) or (entry.get("texture", null) is String and not str(entry["texture"]).is_empty()):
 			continue
-		if G2GBspMap.is_water_material(str(entry.get("material", ""))):
+		if AirdriftBspMap.is_water_material(str(entry.get("material", ""))):
 			water_wanted += 1
 	var water_drawn := 0
 	for drawn_node: Node in node.find_children("*", "MeshInstance3D", true, false):
@@ -356,7 +356,7 @@ func _light_unlisted_and_water(node: G2GBspMap) -> void:
 
 
 ## Blend and additive surfaces are drawn as such.
-func _light_blend_additive(node: G2GBspMap) -> void:
+func _light_blend_additive(node: AirdriftBspMap) -> void:
 	# A blend material draws both its textures: `WorldVertexTransition` paints a second texture by vertex alpha,
 	# which travels in its own block (`alpha_offset`) and reaches the shader as COLOR.a, so a drawn blend surface
 	# needs the texture and a varying colour array. [constant BLENDED] names maps that must have one.
@@ -390,7 +390,7 @@ func _light_blend_additive(node: G2GBspMap) -> void:
 
 	# An `$additive` surface is drawn added: drawn opaque, surf_lt_unicorn's see-through rainbow bands were black sheets
 	# with every value correct. Every manifest surface marked `additive` is on the additive shader; [constant ADDITIVE]
-	# names maps that must have some. Armed by taking the additive branch out of G2GBspMap._material_for.
+	# names maps that must have some. Armed by taking the additive branch out of AirdriftBspMap._material_for.
 	var additive_wanted := 0
 	for entry: Dictionary in node.manifest.get("surfaces", []):
 		if bool(entry.get("additive", false)):
@@ -409,8 +409,8 @@ func _light_blend_additive(node: G2GBspMap) -> void:
 
 
 ## The sky is not a blank dome, a packed sky is bound, a black sky is black.
-func _light_sky(node: G2GBspMap, world: WorldEnvironment) -> void:
-	# No blank white dome: the procedural sky's top is the map's `_ambient`; G2GLighting looks up the editor-default ones by sky name.
+func _light_sky(node: AirdriftBspMap, world: WorldEnvironment) -> void:
+	# No blank white dome: the procedural sky's top is the map's `_ambient`; AirdriftLighting looks up the editor-default ones by sky name.
 	var top := Color(0, 0, 0)
 	if world != null and world.environment != null and world.environment.sky != null:
 		var sky_mat := world.environment.sky.sky_material as ProceduralSkyMaterial
@@ -421,7 +421,7 @@ func _light_sky(node: G2GBspMap, world: WorldEnvironment) -> void:
 			% [top, node.manifest.get("lighting", {}).get("sky_name", "")])
 
 	# A sky the map packed is the sky drawn: 36 held maps carry their own six faces (`lighting.sky_faces`).
-	# Passes on a map with none. Armed by taking `_apply_packed_sky` out of G2GBspMap.
+	# Passes on a map with none. Armed by taking `_apply_packed_sky` out of AirdriftBspMap.
 	var faces: Variant = node.manifest.get("lighting", {}).get("sky_faces", null)
 	var packed_ok := true
 	var packed_why := "no packed sky"
@@ -439,11 +439,11 @@ func _light_sky(node: G2GBspMap, world: WorldEnvironment) -> void:
 	_check(packed_ok, "and a sky it packed is the sky drawn", packed_why)
 
 	# And a sky named black is black, horizon included: surf_kitsune names `blacksky` and was drawn under the pale default dome.
-	# Armed by taking `_darken_black_sky` out of G2GLighting.apply; fires on surf_kitsune alone.
+	# Armed by taking `_darken_black_sky` out of AirdriftLighting.apply; fires on surf_kitsune alone.
 	var lit: Dictionary = node.manifest.get("lighting", {})
 	var dark := true
 	var seen := "no sky material"
-	if G2GLighting.is_black_sky(lit) and world != null and world.environment != null:
+	if AirdriftLighting.is_black_sky(lit) and world != null and world.environment != null:
 		var env := world.environment
 		var smat := env.sky.sky_material as ProceduralSkyMaterial if env.sky != null else null
 		var colours: Array[Color] = [env.background_color]
@@ -460,7 +460,7 @@ func _light_sky(node: G2GBspMap, world: WorldEnvironment) -> void:
 ## The estimated linear luminance of the view from a map's main spawn: 8 headings by 3 pitches from eye height, through every drawn World and Props surface.
 ## A hit is what the material draws ([method _surface_albedo]) under the atlas's light; see-through surfaces are passed through; a miss is the sky.
 ## No fog and no tone map, so it reads a little bright, the safe side for a floor.
-func _spawn_view_luminance(node: G2GBspMap, world: WorldEnvironment) -> float:
+func _spawn_view_luminance(node: AirdriftBspMap, world: WorldEnvironment) -> float:
 	var meshes: Array[MeshInstance3D] = []
 	for child in node.find_children("*", "MeshInstance3D", true, false):
 		var mi := child as MeshInstance3D
@@ -609,7 +609,7 @@ func _lightmap_at(mi: MeshInstance3D, surface: int, triangle: int, at: Vector3, 
 
 ## What a ray that hits nothing sees: the packed sky's six faces averaged, or the
 ## procedural sky's top and horizon, or the background colour.
-func _sky_luminance(node: G2GBspMap, world: WorldEnvironment) -> float:
+func _sky_luminance(node: AirdriftBspMap, world: WorldEnvironment) -> float:
 	if world == null or world.environment == null:
 		return 0.0
 	var env := world.environment

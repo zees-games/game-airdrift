@@ -1,19 +1,19 @@
 extends RefCounted
 
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
 
 ## The account-keyed records section of `dedicated.gd`, run against the suite's own server and game.
 
 var s: DotGameCheckSuite
 var server: DotServer
-var game: G2GGame
+var game: AirdriftGame
 var link: Object
 var map_id: StringName
 var store: DotTimerStore
 
 
-func _init(suite: DotGameCheckSuite, srv: DotServer, g: G2GGame) -> void:
+func _init(suite: DotGameCheckSuite, srv: DotServer, g: AirdriftGame) -> void:
 	s = suite
 	server = srv
 	game = g
@@ -48,7 +48,7 @@ func run() -> void:
 
 	# Alice connects, finishes a run, goes.
 	var first: DotClientSession = await _join(9201, 8801, "acct:alice", "Alice")
-	var player: G2GPlayer = game.players.get(&"u8801")
+	var player: AirdriftPlayer = game.players.get(&"u8801")
 	s._check(player != null, "an account connects as u<userid> in the match", str(game.players.keys()))
 	if player == null:
 		s._done()
@@ -122,8 +122,8 @@ func _legacy() -> void:
 	old.player_name = "Old"
 	old.time = 31.0
 	var _put: DotResult = await store.put(old)
-	s._check(G2GGame.is_legacy_key(&"u12") and not G2GGame.is_legacy_key(&"acct:alice") and not G2GGame.is_legacy_key(&"local")
-		and not G2GGame.is_legacy_key(&"user"), "a session-number key is recognised by its shape and an account's is not")
+	s._check(AirdriftGame.is_legacy_key(&"u12") and not AirdriftGame.is_legacy_key(&"acct:alice") and not AirdriftGame.is_legacy_key(&"local")
+		and not AirdriftGame.is_legacy_key(&"user"), "a session-number key is recognised by its shape and an account's is not")
 	var moved := await game.retire_legacy_records()
 	var after: DotResult = await store.top(map_id, DotTimerTrack.MAIN, &"normal", 20)
 	var left_ids: Array = []

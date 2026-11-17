@@ -1,10 +1,10 @@
 extends Node
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
 
 ## Bot soak on the real timer game: N bots ride one map for M simulated minutes through dot-bot's
-## DotBotSoak, fed by dot-spawn's DotSpawnWatch. Bots here are the course riders of g2g_bots.gd.
+## DotBotSoak, fed by dot-spawn's DotSpawnWatch. Bots here are the course riders of airdrift_bots.gd.
 ## Run: ./game.sh soak [map] [minutes] (--trace, plus DotBotSoakConfig flags); writes .godot/test-logs/soak-<map>.json, prints SOAK, exits 1 on failure. No combat: the kill check is off.
 
 const DEFAULT_MAP := &"bhop_g2g_intro"
@@ -16,7 +16,7 @@ const MAX_PLAN_TICKS := 60000
 ## The maps whose zones file documents no finish on purpose; the same list headless_imported exempts.
 const NO_FINISH: Array = preload("res://examples/headless_imported.gd").NOT_COURSES
 
-var _game: G2GGame
+var _game: AirdriftGame
 var _tick := 0
 var _trace := false
 
@@ -86,12 +86,12 @@ func _run() -> void:
 
 ## Builds the game on its first map, then switches to [param map_id]. False once a failure is reported.
 func _boot(map_id: StringName) -> bool:
-	var g2g_config := G2GConfig.new()
-	g2g_config.records_directory = ""
-	g2g_config.map_seconds = 0.0
-	g2g_config.initial_map = &"bhop_g2g_intro"
-	_game = G2GGame.new()
-	_game.config = g2g_config
+	var airdrift_config := AirdriftConfig.new()
+	airdrift_config.records_directory = ""
+	airdrift_config.map_seconds = 0.0
+	airdrift_config.initial_map = &"bhop_g2g_intro"
+	_game = AirdriftGame.new()
+	_game.config = airdrift_config
 	_game.external_tick = true
 	add_child(_game)
 	for _i in range(120):

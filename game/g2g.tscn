@@ -1,6 +1,7 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://game/g2g_client.gd" id="1_client"]
+; Compatibility shim: the client scene under its old Airdrift path, for manifests not yet moved to game/airdrift.tscn.
 
-[node name="G2GClient" type="Node"]
-script = ExtResource("1_client")
+[ext_resource type="PackedScene" path="res://game/airdrift.tscn" id="1_scene"]
+
+[node name="AirdriftClient" instance=ExtResource("1_scene")]

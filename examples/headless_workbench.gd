@@ -3,7 +3,7 @@ extends DotGameCheckSuite
 ## FC's config through the workbench: DotGameWorkbench over the binder's set, an edit, and the "Export changes as defaults" diff.
 ## Run: godot --headless --path . res://examples/headless_workbench.tscn
 
-const G2GConfig := preload("../game/g2g_config.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
 const CHECKS := 9
 const SECTIONS := 1
 
@@ -18,10 +18,10 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("g2gfast: workbench")
+	print("Airdrift: workbench")
 	_section("the workbench over the binder's set")
-	var config := G2GConfig.new()
-	var binder := G2GConfig.make_binder(config)
+	var config := AirdriftConfig.new()
+	var binder := AirdriftConfig.make_binder(config)
 	_check(binder.load_layers().ok, "defaults load")
 	var wb := DotGameWorkbench.new()
 	wb.panel_mode = 2

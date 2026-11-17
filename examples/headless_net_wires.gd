@@ -1,23 +1,23 @@
 extends DotGameCheckSuite
 
-const G2GAvatars := preload("../game/g2g_avatars.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GEvents := preload("../game/net/g2g_events.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GKillView := preload("../game/net/g2g_killview.gd")
-const G2GMovement := preload("../game/g2g_movement.gd")
-const G2GHunters := preload("../game/g2g_hunters.gd")
-const G2GNetBridge := preload("../game/net/g2g_net_bridge.gd")
-const G2GNetCommand := preload("../game/net/g2g_net_command.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
-const G2GVote := preload("../game/g2g_vote.gd")
-const G2GHud := preload("../game/g2g_hud.gd")
-const G2GModTools := preload("../game/g2g_mod_tools.gd")
-const G2GPlayerNet := preload("../game/net/g2g_player_net.gd")
-const G2GRequest := preload("../game/net/g2g_request.gd")
-const G2GEvent := preload("../game/net/g2g_event.gd")
-const G2GMapCatalogue := preload("../game/g2g_map_catalogue.gd")
+const AirdriftAvatars := preload("../game/airdrift_avatars.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftEvents := preload("../game/net/airdrift_events.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftKillView := preload("../game/net/airdrift_killview.gd")
+const AirdriftMovement := preload("../game/airdrift_movement.gd")
+const AirdriftHunters := preload("../game/airdrift_hunters.gd")
+const AirdriftNetBridge := preload("../game/net/airdrift_net_bridge.gd")
+const AirdriftNetCommand := preload("../game/net/airdrift_net_command.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
+const AirdriftVote := preload("../game/airdrift_vote.gd")
+const AirdriftHud := preload("../game/airdrift_hud.gd")
+const AirdriftModTools := preload("../game/airdrift_mod_tools.gd")
+const AirdriftPlayerNet := preload("../game/net/airdrift_player_net.gd")
+const AirdriftRequest := preload("../game/net/airdrift_request.gd")
+const AirdriftEvent := preload("../game/net/airdrift_event.gd")
+const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
 
 const CLIENT_PEER := 2
 const SESSION := 7
@@ -27,12 +27,12 @@ const SNAPSHOT_RATE := 32
 var _entered := 0
 var _completed := 0
 
-var _server_game: G2GGame = null
-var _client_game: G2GGame = null
+var _server_game: AirdriftGame = null
+var _client_game: AirdriftGame = null
 var _server_net: DotNetManager = null
 var _client_net: DotNetManager = null
-var _server_bridge: G2GNetBridge = null
-var _client_bridge: G2GNetBridge = null
+var _server_bridge: AirdriftNetBridge = null
+var _client_bridge: AirdriftNetBridge = null
 
 var _to_client: Array[Dictionary] = []
 var _to_server: Array[Dictionary] = []
@@ -45,22 +45,22 @@ var _tick: int = 0
 ## A kill and the end of a deathmatch round-trip: the killcam's inputs and the podium's rows.
 func _test_end_of_match_wire() -> void:
 	_section("a kill and a match's end over the link")
-	var shot := G2GEvents.read_kill(DotNetReader.new(G2GEvents.write_kill(4097, 12, "deagle", true)))
+	var shot := AirdriftEvents.read_kill(DotNetReader.new(AirdriftEvents.write_kill(4097, 12, "deagle", true)))
 	_check(bool(shot["ok"]) and int(shot["killer"]) == 4097 and int(shot["victim"]) == 12
 			and shot["weapon"] == "deagle" and bool(shot["headshot"]),
 		"a KILL round-trips: killer, victim, weapon and the head", str(shot))
-	var fired := G2GEvents.read_shot(DotNetReader.new(G2GEvents.write_shot(7, "deagle", Vector3(1.5, -2.0, 3000.0))))
+	var fired := AirdriftEvents.read_shot(DotNetReader.new(AirdriftEvents.write_shot(7, "deagle", Vector3(1.5, -2.0, 3000.0))))
 	_check(bool(fired["ok"]) and int(fired["shooter"]) == 7 and fired["weapon"] == "deagle"
 			and (fired["at"] as Vector3).is_equal_approx(Vector3(1.5, -2.0, 3000.0)),
 		"a SHOT round-trips: shooter, weapon and where", str(fired))
 	var flat := PackedFloat32Array()
 	flat.resize(DotKillViewRing.STRIDE * 600)
-	var packed := DotKillViewClip.pack({"v": 1, "f": flat}, {"killer": "Ana", "weapon": "deagle"}, G2GKillView.BYTES)
+	var packed := DotKillViewClip.pack({"v": 1, "f": flat}, {"killer": "Ana", "weapon": "deagle"}, AirdriftKillView.BYTES)
 	var unpacked := DotKillViewClip.unpack(packed)
-	_check(packed.size() <= G2GKillView.BYTES and packed.size() <= G2GEvent.MAX_BODY and bool(unpacked["ok"])
+	_check(packed.size() <= AirdriftKillView.BYTES and packed.size() <= AirdriftEvent.MAX_BODY and bool(unpacked["ok"])
 			and unpacked["info"]["killer"] == "Ana",
 		"a KILLVIEW clip is thinned to fit an event body and round-trips", str(packed.size()))
-	_check(G2GEvent.fits() and G2GRequest.fits(), "KILLVIEW and RESPAWN fit the kind fields")
+	_check(AirdriftEvent.fits() and AirdriftRequest.fits(), "KILLVIEW and RESPAWN fit the kind fields")
 	var rules := DotKillViewRules.new()
 	var names: Array = []
 	var _made := rules.bind_cvars(func(n: String, _v: String, _d: String, _f: int) -> Variant:
@@ -69,11 +69,11 @@ func _test_end_of_match_wire() -> void:
 	_check("mp_killview" in names and not rules.enabled, "mp_killview is bound, and off by default", str(names.size()))
 	var rows := [{"name": "Ana", "kills": 40, "deaths": 3}, {"name": "Bo", "kills": 12, "deaths": 20},
 		{"name": "Cy", "kills": 0, "deaths": 9}, {"name": "Dee", "kills": 0, "deaths": 0}]
-	var over := G2GEvents.read_match_end(DotNetReader.new(G2GEvents.write_match_end(7.0, rows)))
+	var over := AirdriftEvents.read_match_end(DotNetReader.new(AirdriftEvents.write_match_end(7.0, rows)))
 	_check(bool(over["ok"]) and is_equal_approx(float(over["killcam"]), 7.0) and over["rows"].size() == 3
 			and over["rows"][0] == rows[0] and over["rows"][2] == rows[2],
 		"a MATCH_END round-trips: the killcam's seconds and the podium's three rows", str(over))
-	var none := G2GEvents.read_match_end(DotNetReader.new(G2GEvents.write_match_end(0.0, [])))
+	var none := AirdriftEvents.read_match_end(DotNetReader.new(AirdriftEvents.write_match_end(0.0, [])))
 	_check(bool(none["ok"]) and none["rows"].is_empty() and float(none["killcam"]) == 0.0,
 		"and an empty board reads as none")
 	_done()
@@ -83,8 +83,8 @@ func _test_end_of_match_wire() -> void:
 func _test_hit_wire() -> void:
 	_section("a confirmed hit over the link")
 
-	var round_trip := G2GEvents.read_hit(DotNetReader.new(
-		G2GEvents.write_hit(4097, 33.5, Vector3(-9123.25, 412.5, 15000.0), true, false)))
+	var round_trip := AirdriftEvents.read_hit(DotNetReader.new(
+		AirdriftEvents.write_hit(4097, 33.5, Vector3(-9123.25, 412.5, 15000.0), true, false)))
 	_check(bool(round_trip["ok"]) and int(round_trip["victim"]) == 4097
 			and absf(float(round_trip["amount"]) - 33.5) < 0.1
 			and (round_trip["point"] as Vector3).is_equal_approx(Vector3(-9123.25, 412.5, 15000.0))
@@ -118,13 +118,13 @@ func _test_death_wire() -> void:
 	fall.damage = 62.0
 	fall.direction = Vector3(1.0, 0.0, 0.0)
 	fall.headshot = true
-	var carried := G2GEvents.read_death(DotNetReader.new(G2GEvents.write_death(4097, fall)))
+	var carried := AirdriftEvents.read_death(DotNetReader.new(AirdriftEvents.write_death(4097, fall)))
 	var read: DotPlayerDeath = carried.get("death")
 	_check(bool(carried["ok"]) and int(carried["player_id"]) == 4097 and read != null
 			and read.reaction == fall.reaction and read.roll_seed == 9001 and read.headshot
 			and read.direction.distance_to(Vector3(1.0, 0.0, 0.0)) < 0.05,
 		"a DEATH round-trips: the victim and the server's fall", str(carried))
-	var bare := G2GEvents.read_death(DotNetReader.new(G2GEvents.write_death(4097)))
+	var bare := AirdriftEvents.read_death(DotNetReader.new(AirdriftEvents.write_death(4097)))
 	_check(bool(bare["ok"]) and int(bare["player_id"]) == 4097 and not bare.has("death"),
 		"and one without a fall reads as the victim alone", str(bare))
 
@@ -161,7 +161,7 @@ func _test_death_wire() -> void:
 func _test_rules_wire() -> void:
 	_section("what a client may do on its own screen, over the link")
 
-	var round_trip := G2GEvents.read_rules(DotNetReader.new(G2GEvents.write_rules({
+	var round_trip := AirdriftEvents.read_rules(DotNetReader.new(AirdriftEvents.write_rules({
 		"flashlight": false, "thirdperson": true, "commands": [["r", "Back to the start"], ["wr", "Fastest"]],
 	})))
 	_check(
@@ -174,7 +174,7 @@ func _test_rules_wire() -> void:
 	var many: Array = []
 	for i in range(1500):
 		many.append(["command_%04d" % i, "a description long enough to fill the body quickly %d" % i])
-	var big := G2GEvents.read_rules(DotNetReader.new(G2GEvents.write_rules({
+	var big := AirdriftEvents.read_rules(DotNetReader.new(AirdriftEvents.write_rules({
 		"flashlight": false, "thirdperson": false, "commands": many,
 	})))
 	_check(
@@ -186,9 +186,9 @@ func _test_rules_wire() -> void:
 	)
 
 	var junk := DotNetWriter.new()
-	junk.write_string("{not json", G2GEvents.RULES_BYTES)
+	junk.write_string("{not json", AirdriftEvents.RULES_BYTES)
 	_check(
-		not bool(G2GEvents.read_rules(DotNetReader.new(junk.to_bytes()))["ok"]),
+		not bool(AirdriftEvents.read_rules(DotNetReader.new(junk.to_bytes()))["ok"]),
 		"a body that is not a JSON object is refused rather than half-read"
 	)
 
@@ -276,7 +276,7 @@ func _test_voice_wire() -> void:
 	# The client's own voice reaches the server. Armed: a DotVoiceManager with no send_fn captures
 	# and counts frames that go nowhere while every check above, which hands the link bytes, passes.
 	relayed.clear()
-	var extras_script := preload("../game/g2g_client_extras.gd")
+	var extras_script := preload("../game/airdrift_client_extras.gd")
 	var extras: Node = extras_script.new()
 	extras.name = "VoiceExtras"
 	add_child(extras)
@@ -310,5 +310,5 @@ func _done() -> void:
 func _flush() -> void:
 	pass
 
-func _server_player() -> G2GPlayer:
+func _server_player() -> AirdriftPlayer:
 	return null

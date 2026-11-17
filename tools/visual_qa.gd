@@ -2,12 +2,12 @@ extends DotGameVisualQaCapture
 
 ## g2gfast's visual QA capture (the loop is dot-game's docs/visual-qa.md). One item per stock person, recorded frame by frame
 ## at --fps in three views (f a rival's eye 2.5 m in front, t behind-right, o an opponent in front):
-##   person_<letter>  one of the Kenney stock characters (the body and head parts G2GAvatars.stock draws) as the game's
+##   person_<letter>  one of the Kenney stock characters (the body and head parts AirdriftAvatars.stock draws) as the game's
 ##                    DotHumanoidFigure, idling, walking, running, crouching and jumping.
-## g2gfast is third person and its weapons are hitscan with no held model, so there are no weapon items.
+## Airdrift is third person and its weapons are hitscan with no held model, so there are no weapon items.
 ## The outside views and frame saving are dot-game's DotGameVisualQaViews, through DotGameVisualQaCapture.
 
-const G2GAvatars := preload("../game/g2g_avatars.gd")
+const AirdriftAvatars := preload("../game/airdrift_avatars.gd")
 
 const BODY_HEIGHT := 1.8
 const CLIPS: PackedStringArray = ["idle", "walk", "run", "crouch", "jump"]
@@ -53,14 +53,14 @@ func _stage(item: String, _clip: String) -> DotResult:
 		_holder.remove_child(child)
 		child.free()
 	var letter := item.trim_prefix("person_")
-	var avatar := DotAvatar.make(G2GAvatars.SCHEMA_ID)
-	avatar.set_part(G2GAvatars.SLOT_BODY, StringName("body_kenney_" + letter))
-	avatar.set_part(G2GAvatars.SLOT_HEAD, StringName("head_kenney_" + letter))
+	var avatar := DotAvatar.make(AirdriftAvatars.SCHEMA_ID)
+	avatar.set_part(AirdriftAvatars.SLOT_BODY, StringName("body_kenney_" + letter))
+	avatar.set_part(AirdriftAvatars.SLOT_HEAD, StringName("head_kenney_" + letter))
 	_figure = DotHumanoidFigure.new()
 	_figure.name = "Figure"
 	_holder.add_child(_figure)
 	_figure.global_position = Vector3.ZERO
-	_figure.build(G2GAvatars.look_of(avatar, StringName(item)), BODY_HEIGHT)
+	_figure.build(AirdriftAvatars.look_of(avatar, StringName(item)), BODY_HEIGHT)
 	return DotResult.success(item)
 
 

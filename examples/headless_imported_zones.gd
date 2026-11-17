@@ -23,7 +23,7 @@ func _test_zones() -> void:
 
 	# Source sweeps its trigger tests; dot-timer samples a point per tick. A 16-unit plane pit, enough in Source,
 	# is stepped clean over by a player falling at genre speed, who then falls for ever.
-	var thin := zones.thin_zones(G2GUnits.to_metres(3500.0), game.tick_rate)
+	var thin := zones.thin_zones(AirdriftUnits.to_metres(3500.0), game.tick_rate)
 	_check(thin.is_empty(), "and no zone a 3500 u/s player passes through between ticks",
 		"%d thin" % thin.size())
 
@@ -125,8 +125,8 @@ func _test_runnable() -> void:
 	# A tick outside every zone, between the start and everything after it. The run begins on the tick the player LEAVES
 	# the start line, after that tick's zone handling, so stepping straight into the first stage arrives while the run is
 	# IDLE and the split is dropped. An artifact of stepping a timer by hand rather than walking a map.
-	var bounds: Dictionary = (game.current_map_node() as G2GBspMap).manifest.get("bounds", {})
-	var away := G2GUnits.vector_to_metres(Vector3(
+	var bounds: Dictionary = (game.current_map_node() as AirdriftBspMap).manifest.get("bounds", {})
+	var away := AirdriftUnits.vector_to_metres(Vector3(
 		float((bounds.get("max", [0, 0, 0]) as Array)[0]),
 		float((bounds.get("max", [0, 0, 0]) as Array)[1]),
 		float((bounds.get("max", [0, 0, 0]) as Array)[2]))) + Vector3(0.0, 128.0, 0.0)
@@ -242,12 +242,12 @@ func _test_stands_on_it() -> void:
 		var at := bot.controller.state.position
 		_check(not start_zone.contains(at) and at.y > start.y,
 			"and is carried up off its spawn by the push it stands in (SPAWNS_IN_A_PUSH)",
-			"at %s" % [at / G2GUnits.METRES_PER_UNIT])
+			"at %s" % [at / AirdriftUnits.METRES_PER_UNIT])
 	else:
 		var at := bot.controller.state.position
 		_check(start_zone.contains(at), "and comes to rest inside the start zone",
-			"at %s, zone %s..%s" % [at / G2GUnits.METRES_PER_UNIT,
-				start_zone.from / G2GUnits.METRES_PER_UNIT, start_zone.to / G2GUnits.METRES_PER_UNIT])
+			"at %s, zone %s..%s" % [at / AirdriftUnits.METRES_PER_UNIT,
+				start_zone.from / AirdriftUnits.METRES_PER_UNIT, start_zone.to / AirdriftUnits.METRES_PER_UNIT])
 
 	# And it is not shut in: sixteen rays at waist height from where it came to rest, and one has to run 5 m before it meets
 	# anything. 5 and not more because a start room a mapper leaves by a teleport is a closed room too (the smallest here are
@@ -263,8 +263,8 @@ func _test_stands_on_it() -> void:
 	_check(longest >= 5.0, "and is not shut in where it stands",
 		"the longest of 16 rays from the spawn runs %.1f m" % longest)
 
-	var bounds: Dictionary = (node as G2GBspMap).manifest.get("bounds", {})
-	var min_y: float = float((bounds.get("min", [0, -16384, 0]) as Array)[1]) * G2GUnits.METRES_PER_UNIT
+	var bounds: Dictionary = (node as AirdriftBspMap).manifest.get("bounds", {})
+	var min_y: float = float((bounds.get("min", [0, -16384, 0]) as Array)[1]) * AirdriftUnits.METRES_PER_UNIT
 	_check(bot.global_position.y > min_y, "and has not left the world",
 		"y=%.1f, world floor %.1f" % [bot.global_position.y, min_y])
 	_done()
@@ -288,7 +288,7 @@ func _test_stands_where_it_sends_you() -> void:
 				var stage := zones.stage_zone(track, n)
 				if stage == null:
 					continue
-				if stage.payload.has(G2GBspMap.NO_RESTART):
+				if stage.payload.has(AirdriftBspMap.NO_RESTART):
 					# A split with no restart has no spot; what is asserted is that
 					# nobody is sent to it. Main track only: that is the bot's.
 					if track == DotTimerTrack.MAIN:
@@ -306,7 +306,7 @@ func _test_stands_where_it_sends_you() -> void:
 		for track in zones.playable_tracks():
 			for n in range(1, zones.stage_count(track) + 1):
 				var stage := zones.stage_zone(track, n)
-				if stage == null or stage.payload.has(G2GBspMap.NO_RESTART):
+				if stage == null or stage.payload.has(AirdriftBspMap.NO_RESTART):
 					continue
 				# Agreeing with ONE door is enough: a map built for two teams mirrors its
 				# arrivals (surf_year3000's start room takes both teams' booths, facing
@@ -314,7 +314,7 @@ func _test_stands_where_it_sends_you() -> void:
 				var door_yaws: Array[float] = []
 				for door: DotTimerZone in zones.of_kind(DotTimerZone.Kind.TELEPORT, track):
 					# A finish door sends past the end (surf_rookie's lands back in stage 1), not into the stage.
-					if door.payload.has(G2GBspMap.FINISH_DOOR):
+					if door.payload.has(AirdriftBspMap.FINISH_DOOR):
 						continue
 					if stage.contains(door.destination + Vector3.UP * 0.1):
 						door_yaws.append(door.destination_yaw)
@@ -330,7 +330,7 @@ func _test_stands_where_it_sends_you() -> void:
 		"every stage faces a player the way the map's own door into it does (%d compared)" % facings,
 		", ".join(disagree))
 
-	var bot: G2GPlayer = game.players.get(&"bot")
+	var bot: AirdriftPlayer = game.players.get(&"bot")
 	if bot == null:
 		bot = game.add_player(&"bot", "Bot", true)
 		bot.sampler = null
@@ -343,7 +343,7 @@ func _test_stands_where_it_sends_you() -> void:
 		var falls: Array = FALLING_ARRIVALS.get(String(_map_id), [])
 		_check(drop < (20.0 if falls.has(spot[0]) else 8.0),
 			"%s is somewhere a player can stand%s" % [spot[0], " (or a drop the map means, FALLING_ARRIVALS)" if falls.has(spot[0]) else ""],
-			"fell %.1f m from %s" % [drop, str(at / G2GUnits.METRES_PER_UNIT)])
+			"fell %.1f m from %s" % [drop, str(at / AirdriftUnits.METRES_PER_UNIT)])
 
 	for n in splits:
 		var before := bot.global_position
@@ -377,7 +377,7 @@ func _test_arrivals_miss_the_pits() -> void:
 				DotTimerZone.Kind.SPAWN:
 					label = "%s spawn" % DotTimerTrack.short_name_of(zone.track)
 				DotTimerZone.Kind.STAGE:
-					if zone.payload.has(G2GBspMap.NO_RESTART):
+					if zone.payload.has(AirdriftBspMap.NO_RESTART):
 						continue    # nobody is ever put there; see ARRIVES_IN_PIT
 					label = "stage %d" % int(zone.number)
 				DotTimerZone.Kind.TELEPORT:
@@ -403,7 +403,7 @@ func _test_arrivals_miss_the_pits() -> void:
 
 
 ## Walking through one of the map's doors does not end the run.
-## `doorways` makes a door a TELEPORT, which keeps the run, but the game's TELEPORT handler called `G2GPlayer.teleport`, which ends it,
+## `doorways` makes a door a TELEPORT, which keeps the run, but the game's TELEPORT handler called `AirdriftPlayer.teleport`, which ends it,
 ## so the zone list was right and the only symptom was a timer that stopped at the first door. Driven through the real handler: the manager's signal.
 func _test_a_door_keeps_the_run() -> void:
 	_section("doors")
@@ -418,7 +418,7 @@ func _test_a_door_keeps_the_run() -> void:
 		_done()
 		return
 
-	var bot: G2GPlayer = game.players.get(&"bot")
+	var bot: AirdriftPlayer = game.players.get(&"bot")
 	if bot == null:
 		bot = game.add_player(&"bot", "Bot", true)
 		bot.sampler = null

@@ -1,5 +1,5 @@
 extends DotGameCheckSuite
-const G2GTestPorts := preload("test_ports.gd")
+const AirdriftTestPorts := preload("test_ports.gd")
 
 ## A module reload leaves ONE link under the server, and a real client over a real socket
 ## still hears the server's RPCs afterwards.
@@ -14,14 +14,14 @@ const G2GTestPorts := preload("test_ports.gd")
 ## client joins: a reload mid-session leaves the new bridge not knowing who is seated, which is
 ## a different matter. Signing on is the proof, since HELLO is a server RPC.
 
-const G2GClient := preload("../game/g2g_client.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GNetLink := preload("../game/net/g2g_net_link.gd")
+const AirdriftClient := preload("../game/airdrift_client.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftNetLink := preload("../game/net/airdrift_net_link.gd")
 
-var PORT := G2GTestPorts.free_port()
+var PORT := AirdriftTestPorts.free_port()
 const DATA := "user://g2g_link"
-const MODULE := "res://game/g2g_module.gd"
+const MODULE := "res://game/airdrift_module.gd"
 const MAP := &"bhop_g2g_intro"
 const SECTIONS := 3
 const CHECKS := 9
@@ -32,9 +32,9 @@ var _completed := 0
 var _server_side: Node = null
 var _client_side: Node = null
 var _server: DotServer = null
-var _game: G2GGame = null
+var _game: AirdriftGame = null
 var _link: DotClientLink = null
-var _client: G2GClient = null
+var _client: AirdriftClient = null
 
 
 func _ready() -> void:
@@ -43,7 +43,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("g2gfast -- module reload and the link")
+	print("Airdrift -- module reload and the link")
 	DotPaths.remove_tree(DATA)
 	DirAccess.make_dir_recursive_absolute(DATA)
 	if await _boot():
@@ -54,7 +54,7 @@ func _run() -> void:
 
 
 func _boot() -> bool:
-	_section("a g2gfast server boots")
+	_section("an Airdrift server boots")
 	_server_side = Node.new()
 	_server_side.name = "ServerSide"
 	add_child(_server_side)
@@ -65,7 +65,7 @@ func _boot() -> bool:
 	get_tree().set_multiplayer(MultiplayerAPI.create_default_interface(), _client_side.get_path())
 
 	var config := DotServerConfig.new()
-	config.hostname = "g2gfast link"
+	config.hostname = "Airdrift link"
 	config.port = PORT
 	config.bind_address = "127.0.0.1"
 	config.transport_mode = "enet"
@@ -91,13 +91,13 @@ func _boot() -> bool:
 		_done()
 		return false
 
-	var g2g_config := G2GConfig.new()
-	g2g_config.records_directory = ""
-	g2g_config.map_seconds = 0.0
-	g2g_config.initial_map = MAP
-	_game = G2GGame.new()
+	var airdrift_config := AirdriftConfig.new()
+	airdrift_config.records_directory = ""
+	airdrift_config.map_seconds = 0.0
+	airdrift_config.initial_map = MAP
+	_game = AirdriftGame.new()
 	_game.name = "Game"
-	_game.config = g2g_config
+	_game.config = airdrift_config
 	_server_side.add_child(_game)
 	await _until(func() -> bool: return _game.maps != null and _game.maps.current != null, 10.0)
 
@@ -118,7 +118,7 @@ func _load_module() -> DotResult:
 func _links() -> int:
 	var n := 0
 	for child in _server.get_children():
-		if child.get_script() == G2GNetLink:
+		if child.get_script() == AirdriftNetLink:
 			n += 1
 	return n
 
@@ -131,7 +131,7 @@ func _test_reload() -> void:
 		await _settle(3)
 	await _settle(5)
 	var links := _links()
-	_check(links == 1 and _server.has_node(NodePath(String(G2GNetLink.NODE_NAME))),
+	_check(links == 1 and _server.has_node(NodePath(String(AirdriftNetLink.NODE_NAME))),
 		"exactly one link, under the name the client routes to (%d)" % links)
 	_done()
 
@@ -148,7 +148,7 @@ func _test_client_hears_the_server() -> void:
 	_link.spawned.connect(func() -> void: spawned[0] = true)
 	_link.connect_to_server("127.0.0.1:%d" % PORT)
 	await _until(func() -> bool: return spawned[0] or _link.is_playing(), 30.0)
-	_client = (load("res://game/g2g.tscn") as PackedScene).instantiate() as G2GClient
+	_client = (load("res://game/airdrift.tscn") as PackedScene).instantiate() as AirdriftClient
 	_client_side.add_child(_client)
 	_client.mouse_capture_override = true
 	_client.presentation.settings.local_store = DotSettingsStoreMemory.new()

@@ -1,7 +1,7 @@
 extends Node3D
 
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 
 ## Sweeps the player's own hull DOWN a ramp, everywhere, and reports where it stops.
 ##
@@ -47,7 +47,7 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 
-	var map := G2GBspMap.new()
+	var map := AirdriftBspMap.new()
 	add_child(map)
 	map.build_from_path(manifest_path)
 
@@ -56,10 +56,10 @@ func _ready() -> void:
 
 	var samples := _ramp_samples(map)
 	var space := get_viewport().world_3d.direct_space_state
-	var radius := G2GUnits.to_metres(HULL_RADIUS_UNITS)
-	var height := G2GUnits.to_metres(HULL_HEIGHT_UNITS)
-	var skin := G2GUnits.to_metres(SKIN_UNITS)
-	var sweep := G2GUnits.to_metres(sweep_units)
+	var radius := AirdriftUnits.to_metres(HULL_RADIUS_UNITS)
+	var height := AirdriftUnits.to_metres(HULL_HEIGHT_UNITS)
+	var skin := AirdriftUnits.to_metres(SKIN_UNITS)
+	var sweep := AirdriftUnits.to_metres(sweep_units)
 
 	var shape := CapsuleShape3D.new()
 	shape.radius = radius
@@ -125,7 +125,7 @@ func _ready() -> void:
 		# is this importer's to fix, and one that survives is geometry the mapper drew.
 		for b in range(LIFT_STEPS.size()):
 			query.transform = Transform3D(Basis.IDENTITY,
-				centre + n * G2GUnits.to_metres(float(LIFT_STEPS[b])))
+				centre + n * AirdriftUnits.to_metres(float(LIFT_STEPS[b])))
 			var high := space.cast_motion(query)
 			if high.size() == 2 and high[0] >= BLOCKED_BELOW:
 				cleared_at[b] += 1
@@ -155,7 +155,7 @@ func _ready() -> void:
 
 
 ## The centre and normal of every triangle on a RAMP surface, thinned to a limit.
-func _ramp_samples(map: G2GBspMap) -> Array:
+func _ramp_samples(map: AirdriftBspMap) -> Array:
 	var mi := map.get_node_or_null("World") as MeshInstance3D
 	if mi == null or mi.mesh == null:
 		return []

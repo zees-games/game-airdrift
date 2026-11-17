@@ -1,6 +1,6 @@
 extends RefCounted
 
-const G2GProgress := preload("res://game/g2g_progress.gd")
+const AirdriftProgress := preload("res://game/airdrift_progress.gd")
 
 ## Stats are filed under dot-game's stable key; achievements and records stay on the record key.
 
@@ -16,7 +16,7 @@ class _Identity extends RefCounted:
 
 
 ## Failure descriptions, empty when the split holds.
-static func run(progress: G2GProgress) -> Array[String]:
+static func run(progress: AirdriftProgress) -> Array[String]:
 	var bad: Array[String] = []
 	var session := DotClientSession.new()
 	session.userid = 9001

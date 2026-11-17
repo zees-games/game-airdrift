@@ -4,7 +4,7 @@ extends "headless_net_maps.gd"
 ## workbench, ghosts and solid players, blind and beacon, spectating, hunters, leaving, votes and the clock.
 
 
-## sv_workbench_remote over the real frames, in the order G2GModule and G2GClient register them: an admin gets a
+## sv_workbench_remote over the real frames, in the order AirdriftModule and AirdriftClient register them: an admin gets a
 ## panel and an edit that applies and replicates; a guest, a non-admin, a revoked admin and the cvar off are refused.
 func _test_the_remote_workbench() -> void:
 	_section("[a flagged admin edits the server's profiles, and nobody else can]")
@@ -18,7 +18,7 @@ func _test_the_remote_workbench() -> void:
 	var state: Dictionary = rig["state"]
 	var snet: DotNetManager = rig["snet"]
 	var cnet: DotNetManager = rig["cnet"]
-	var sconfig: G2GConfig = rig["sconfig"]
+	var sconfig: AirdriftConfig = rig["sconfig"]
 	var sbinder: DotGameConfigBinder = rig["sbinder"]
 	var swb: DotGameWorkbench = rig["swb"]
 	var slink: DotNetProfileLink = rig["slink"]
@@ -81,16 +81,16 @@ func _test_the_remote_workbench() -> void:
 	_done()
 
 
-## Two managers over a loopback, the server's workbench and the client's, wired as G2GModule and G2GClient wire them.
+## Two managers over a loopback, the server's workbench and the client's, wired as AirdriftModule and AirdriftClient wire them.
 func _remote_workbench_rig() -> Dictionary:
 	var flags := {"boss": ["cvar", "root"], "plain": []}
 	var state := {"on": false, "uid": "", "now": 100000}
 	var snet := _make_manager(true, &"wbserver", 1, self, 64)
 	var cnet := _make_manager(false, &"wbclient", 5, self, 64)
-	var sconfig := G2GConfig.new()
-	var cconfig := G2GConfig.new()
-	var sbinder := G2GConfig.make_binder(sconfig)
-	var cbinder := G2GConfig.make_binder(cconfig)
+	var sconfig := AirdriftConfig.new()
+	var cconfig := AirdriftConfig.new()
+	var sbinder := AirdriftConfig.make_binder(sconfig)
+	var cbinder := AirdriftConfig.make_binder(cconfig)
 	var _l1 := sbinder.load_layers()
 	var _l2 := cbinder.load_layers()
 	var set: DotProfileSet = null
@@ -164,10 +164,10 @@ func _test_ghost() -> void:
 
 	var ghost := _server_game.spawn_ghost()
 	_check(ghost != null, "the server spawns it")
-	_check(_server_bridge.behaviour_for(G2GGame.GHOST_SESSION) != null, "and the bridge adopts it as a bot")
+	_check(_server_bridge.behaviour_for(AirdriftGame.GHOST_SESSION) != null, "and the bridge adopts it as a bot")
 	_exchange()
-	_check(_client_game.players.has(G2GGame.GHOST_ID), "the client sees it")
-	var mirrored: G2GPlayer = _client_game.players.get(G2GGame.GHOST_ID)
+	_check(_client_game.players.has(AirdriftGame.GHOST_ID), "the client sees it")
+	var mirrored: AirdriftPlayer = _client_game.players.get(AirdriftGame.GHOST_ID)
 	var before := mirrored.global_position if mirrored else Vector3.ZERO
 	_steps(64)
 	for _i in range(3):
@@ -177,10 +177,10 @@ func _test_ghost() -> void:
 	_check(mirrored != null and mirrored.replay == null and mirrored.timer == null,
 		"as a remote player with no timer to mislead a HUD")
 
-	_server_game.remove_player(G2GGame.GHOST_ID)
+	_server_game.remove_player(AirdriftGame.GHOST_ID)
 	_exchange()
-	_check(_server_bridge.behaviour_for(G2GGame.GHOST_SESSION) == null, "removing it releases the entity")
-	_check(not _client_game.players.has(G2GGame.GHOST_ID), "and the client drops it")
+	_check(_server_bridge.behaviour_for(AirdriftGame.GHOST_SESSION) == null, "removing it releases the entity")
+	_check(not _client_game.players.has(AirdriftGame.GHOST_ID), "and the client drops it")
 	_done()
 
 
@@ -242,7 +242,7 @@ func _test_solid_players() -> void:
 func _test_blind_and_beacon() -> void:
 	_section("an admin's blind and beacon: who is told")
 
-	var handlers := G2GModTools.handlers(_server_game)
+	var handlers := AirdriftModTools.handlers(_server_game)
 	var blind: Callable = handlers[DotModTools.ACTION_BLIND]
 	var beacon: Callable = handlers[DotModTools.ACTION_BEACON]
 
@@ -251,8 +251,8 @@ func _test_blind_and_beacon() -> void:
 	_exchange()
 	_steps(4)
 
-	var ada_here: G2GPlayerNet = _client_bridge.behaviour_for(SESSION)
-	var bea_here: G2GPlayerNet = _client_bridge.behaviour_for(8)
+	var ada_here: AirdriftPlayerNet = _client_bridge.behaviour_for(SESSION)
+	var bea_here: AirdriftPlayerNet = _client_bridge.behaviour_for(8)
 	_check(ada_here != null and bea_here != null, "and this client mirrors both")
 	if ada_here == null or bea_here == null:
 		return
@@ -319,7 +319,7 @@ func _test_blind_and_beacon() -> void:
 
 ## The weapon in hand: owner only, like the blind, and named on this client's HUD.
 func _check_weapon_in_hand() -> void:
-	var bea_here: G2GPlayerNet = _client_bridge.behaviour_for(8)
+	var bea_here: AirdriftPlayerNet = _client_bridge.behaviour_for(8)
 	# The weapon in hand: owner only, like the blind, and named on this client's HUD.
 	_server_player().held_weapon = &"deagle"
 	_server_bridge.behaviour_for(8).player.held_weapon = &"knife"
@@ -328,7 +328,7 @@ func _check_weapon_in_hand() -> void:
 		"the weapon in hand reaches its owner", str(_client_player().held_weapon))
 	_check(bea_here.player.held_weapon == &"" and bea_here.net_weapon == 0,
 		"and nobody else's weapon reaches this client", "received net_weapon = %d" % bea_here.net_weapon)
-	var hud := G2GHud.new()
+	var hud := AirdriftHud.new()
 	add_child(hud)
 	hud.bind(_client_game, _client_player().player_id)
 	hud.show_weapon(_client_player())
@@ -357,7 +357,7 @@ func _test_spectating_reaches_the_client() -> void:
 	_client_bridge.spectate_received.connect(on_spec)
 	_client_bridge.spectators_received.connect(on_list)
 
-	_client_bridge.ask_spectate(G2GEvents.SPECTATE_NEXT)
+	_client_bridge.ask_spectate(AirdriftEvents.SPECTATE_NEXT)
 	_exchange()
 	_steps(2)
 
@@ -379,7 +379,7 @@ func _test_spectating_reaches_the_client() -> void:
 	_exchange()
 	_check(lists.has(&"u8") and (lists[&"u8"] as PackedStringArray).is_empty(),
 		"sv_spec_list 0 clears the list on every screen, rather than leaving the last one")
-	_client_bridge.ask_spectate(G2GEvents.SPECTATE_PREVIOUS)
+	_client_bridge.ask_spectate(AirdriftEvents.SPECTATE_PREVIOUS)
 	_exchange()
 	_check((lists[&"u8"] as PackedStringArray).is_empty(),
 		"and nothing is sent while it is off, whoever changes whom they watch")
@@ -389,26 +389,26 @@ func _test_spectating_reaches_the_client() -> void:
 	_check(Array(lists.get(&"u8", PackedStringArray())).has("Ada"), "and turning it back on sends it again")
 
 	# The free-roam key: the mode crosses the wire with no target, and the same key returns.
-	_client_bridge.ask_spectate(G2GEvents.SPECTATE_ROAM)
+	_client_bridge.ask_spectate(AirdriftEvents.SPECTATE_ROAM)
 	_exchange()
 	_steps(2)
 	_check(_server_game.spectate.is_roaming(ada), "the free-roam request puts the server's viewer in ROAMING")
 	_check(mirror != null and mirror.is_roaming(ada) and mirror.target_of(ada) == &"",
 		"and the client's mirror is told, with no target")
-	_client_bridge.ask_spectate(G2GEvents.SPECTATE_ROAM)
+	_client_bridge.ask_spectate(AirdriftEvents.SPECTATE_ROAM)
 	_exchange()
 	_steps(2)
 	_check(not _server_game.spectate.is_roaming(ada) and _server_game.spectate.is_spectating(ada),
 		"the same request goes back onto a player")
 	var _off := _server_game.spectate.manager.rules.set_cvar("mp_freeroam", "0")
-	_client_bridge.ask_spectate(G2GEvents.SPECTATE_ROAM)
+	_client_bridge.ask_spectate(AirdriftEvents.SPECTATE_ROAM)
 	_exchange()
 	_steps(2)
 	_check(not _server_game.spectate.is_roaming(ada), "and with mp_freeroam 0 the request is refused")
 	var _on := _server_game.spectate.manager.rules.set_cvar("mp_freeroam", "1")
 
 	# R: one press stops watching and restarts. A runner who pressed R wants to run.
-	_client_bridge.ask_restart(G2GEvents.RESTART_STAGE)
+	_client_bridge.ask_restart(AirdriftEvents.RESTART_STAGE)
 	_exchange()
 	_steps(2)
 	_check(not _server_game.spectate.is_spectating(ada), "R stops spectating on the server")
@@ -432,11 +432,11 @@ func _check_restart_tracks() -> void:
 	_exchange()
 	_steps(2)
 	var on_bonus := _server_game.timers.timer_for(ada).track == 1
-	_client_bridge.ask_restart(G2GEvents.RESTART_STAGE)
+	_client_bridge.ask_restart(AirdriftEvents.RESTART_STAGE)
 	_exchange()
 	_check(on_bonus and _server_game.timers.timer_for(ada).track == 1,
 		"one R on a bonus restarts the bonus")
-	_client_bridge.ask_restart(G2GEvents.RESTART_MAIN)
+	_client_bridge.ask_restart(AirdriftEvents.RESTART_MAIN)
 	_exchange()
 	_steps(2)
 	_check(_server_game.timers.timer_for(ada).track == DotTimerTrack.MAIN,
@@ -446,7 +446,7 @@ func _check_restart_tracks() -> void:
 
 	# A client from before the body existed sends RESTART with nothing in it, which must
 	# still mean what its R meant: the start of the track it is on.
-	var request := G2GRequest.new(G2GEvents.Ask.RESTART, PackedByteArray())
+	var request := AirdriftRequest.new(AirdriftEvents.Ask.RESTART, PackedByteArray())
 	request.sender_peer_id = CLIENT_PEER
 	_server_bridge._on_request(request)
 	_check(_server_game.timers.timer_for(ada).track == DotTimerTrack.MAIN,
@@ -459,7 +459,7 @@ func _check_restart_tracks() -> void:
 func _test_hunters_reach_the_client() -> void:
 	_section("hunters reach the client")
 
-	var hunters := G2GHunters.new()
+	var hunters := AirdriftHunters.new()
 	hunters.name = "Hunters"
 	hunters.game = _server_game
 	_server_game.add_child(hunters)
@@ -553,7 +553,7 @@ func _test_leave() -> void:
 func _test_vote_wire() -> void:
 	_section("the map vote over the link")
 
-	var round_trip := G2GEvents.read_vote(DotNetReader.new(G2GEvents.write_vote("vote_count", 7, true)))
+	var round_trip := AirdriftEvents.read_vote(DotNetReader.new(AirdriftEvents.write_vote("vote_count", 7, true)))
 	_check(
 		bool(round_trip["ok"]) and String(round_trip["cue"]) == "vote_count"
 			and int(round_trip["seconds_left"]) == 7 and bool(round_trip["runoff"]),
@@ -597,7 +597,7 @@ func _test_clock_wire() -> void:
 
 	# A real vote on the server's game. Not authoritative, so it applies nothing and
 	# registers no service; its clock is the thing under test.
-	var vote := G2GVote.new()
+	var vote := AirdriftVote.new()
 	vote.name = "ClockVote"
 	vote.game = _server_game
 	vote.authoritative = false
@@ -627,10 +627,10 @@ func _test_clock_wire() -> void:
 		]
 	)
 	_check(
-		G2GHud.time_left_text(_client_bridge.clock_view, "9:59", now)
+		AirdriftHud.time_left_text(_client_bridge.clock_view, "9:59", now)
 			== _client_bridge.clock_view.formatted_at(now),
 		"and the HUD draws that rather than the client's own map clock (%s)" % (
-			G2GHud.time_left_text(_client_bridge.clock_view, "9:59", now)
+			AirdriftHud.time_left_text(_client_bridge.clock_view, "9:59", now)
 		)
 	)
 
@@ -668,7 +668,7 @@ func _test_clock_wire() -> void:
 
 
 ## A vote with no clock (`trigger: rtv_only` and no limit) leaves the HUD with none either.
-func _check_no_clock(vote: G2GVote, dt: float, arrived: Array[Dictionary]) -> void:
+func _check_no_clock(vote: AirdriftVote, dt: float, arrived: Array[Dictionary]) -> void:
 	# `trigger: rtv_only` with no limit: the server has no clock, and neither does the HUD
 	# — not even the client's local map session's, which is the number that was wrong.
 	vote.director.rules.duration_sec = 0.0
@@ -682,19 +682,19 @@ func _check_no_clock(vote: G2GVote, dt: float, arrived: Array[Dictionary]) -> vo
 		"a vote with no clock tells the client so"
 	)
 	_check(
-		G2GHud.time_left_text(_client_bridge.clock_view, "9:59", now) == "",
+		AirdriftHud.time_left_text(_client_bridge.clock_view, "9:59", now) == "",
 		"and the HUD shows no clock at all, rather than its own"
 	)
 	_check(
-		G2GHud.time_left_text(null, "9:59", now) == "9:59",
+		AirdriftHud.time_left_text(null, "9:59", now) == "9:59",
 		"while a HUD nothing has told (offline) keeps the local session's, which is the real one there"
 	)
 
 
 ## A CLOCK event survives its own encoding.
 func _check_clock_round_trip() -> void:
-	var round_trip := G2GEvents.read_clock(DotNetReader.new(
-		G2GEvents.write_clock({"has_clock": true, "seconds_left": 1234, "running": true})
+	var round_trip := AirdriftEvents.read_clock(DotNetReader.new(
+		AirdriftEvents.write_clock({"has_clock": true, "seconds_left": 1234, "running": true})
 	))
 	_check(
 		bool(round_trip["ok"]) and bool(round_trip["has_clock"])

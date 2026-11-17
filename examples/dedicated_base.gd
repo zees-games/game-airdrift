@@ -1,24 +1,24 @@
 extends DotGameCheckSuite
 
-const G2GArsenal := preload("../game/g2g_arsenal.gd")
-const G2GAvatars := preload("../game/g2g_avatars.gd")
-const G2GMovementNames := preload("../game/g2g_movement_names.gd")
-const G2GBrowser := preload("../game/g2g_browser.gd")
-const G2GCamera := preload("../game/g2g_camera.gd")
-const G2GCombat := preload("../game/g2g_combat.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GIdentity := preload("../game/g2g_identity.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
-const G2GProps := preload("../game/g2g_props.gd")
-const G2GServices := preload("../game/g2g_services.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
-const G2GVote := preload("../game/g2g_vote.gd")
+const AirdriftArsenal := preload("../game/airdrift_arsenal.gd")
+const AirdriftAvatars := preload("../game/airdrift_avatars.gd")
+const AirdriftMovementNames := preload("../game/airdrift_movement_names.gd")
+const AirdriftBrowser := preload("../game/airdrift_browser.gd")
+const AirdriftCamera := preload("../game/airdrift_camera.gd")
+const AirdriftCombat := preload("../game/airdrift_combat.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftIdentity := preload("../game/airdrift_identity.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
+const AirdriftProps := preload("../game/airdrift_props.gd")
+const AirdriftServices := preload("../game/airdrift_services.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
+const AirdriftVote := preload("../game/airdrift_vote.gd")
 const ExitProbe := preload("dedicated_exit_probe.gd")
 const DedicatedWorld := preload("dedicated_world.gd")
 const Accounts := preload("dedicated_accounts.gd")
 
-## A real DotServer running g2gfast: the movement cvars, and sv_autobunnyhopping in
+## A real DotServer running Airdrift: the movement cvars, and sv_autobunnyhopping in
 ## particular, reaching every player live.
 ##
 ## [codeblock]
@@ -52,7 +52,7 @@ const APP_URL := "g2gfast"
 
 var server: DotServer = null
 var query_host: DotQueryHost = null
-var game: G2GGame = null
+var game: AirdriftGame = null
 
 
 var _stats_errors: PackedStringArray = []

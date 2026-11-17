@@ -14,7 +14,7 @@ var _frame := 0
 
 func _initialize() -> void:
 	DotLog.set_level(DotLog.Level.WARN)
-	_client = (load("res://game/g2g.tscn") as PackedScene).instantiate()
+	_client = (load("res://game/airdrift.tscn") as PackedScene).instantiate()
 	_client.force_offline = true
 	root.add_child(_client)
 

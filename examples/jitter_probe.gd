@@ -9,7 +9,7 @@ extends Node
 ## assertion on the simulation can reach.
 ##
 ## Four configurations of one constant-velocity motion, drawn the way
-## [method G2GPlayer.present] draws it and sampled once per rendered frame. A perfectly
+## [method AirdriftPlayer.present] draws it and sampled once per rendered frame. A perfectly
 ## smooth render moves the same distance every frame; anything else is the judder.
 ##
 ##   1. the browser as it shipped — engine 60, server 128, drawn at the last whole tick
@@ -119,7 +119,7 @@ func _physics_process(delta: float) -> void:
 	if _clock == null:
 		return
 
-	# Exactly `G2GClient._physics_process`: ask the clock how many ticks this frame is
+	# Exactly `AirdriftClient._physics_process`: ask the clock how many ticks this frame is
 	# worth and run that many. With the engine on the server's rate it is always one;
 	# at 60 against 128 it alternates two and three, which is the whole bug.
 	for _i in range(_clock.advance(delta)):

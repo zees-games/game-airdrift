@@ -6,7 +6,7 @@ extends "dedicated_base.gd"
 func _test_cvars_reach_the_movement() -> void:
 	_section("cvars reach the movement")
 	game.add_player(&"u1", "One")
-	var player: G2GPlayer = game.players[&"u1"]
+	var player: AirdriftPlayer = game.players[&"u1"]
 
 	_check(server.console.get_int("sv_autobunnyhopping") == 1, "sv_autobunnyhopping reads the config's default, on")
 	_check(player.controller.tunables.auto_hop, "and the player has it")
@@ -26,7 +26,7 @@ func _test_cvars_reach_the_movement() -> void:
 	_check(game.progress.stats.schema.validate().ok, "the stats schema, hitzones included, validates")
 	_check(_stats_errors.is_empty(), "the stats layer logged no error", str(_stats_errors))
 
-	_check(absf(player.controller.tunables.gravity - G2GUnits.to_metres(600.0)) < 0.001, "sv_gravity 600 is 11.43 m/s² on the player")
+	_check(absf(player.controller.tunables.gravity - AirdriftUnits.to_metres(600.0)) < 0.001, "sv_gravity 600 is 11.43 m/s² on the player")
 
 	_run_command("sv_maxvelocity 100")
 	_check(game.config.max_velocity == 3500.0, "a max_velocity below max_speed is refused and the config kept", "%.0f" % game.config.max_velocity)
@@ -36,7 +36,7 @@ func _test_cvars_reach_the_movement() -> void:
 	_done()
 
 
-## docs/movement.md "Two names for a movement setting": the shared spellings write G2GConfig, and the g2g ones keep working.
+## docs/movement.md "Two names for a movement setting": the shared spellings write AirdriftConfig, and the Airdrift ones keep working.
 func _test_stats_report() -> void:
 	_section("stats_report")
 	var cv: DotConVar = server.console.find_cvar("stats_report")
@@ -79,15 +79,15 @@ func _test_stats_report() -> void:
 
 func _test_the_shared_movement_names() -> void:
 	_section("the shared movement names")
-	var player: G2GPlayer = game.players[&"u1"]
+	var player: AirdriftPlayer = game.players[&"u1"]
 	var before: String = player.controller.tunables.fingerprint()
 	for shared: String in ["sv_runspeed", "sv_airwishspeed", "sv_autohop"]:
 		_check(server.console.find_cvar(shared) != null, "%s is registered" % shared)
-	_check(server.console.get_float("sv_runspeed") == server.console.get_float("sv_maxspeed"), "sv_runspeed reads g2g's sv_maxspeed run speed")
+	_check(server.console.get_float("sv_runspeed") == server.console.get_float("sv_maxspeed"), "sv_runspeed reads Airdrift's sv_maxspeed run speed")
 
 	_run_command("sv_runspeed 300")
-	_check(game.config.max_speed == 300.0, "sv_runspeed writes G2GConfig.max_speed")
-	_check(server.console.get_float("sv_maxspeed") == 300.0, "and g2g's sv_maxspeed follows")
+	_check(game.config.max_speed == 300.0, "sv_runspeed writes AirdriftConfig.max_speed")
+	_check(server.console.get_float("sv_maxspeed") == 300.0, "and Airdrift's sv_maxspeed follows")
 	_check(player.controller.tunables.fingerprint() != before, "and the player's movement fingerprint changed (runs are abandoned)")
 
 	_run_command("sv_maxspeed 250")
@@ -108,14 +108,14 @@ func _test_the_shared_movement_names() -> void:
 	_run_command("sv_autobunnyhopping 1")
 	_check(game.config.auto_bhop and server.console.get_int("sv_autohop") == 1, "and sv_autobunnyhopping 1 turns it back on")
 
-	_check(G2GMovementNames.UNBOUND.has("sv_maxspeed") and server.console.get_float("sv_maxspeed") == 250.0,
+	_check(AirdriftMovementNames.UNBOUND.has("sv_maxspeed") and server.console.get_float("sv_maxspeed") == 250.0,
 		"the shared wish-speed sv_maxspeed is not mapped onto the run speed")
 	_done()
 
 
 func _test_autobhop_live() -> void:
 	_section("sv_autobunnyhopping, live")
-	var player: G2GPlayer = game.players[&"u1"]
+	var player: AirdriftPlayer = game.players[&"u1"]
 	player.sampler = null
 
 	var hold := DotFpsCommand.new()
@@ -171,12 +171,12 @@ func _test_autobhop_live() -> void:
 
 func _test_thirdperson_cvar() -> void:
 	_section("sv_allow_thirdperson")
-	var player: G2GPlayer = game.add_player(&"u2", "Two", true)
+	var player: AirdriftPlayer = game.add_player(&"u2", "Two", true)
 	player.sampler = null
 	_check(player.camera.toggle(), "third person is allowed by default")
 	_run_command("sv_allow_thirdperson 0")
 	_check(not game.config.allow_thirdperson, "the cvar writes the config")
-	_check(player.camera.mode == G2GCamera.Mode.FIRST_PERSON, "and a player already in third person is put back")
+	_check(player.camera.mode == AirdriftCamera.Mode.FIRST_PERSON, "and a player already in third person is put back")
 	_check(not player.camera.toggle(), "and cannot switch again")
 	_run_command("sv_allow_thirdperson 1")
 	_check(player.camera.toggle(), "until it is allowed again")
@@ -242,8 +242,8 @@ func _test_commands() -> void:
 	# The map menu's server half (M): every map this server has, a player offered a vote, staff
 	# (the default sv_map_menu_flag) the change; and the older client's own map list answers
 	# to the same flag. The change itself is game.change_map, which `g2g_map` drives above.
-	var g2g := server.modules.get_module("g2gfast")
-	var vote_node: Object = g2g.get("vote") if g2g != null else null
+	var airdrift := server.modules.get_module("g2gfast")
+	var vote_node: Object = airdrift.get("vote") if airdrift != null else null
 	var menu_half: Object = vote_node.get("commands").get("map_menu") if vote_node != null and vote_node.get("commands") != null else null
 	var player := DotCmdContext.new()
 	player.source = DotCmdContext.Source.CHAT
@@ -281,8 +281,8 @@ func _test_commands() -> void:
 	_run_command("g2g_zone_mark 100 64 -456 0")
 	_run_command("g2g_zone_mark 356 64 -200 128")
 	var drawn: DotTimerZone = game.timers.zones.zones.back() if game.timers.zones.zones.size() == before + 1 else null
-	var lo := G2GUnits.vector_to_units(drawn.from).round() if drawn != null else Vector3.ZERO
-	var hi := G2GUnits.vector_to_units(drawn.to).round() if drawn != null else Vector3.ZERO
+	var lo := AirdriftUnits.vector_to_units(drawn.from).round() if drawn != null else Vector3.ZERO
+	var hi := AirdriftUnits.vector_to_units(drawn.to).round() if drawn != null else Vector3.ZERO
 	_check(drawn != null and lo == Vector3(100, 64, -456) and hi == Vector3(356, 192, -200) and int(drawn.number) == 5,
 		"the zone editor's aimed corners draw exactly that box, at its height", "%s..%s" % [lo, hi])
 	var _undone := _run_command("g2g_zone_undo")
@@ -352,7 +352,7 @@ func _test_query_and_chat() -> void:
 	_check(fields_fn.is_valid() and not keyed.is_empty(), "the module gives the server's Tab board this game's columns",
 		"%d players keyed by session" % keyed.size())
 	if fields_fn.is_valid() and not keyed.is_empty():
-		var who: G2GPlayer = game.players[keyed[0]]
+		var who: AirdriftPlayer = game.players[keyed[0]]
 		var row: Dictionary = fields_fn.call(DotClientSession.new(int(String(keyed[0]).trim_prefix("u"))))
 		_check(row.has("best") and row.has("rank") and str(row.get("style", "")) == who.timer_style.display_name,
 			"each runner's style, best time and rank on this map", str(row))
@@ -426,7 +426,7 @@ func _test_services() -> void:
 	if module == null:
 		return
 
-	var services: G2GServices = module.get("services")
+	var services: AirdriftServices = module.get("services")
 	_check(services != null, "the services layer is up")
 
 	if services == null:
@@ -462,11 +462,11 @@ func _test_services() -> void:
 	# is mid-run. It is a MEMBERS channel, and the membership rule is a thing only
 	# this game knows — which is exactly why dot-chat asks rather than deciding.
 	_check(
-		services.chat.has_channel(G2GServices.CH_RUNNING),
+		services.chat.has_channel(AirdriftServices.CH_RUNNING),
 		"there is a channel for the people who are mid-run"
 	)
 
-	var running := services.chat.channel(G2GServices.CH_RUNNING)
+	var running := services.chat.channel(AirdriftServices.CH_RUNNING)
 	_check(
 		running != null and running.scope == DotChatChannel.Scope.MEMBERS,
 		"and it really is decided by membership rather than by radius"
@@ -505,7 +505,7 @@ func _test_services() -> void:
 
 	# --- Identity --------------------------------------------------------
 
-	var identity: G2GIdentity = module.get("identity")
+	var identity: AirdriftIdentity = module.get("identity")
 	_check(identity != null, "the identity layer is up")
 
 	if identity == null:
@@ -522,10 +522,10 @@ func _test_services() -> void:
 	)
 
 	# The avatar manager validates against the GAME's schema, not a second one.
-	# `G2GRig.dress` conforms every document to it, so a manager on a different schema
+	# `AirdriftRig.dress` conforms every document to it, so a manager on a different schema
 	# would accept avatars the rig then silently rewrote.
 	_check(
-		identity.avatars != null and identity.avatars.schema.id == G2GAvatars.SCHEMA_ID,
+		identity.avatars != null and identity.avatars.schema.id == AirdriftAvatars.SCHEMA_ID,
 		"and the avatar manager validates against the game's own schema"
 	)
 	_done()

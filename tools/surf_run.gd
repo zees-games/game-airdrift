@@ -1,9 +1,9 @@
 extends Node3D
 
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GMovement := preload("../game/g2g_movement.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftMovement := preload("../game/airdrift_movement.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 
 ## Surfs an imported map with the real motor and reports where the ride ends.
 ##
@@ -42,13 +42,13 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 
-	var map := G2GBspMap.new()
+	var map := AirdriftBspMap.new()
 	add_child(map)
 	map.build_from_path(manifest_path)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 
-	var tunables := G2GMovement.tunables_for(G2GConfig.new())
+	var tunables := AirdriftMovement.tunables_for(AirdriftConfig.new())
 	# `--iterations N` / `--planes N`: what the slide budget is worth, as a number.
 	for a in range(args.size() - 1):
 		if args[a] == "--iterations":
@@ -107,14 +107,14 @@ func _ride(motor: DotFpsMotor, sample: Array, limit: float, tally: Dictionary) -
 	var step := 1.0 / 128.0
 	var state := DotFpsState.new()
 	var n: Vector3 = sample[1]
-	state.position = sample[0] + n * G2GUnits.to_metres(DROP_UNITS)
+	state.position = sample[0] + n * AirdriftUnits.to_metres(DROP_UNITS)
 	# Entering the way a player does: across the slope, not into it. The downhill
 	# direction flattened is the line the ride runs along.
 	var along := (Vector3.DOWN - n * n.dot(Vector3.DOWN))
 	along.y = 0.0
 	if along.length_squared() < 1e-9:
 		return
-	state.velocity = along.normalized() * G2GUnits.to_metres(ENTRY_SPEED_UNITS)
+	state.velocity = along.normalized() * AirdriftUnits.to_metres(ENTRY_SPEED_UNITS)
 	var command := DotFpsCommand.new()
 
 	var outcome := "carried"
@@ -148,10 +148,10 @@ func _ride(motor: DotFpsMotor, sample: Array, limit: float, tally: Dictionary) -
 			if tally["worst_stop"].is_empty():
 				tally["worst_stop"] = {
 					"at": state.position,
-					"from": G2GUnits.to_units(before),
-					"to": G2GUnits.to_units(now),
+					"from": AirdriftUnits.to_units(before),
+					"to": AirdriftUnits.to_units(now),
 				}
-		var speed := G2GUnits.to_units(state.horizontal_speed())
+		var speed := AirdriftUnits.to_units(state.horizontal_speed())
 		# Only a stop ON the ride counts. A player who has reached the floor at the
 		# bottom and slowed down there has finished the ramp, which is the ramp
 		# working.
@@ -178,7 +178,7 @@ func _on_a_ramp(state: DotFpsState) -> bool:
 	return state.ground_normal.angle_to(Vector3.UP) > deg_to_rad(30.0)
 
 
-func _ramp_samples(map: G2GBspMap) -> Array:
+func _ramp_samples(map: AirdriftBspMap) -> Array:
 	var mi := map.get_node_or_null("World") as MeshInstance3D
 	if mi == null or mi.mesh == null:
 		return []

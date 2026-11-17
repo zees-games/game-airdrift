@@ -15,14 +15,14 @@ func _done() -> void:
 
 
 
-func _make_game(server: bool, scope: StringName, parent: Node) -> G2GGame:
-	var config := G2GConfig.new()
+func _make_game(server: bool, scope: StringName, parent: Node) -> AirdriftGame:
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = &"bhop_g2g_intro"
 	config.authoritative = server
 
-	var game := G2GGame.new()
+	var game := AirdriftGame.new()
 	game.name = "Game"
 	game.config = config
 	game.service_scope = scope
@@ -105,11 +105,11 @@ func _forward() -> DotFpsCommand:
 	return c
 
 
-func _server_player() -> G2GPlayer:
+func _server_player() -> AirdriftPlayer:
 	return _server_game.players.get(&"u%d" % SESSION)
 
 
-func _client_player() -> G2GPlayer:
+func _client_player() -> AirdriftPlayer:
 	return _client_game.players.get(&"u%d" % SESSION)
 
 
@@ -231,7 +231,7 @@ func _until_client_on(id: StringName, seconds: float) -> bool:
 ## A map as a signed pack: a manifest and a mesh, published into `user://`. Empty of
 ## geometry on purpose — this suite is about who has it, not what is in it.
 ##
-## [param version] empty publishes as [method G2GMapCatalogue.pack_version] does, from the
+## [param version] empty publishes as [method AirdriftMapCatalogue.pack_version] does, from the
 ## files; [param extra] is merged into the manifest, so a republish can change them.
 func _publish_map_fixture(
 	id: StringName, version: String, keys: Dictionary, owner := "", extra := {}
@@ -253,11 +253,11 @@ func _publish_map_fixture(
 	var content := String(id) if owner.is_empty() else "%s/%s" % [owner, id]
 	var publisher := DotCloudPublisher.new()
 	publisher.content_id = content
-	publisher.version = version if not version.is_empty() else G2GMapCatalogue.pack_version(source)
+	publisher.version = version if not version.is_empty() else AirdriftMapCatalogue.pack_version(source)
 	publisher.signing_key_pem = str(keys["private"])
 	publisher.signing_key_id = "headless_net"
 	# Published at `<base>/<id>/`, the layout a server's version-less `ensure(id)` finds —
-	# `G2GGame.ensure_map_content` asks for whatever version the origin has, and a client
+	# `AirdriftGame.ensure_map_content` asks for whatever version the origin has, and a client
 	# asks for the version its announce named; both reach the same manifest.
 	return publisher.publish(source, "%s/dist/%s" % [SYNC_FIXTURE_ROOT, content])
 
@@ -313,7 +313,7 @@ func _test_map_change() -> void:
 	var mid_change := func() -> void:
 		_server_bridge.add_player(late_peer, late_session, "Late")
 		var writer := DotNetWriter.new()
-		_server_net.messages.encode(G2GRequest.new(G2GEvents.Ask.READY, PackedByteArray()), writer)
+		_server_net.messages.encode(AirdriftRequest.new(AirdriftEvents.Ask.READY, PackedByteArray()), writer)
 		_server_bridge.receive_request(late_peer, writer.to_bytes())
 
 	var outcome := await _change_and_pump(&"surf_g2g_intro", 8.0, mid_change)
@@ -358,7 +358,7 @@ func _test_map_change() -> void:
 ## server's own world and tells nobody — so on a live server a vote moved it to bhop_fur
 ## while both players stayed on surf_mesa, and the respawn put them at bhop_fur's start
 ## in the sky over a map they were still drawing. `_test_map_change` could not see it: it
-## calls `G2GGame.change_map`, which was always right. This goes in through the door the
+## calls `AirdriftGame.change_map`, which was always right. This goes in through the door the
 ## vote uses — `source.apply`, exactly what the director calls on a winner. Armed by
 ## giving the source `game.maps` back: the server changed and the client did not.
 func _test_map_by_vote() -> void:
@@ -368,7 +368,7 @@ func _test_map_by_vote() -> void:
 	host.poll_interval_sec = 0.05
 	host.sync_timeout_sec = 5.0
 
-	var vote := G2GVote.new()
+	var vote := AirdriftVote.new()
 	vote.name = "MapVote"
 	vote.game = _server_game
 	vote.authoritative = false
@@ -456,7 +456,7 @@ func _test_map_delivered() -> void:
 	_check(followed, "the client is on it",
 		String(_client_game.maps.current.id) if _client_game.maps.current != null else "none")
 	var world := _client_game.maps.world
-	_check(world != null and world.scene_file_path == G2GMapCatalogue.IMPORTED_SCENE
+	_check(world != null and world.scene_file_path == AirdriftMapCatalogue.IMPORTED_SCENE
 		and str(world.get("manifest_path")).begins_with(mount),
 		"as the imported-map scene out of its own build, built from the manifest in the pack",
 		"%s %s" % [world.scene_file_path if world != null else "-", world.get("manifest_path") if world != null else "-"])
@@ -472,7 +472,7 @@ func _test_map_delivered() -> void:
 ## [b]Every map pack was `@0.0.0` (`[g2g-maps-version-1]`).[/b] dot-cloud keys a mount on
 ## `id@version` and cannot undo one, so a client that had mounted the old pack was told
 ## "that map, 0.0.0" by a server that had the new one, found it mounted, and played the
-## old geometry. `G2GMapCatalogue.pack_version` names a pack by its files; this is the
+## old geometry. `AirdriftMapCatalogue.pack_version` names a pack by its files; this is the
 ## check that a change of files reaches a client that already holds the map.
 func _test_map_republished() -> void:
 	_section("changing the map: a map republished with different files")
@@ -486,7 +486,7 @@ func _test_map_republished() -> void:
 	_check(first.ok and again.ok, "a map publishes under the version of its files",
 		"%s %s" % [first.error, again.error])
 	var source := SYNC_FIXTURE_ROOT.path_join("src").path_join(String(REPUB_FIXTURE))
-	var v1 := G2GMapCatalogue.pack_version(source)
+	var v1 := AirdriftMapCatalogue.pack_version(source)
 
 	var fetched: DotResult = await _server_game.ensure_map_content(REPUB_FIXTURE)
 	var on_server := _server_game.maps.catalogue.get_map(REPUB_FIXTURE)
@@ -499,7 +499,7 @@ func _test_map_republished() -> void:
 
 	var changed := _publish_map_fixture(REPUB_FIXTURE, "", _fixture_keys, "",
 		{"display_name": "repub fixture, second cut"})
-	var v2 := G2GMapCatalogue.pack_version(source)
+	var v2 := AirdriftMapCatalogue.pack_version(source)
 	_check(changed.ok and v2 != v1 and v2.begins_with("0.0.0-"),
 		"republished with different files, it is a different version (%s)" % v2)
 
@@ -532,7 +532,7 @@ func _client_world_from(id: StringName, version: String) -> bool:
 
 
 ## A map on an origin that keeps packs under an owner: the map id stays what a player
-## types, the pack is `<owner>/<id>`. See [member G2GConfig.map_content_owner].
+## types, the pack is `<owner>/<id>`. See [member AirdriftConfig.map_content_owner].
 func _test_map_owned() -> void:
 	_section("changing the map: a map published under an owner")
 
@@ -572,12 +572,12 @@ func _test_map_straggler() -> void:
 	var host := _server_bridge.map_host
 	host.sync_timeout_sec = SYNC_TIMEOUT
 
-	# What `G2GGame.ensure_map_content` makes of a pack it fetched — built by hand, because
+	# What `AirdriftGame.ensure_map_content` makes of a pack it fetched — built by hand, because
 	# a server in this process that mounted the pack would have mounted it for the client
 	# too (see [SlowCloud]). The server's own load at the swap mounts it for real.
 	var on_server := DotMapDef.new()
 	on_server.id = SYNC_FIXTURE
-	on_server.scene_path = G2GMapCatalogue.IMPORTED_SCENE
+	on_server.scene_path = AirdriftMapCatalogue.IMPORTED_SCENE
 	on_server.content_id = SYNC_FIXTURE
 	on_server.content_version = "1.0.0"
 	on_server.meta["manifest"] = "res://dot_cloud/%s/1.0.0/%s.json" % [SYNC_FIXTURE, SYNC_FIXTURE]
@@ -636,7 +636,7 @@ func _test_map_straggler() -> void:
 		"history %d -> %d, moved %.3f m" % [history_before,
 			_client_net.local_inputs().since(0).size(),
 			_client_player().global_position.distance_to(client_before)])
-	var held: G2GPlayerNet = _server_bridge.behaviour_for(SESSION)
+	var held: AirdriftPlayerNet = _server_bridge.behaviour_for(SESSION)
 	_check(held != null and held.last_move.move.length() < 0.01,
 		"and the server is sent a player standing still, not the key it would repeat",
 		str(held.last_move.move) if held != null else "no behaviour")

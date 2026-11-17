@@ -3,7 +3,7 @@ created and distributed by Kenney (www.kenney.nl), licensed Creative Commons Zer
 http://creativecommons.org/publicdomain/zero/1.0/
 
 They stand in for the source game's own textures on imported maps; see substitutes.json
-and game/g2g_stock_substitutes.gd. Nothing from the source game is in this directory.
+and game/airdrift_stock_substitutes.gd. Nothing from the source game is in this directory.
 
 The four JPEGs (cc0_concrete_smooth.jpg, cc0_metal_brushed.jpg, cc0_metal_plates.jpg, cc0_snow.jpg) are
 from ambientCG (https://ambientcg.com), by Lennart Demes, licensed CC0 1.0:

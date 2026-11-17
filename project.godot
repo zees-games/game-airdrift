@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Zee's Airdrift"
-run/main_scene="res://game/g2g.tscn"
+run/main_scene="res://game/airdrift.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 

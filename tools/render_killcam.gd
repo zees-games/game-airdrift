@@ -14,7 +14,7 @@ var _calm := false
 
 func _initialize() -> void:
 	_calm = "--reduce-motion" in OS.get_cmdline_user_args()
-	var scene: PackedScene = load("res://game/g2g.tscn")
+	var scene: PackedScene = load("res://game/airdrift.tscn")
 	client = scene.instantiate()
 	client.set("force_offline", true)
 	root.add_child(client)

@@ -8,7 +8,7 @@ func _test_a_party_run_is_tainted() -> void:
 
 	DotP2PSignallerLoopback.reset_all()
 
-	var party := G2GParty.new()
+	var party := AirdriftParty.new()
 	party.name = "Party"
 	add_child(party)
 	_check(party.setup().ok, "a party sets up")
@@ -110,9 +110,9 @@ func _test_chat_box() -> void:
 	# it was a bare "Guest 435:" in the box, which read as a chat command echoed with its
 	# text stripped. The client is never added to the tree; only `_on_said` is used, fed
 	# exactly what the extras' `message_received` handler hands it.
-	var extras_script := preload("../game/g2g_client_extras.gd")
+	var extras_script := preload("../game/airdrift_client_extras.gd")
 	var join := DotChatMessage.make(DotChatMessage.Kind.JOIN, &"all", "k2", "Guest 435", "")
-	var said_client := G2GClient.new()
+	var said_client := AirdriftClient.new()
 	said_client.presentation = p
 	said_client._on_said(extras_script.speaker_of(join), extras_script.text_of(join), join.kind_name())
 	var said_rows := window.history()
@@ -134,9 +134,9 @@ func _test_chat_box() -> void:
 ## The one bug in this file's history that no assertion in it could have caught, and
 ## the reason it is now an assertion.
 ##
-## [G2GRig] puts a player's body on two visibility layers so the OWNER'S first-person
+## [AirdriftRig] puts a player's body on two visibility layers so the OWNER'S first-person
 ## camera can cull it while every other camera still draws it — that is what
-## [member G2GCamera.first]'s cull mask is for, and the third-person path depends on
+## [member AirdriftCamera.first]'s cull mask is for, and the third-person path depends on
 ## the same two layers. It set both layers unconditionally, so the culled layer was
 ## never the only one and the first-person camera drew its own player's avatar at
 ## point-blank range. The bottom third of the screen was the inside of the player's
@@ -149,7 +149,7 @@ func _test_chat_box() -> void:
 func _test_a_runner_does_not_see_their_own_head() -> void:
 	_section("A first-person runner is culled out of their own camera")
 
-	var camera := G2GCamera.new()
+	var camera := AirdriftCamera.new()
 	add_child(camera)
 	await get_tree().process_frame
 
@@ -157,17 +157,17 @@ func _test_a_runner_does_not_see_their_own_head() -> void:
 	var tp_mask: int = camera.third.cull_mask
 
 	_check(
-		fp_mask & (1 << (G2GRig.LAYER_LOCAL_BODY - 1)) == 0,
+		fp_mask & (1 << (AirdriftRig.LAYER_LOCAL_BODY - 1)) == 0,
 		"the first-person camera culls the local-body layer",
 		"mask 0x%05X" % fp_mask
 	)
 	_check(
-		tp_mask & (1 << (G2GRig.LAYER_LOCAL_BODY - 1)) != 0,
+		tp_mask & (1 << (AirdriftRig.LAYER_LOCAL_BODY - 1)) != 0,
 		"and the third-person camera does not",
 		"mask 0x%05X" % tp_mask
 	)
 
-	var rig := G2GRig.new()
+	var rig := AirdriftRig.new()
 	add_child(rig)
 	await get_tree().process_frame
 
@@ -240,8 +240,8 @@ func _test_every_sound_has_a_voice() -> void:
 	# close as an assertion gets. game-fatal-contact/tools/audio_probe.sh is the other half.
 	_section("Every sound this game declares has a noise to make")
 
-	var cat := G2GPresentation.sound_catalogue()
-	var recipes := G2GPresentation.sound_recipes()
+	var cat := AirdriftPresentation.sound_catalogue()
+	var recipes := AirdriftPresentation.sound_recipes()
 
 	var uncovered: Array[String] = []
 	for id in cat.ids():
@@ -283,10 +283,10 @@ func _test_the_vote_is_heard() -> void:
 	var p := _make()
 	var sink := p.audio.sink as DotAudioSinkNull
 
-	# G2GVote's constants are the one copy: its rules name them and this catalogue
+	# AirdriftVote's constants are the one copy: its rules name them and this catalogue
 	# defines them, so a cue the server sends and the client lacks cannot be a typo.
 	var named: Array[StringName] = [
-		G2GVote.CUE_START, G2GVote.CUE_END, G2GVote.CUE_WARNING, G2GVote.CUE_COUNT
+		AirdriftVote.CUE_START, AirdriftVote.CUE_END, AirdriftVote.CUE_WARNING, AirdriftVote.CUE_COUNT
 	]
 	var missing: Array[String] = []
 	for id in named:
@@ -299,11 +299,11 @@ func _test_the_vote_is_heard() -> void:
 	)
 
 	sink.forget()
-	_check(p.on_vote_cue(G2GVote.CUE_START) != 0, "a ballot opening plays")
+	_check(p.on_vote_cue(AirdriftVote.CUE_START) != 0, "a ballot opening plays")
 	p.on_vote_cue(&"")
 	p.on_vote_cue(&"not_in_this_build")
 	_check(
-		sink.count_of(G2GVote.CUE_START) == 1 and sink.count_of(&"not_in_this_build") == 0,
+		sink.count_of(AirdriftVote.CUE_START) == 1 and sink.count_of(&"not_in_this_build") == 0,
 		"once, and an empty or unknown cue is silence"
 	)
 
@@ -318,10 +318,10 @@ func _test_the_vote_is_heard() -> void:
 func _test_blind_and_beacon() -> void:
 	_section("A blind is the owner's screen, and a beacon is everybody's")
 
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.initial_map = &"bhop_g2g_intro"
-	var game := G2GGame.new()
+	var game := AirdriftGame.new()
 	game.name = "BeaconGame"
 	game.config = config
 	add_child(game)
@@ -330,10 +330,10 @@ func _test_blind_and_beacon() -> void:
 		if game.maps != null and game.maps.current != null:
 			break
 
-	var ada: G2GPlayer = game.add_player(&"u1", "Ada")
-	var bea: G2GPlayer = game.add_player(&"u2", "Bea")
+	var ada: AirdriftPlayer = game.add_player(&"u1", "Ada")
+	var bea: AirdriftPlayer = game.add_player(&"u2", "Bea")
 
-	var hud := G2GHud.new()
+	var hud := AirdriftHud.new()
 	add_child(hud)
 	hud.bind(game, &"u1")
 
@@ -354,7 +354,7 @@ func _test_blind_and_beacon() -> void:
 	hud.timer_hud.size = Vector2(1280.0, 720.0)
 	var plate := hud.timer_rect()
 	var box := _make()
-	var fitted := G2GPresentation.chat_width_beside(plate, box.chat_window, 720.0)
+	var fitted := AirdriftPresentation.chat_width_beside(plate, box.chat_window, 720.0)
 	_check(
 		plate.size.x > 0.0 and box.chat_window.margin_left + fitted <= plate.position.x,
 		"a full chat log stays left of the timer's plate (%.0f wide at x %.0f)" % [plate.size.x, plate.position.x],
@@ -363,9 +363,9 @@ func _test_blind_and_beacon() -> void:
 	box.queue_free()
 
 	ada.blinded = true
-	hud.present_blind(G2GHud.BLIND_FADE_SEC * 0.5)
+	hud.present_blind(AirdriftHud.BLIND_FADE_SEC * 0.5)
 	var halfway := hud.blind_overlay.modulate.a
-	hud.present_blind(G2GHud.BLIND_FADE_SEC)
+	hud.present_blind(AirdriftHud.BLIND_FADE_SEC)
 	_check(
 		halfway > 0.2 and halfway < 0.8 and is_equal_approx(hud.blind_overlay.modulate.a, 1.0),
 		"a blind fades down over a quarter of a second rather than cutting (%.2f halfway)" % halfway
@@ -415,14 +415,14 @@ func _test_blind_and_beacon() -> void:
 
 	var p := _make()
 	var sink := p.audio.sink as DotAudioSinkNull
-	var def := p.audio.catalogue.find(G2GPresentation.BEACON_SOUND)
+	var def := p.audio.catalogue.find(AirdriftPresentation.BEACON_SOUND)
 	_check(
 		def != null and def.kind == DotAudioDef.Kind.POSITIONAL_3D and def.priority < 50,
 		"the ping is positional, and below every sound the run is made of"
 	)
 	sink.forget()
 	_check(
-		p.on_beacon(Vector3(3.0, 0.0, 4.0)) != 0 and sink.count_of(G2GPresentation.BEACON_SOUND) == 1,
+		p.on_beacon(Vector3(3.0, 0.0, 4.0)) != 0 and sink.count_of(AirdriftPresentation.BEACON_SOUND) == 1,
 		"and a ripple plays it"
 	)
 
@@ -433,7 +433,7 @@ func _test_blind_and_beacon() -> void:
 
 
 ## `[p2p-await-games]`: a practice session over the HTTP rendezvous, host and join, each
-## awaited end to end — through `G2GParty`, `DotP2PSession` and `DotP2PSignallerHttp` to
+## awaited end to end — through `AirdriftParty`, `DotP2PSession` and `DotP2PSignallerHttp` to
 ## a socket and back.
 ##
 ## [b]What "awaited" is asserted as.[/b] The answer the caller gets back is the one the
@@ -458,11 +458,11 @@ func _test_party_over_http() -> void:
 		return
 
 	var url := "http://127.0.0.1:%d/p2p" % stub.port
-	var ada := G2GParty.new()
+	var ada := AirdriftParty.new()
 	ada.name = "PartyAda"
 	ada.signalling_url = url
 	add_child(ada)
-	var bob := G2GParty.new()
+	var bob := AirdriftParty.new()
 	bob.name = "PartyBob"
 	bob.signalling_url = url
 	add_child(bob)
@@ -524,7 +524,7 @@ func _test_party_over_http() -> void:
 
 	# A refusal arrives as a failure the caller can read, not as null and not as success.
 	bob.leave()
-	var carol := G2GParty.new()
+	var carol := AirdriftParty.new()
 	carol.name = "PartyCarol"
 	carol.signalling_url = url
 	add_child(carol)
@@ -554,10 +554,10 @@ func _test_a_map_credits_its_author() -> void:
 
 	var bare := DotMapDef.new()
 	bare.id = &"bhop_g2g_intro"
-	_check(G2GHud.now_playing_text(bare) == "Now playing bhop_g2g_intro",
-		"a hand-built map with no author reads as it always did", G2GHud.now_playing_text(bare))
+	_check(AirdriftHud.now_playing_text(bare) == "Now playing bhop_g2g_intro",
+		"a hand-built map with no author reads as it always did", AirdriftHud.now_playing_text(bare))
 
-	var defs: Array[DotMapDef] = G2GMapCatalogue.scan()
+	var defs: Array[DotMapDef] = AirdriftMapCatalogue.scan()
 	var imported := defs.filter(func(m: DotMapDef) -> bool:
 		return FileAccess.file_exists("res://maps/imported/%s/%s.json" % [m.id, m.id]))
 	# [b]A clean checkout has nothing to ask[/b], and CI is one: `maps/imported/` is
@@ -569,7 +569,7 @@ func _test_a_map_credits_its_author() -> void:
 		_skip(3, "no imported maps on this checkout, so no author to ask (maps/imported/ is gitignored)")
 		_done()
 		return
-	var uncredited := imported.filter(func(m: Variant) -> bool: return G2GMapCatalogue.credit(m as DotMapDef).is_empty())
+	var uncredited := imported.filter(func(m: Variant) -> bool: return AirdriftMapCatalogue.credit(m as DotMapDef).is_empty())
 	_check(imported.size() > 0, "the catalogue holds imported maps to ask", "%d defs" % defs.size())
 	_check(uncredited.is_empty(), "and every one of them has an author to name",
 		", ".join(uncredited.map(func(m: Variant) -> String: return String((m as DotMapDef).id))))
@@ -578,9 +578,9 @@ func _test_a_map_credits_its_author() -> void:
 	for m: Variant in imported:
 		if (m as DotMapDef).id == &"surf_mesa":
 			mesa = m
-	_check(mesa != null and G2GHud.now_playing_text(mesa).ends_with(", by Arblarg"),
+	_check(mesa != null and AirdriftHud.now_playing_text(mesa).ends_with(", by Arblarg"),
 		"so surf_mesa's line credits Arblarg",
-		G2GHud.now_playing_text(mesa) if mesa != null else "no surf_mesa")
+		AirdriftHud.now_playing_text(mesa) if mesa != null else "no surf_mesa")
 	_done()
 
 

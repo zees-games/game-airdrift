@@ -9,7 +9,7 @@ extends SceneTree
 ## layout a server's `ensure(id)` looks for and the one the content origin already serves
 ## the unowned map packs in -- so the output directory is uploaded to the origin's
 ## `content/` as it stands. A server fetches them with `sv_map_content_owner <owner>`
-## (see [member G2GConfig.map_content_owner]); the map id a player types is unchanged.
+## (see [member AirdriftConfig.map_content_owner]); the map id a player types is unchanged.
 ##
 ## [b]Signed with dot-server-deploy's key, not the site's.[/b] A map is not an asset on
 ## the site, so the site cannot publish it, and the key every client already trusts under
@@ -17,7 +17,7 @@ extends SceneTree
 ##
 ## Exit codes: 0 every map published, 1 called wrong, 2 at least one failed.
 
-const G2GMapCatalogue := preload("../game/g2g_map_catalogue.gd")
+const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
 
 const IMPORTED := "res://maps/imported"
 
@@ -28,7 +28,7 @@ func _initialize() -> void:
 	var key_path := ""
 	var key_id := "default"
 	var out := "dist/maps"
-	# Empty: each map's own `G2GMapCatalogue.pack_version`, from its files. `--version`
+	# Empty: each map's own `AirdriftMapCatalogue.pack_version`, from its files. `--version`
 	# still forces one for every map named, for a release that wants a number.
 	var version := ""
 	var ids: PackedStringArray = []
@@ -85,7 +85,7 @@ func _initialize() -> void:
 
 		var pub := DotCloudPublisher.new()
 		pub.content_id = "%s/%s" % [owner, id]
-		pub.version = version if not version.is_empty() else G2GMapCatalogue.pack_version(source)
+		pub.version = version if not version.is_empty() else AirdriftMapCatalogue.pack_version(source)
 		pub.display_name = id
 		pub.signing_key_pem = pem
 		pub.signing_key_id = key_id
@@ -111,7 +111,7 @@ func _private_reference_hashes() -> Dictionary:
 	if not DirAccess.dir_exists_absolute(PRIVATE_REFERENCE):
 		return out
 	var files := PackedStringArray()
-	G2GMapCatalogue._files_under(PRIVATE_REFERENCE, "", files)
+	AirdriftMapCatalogue._files_under(PRIVATE_REFERENCE, "", files)
 	for rel in files:
 		out[FileAccess.get_sha256(PRIVATE_REFERENCE.path_join(rel))] = rel
 	return out
@@ -121,7 +121,7 @@ func _private_reference_hashes() -> Dictionary:
 func _private_files_in(source: String, hashes: Dictionary) -> PackedStringArray:
 	var leaked := PackedStringArray()
 	var files := PackedStringArray()
-	G2GMapCatalogue._files_under(source, "", files)
+	AirdriftMapCatalogue._files_under(source, "", files)
 	for rel in files:
 		var path := source.path_join(rel)
 		var real := ProjectSettings.globalize_path(path)

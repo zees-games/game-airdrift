@@ -1,5 +1,5 @@
 extends "dedicated_votes.gd"
-const G2GTestPorts := preload("test_ports.gd")
+const AirdriftTestPorts := preload("test_ports.gd")
 
 func _ready() -> void:
 	DotLog.set_level(DotLog.Level.ERROR)
@@ -14,7 +14,7 @@ func _on_log_record(rec: Dictionary) -> void:
 
 
 func _run() -> void:
-	print("g2gfast — dedicated server")
+	print("Airdrift — dedicated server")
 	print("")
 
 	var probe: Array = []
@@ -101,11 +101,11 @@ func _boot() -> void:
 	var config := DotServerConfig.new()
 	config.startup_config = cfg_path
 	config.autoexec_config = ""
-	config.port = G2GTestPorts.free_port()
+	config.port = AirdriftTestPorts.free_port()
 	config.max_players = 16
 	config.hibernate_when_empty = false
 	config.query_enabled = true
-	config.query_port = G2GTestPorts.free_port()
+	config.query_port = AirdriftTestPorts.free_port()
 	config.admins_path = "%s/admins.json" % SERVER_DIR
 	config.bans_path = "%s/bans.json" % SERVER_DIR
 	config.audit_log_path = "%s/audit.jsonl" % SERVER_DIR
@@ -141,19 +141,19 @@ func _boot() -> void:
 		await get_tree().process_frame
 	_check(query_host.is_open(), "the query host attached and opened")
 
-	var g2g_config := G2GConfig.new()
-	g2g_config.records_directory = ""
-	g2g_config.map_seconds = 0.0
-	g2g_config.initial_map = &"bhop_g2g_intro"
+	var airdrift_config := AirdriftConfig.new()
+	airdrift_config.records_directory = ""
+	airdrift_config.map_seconds = 0.0
+	airdrift_config.initial_map = &"bhop_g2g_intro"
 	# All three modes on, so the layers exist and can be flipped. They are built
 	# whether or not they are enabled — the cvars flip a layer that already exists —
 	# so this is what says "this server booted with them", not "they are running".
-	g2g_config.deathmatch = true
-	g2g_config.hunters = true
-	g2g_config.placeable_props = true
+	airdrift_config.deathmatch = true
+	airdrift_config.hunters = true
+	airdrift_config.placeable_props = true
 
-	game = G2GGame.new()
-	game.config = g2g_config
+	game = AirdriftGame.new()
+	game.config = airdrift_config
 	add_child(game)
 	for _i in range(60):
 		await get_tree().process_frame
@@ -169,14 +169,14 @@ func _boot() -> void:
 	# a preload would load the module when this scene loads, long before the host does,
 	# and the order scripts load in is what decides whether Godot 4.7.2 leaks them at
 	# exit. See [method ExitProbe.run]. This is the order a deployed server has.
-	(load("res://game/g2g_module.gd") as GDScript).set(
+	(load("res://game/airdrift_module.gd") as GDScript).set(
 		"punishments_file", "%s/punishments.json" % SERVER_DIR
 	)
 
 	var loaded: DotResult = await server.modules.load_module(
-		"res://game/g2g_module.gd"
+		"res://game/airdrift_module.gd"
 	)
-	_check(loaded.ok, "the g2gfast module loads", loaded.error.message if not loaded.ok else "")
+	_check(loaded.ok, "the Airdrift module loads", loaded.error.message if not loaded.ok else "")
 
 	# [b]The store, and that it is empty.[/b] The second is what says the first worked on
 	# THIS run: a path that is right and a directory that was not wiped is a suite carrying
@@ -201,7 +201,7 @@ func _boot() -> void:
 func _test_browser() -> void:
 	_section("a browser asking this server")
 
-	var servers := G2GBrowser.new()
+	var servers := AirdriftBrowser.new()
 	servers.name = "Servers"
 	servers.timeout_ms = 2000
 	# In memory. A suite that wrote a player's favourites to disk is a suite that
@@ -251,10 +251,10 @@ func _test_browser() -> void:
 		# section under `rules["game"]` precisely so a game putting a field called
 		# `map` in it cannot overwrite the other one.
 		_check(
-			G2GBrowser.game_field(entry, "map") == String(game.maps.current.id),
+			AirdriftBrowser.game_field(entry, "map") == String(game.maps.current.id),
 			"and the map the game says it is running",
 			"%s vs %s" % [
-				G2GBrowser.game_field(entry, "map"), String(game.maps.current.id)
+				AirdriftBrowser.game_field(entry, "map"), String(game.maps.current.id)
 			]
 		)
 
@@ -267,17 +267,17 @@ func _test_browser() -> void:
 		# this compared `game_field(...)` to `str(100)` and failed on `"100.0"`, which
 		# is the query working and the reader guessing.
 		_check(
-			int(G2GBrowser.game_number(entry, "tick_rate")) == game.tick_rate,
+			int(AirdriftBrowser.game_number(entry, "tick_rate")) == game.tick_rate,
 			"and the tick rate",
 			"%.1f vs %d" % [
-				G2GBrowser.game_number(entry, "tick_rate"), game.tick_rate
+				AirdriftBrowser.game_number(entry, "tick_rate"), game.tick_rate
 			]
 		)
 
 		_check(
-			G2GBrowser.game_field(entry, "deathmatch") != "",
+			AirdriftBrowser.game_field(entry, "deathmatch") != "",
 			"and whether deathmatch is on, which is a mode this server now has",
-			G2GBrowser.game_field(entry, "deathmatch")
+			AirdriftBrowser.game_field(entry, "deathmatch")
 		)
 
 	servers.favourite(entry.key(), true)
@@ -319,7 +319,7 @@ func _test_live_tools() -> void:
 	session.display_name = "One"
 	var _adopted := server.adopt_session(session)
 
-	var player: G2GPlayer = game.players[&"u1"]
+	var player: AirdriftPlayer = game.players[&"u1"]
 	var stopped: Array[StringName] = []
 	var on_stop := func(_r: DotTimerRun, why: StringName) -> void: stopped.append(why)
 	player.timer.run_stopped.connect(on_stop)
@@ -376,7 +376,7 @@ func _test_live_tools() -> void:
 	# none (FC's first draft of this check hung there). Armed 2026-09-27: without the
 	# clear, `return One` put them back at the spot on the previous map.
 	var module: Object = server.modules.get_module("g2gfast")
-	var tools: DotModTools = (module.get("services") as G2GServices).mod_tools if module != null else null
+	var tools: DotModTools = (module.get("services") as AirdriftServices).mod_tools if module != null else null
 	var _moved: DotResult = await tools.teleport(&"", &"1", player.global_position + Vector3(6.0, 0.0, 0.0))
 	_check(tools.can_return(&"1"), "a moderator moves One, so `return` has somewhere to put them")
 	game.maps.changed.emit(game.maps.current, game.current_map_node())
@@ -394,7 +394,7 @@ func _test_live_tools() -> void:
 
 ## Puts [param player] on the floor a step past the main start zone, toward the finish.
 ## True when they are there and out of the start.
-func _stand_past_start(player: G2GPlayer) -> bool:
+func _stand_past_start(player: AirdriftPlayer) -> bool:
 	var zones := player.timer.zones
 	if zones == null:
 		return false
@@ -428,8 +428,8 @@ func _test_blind_and_beacon() -> void:
 
 	var module: Object = server.modules.get_module("g2gfast")
 	var bridge: Object = module.get("bridge") if module != null else null
-	var tools: DotModTools = (module.get("services") as G2GServices).mod_tools if module != null else null
-	var player: G2GPlayer = game.players[&"u1"]
+	var tools: DotModTools = (module.get("services") as AirdriftServices).mod_tools if module != null else null
+	var player: AirdriftPlayer = game.players[&"u1"]
 	var net: Object = bridge.call("behaviour_for", 1) if bridge != null else null
 
 	var blinded := await _run_command_later("blind One")
@@ -506,7 +506,7 @@ func _test_unload() -> void:
 	_check(game.players.is_empty(), "and the players it added")
 	await get_tree().process_frame
 	# The bridge's map-change host was the game's while the module was loaded, and the
-	# game outlives the module. [b]Armed by emptying `G2GNetBridge._exit_tree`, and it did
+	# game outlives the module. [b]Armed by emptying `AirdriftNetBridge._exit_tree`, and it did
 	# NOT fire[/b]: a freed Object compares equal to null on 4.7.2, so both this check and
 	# `change_map`'s own `map_sync != null` route around a freed host anyway. What it
 	# asserts is the outcome; `_exit_tree` is for a bridge taken out without being freed.
@@ -518,7 +518,7 @@ func _test_unload() -> void:
 	_check(after.ok and game.maps.current.id == next_map,
 		"so a map change after it is this process's own", str(after.error) if not after.ok else "")
 	# The SECOND map change with the combat layer built — the first one that has old
-	# spawn points to clear. `G2GCombat._on_map_ready` called a method dot-match has never
+	# spawn points to clear. `AirdriftCombat._on_map_ready` called a method dot-match has never
 	# had, and the script error left the previous map's points as the deathmatch's.
 	var points: Array = game.combat.match_node.spawn_points() if game.combat != null else []
 	var main_pad: Vector3 = game.current_map_node().spawn_for(DotTimerTrack.MAIN)
@@ -556,15 +556,15 @@ func _test_weapons_keep_wall_clock_time() -> void:
 	var raw64 := _weapon_shots(64, false)
 	_check(raw64.size() < at128.size(), "rows naming no rate fire slower at 64 Hz", "%s vs %s" % [raw64, at128])
 
-	var deagle: DotWeaponDef = G2GArsenal.deagle()
+	var deagle: DotWeaponDef = AirdriftArsenal.deagle()
 	var b := deagle.tuning as DotWeaponBallistics
 	_check(
 		is_equal_approx(deagle.per_tick_at(b.bloom_recovery, 64), 2.0 * deagle.per_tick_at(b.bloom_recovery, 128)),
 		"bloom recovers twice as much per tick at 64 Hz, the same per second"
 	)
 	_check(
-		G2GArsenal.knife().authored_tick_rate == G2GArsenal.TICK_RATE
-			and deagle.authored_tick_rate == G2GArsenal.TICK_RATE,
+		AirdriftArsenal.knife().authored_tick_rate == AirdriftArsenal.TICK_RATE
+			and deagle.authored_tick_rate == AirdriftArsenal.TICK_RATE,
 		"every row the game builds names the rate it was written at"
 	)
 
@@ -575,7 +575,7 @@ func _test_weapons_keep_wall_clock_time() -> void:
 ## the trigger pressed and released every 1/64 s for three seconds.
 func _weapon_shots(rate: int, authored: bool) -> Array[float]:
 	var catalogue := DotWeaponCatalogue.new()
-	for def: DotWeaponDef in G2GArsenal.weapons():
+	for def: DotWeaponDef in AirdriftArsenal.weapons():
 		if not authored:
 			def.authored_tick_rate = 0
 		catalogue.add(def)
@@ -588,8 +588,8 @@ func _weapon_shots(rate: int, authored: bool) -> Array[float]:
 	var res := arsenal.setup()
 	if not res.ok:
 		push_error(res.error.message)
-	arsenal.give(G2GArsenal.ITEM_KNIFE)
-	arsenal.give(G2GArsenal.ITEM_DEAGLE)
+	arsenal.give(AirdriftArsenal.ITEM_KNIFE)
+	arsenal.give(AirdriftArsenal.ITEM_DEAGLE)
 
 	var out: Array[float] = []
 	var previous: DotWeaponCommand = null

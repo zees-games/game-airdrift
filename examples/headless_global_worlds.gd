@@ -3,9 +3,9 @@ extends DotGameCheckSuite
 ## The pilot of drawing imported maps through dot-map's world document (`g2g_global_worlds`): the switch is off by default and changes nothing; on, a map is drawn from `worlds/<id>` while its zones, spawns and collision stay the manifest's.
 ## Run: godot --headless --path . res://examples/headless_global_worlds.tscn
 
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
-const G2GMapCatalogue := preload("../game/g2g_map_catalogue.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
+const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 
 const PILOT := ["bhop_training_fun", "bhop_eazy", "bhop_aztec", "bunnyhop_pro", "bhop_amor", "bhop_eazy_v2", "bhop_grove", "surf_eclipse", "surf_year3000", "surf_greensway", "surf_beginner", "surf_kitsune"]
 const CHECKS := 108
@@ -23,12 +23,12 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("game-g2gfast: maps drawn from the dot-map world document")
+	print("game-airdrift: maps drawn from the dot-map world document")
 	if not FileAccess.file_exists("res://worlds/%s.json" % PILOT[0]):
 		print("SKIP: no worlds/ (airdrift-maps/worlds is not linked)")
 		get_tree().quit(0)
 		return
-	var catalogue := G2GMapCatalogue.discover()
+	var catalogue := AirdriftMapCatalogue.discover()
 	for id: String in PILOT:
 		_section(id)
 		var def := catalogue.get_map(StringName(id))
@@ -47,7 +47,7 @@ func _run() -> void:
 		var old: Array = global.manifest.get("spawns", [])
 		var matched := 0
 		for o: Dictionary in old:
-			var at: Vector3 = G2GUnits.vector_to_metres(Vector3(o["origin"][0], o["origin"][1], o["origin"][2]))
+			var at: Vector3 = AirdriftUnits.vector_to_metres(Vector3(o["origin"][0], o["origin"][1], o["origin"][2]))
 			for s: Dictionary in spawns:
 				if (s["origin"] as Vector3).distance_to(at) < 0.02:
 					matched += 1
@@ -65,7 +65,7 @@ func _run() -> void:
 					inside += 1
 			var inside_old := 0
 			for o: Dictionary in old:
-				if start.contains(G2GUnits.vector_to_metres(Vector3(o["origin"][0], o["origin"][1], o["origin"][2]))):
+				if start.contains(AirdriftUnits.vector_to_metres(Vector3(o["origin"][0], o["origin"][1], o["origin"][2]))):
 					inside_old += 1
 			# Surf maps spawn on every stage and some zones sit off the spawns: the world must agree with the manifest, not hold them all.
 			_check(inside == inside_old, "%s: the START zone holds as many world spawns as the manifest's (%d of %d)" % [id, inside, spawns.size()])
@@ -87,8 +87,8 @@ func _run() -> void:
 	_report_sections(_entered, _completed, SECTIONS, CHECKS)
 
 
-func _build(def: DotMapDef, on: bool) -> G2GBspMap:
-	var map := (load(def.scene_path) as PackedScene).instantiate() as G2GBspMap
+func _build(def: DotMapDef, on: bool) -> AirdriftBspMap:
+	var map := (load(def.scene_path) as PackedScene).instantiate() as AirdriftBspMap
 	map.global_worlds = on
 	map.build_from(def)
 	add_child(map)

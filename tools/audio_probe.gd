@@ -1,6 +1,6 @@
 extends SceneTree
 
-const G2GPresentation := preload("../game/g2g_presentation.gd")
+const AirdriftPresentation := preload("../game/airdrift_presentation.gd")
 
 ## Asks whether this game actually makes a noise, on a machine that has a sound card.
 ##
@@ -60,7 +60,7 @@ func _process(_delta: float) -> bool:
 
 
 func _build() -> bool:
-	var p := G2GPresentation.new()
+	var p := AirdriftPresentation.new()
 	p.name = "AudioProbe"
 	root.add_child(p)
 

@@ -8,7 +8,7 @@ extends "headless_client_solo.gd"
 ## [/codeblock]
 ##
 ## [b]Every other suite here drives the pieces — a game, two bridges, a menu against a fake
-## host — and none of them stands up `G2GClient`.[/b] So the offline chat box let a runner
+## host — and none of them stands up `AirdriftClient`.[/b] So the offline chat box let a runner
 ## walk with W held for as long as the box has existed: the sampler that was suspended was
 ## the networked one, and offline the player's own sampler is the one that moves them. The
 ## presentation suite checked the box swallowed keys, and it did; nothing asked whether the
@@ -28,11 +28,11 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("game-g2gfast: the client, offline")
+	print("game-airdrift: the client, offline")
 
 	# A hand-built map, so the suite needs nothing imported.
-	OS.set_environment("G2G_INITIAL_MAP", "bhop_g2g_intro")
-	_client = (load("res://game/g2g.tscn") as PackedScene).instantiate() as G2GClient
+	OS.set_environment("AIRDRIFT_INITIAL_MAP", "bhop_g2g_intro")
+	_client = (load("res://game/airdrift.tscn") as PackedScene).instantiate() as AirdriftClient
 	_client.force_offline = true
 	add_child(_client)
 
@@ -174,13 +174,13 @@ func _test_spectating_holds_the_runner() -> void:
 func _test_r_once_and_twice() -> void:
 	_section("R once, and R twice inside the window")
 	var first := _client._restart_key(10000)
-	var second := _client._restart_key(10000 + G2GClient.DOUBLE_TAP_MSEC - 50)
-	_check(first == G2GEvents.RESTART_STAGE and second == G2GEvents.RESTART_MAIN,
+	var second := _client._restart_key(10000 + AirdriftClient.DOUBLE_TAP_MSEC - 50)
+	_check(first == AirdriftEvents.RESTART_STAGE and second == AirdriftEvents.RESTART_MAIN,
 		"one R is the stage and a second inside the window is the start")
-	var third := _client._restart_key(10000 + G2GClient.DOUBLE_TAP_MSEC)
-	_check(third == G2GEvents.RESTART_STAGE, "a double tap is spent: a third press starts again")
-	var late := _client._restart_key(10000 + G2GClient.DOUBLE_TAP_MSEC * 3)
-	_check(late == G2GEvents.RESTART_STAGE, "and two presses further apart are two single Rs")
+	var third := _client._restart_key(10000 + AirdriftClient.DOUBLE_TAP_MSEC)
+	_check(third == AirdriftEvents.RESTART_STAGE, "a double tap is spent: a third press starts again")
+	var late := _client._restart_key(10000 + AirdriftClient.DOUBLE_TAP_MSEC * 3)
+	_check(late == AirdriftEvents.RESTART_STAGE, "and two presses further apart are two single Rs")
 	_done()
 
 
@@ -277,7 +277,7 @@ func _test_a_dead_body_falls() -> void:
 	var dressed := DotAvatar.make(&"g2g_stock")
 	dressed.set_part(&"body", &"body_kenney_c")
 	dressed.set_part(&"head", &"head_kenney_c")
-	var other: G2GPlayer = game.add_player(&"u91", "Fallen", false, dressed)
+	var other: AirdriftPlayer = game.add_player(&"u91", "Fallen", false, dressed)
 	other.teleport(_client.player.controller.state.position + Vector3(0.0, 0.0, -4.0))
 	for _i in range(4):
 		await get_tree().process_frame
@@ -317,7 +317,7 @@ func _test_a_dead_body_falls() -> void:
 func _test_the_end_of_a_deathmatch() -> void:
 	_section("A deathmatch's end: the final killcam, the winner, then the board")
 	var game := _client.game
-	var rival: G2GPlayer = game.add_player(&"u92", "Rival", false)
+	var rival: AirdriftPlayer = game.add_player(&"u92", "Rival", false)
 	var start := _client.player.controller.state.position + Vector3(0.0, 0.0, -6.0)
 	var clock := [0.0]
 	var kc := _client.killcam
@@ -347,7 +347,7 @@ func _test_the_end_of_a_deathmatch() -> void:
 		"under a banner naming the killer")
 	kc.killcam.banner.present({"killer": "Rival", "weapon": "Deagle", "weapon_id": "deagle"})
 	_check(kc.killcam.banner.icon_rect.visible and kc.killcam.banner.icon_rect.texture != null,
-		"the banner shows the weapon's icon from the real G2GWeaponIcons")
+		"the banner shows the weapon's icon from the real AirdriftWeaponIcons")
 	var n := 0
 	while kc.is_playing() and n < 1000:
 		kc.killcam.advance(step)
@@ -402,7 +402,7 @@ func _test_an_online_kill_view_poses_the_bodies() -> void:
 	var minted: int = _client.killcam_bodies._local_ids.size()
 	_check(_client.killcam_bodies.id_for(game, &"") == 0 and _client.killcam_bodies._local_ids.size() == minted,
 		"a world killer's empty key mints no local id")
-	var rival: G2GPlayer = game.add_player(&"u93", "Rival", false)
+	var rival: AirdriftPlayer = game.add_player(&"u93", "Rival", false)
 	var kc := _client.killcam
 	var clock := [100.0]
 	kc.now_fn = func() -> float: return clock[0]
@@ -418,7 +418,7 @@ func _test_an_online_kill_view_poses_the_bodies() -> void:
 	game.killview_rules.enabled = true
 	var bridge := KillBridge.new()
 	add_child(bridge)
-	var host := G2GClientKillView.new()
+	var host := AirdriftClientKillView.new()
 	add_child(host)
 	host.attach(_client, bridge, game)
 	host.view.kv.auto_process = false
@@ -444,7 +444,7 @@ func _test_an_online_kill_view_poses_the_bodies() -> void:
 	var screen: Node = host.get_node_or_null("KillerScreen")
 	_check(screen != null and screen.label != null and screen.label.text != "",
 		"the killer's screen shows the recorded weapon", str(screen.label.text if screen != null and screen.label != null else null))
-	var local_layer := 1 << (G2GRig.LAYER_LOCAL_BODY - 1)
+	var local_layer := 1 << (AirdriftRig.LAYER_LOCAL_BODY - 1)
 	_check(host.view.camera.cull_mask & local_layer != 0,
 		"the replay camera draws the layer the local body sits on, or the victim is not in their own kill view",
 		str(host.view.camera.cull_mask))
@@ -486,11 +486,11 @@ func _test_the_wheel_jumps() -> void:
 	_done()
 
 
-## The client never set [member G2GNetBridgeWire.attack_wanted], so the fire bit in every input packet stayed
+## The client never set [member AirdriftNetBridgeWire.attack_wanted], so the fire bit in every input packet stayed
 ## false. The left button (pointer captured) and the touch FIRE button now set it, and nothing else does.
 func _test_the_fire_bit_follows_the_trigger() -> void:
 	_section("the trigger sets attack_wanted, which is the packet's fire bit")
-	var bridge := G2GNetBridge.new()
+	var bridge := AirdriftNetBridge.new()
 	add_child(bridge)
 	_client.bridge = bridge
 	_check(not _client.fire_wanted() and not bridge.attack_wanted, "idle: no fire")
@@ -576,7 +576,7 @@ func _test_the_map_menu() -> void:
 ## server's STAGE_REF feeds online; the wire half is in `headless_net`).
 func _test_the_stage_splits_panel() -> void:
 	_section("The stage splits panel: stages, setting, spectating and a comparison")
-	var hud: G2GHud = _client.hud
+	var hud: AirdriftHud = _client.hud
 	var panel: DotTimerSplitsPanel = hud.splits_panel
 	var settings: DotSettingsManager = _client.presentation.settings
 	var _first: Variant = await _client.menu.maps.change_fn.call(&"bhop_g2g_intro")
@@ -608,7 +608,7 @@ func _test_the_stage_splits_panel() -> void:
 	_check(panel.visible, "and it returns when watching stops")
 
 	# A comparison from the game's own store: a personal best with splits and a best section.
-	var game: G2GGame = _client.game
+	var game: AirdriftGame = _client.game
 	var timer: DotTimer = _client.player.timer
 	var key: StringName = game.record_key(hud.player_id)
 	var record := DotTimerRecord.new()

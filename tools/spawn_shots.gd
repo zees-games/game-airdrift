@@ -1,8 +1,8 @@
 extends SceneTree
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GCamera := preload("../game/g2g_camera.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftCamera := preload("../game/airdrift_camera.gd")
 
 ## Third-person spawn frame on every map, to `screenshots/spawns/<map>.png`.
 ##
@@ -14,16 +14,16 @@ const G2GCamera := preload("../game/g2g_camera.gd")
 const OUT_DIR := "res://screenshots/spawns"
 const SETTLE := 40
 
-var _game: G2GGame = null
+var _game: AirdriftGame = null
 
 
 func _initialize() -> void:
 	DotLog.set_level(DotLog.Level.ERROR)
 	DotFpsSampler.register_default_actions()
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.auto_bhop = true
 	config.initial_map = &""
-	_game = G2GGame.new()
+	_game = AirdriftGame.new()
 	_game.name = "Game"
 	_game.config = config
 	root.add_child(_game)
@@ -56,7 +56,7 @@ func _run() -> void:
 		_game.remove_player(&"local")
 		var me := _game.add_player(&"local", "qa", true)
 		me.sampler = null
-		var _third := me.camera.set_mode(G2GCamera.Mode.THIRD_PERSON)
+		var _third := me.camera.set_mode(AirdriftCamera.Mode.THIRD_PERSON)
 		for i in SETTLE:
 			me.present(1.0 / 60.0)
 			await process_frame

@@ -1,15 +1,15 @@
 extends Node3D
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
-const G2GSurfCourse := preload("../game/g2g_surf_course.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
+const AirdriftSurfCourse := preload("../game/airdrift_surf_course.gd")
 
 ## Plans a surf stage on the real motor, saves what it found as the map's surf cache, and
 ## measures the bot that rides from it. The planner and the pilot are dot-bot's
 ## ([DotBotSurfPlanner], [DotBotSurfPilot]), the simulator dot-player-controller's
-## ([DotFpsSimulator]); the stage is [code]G2GSurfCourse[/code], read from the timer's zones.
+## ([DotFpsSimulator]); the stage is [code]AirdriftSurfCourse[/code], read from the timer's zones.
 ##
 ##     godot --headless --fixed-fps 128 --path . tools/surf_plan.tscn -- surf_beginner 1
 ##     godot --headless --fixed-fps 128 --path . tools/surf_plan.tscn -- surf_beginner 1 --starts 6 --runs 50 --live 20
@@ -41,7 +41,7 @@ const ALONG_UNITS := 32.0
 const SPEED_UNITS := 150.0
 const RIDE_SECONDS := 20.0
 
-var game: G2GGame = null
+var game: AirdriftGame = null
 ## `--seconds N`: how long a ride may take; a whole-run stage 0 is longer than a stage.
 var ride_seconds := RIDE_SECONDS
 
@@ -67,7 +67,7 @@ func _run() -> void:
 		return
 
 	var why: Array = []
-	var course: DotBotSurfCourse = G2GSurfCourse.for_stage(game, number, why)
+	var course: DotBotSurfCourse = AirdriftSurfCourse.for_stage(game, number, why)
 	if course == null:
 		print("[surf] %s: %s" % [id, why[0]])
 		get_tree().quit(1)
@@ -82,18 +82,18 @@ func _run() -> void:
 	var base := bot.controller.state.duplicate_state()
 	var sim: DotFpsSimulator = course.simulator_for(bot.controller, game.mechanics)
 	print("[surf] %s stage %d: from %s u, %d goal zones, %d pits, aiming %s u" % [id, number,
-		str(G2GUnits.vector_to_units(course.start).round()), course.goal_zones.size(), course.pit_zones.size(),
-		str(G2GUnits.vector_to_units(course.goal_centre).round())])
+		str(AirdriftUnits.vector_to_units(course.start).round()), course.goal_zones.size(), course.pit_zones.size(),
+		str(AirdriftUnits.vector_to_units(course.goal_centre).round())])
 
 	var checks: Array = await simulator_checks(game, bot, sim, base, course.reference_yaw(),
-		first_ride_actions(G2GSurfCourse.read_stage(id, number)))
+		first_ride_actions(AirdriftSurfCourse.read_stage(id, number)))
 	var failed := 0
 	for c: Array in checks:
 		print("[surf]   %s  %s%s" % ["ok  " if c[0] else "FAIL", c[1], "" if c[2] == "" else "  (%s)" % c[2]])
 		if not c[0]:
 			failed += 1
 
-	var path := ProjectSettings.globalize_path(G2GSurfCourse.stage_path(id, number))
+	var path := ProjectSettings.globalize_path(AirdriftSurfCourse.stage_path(id, number))
 	if args.has("--trace"):
 		_trace(args, base, course, sim)
 		get_tree().quit(0)
@@ -110,13 +110,13 @@ func _run() -> void:
 		get_tree().quit(1)
 		return
 
-	var data: Dictionary = G2GSurfCourse.read_stage(id, number)
+	var data: Dictionary = AirdriftSurfCourse.read_stage(id, number)
 	if data.is_empty():
 		print("[surf] no cache for stage %d at %s" % [number, path])
 		get_tree().quit(1)
 		return
 	var pilot := DotBotSurfPilot.new()
-	pilot.load_stage(data, G2GUnits.METRES_PER_UNIT)
+	pilot.load_stage(data, AirdriftUnits.METRES_PER_UNIT)
 	pilot.sim = sim
 	pilot.score = course.score
 	# `--track`: track the remembered ride instead of taking the nearest entry's action;
@@ -142,11 +142,11 @@ func _run() -> void:
 
 ## Builds the game on [param id], with no mechanic blocks. False once the failure is reported.
 func _load_game(id: StringName) -> bool:
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = id
-	game = G2GGame.new()
+	game = AirdriftGame.new()
 	game.config = config
 	add_child(game)
 	for _i in range(240):
@@ -171,7 +171,7 @@ func _apply_guide(args: PackedStringArray, guide_at: int, course: DotBotSurfCour
 			guide_units.append([float(xyz[0]), float(xyz[1]), float(xyz[2])])
 		course.guide = PackedVector3Array([course.start])
 		for g: Array in guide_units:
-			course.guide.append(G2GUnits.vector_to_metres(Vector3(g[0], g[1], g[2])))
+			course.guide.append(AirdriftUnits.vector_to_metres(Vector3(g[0], g[1], g[2])))
 	return guide_units
 
 
@@ -183,8 +183,8 @@ func _trace(args: PackedStringArray, base: DotFpsState, course: DotBotSurfCourse
 	var from_at := args.find("--from")
 	if from_at >= 0 and from_at + 1 < args.size():
 		var f := args[from_at + 1].split(",")
-		base.position = G2GUnits.vector_to_metres(Vector3(float(f[0]), float(f[1]), float(f[2])))
-		base.velocity = G2GUnits.vector_to_metres(Vector3(float(f[3]), float(f[4]), float(f[5])))
+		base.position = AirdriftUnits.vector_to_metres(Vector3(float(f[0]), float(f[1]), float(f[2])))
+		base.velocity = AirdriftUnits.vector_to_metres(Vector3(float(f[3]), float(f[4]), float(f[5])))
 		base.mode = DotFpsState.Mode.AIR
 		base.yaw = rad_to_deg(atan2(-base.velocity.x, -base.velocity.z))
 	var tracer := DotBotSurfPlanner.new()
@@ -194,14 +194,14 @@ func _trace(args: PackedStringArray, base: DotFpsState, course: DotBotSurfCourse
 		if depth % 4 == 0:
 			var st: DotFpsState = best["state"]
 			print("[surf]   %.1f s best %s u, velocity %s u/s, score %.1f" % [(depth + 1) * tracer.hold / 128.0,
-				str(G2GUnits.vector_to_units(st.position).round()), str(G2GUnits.vector_to_units(st.velocity).round()), float(best["score"])])
+				str(AirdriftUnits.vector_to_units(st.position).round()), str(AirdriftUnits.vector_to_units(st.velocity).round()), float(best["score"])])
 	var found: Dictionary = tracer.search(base, course, sim)
 	print("[surf] traced search: %s %s" % [found["found"], found["why"]])
 
 
 ## The planning pass and its save. False when no search found a ride.
 func _plan_stage(args: PackedStringArray, id: StringName, number: int, starts: int, repairs: int, rounds: int,
-		course: DotBotSurfCourse, sim: DotFpsSimulator, bot: G2GPlayer, base: DotFpsState, path: String,
+		course: DotBotSurfCourse, sim: DotFpsSimulator, bot: AirdriftPlayer, base: DotFpsState, path: String,
 		guide_units: Array, guide_at: int) -> bool:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1000 + number
@@ -222,12 +222,12 @@ func _plan_stage(args: PackedStringArray, id: StringName, number: int, starts: i
 	var repair_pilot := DotBotSurfPilot.new()
 	repair_pilot.rolling = not args.has("--no-rolling")
 	var resume := args.has("--resume")
-	var keep: Dictionary = G2GSurfCourse.read_stage(id, number) if resume else {}
+	var keep: Dictionary = AirdriftSurfCourse.read_stage(id, number) if resume else {}
 	var built: Dictionary = _build_saving(planner, from_starts, repair_starts, rounds, course, sim, repair_sim,
 		func(line: String) -> void: print("[surf]   " + line), repair_pilot, keep,
 		func(snapshot: Dictionary) -> void:
 			_save_stage(path, id, number, course, snapshot, guide_units if guide_at >= 0 else
-				G2GSurfCourse.read_stage(id, number).get("guide", []),
+				AirdriftSurfCourse.read_stage(id, number).get("guide", []),
 				{"starts": starts, "repairs": repairs, "rounds": snapshot["rounds"], "searches": snapshot["searches"],
 				"seconds": snappedf((Time.get_ticks_msec() - started) / 1000.0, 0.1)}))
 	var rides: PackedFloat32Array = built["rides"]
@@ -239,12 +239,12 @@ func _plan_stage(args: PackedStringArray, id: StringName, number: int, starts: i
 		float(sim.usec + repair_sim.usec) / maxf(1.0, float(sim.steps + repair_sim.steps)), planner.expanded])
 	if seconds.is_empty():
 		return false
-	print("[surf]   saved %d entries to %s" % [rides.size() / DotBotSurfPilot.STRIDE, G2GSurfCourse.stage_path(id, number)])
+	print("[surf]   saved %d entries to %s" % [rides.size() / DotBotSurfPilot.STRIDE, AirdriftSurfCourse.stage_path(id, number)])
 	return true
 
 
 ## Rides the cached line `runs` times from perturbed starts, in simulation.
-func _simulated_rides(runs: int, number: int, base: DotFpsState, course: DotBotSurfCourse, bot: G2GPlayer,
+func _simulated_rides(runs: int, number: int, base: DotFpsState, course: DotBotSurfCourse, bot: AirdriftPlayer,
 		sim: DotFpsSimulator, pilot: DotBotSurfPilot) -> void:
 	if runs <= 0:
 		return
@@ -266,7 +266,7 @@ func _simulated_rides(runs: int, number: int, base: DotFpsState, course: DotBotS
 		elif misses.size() < 12:
 			var last: DotFpsState = (r["trail"] as Array).back()
 			misses.append("%s %.2f s near %s u" % ["fell" if int(r["event"]) != DotBotSurfCourse.EVENT_NONE else "stalled",
-				float(r["ticks"]) * sim.delta, str(G2GUnits.vector_to_units(last.position).round())])
+				float(r["ticks"]) * sim.delta, str(AirdriftUnits.vector_to_units(last.position).round())])
 	var lookahead: int = sim.steps - steps_before
 	print("[surf]   simulated rides: %d of %d reached the goal (%.0f%%), %s; lookahead %.2f motor ticks per ridden tick (%.0f us of motor per ridden tick); %d futures, %d vetoes, %d hopeless, %d resyncs" % [
 		ok, runs, 100.0 * ok / maxf(1.0, runs), _spread(times),
@@ -280,9 +280,9 @@ func _simulated_rides(runs: int, number: int, base: DotFpsState, course: DotBotS
 func _chain(args: PackedStringArray, box_arg: String, course: DotBotSurfCourse, sim: DotFpsSimulator,
 		base: DotFpsState, path: String, id: StringName, number: int, guide1: Array) -> int:
 	var b := box_arg.split(",")
-	var centre := G2GUnits.vector_to_metres(Vector3(float(b[0]), float(b[1]), float(b[2])))
-	var half := G2GUnits.vector_to_metres(Vector3(float(b[3]), float(b[4]), float(b[5])))
-	var min_speed := G2GUnits.to_metres(float(b[6]))
+	var centre := AirdriftUnits.vector_to_metres(Vector3(float(b[0]), float(b[1]), float(b[2])))
+	var half := AirdriftUnits.vector_to_metres(Vector3(float(b[3]), float(b[4]), float(b[5])))
+	var min_speed := AirdriftUnits.to_metres(float(b[6]))
 	var box := AABB(centre - half, half * 2.0)
 	var real_goals: Array[DotTimerZone] = course.goal_zones.duplicate()
 	course.goal_zones.clear()
@@ -295,7 +295,7 @@ func _chain(args: PackedStringArray, box_arg: String, course: DotBotSurfCourse, 
 		if depth % 4 == 0:
 			var st: DotFpsState = best["state"]
 			print("[surf]   %.1f s best %s u, velocity %s u/s" % [(depth + 1) * planner.hold / 128.0,
-				str(G2GUnits.vector_to_units(st.position).round()), str(G2GUnits.vector_to_units(st.velocity).round())])
+				str(AirdriftUnits.vector_to_units(st.position).round()), str(AirdriftUnits.vector_to_units(st.velocity).round())])
 	var found: Dictionary = planner.search(base, course, sim)
 	print("[surf] first leg: %s %s" % [found["found"], found["why"]])
 	if not bool(found["found"]):
@@ -308,8 +308,8 @@ func _chain(args: PackedStringArray, box_arg: String, course: DotBotSurfCourse, 
 			entries.append_array([s.position.x, s.position.y, s.position.z, s.velocity.x, s.velocity.y, s.velocity.z, float(action)])
 			if sim.step(s, DotBotSurfPilot.command_for(sim, action, s, reference)) != DotBotSurfCourse.EVENT_NONE:
 				break
-	print("[surf]   first leg arrives at %s u, %s u/s after %d ticks" % [str(G2GUnits.vector_to_units(s.position).round()),
-		str(G2GUnits.vector_to_units(s.velocity).round()), entries.size() / DotBotSurfPilot.STRIDE])
+	print("[surf]   first leg arrives at %s u, %s u/s after %d ticks" % [str(AirdriftUnits.vector_to_units(s.position).round()),
+		str(AirdriftUnits.vector_to_units(s.velocity).round()), entries.size() / DotBotSurfPilot.STRIDE])
 	course.goal_fn = Callable()
 	course.goal_zones = real_goals
 	var guide2: Array = []
@@ -319,7 +319,7 @@ func _chain(args: PackedStringArray, box_arg: String, course: DotBotSurfCourse, 
 		for part in args[g2_at + 1].split(";"):
 			var xyz := part.split(",")
 			guide2.append([float(xyz[0]), float(xyz[1]), float(xyz[2])])
-			course.guide.append(G2GUnits.vector_to_metres(Vector3(float(xyz[0]), float(xyz[1]), float(xyz[2]))))
+			course.guide.append(AirdriftUnits.vector_to_metres(Vector3(float(xyz[0]), float(xyz[1]), float(xyz[2]))))
 	course.height_weight = float(_opt(args, "--height2", 0))
 	found = planner.search(s, course, sim)
 	print("[surf] second leg: %s %s" % [found["found"], found["why"]])
@@ -337,7 +337,7 @@ func _chain(args: PackedStringArray, box_arg: String, course: DotBotSurfCourse, 
 	_save_stage(path, id, number, course, {"seconds": [snappedf(total * sim.delta, 0.01)],
 		"lengths": PackedInt32Array([total]), "rides": entries, "rounds": [], "searches": 2}, whole,
 		{"starts": 1, "chain": box_arg, "seconds": 0.0})
-	print("[surf]   saved the chained ride to %s" % G2GSurfCourse.stage_path(id, number))
+	print("[surf]   saved the chained ride to %s" % AirdriftSurfCourse.stage_path(id, number))
 	return 0
 
 
@@ -361,9 +361,9 @@ func _build_saving(planner: DotBotSurfPlanner, starts: Array, repairs: Array, ro
 			"found": counts[1], "rounds": per_round}
 	if not keep.is_empty():
 		for row: Array in keep.get("entries", []):
-			rides.append_array([float(row[0]) * G2GUnits.METRES_PER_UNIT, float(row[1]) * G2GUnits.METRES_PER_UNIT,
-				float(row[2]) * G2GUnits.METRES_PER_UNIT, float(row[3]) * G2GUnits.METRES_PER_UNIT,
-				float(row[4]) * G2GUnits.METRES_PER_UNIT, float(row[5]) * G2GUnits.METRES_PER_UNIT, float(row[6])])
+			rides.append_array([float(row[0]) * AirdriftUnits.METRES_PER_UNIT, float(row[1]) * AirdriftUnits.METRES_PER_UNIT,
+				float(row[2]) * AirdriftUnits.METRES_PER_UNIT, float(row[3]) * AirdriftUnits.METRES_PER_UNIT,
+				float(row[4]) * AirdriftUnits.METRES_PER_UNIT, float(row[5]) * AirdriftUnits.METRES_PER_UNIT, float(row[6])])
 		for n: Variant in keep.get("lengths", []):
 			lengths.append(int(n))
 		ride_seconds.append_array(keep.get("rides", []))
@@ -428,14 +428,14 @@ func _build_saving(planner: DotBotSurfPlanner, starts: Array, repairs: Array, ro
 ## Writes [param snapshot] ([method _build_saving]'s) as stage [param number]'s own cache file.
 static func _save_stage(_path: String, id: StringName, number: int, course: DotBotSurfCourse, snapshot: Dictionary,
 		guide_units: Array, planned: Dictionary) -> void:
-	G2GSurfCourse.write_stage_file(G2GSurfCourse.stage_path(id, number), {
+	AirdriftSurfCourse.write_stage_file(AirdriftSurfCourse.stage_path(id, number), {
 		"reference_yaw": snappedf(course.reference_yaw(), 0.01),
 		"start": _units(course.start),
 		"rides": snapshot["seconds"],
 		"lengths": Array(snapshot["lengths"]),
 		"planned": planned,
 		"guide": guide_units,
-		"entries": DotBotSurfPilot.entries_to_rows(snapshot["rides"], G2GUnits.METRES_PER_UNIT),
+		"entries": DotBotSurfPilot.entries_to_rows(snapshot["rides"], AirdriftUnits.METRES_PER_UNIT),
 	})
 
 
@@ -445,7 +445,7 @@ static func _save_stage(_path: String, id: StringName, number: int, course: DotB
 ## (from its start, stopped short of the door that would teleport the live player), so
 ## the comparison covers the drop, the ramp and the flight, not just a deck. Empty, a
 ## fixed run-and-strafe of 256 ticks.
-static func simulator_checks(p_game: Node, bot: G2GPlayer, sim: DotFpsSimulator, base: DotFpsState,
+static func simulator_checks(p_game: Node, bot: AirdriftPlayer, sim: DotFpsSimulator, base: DotFpsState,
 		reference: float, actions: PackedInt32Array = PackedInt32Array()) -> Array:
 	var out: Array = []
 	var tree := bot.get_tree()
@@ -476,14 +476,14 @@ static func simulator_checks(p_game: Node, bot: G2GPlayer, sim: DotFpsSimulator,
 		await tree.physics_frame
 	var apart := bot.controller.state.position.distance_to(a.position)
 	out.append([apart < 0.001, "the live player given the same commands ends where the simulation did",
-		"%.4f m apart after %d ticks, at %s u" % [apart, plan.size(), str(G2GUnits.vector_to_units(a.position).round())]])
+		"%.4f m apart after %d ticks, at %s u" % [apart, plan.size(), str(AirdriftUnits.vector_to_units(a.position).round())]])
 	return out
 
 
 ## Rides the stage [param count] times in the game from perturbed starts. Returns
 ## `{"ok": int, "times": Array[float], "failures": Array[String]}`.
 ## The first ride is from [param base] itself when [param exact_first] is true.
-static func ride_live(p_game: Node, bot: G2GPlayer, course: DotBotSurfCourse, pilot: DotBotSurfPilot,
+static func ride_live(p_game: Node, bot: AirdriftPlayer, course: DotBotSurfCourse, pilot: DotBotSurfPilot,
 		base: DotFpsState, count: int, seed_value: int, exact_first: bool = false, seconds: float = RIDE_SECONDS) -> Dictionary:
 	var tree := bot.get_tree()
 	var rng := RandomNumberGenerator.new()
@@ -529,7 +529,7 @@ static func ride_live(p_game: Node, bot: G2GPlayer, course: DotBotSurfCourse, pi
 			times.append(float(t) / float(rate))
 		else:
 			failures.append("ride %d %s at %s u" % [i, "fell" if put_back[0] else "timed out",
-				str(G2GUnits.vector_to_units(fell_at[0] if put_back[0] else bot.controller.state.position).round())])
+				str(AirdriftUnits.vector_to_units(fell_at[0] if put_back[0] else bot.controller.state.position).round())])
 	p_game.timers.effect_requested.disconnect(on_effect)
 	return {"ok": ok, "times": times, "failures": failures}
 
@@ -539,10 +539,10 @@ static func perturbed(base: DotFpsState, course: DotBotSurfCourse, rng: RandomNu
 	var s := base.duplicate_state()
 	var forward := DotFpsMotor.forward_for(course.reference_yaw())
 	var side := Vector3(-forward.z, 0.0, forward.x)
-	s.position += side * G2GUnits.to_metres(rng.randf_range(-SIDE_UNITS, SIDE_UNITS))
-	s.position += forward * G2GUnits.to_metres(rng.randf_range(-ALONG_UNITS, ALONG_UNITS))
+	s.position += side * AirdriftUnits.to_metres(rng.randf_range(-SIDE_UNITS, SIDE_UNITS))
+	s.position += forward * AirdriftUnits.to_metres(rng.randf_range(-ALONG_UNITS, ALONG_UNITS))
 	var angle := rng.randf_range(0.0, TAU)
-	s.velocity = Vector3(cos(angle), 0.0, sin(angle)) * G2GUnits.to_metres(rng.randf_range(0.0, SPEED_UNITS))
+	s.velocity = Vector3(cos(angle), 0.0, sin(angle)) * AirdriftUnits.to_metres(rng.randf_range(0.0, SPEED_UNITS))
 	return s
 
 
@@ -574,7 +574,7 @@ static func _spread(times: Array) -> String:
 
 
 static func _units(v: Vector3) -> Array:
-	var u := G2GUnits.vector_to_units(v)
+	var u := AirdriftUnits.vector_to_units(v)
 	return [snappedf(u.x, 0.1), snappedf(u.y, 0.1), snappedf(u.z, 0.1)]
 
 

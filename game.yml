@@ -21,9 +21,9 @@ kind: pack
 name: "Zee's Airdrift"
 max_players: 32
 
-scene: scenes/g2g_server.tscn
-client_scene: game/g2g.tscn
-module: game/g2g_module.gd
+scene: scenes/airdrift_server.tscn
+client_scene: game/airdrift.tscn
+module: game/airdrift_module.gd
 
 cvars:
   # A map id typed at the console that is in no map list is fetched as <owner>/<id>

@@ -6,15 +6,15 @@ extends DotGamePerfBench
 
 
 func _configure() -> void:
-	client_scene = "res://game/g2g.tscn"
+	client_scene = "res://game/airdrift.tscn"
 	map = "surf_mesa"
 	bots = 15
 
 
 func _setup_client(c: Node) -> void:
 	c.set("force_offline", true)
-	# The client's own layered configuration reads G2G_* before it starts the offline map.
-	OS.set_environment("G2G_INITIAL_MAP", map)
+	# The client's own layered configuration reads AIRDRIFT_* before it starts the offline map.
+	OS.set_environment("AIRDRIFT_INITIAL_MAP", map)
 	if args.has("motor-tick"):
 		DotFpsMotor.native_tick = String(args["motor-tick"]) == "1"
 

@@ -13,7 +13,7 @@ func _test_vote() -> void:
 	_section("the vote")
 
 	var module := server.modules.get_module("g2gfast")
-	var vote: G2GVote = module.get("vote") if module != null else null
+	var vote: AirdriftVote = module.get("vote") if module != null else null
 
 	_check(vote != null, "the vote is up")
 
@@ -43,7 +43,7 @@ func _test_vote() -> void:
 	game.spawn_ghost()
 
 	var voters := vote._player_count()
-	var ghosted := game.players.has(G2GGame.GHOST_ID)
+	var ghosted := game.players.has(AirdriftGame.GHOST_ID)
 
 	# [b]The count, not zero.[/b] The first version of this asserted an empty server
 	# and the sections above leave players on it — so it failed at "2 voters with 3
@@ -64,7 +64,7 @@ func _test_vote() -> void:
 
 
 ## The ballot opens, closes, and hands its cues on for the wire.
-func _test_vote_ballot(vote: G2GVote) -> void:
+func _test_vote_ballot(vote: AirdriftVote) -> void:
 	# What the module forwards to the wire as a VOTE event, heard at the vote's edge.
 	var heard: Array = []
 	var probe := func(cue: StringName, seconds_left: int, _runoff: bool) -> void:
@@ -83,7 +83,7 @@ func _test_vote_ballot(vote: G2GVote) -> void:
 		vote.director.close_vote()
 		_check(not vote.is_voting(), "and closes again")
 		_check(
-			heard.has([String(G2GVote.CUE_START), 0]) and heard.has([String(G2GVote.CUE_END), 0]),
+			heard.has([String(AirdriftVote.CUE_START), 0]) and heard.has([String(AirdriftVote.CUE_END), 0]),
 			"and its start and end cues are handed on for the wire (%s)" % str(heard)
 		)
 
@@ -154,7 +154,7 @@ func _test_vote_commands(module: Object) -> void:
 func _test_map_menu_permissions() -> void:
 	_section("M: a guest votes, staff and a lone player change")
 	var module := server.modules.get_module("g2gfast")
-	var vote: G2GVote = module.get("vote") if module != null else null
+	var vote: AirdriftVote = module.get("vote") if module != null else null
 	var menu: Object = vote.commands.get("map_menu") if vote != null and vote.commands != null else null
 	if menu == null:
 		_check(false, "the map menu is installed")
@@ -253,7 +253,7 @@ func _test_map_menu_permissions() -> void:
 	_done()
 
 
-func _test_status_clock(vote: G2GVote) -> void:
+func _test_status_clock(vote: AirdriftVote) -> void:
 	var rules := vote.director.rules
 	var clock := vote.director.clock
 	var was_duration := rules.duration_sec
@@ -368,7 +368,7 @@ func _test_modes() -> void:
 
 
 ## The id round trip and the combat handle of one joined player; returns the entity id.
-func _modes_ids(runner: G2GPlayer) -> int:
+func _modes_ids(runner: AirdriftPlayer) -> int:
 	_check(
 		game.combat.health_of(&"u4242") != null,
 		"and is shootable in deathmatch"
@@ -397,7 +397,7 @@ func _modes_ids(runner: G2GPlayer) -> int:
 	# handle used to be the same integer, so a loadout's filename and a
 	# session lookup were quietly riding on a runtime id.
 	_check(
-		G2GCombat.userid_of(&"u4242") == 4242,
+		AirdriftCombat.userid_of(&"u4242") == 4242,
 		"the userid is still parsed out of the name, unchanged"
 	)
 	_check(
@@ -408,7 +408,7 @@ func _modes_ids(runner: G2GPlayer) -> int:
 
 
 ## A hit on yourself and on somebody else, then a kill: how the body falls and the return.
-func _modes_hit_and_fall(runner: G2GPlayer, entity: int) -> void:
+func _modes_hit_and_fall(runner: AirdriftPlayer, entity: int) -> void:
 	# The shooter's hit feedback is what the authority applied, never a refusal.
 	# A second player, hit by the first: a refused hit (spawn protection) or one
 	# on yourself is no hit, and an applied one says who fired, at whom, how much.
@@ -417,7 +417,7 @@ func _modes_hit_and_fall(runner: G2GPlayer, entity: int) -> void:
 	var on_hit := func(by: StringName, victim: int, amount: float, _point: Vector3, _killed: bool, _head: bool) -> void:
 		heard.append([by, victim, amount])
 	game.combat.hit_landed.connect(on_hit)
-	var bullet := game.combat.manager.damage_type(G2GArsenal.DAMAGE_BULLET)
+	var bullet := game.combat.manager.damage_type(AirdriftArsenal.DAMAGE_BULLET)
 	var victim_entity := game.combat.entity_for(&"u4343")
 	game.combat.manager.apply_damage(DotDamage.make(entity, entity, 10.0, bullet))
 	var self_heard := heard.size()
@@ -445,7 +445,7 @@ func _modes_hit_and_fall(runner: G2GPlayer, entity: int) -> void:
 	var fatal := DotDamage.make(entity, victim_entity, 500.0, bullet)
 	fatal.tick = game.current_tick()
 	game.combat.manager.apply_damage(fatal)
-	var fallen: G2GPlayer = game.players.get(&"u4343")
+	var fallen: AirdriftPlayer = game.players.get(&"u4343")
 	var away := Vector3.ZERO
 	if fallen != null:
 		away = fallen.controller.state.position - runner.controller.state.position
@@ -472,7 +472,7 @@ func _modes_hit_and_fall(runner: G2GPlayer, entity: int) -> void:
 
 ## The server kill view clip names its killer by key.
 func _modes_killview(entity: int) -> void:
-	var bullet := game.combat.manager.damage_type(G2GArsenal.DAMAGE_BULLET)
+	var bullet := game.combat.manager.damage_type(AirdriftArsenal.DAMAGE_BULLET)
 	# The server's own kill view clip names its killer by key, for a client that numbers no entity.
 	var kv_bridge: Object = server.modules.get_module("g2gfast").get("bridge")
 	var kv: Object = kv_bridge.get("killview") if kv_bridge != null else null
@@ -502,11 +502,11 @@ func _modes_fire() -> void:
 	# and registering it would put a name on the scoreboard that never dies
 	# and never leaves.
 	_check(
-		game.combat.health_of(G2GGame.GHOST_ID) == null,
+		game.combat.health_of(AirdriftGame.GHOST_ID) == null,
 		"the record ghost is not on the scoreboard"
 	)
 
-	# The trigger is a bit on `G2GNetCommand`, replayed with that tick's movement, not a request.
+	# The trigger is a bit on `AirdriftNetCommand`, replayed with that tick's movement, not a request.
 	var arsenal_before := game.combat._kit[&"u4242"]["arsenal"] as DotWeaponArsenal
 	_check(
 		arsenal_before.slots().size() >= 1,
@@ -565,11 +565,11 @@ func _modes_fire() -> void:
 func _modes_fire_starved(fire: DotWeaponCommand) -> void:
 	# dot-net skips `_net_apply_input` for a starved tick, so a command left on
 	# the player would be replayed for as long as packets are lost — the held
-	# trigger `G2GPlayerNet.last_attack` says does not survive a hiccup.
+	# trigger `AirdriftPlayerNet.last_attack` says does not survive a hiccup.
 	game.combat.set_fire_command(&"u4242", fire)
 	game.tick_once(game.current_tick() + 1)
 	game.tick_once(game.current_tick() + 1)
-	var shooter: G2GPlayer = game.players.get(&"u4242")
+	var shooter: AirdriftPlayer = game.players.get(&"u4242")
 	_check(
 		shooter != null and not shooter.has_meta("g2g_fire"),
 		"and a trigger is read once, so a lost packet is not a held trigger"
@@ -577,7 +577,7 @@ func _modes_fire_starved(fire: DotWeaponCommand) -> void:
 
 
 ## A hunter's kill is a death like any other.
-func _modes_hunter_kill(runner: G2GPlayer) -> void:
+func _modes_hunter_kill(runner: AirdriftPlayer) -> void:
 	# A hunter's kill is world damage through the same combat layer, so it is a death
 	# like any other: the body falls away from the hunter that swiped.
 	if game.hunters != null:
@@ -597,7 +597,7 @@ func _modes_hunter_kill(runner: G2GPlayer) -> void:
 ## its own richer protocol since it was written; dot-browser's suite queries a DQP
 ## server over a real loopback socket. Neither had ever met the other.
 ##
-## What this game contributes that a bare `DotGameDescriptor` cannot is `G2GQuery`'s
+## What this game contributes that a bare `DotGameDescriptor` cannot is `AirdriftQuery`'s
 ## section: the map, the tick rate, the styles, the world record, and — since the
 ## modes were added — whether deathmatch and the hunters are on. A player filtering a
 ## list for "surf DM" is filtering for exactly that.

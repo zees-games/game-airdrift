@@ -1,19 +1,19 @@
 extends DotGameCheckSuite
 
-## G2GConfig through DotGameConfigBinder: fields, cvars, the deathmatch rules reading them, strict refusal, the diff.
+## AirdriftConfig through DotGameConfigBinder: fields, cvars, the deathmatch rules reading them, strict refusal, the diff.
 ## Run: godot --headless --path . res://examples/headless_config.tscn
 
-const G2GArsenal := preload("../game/g2g_arsenal.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GMapMechanics := preload("../game/g2g_map_mechanics.gd")
-const G2GZoneEditor := preload("../game/g2g_zone_editor.gd")
+const AirdriftArsenal := preload("../game/airdrift_arsenal.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftMapMechanics := preload("../game/airdrift_map_mechanics.gd")
+const AirdriftZoneEditor := preload("../game/airdrift_zone_editor.gd")
 ## One directory per suite process (the probe child is handed its parent's): user:// is shared by
 ## every copy of this project on a box, and two suites at once wrote and deleted each other's cfg files.
 const ROOT_ARG := "--cfgroot="
 var ROOT := _root()
 const GAME := "game-g2gfast"
-const CHECKS := 37
+const CHECKS := 40
 const SECTIONS := 4
 
 var _entered := 0
@@ -36,10 +36,10 @@ func _run() -> void:
 	if OS.get_cmdline_user_args().has("--probe"):
 		_probe()
 		return
-	print("g2gfast: config binder")
+	print("Airdrift: config binder")
 	_section("fields, cvars and rules")
-	var config := G2GConfig.new()
-	var binder := G2GConfig.make_binder(config)
+	var config := AirdriftConfig.new()
+	var binder := AirdriftConfig.make_binder(config)
 	binder.strict = true
 	_check(DotAddonConfig.game_names("game-airdrift") == PackedStringArray(["game-g2gfast", "game-airdrift"]), "the binder registers game-g2gfast as game-airdrift's former id", str(DotAddonConfig.game_names("game-airdrift")))
 	_check(binder.load_layers().ok, "defaults load")
@@ -52,14 +52,14 @@ func _run() -> void:
 	console.set_cvar("g2g_max_players", "300")
 	_check(config.max_players == 300, "max_players is not capped at the old 128")
 	console.set_cvar("g2g_max_players", "64")
-	var cap_src := FileAccess.get_file_as_string("res://game/g2g_module.gd") + FileAccess.get_file_as_string("res://game/g2g_client.gd")
+	var cap_src := FileAccess.get_file_as_string("res://game/airdrift_module.gd") + FileAccess.get_file_as_string("res://game/airdrift_client.gd")
 	_check(not cap_src.contains("max_entities_per_snapshot = 64"), "no 64-entity snapshot cap on server or client")
 	console.set_cvar("g2g_respawn_delay", "4")
 	_check(config.respawn_delay == 4.0 and binder.source_of("respawn_delay") == "cvar", "a cvar writes the field")
-	var rules := G2GArsenal.match_rules(config.score_limit, config.respawn_delay, config.spawn_protection)
+	var rules := AirdriftArsenal.match_rules(config.score_limit, config.respawn_delay, config.spawn_protection)
 	_check(rules.respawn_delay_sec == 4.0 and rules.spawn_protection_sec == 2.0, "the match rules read the config")
-	_check(G2GArsenal.match_rules().respawn_delay_sec == 1.0, "and keep the old defaults without it")
-	var mechanics := G2GMapMechanics.new()
+	_check(AirdriftArsenal.match_rules().respawn_delay_sec == 1.0, "and keep the old defaults without it")
+	var mechanics := AirdriftMapMechanics.new()
 	_check(mechanics.lethal_damage == config.lethal_damage, "the map mechanics start at the configured lethal damage")
 	_check(binder.diff_yaml().contains("respawn_delay: 4"), "the diff names the edit")
 	config.max_velocity = 10.0
@@ -74,14 +74,14 @@ func _run() -> void:
 	config.zone_editor_max_height = -16.0
 	_check(not config.validate().ok, "a negative height limit is refused, not clamped")
 	config.zone_editor_max_height = 2048.0
-	var at_cap := G2GZoneEditor.step_limited(99.0, 1.0, 99.0, "stage number")
+	var at_cap := AirdriftZoneEditor.step_limited(99.0, 1.0, 99.0, "stage number")
 	_check(not at_cap.ok and at_cap.value == 99.0 and at_cap.message.contains("limit"), "past the limit the step fails loudly and keeps the value")
-	_check(G2GZoneEditor.step_limited(98.0, 1.0, 99.0, "stage number").value == 99.0, "up to the limit it steps")
-	_check(G2GZoneEditor.step_limited(99.0, 1.0, 0.0, "stage number").value == 100.0, "0 is unlimited: stage 100")
-	_check(G2GZoneEditor.step_limited(2048.0, 16.0, 0.0, "zone height").value == 2064.0, "0 is unlimited: height past 2048")
+	_check(AirdriftZoneEditor.step_limited(98.0, 1.0, 99.0, "stage number").value == 99.0, "up to the limit it steps")
+	_check(AirdriftZoneEditor.step_limited(99.0, 1.0, 0.0, "stage number").value == 100.0, "0 is unlimited: stage 100")
+	_check(AirdriftZoneEditor.step_limited(2048.0, 16.0, 0.0, "zone height").value == 2064.0, "0 is unlimited: height past 2048")
 	_check(binder.schema()[0]["description"].length() > 5, "doc comments reach the schema")
 	_check(binder.write_schema(ROOT + "_schema_check.json").ok, "write_schema works")
-	var fall := G2GGame.make_fall_rules()
+	var fall := AirdriftGame.make_fall_rules()
 	var _made := fall.bind_cvars(console.cvar, DotConVar.FLAG_NOTIFY)
 	_check(console.get_int("sv_falldamage") == 0 and not fall.enabled, "fall damage is off in this game by default")
 	_check(fall.damage_for(60.0) == 0.0, "a 60 m/s landing costs nothing while it is off")
@@ -134,8 +134,8 @@ func _check_workbench(binder: DotGameConfigBinder) -> void:
 
 ## Child process: loads the layers strictly over the test root and prints what the live config holds.
 func _probe() -> void:
-	var config := G2GConfig.new()
-	var binder := G2GConfig.make_binder(config)
+	var config := AirdriftConfig.new()
+	var binder := AirdriftConfig.make_binder(config)
 	binder.strict = true
 	binder.roots = PackedStringArray([ProjectSettings.globalize_path(ROOT)])
 	var loaded := binder.load_layers()
@@ -155,10 +155,10 @@ func _write(rel: String, text: String) -> void:
 	f.close()
 
 
-func _child() -> String:
+func _child(arg := "--airdrift-respawn-delay=3.0") -> String:
 	var out: Array = []
 	OS.execute(OS.get_executable_path(), ["--headless", "--path", ProjectSettings.globalize_path("res://"),
-		"res://examples/headless_config.tscn", "--", "--probe", ROOT_ARG + ROOT, "--g2g-respawn-delay=3.0"], out, true)
+		"res://examples/headless_config.tscn", "--", "--probe", ROOT_ARG + ROOT, arg], out, true)
 	return "".join(PackedStringArray(out))
 
 
@@ -166,20 +166,29 @@ func _child() -> String:
 func _layers() -> void:
 	_write("game/%s/config_movement/game.yml" % GAME, "gravity: 650.0\n")
 	_write("game/%s/config_modes/game.yml" % GAME, "score_limit: 10\n")
-	OS.set_environment("G2G_SCORE_LIMIT", "25")
+	OS.set_environment("AIRDRIFT_SCORE_LIMIT", "25")
 	var text := _child()
 	_check(text.contains("PROBE ok=true"), "the layers load strictly in a fresh process: " + text.right(300))
 	_check(text.contains("grav=650") and text.contains("grav_src=yml"), "a cfg file reaches the live config")
 	_check(text.contains("score=25") and text.contains("score_src=env") and text.contains("cvar=25"), "the environment beats a file and reaches the cvar")
 	_check(text.contains("delay=3") and text.contains("delay_src=argv"), "argv alone reaches the config")
-	OS.unset_environment("G2G_SCORE_LIMIT")
+	# The old prefixes (AirdriftConfig.LEGACY_*) are still read, and the new ones win over them.
+	OS.set_environment(AirdriftConfig.LEGACY_ENV_PREFIX + "SCORE_LIMIT", "40")
+	text = _child()
+	_check(text.contains("score=25") and text.contains("score_src=env"), "the new environment prefix beats the old one")
+	OS.unset_environment("AIRDRIFT_SCORE_LIMIT")
+	text = _child(AirdriftConfig.LEGACY_CLI_PREFIX + "respawn-delay=4.0")
+	_check(text.contains("PROBE ok=true") and text.contains("score=40") and text.contains("score_src=env"),
+		"the old environment prefix alone still reaches the config: " + text.right(300))
+	_check(text.contains("delay=4") and text.contains("delay_src=argv"), "the old argument prefix still reaches the config")
+	OS.unset_environment(AirdriftConfig.LEGACY_ENV_PREFIX + "SCORE_LIMIT")
 	_write("game/%s/config_modes/game.yml" % GAME, "gravity: 650.0\n")
 	_check(_child().contains("PROBE ok=false"), "strict: a key in the wrong file is refused")
 	for f in ["config_movement", "config_modes"]:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(ROOT.path_join("game/%s/%s/game.yml" % [GAME, f])))
 
 
-## The shipped cfg files hold every key, in step with G2GConfig.
+## The shipped cfg files hold every key, in step with AirdriftConfig.
 func _templates(binder: DotGameConfigBinder) -> void:
 	var files := binder.template_files()
 	_check(files.size() == 4, "four shipped cfg files: %d" % files.size())

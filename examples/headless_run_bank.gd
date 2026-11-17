@@ -7,7 +7,7 @@ func _test_surf_run() -> void:
 	game.config.air_accelerate = 150.0
 	game.apply_movement()
 
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	await get_tree().physics_frame
 
 	# Off the front of the start platform first: the spawn is 320 units from its
@@ -76,7 +76,7 @@ func _test_surf_run() -> void:
 	# none of them says is how much of this route was ridden, and the answer is a
 	# under 5% of it with neither split crossed.
 	#
-	# The cause is the map rather than the bot: `G2GGeometry.ramp` rotates about
+	# The cause is the map rather than the bot: `AirdriftGeometry.ramp` rotates about
 	# `Vector3.FORWARD`, which banks a slab in X and Y and leaves its Z extent
 	# horizontal, so both of this map's ramps are LEVEL along their length and give a
 	# player nothing. The descent comes from the stepped valley floor between them. That
@@ -87,10 +87,10 @@ func _test_surf_run() -> void:
 	# route is Christian's to change. `the fall line` below is the route on this map
 	# where the answer is the ramp.
 	var travelled := entry_z - deepest_z
-	var route := G2GUnits.to_metres(8192.0)
+	var route := AirdriftUnits.to_metres(8192.0)
 	print(
 		"        the main run: %.1f m of a %.0f m route, %d of 2 splits, top %s u/s"
-		% [travelled, route, splits.size(), G2GUnits.format_speed(top)]
+		% [travelled, route, splits.size(), AirdriftUnits.format_speed(top)]
 	)
 
 	_check(
@@ -105,7 +105,7 @@ func _test_surf_run() -> void:
 		"most of the descent is spent not grounded, which is surf",
 		"%d of %d ticks" % [airborne, descended]
 	)
-	_check(G2GUnits.to_units(top) > 500.0, "and the bot reaches surf speed, twice its run speed", "%s u/s" % G2GUnits.format_speed(top))
+	_check(AirdriftUnits.to_units(top) > 500.0, "and the bot reaches surf speed, twice its run speed", "%s u/s" % AirdriftUnits.format_speed(top))
 	_check(bot.controller.motor.stuck_ticks == 0, "without the slide ever running out of iterations")
 	game.config.air_accelerate = 1000.0
 	game.apply_movement()
@@ -114,7 +114,7 @@ func _test_surf_run() -> void:
 
 func _test_bonus_track() -> void:
 	_section("the bonus track")
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	_check(game.timers.set_player_track(&"bot", DotTimerTrack.of_bonus(1)), "a player can switch to the bonus")
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
@@ -151,7 +151,7 @@ func _test_bonus_track() -> void:
 ## because a check that passes on the respawn is the one `[bonus-run-2]` found passing
 ## loudest in exactly the case it was written for.
 func _test_single_bank() -> void:
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	var bonus := DotTimerTrack.of_bonus(1)
 
 	game.config.air_accelerate = 150.0
@@ -166,7 +166,7 @@ func _test_single_bank() -> void:
 	# where this sat, and +48 do not -- the rider sheds its forward speed mid-bank and
 	# hangs against it. +32 finished here only because the sections before this one
 	# leave the bot about 30 u/s of sideways drift, which is not a line to rely on.
-	var line := lip + G2GUnits.PLAYER_HALF_WIDTH * 1.5
+	var line := lip + AirdriftUnits.PLAYER_HALF_WIDTH * 1.5
 	var end_z := SurfIntro.bonus_bank_end_z()
 
 	var started: Array[bool] = [false]
@@ -192,7 +192,7 @@ func _test_single_bank() -> void:
 	var duplicates_before := bot.controller.motor.duplicate_plane_ticks
 
 	for i in range(2600):
-		var at := G2GUnits.vector_to_units(bot.global_position)
+		var at := AirdriftUnits.vector_to_units(bot.global_position)
 		var c := DotFpsCommand.new()
 		c.yaw = 0.0
 
@@ -207,7 +207,7 @@ func _test_single_bank() -> void:
 		await get_tree().physics_frame
 		ticks = i + 1
 
-		at = G2GUnits.vector_to_units(bot.global_position)
+		at = AirdriftUnits.vector_to_units(bot.global_position)
 
 		# On the bank: over its length, and with its feet on its face rather than above
 		# it — the pad's front lies over the bank's near end, and so does the fall off
@@ -216,7 +216,7 @@ func _test_single_bank() -> void:
 			rode_to = minf(rode_to, at.z)
 			ride_y_top = maxf(ride_y_top, at.y)
 			ride_y_low = minf(ride_y_low, at.y)
-			top = maxf(top, -G2GUnits.to_units(bot.controller.state.velocity.z))
+			top = maxf(top, -AirdriftUnits.to_units(bot.controller.state.velocity.z))
 
 		# A rider who has not moved in a second and a half is not riding. The freeze
 		# this was written for (velocity intact, no ground covered, one duplicate-plane
@@ -253,7 +253,7 @@ func _test_single_bank() -> void:
 		"and a bot holding into the bank rides it to its far end",
 		"left it at z %.0f of %.0f%s" % [
 			rode_to, end_z,
-			", frozen in place with %.0f u/s on the clock" % G2GUnits.to_units(bot.speed()) if still > 192 else "",
+			", frozen in place with %.0f u/s on the clock" % AirdriftUnits.to_units(bot.speed()) if still > 192 else "",
 		]
 	)
 	_check(
@@ -262,7 +262,7 @@ func _test_single_bank() -> void:
 		"%s at %s after %d ticks" % [
 			"put back by the respawn zone" if reset[0]
 				else ("frozen on the bank" if still > 192 else "did not finish"),
-			str(G2GUnits.vector_to_units(bot.global_position).round()),
+			str(AirdriftUnits.vector_to_units(bot.global_position).round()),
 			ticks,
 		]
 	)
@@ -282,30 +282,30 @@ func _test_single_bank() -> void:
 ## input, and followed until it lands. Armed against the 512-unit pad this replaced: both
 ## came down in the pit.
 func _test_fast_bank_exit(line: float) -> void:
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	var finish := game.timers.zones.first_of_kind(DotTimerZone.Kind.END, 1)
 	# Just clear of the bank's end, so the hull is in the air rather than half on the
 	# slab's corner, which snags a launch into a drop straight down past the pad.
-	var end_z := SurfIntro.bonus_bank_end_z() - G2GUnits.PLAYER_HALF_WIDTH - 4.0
-	var top_x := SurfIntro.BONUS_X + SurfIntro.BONUS_FINISH_SIZE * 0.5 - G2GUnits.PLAYER_HALF_WIDTH
+	var end_z := SurfIntro.bonus_bank_end_z() - AirdriftUnits.PLAYER_HALF_WIDTH - 4.0
+	var top_x := SurfIntro.BONUS_X + SurfIntro.BONUS_FINISH_SIZE * 0.5 - AirdriftUnits.PLAYER_HALF_WIDTH
 	for x: float in [line, top_x]:
 		var from := Vector3(x, SurfIntro.bonus_bank_surface_y(x) + 2.0, end_z)
-		bot.teleport(from * G2GUnits.METRES_PER_UNIT, 0.0)
+		bot.teleport(from * AirdriftUnits.METRES_PER_UNIT, 0.0)
 		await get_tree().physics_frame
-		bot.controller.state.velocity = Vector3(0.0, 0.0, -900.0 * G2GUnits.METRES_PER_UNIT)
+		bot.controller.state.velocity = Vector3(0.0, 0.0, -900.0 * AirdriftUnits.METRES_PER_UNIT)
 		var landed := Vector3.INF
 		for _i in range(300):
 			var c := DotFpsCommand.new()
 			c.yaw = 0.0
 			bot.controller.apply_command(c)
 			await get_tree().physics_frame
-			var at := G2GUnits.vector_to_units(bot.global_position)
+			var at := AirdriftUnits.vector_to_units(bot.global_position)
 			if at.y < SurfIntro.BONUS_FINISH_Y + 2.0 or (
 					bot.controller.state.is_grounded() and at.y < SurfIntro.BONUS_FINISH_Y + 64.0):
 				landed = at
 				break
 		_check(
-			finish != null and landed.is_finite() and finish.contains(landed * G2GUnits.METRES_PER_UNIT + Vector3.UP * 0.1),
+			finish != null and landed.is_finite() and finish.contains(landed * AirdriftUnits.METRES_PER_UNIT + Vector3.UP * 0.1),
 			"a rider leaving the bank at 900 u/s from x %.0f comes down in its finish" % x,
 			"came down at %s; the finish is z %.0f to %.0f" % [
 				str(landed.round()), SurfIntro.BONUS_FINISH_NEAR_Z,
@@ -323,7 +323,7 @@ func _test_fast_bank_exit(line: float) -> void:
 ## of geometry actually line up. Numbers that are 200 units out produce a route that
 ## looks perfect in a screenshot and drops every player into the pit.
 func _test_transfer_bonus() -> void:
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	var transfer := DotTimerTrack.of_bonus(2)
 
 	_check(game.timers.set_player_track(&"bot", transfer), "and to the transfer bonus")
@@ -343,7 +343,7 @@ func _test_transfer_bonus() -> void:
 
 
 ## Drives the bot across the transfer; the figures come back in a dictionary.
-func _transfer_ride(bot: G2GPlayer, transfer: int) -> Dictionary:
+func _transfer_ride(bot: AirdriftPlayer, transfer: int) -> Dictionary:
 	game.config.air_accelerate = 150.0
 	game.apply_movement()
 
@@ -395,7 +395,7 @@ func _transfer_ride(bot: G2GPlayer, transfer: int) -> Dictionary:
 	return {"started": started, "reset": reset[0], "rode": rode, "travelled": travelled}
 
 
-func _transfer_verdict(bot: G2GPlayer, spawn: Vector3, ride: Dictionary) -> void:
+func _transfer_verdict(bot: AirdriftPlayer, spawn: Vector3, ride: Dictionary) -> void:
 	var reset: bool = ride["reset"]
 	var rode: Vector3 = ride["rode"]
 
@@ -408,7 +408,7 @@ func _transfer_verdict(bot: G2GPlayer, spawn: Vector3, ride: Dictionary) -> void
 		% [
 			ride["travelled"], rode.y,
 			"put back on its pad" if reset
-				else ("still on the route" if rode.y > G2GUnits.to_metres(START_Y - 1700.0)
+				else ("still on the route" if rode.y > AirdriftUnits.to_metres(START_Y - 1700.0)
 					else "below the route's floor and still falling"),
 		]
 	)
@@ -443,7 +443,7 @@ func _transfer_verdict(bot: G2GPlayer, spawn: Vector3, ride: Dictionary) -> void
 func _test_the_fall_line() -> void:
 	_section("the fall line — surf_g2g_intro's third bonus")
 
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	var fall := DotTimerTrack.of_bonus(3)
 	await _fall_line_route_checks(bot, fall)
 	await _fall_line_run(bot)
@@ -451,7 +451,7 @@ func _test_the_fall_line() -> void:
 	_done()
 
 
-func _fall_line_route_checks(bot: G2GPlayer, fall: int) -> void:
+func _fall_line_route_checks(bot: AirdriftPlayer, fall: int) -> void:
 	var zones := game.timers.zones
 
 	_check(
@@ -492,7 +492,7 @@ func _fall_line_route_checks(bot: G2GPlayer, fall: int) -> void:
 	# A player here is the fastest thing on the map, so it is the route where a thin
 	# line is certain to be passed through between ticks rather than merely likely.
 	_check(
-		zones != null and zones.thin_zones(G2GUnits.to_metres(3500.0), game.tick_rate).is_empty(),
+		zones != null and zones.thin_zones(AirdriftUnits.to_metres(3500.0), game.tick_rate).is_empty(),
 		"and no zone a 3500 u/s player crosses without entering"
 	)
 
@@ -508,7 +508,7 @@ func _fall_line_route_checks(bot: G2GPlayer, fall: int) -> void:
 	)
 
 
-func _fall_line_run(bot: G2GPlayer) -> void:
+func _fall_line_run(bot: AirdriftPlayer) -> void:
 	game.config.air_accelerate = 150.0
 	game.apply_movement()
 
@@ -572,9 +572,9 @@ func _fall_line_run(bot: G2GPlayer) -> void:
 		"        the fall line: %.1f m travelled, chute is %.0f m, in %d ticks, top %s u/s"
 		% [
 			entry_z - bot.global_position.z,
-			G2GUnits.to_metres(SurfIntro.FALL_RUN),
+			AirdriftUnits.to_metres(SurfIntro.FALL_RUN),
 			ticks,
-			G2GUnits.format_speed(top),
+			AirdriftUnits.format_speed(top),
 		]
 	)
 
@@ -584,7 +584,7 @@ func _fall_line_run(bot: G2GPlayer) -> void:
 	})
 
 
-func _fall_line_verdict(bot: G2GPlayer, r: Dictionary) -> void:
+func _fall_line_verdict(bot: AirdriftPlayer, r: Dictionary) -> void:
 	var started: bool = r["started"]
 	var finished: bool = r["finished"]
 	var reset: bool = r["reset"]
@@ -594,9 +594,9 @@ func _fall_line_verdict(bot: G2GPlayer, r: Dictionary) -> void:
 	var entry_y: float = r["entry_y"]
 	_check(started, "leaving its pad starts a run on the fall line's own track")
 	_check(
-		G2GUnits.to_units(top) > 1200.0,
+		AirdriftUnits.to_units(top) > 1200.0,
 		"the bed makes the player fast, which this map's own ramps never do",
-		"%s u/s" % G2GUnits.format_speed(top)
+		"%s u/s" % AirdriftUnits.format_speed(top)
 	)
 	_check(splits == [1, 2], "it crosses both splits, in order", str(splits))
 	_check(
@@ -614,10 +614,10 @@ func _fall_line_verdict(bot: G2GPlayer, r: Dictionary) -> void:
 		"%d stuck ticks" % bot.controller.motor.stuck_ticks
 	)
 	_check(
-		entry_y - bot.global_position.y > G2GUnits.to_metres(SurfIntro.fall_drop() * 0.9),
+		entry_y - bot.global_position.y > AirdriftUnits.to_metres(SurfIntro.fall_drop() * 0.9),
 		"and the descent is the ramp's, not a fall past it",
 		"%.1f m of %.1f m" % [
-			entry_y - bot.global_position.y, G2GUnits.to_metres(SurfIntro.fall_drop())
+			entry_y - bot.global_position.y, AirdriftUnits.to_metres(SurfIntro.fall_drop())
 		]
 	)
 
@@ -662,8 +662,8 @@ func _test_ghost() -> void:
 		await get_tree().physics_frame
 	var after := ghost.global_position if ghost != null else Vector3.ZERO
 	_check(before.distance_to(after) > 1.0, "and it runs the map", "%.2f m in half a second" % before.distance_to(after))
-	_check(ghost != null and G2GUnits.to_units(ghost.speed()) > 100.0, "at the replay's speed", G2GUnits.format_speed(ghost.speed()) if ghost else "")
-	_check(game.players.size() >= 2 and game.timers.player(G2GGame.GHOST_ID) == null, "without a timer to feed")
+	_check(ghost != null and AirdriftUnits.to_units(ghost.speed()) > 100.0, "at the replay's speed", AirdriftUnits.format_speed(ghost.speed()) if ghost else "")
+	_check(game.players.size() >= 2 and game.timers.player(AirdriftGame.GHOST_ID) == null, "without a timer to feed")
 
 	_ghost_persistence(map_id, replay, record)
 
@@ -686,11 +686,11 @@ func _test_ghost() -> void:
 func _ghost_persistence(map_id: StringName, replay: DotTimerReplay, record: DotTimerRecord) -> void:
 	# Persistence: a second keeper over the same directory finds it.
 	var dir := "user://g2gfast-test-replays-%d" % Time.get_ticks_usec()
-	var keeper := G2GReplays.new()
+	var keeper := AirdriftReplays.new()
 	_check(keeper.setup(dir).ok, "a keeper opens a directory")
 	record.time = 3.0
 	_check(keeper.offer(replay, record), "and writes a replay there")
-	var again := G2GReplays.new()
+	var again := AirdriftReplays.new()
 	again.setup(dir)
 	var found := again.best(map_id, 0, &"normal")
 	_check(found != null and found.frames.size() == replay.frames.size() and absf(found.time - 3.0) < 0.001,
@@ -705,12 +705,12 @@ func _ghost_persistence(map_id: StringName, replay: DotTimerReplay, record: DotT
 
 func _look_guard() -> void:
 	# [b]The look guard, on the predicate rather than through a client.[/b] Nothing in
-	# this suite stands a `G2GClient` up, so the honest thing this can check is the
+	# this suite stands a `AirdriftClient` up, so the honest thing this can check is the
 	# contract the motion handler branches on. `Input.mouse_mode` is not the thing to
 	# assert against: the dummy display server pins it to VISIBLE and drops every write
 	# without erroring, which is why `game-fatal-contact`'s identical guard has never been
 	# exercised by anything either.
-	var look := G2GClient.new()
+	var look := AirdriftClient.new()
 	_check(not look.mouse_drives_view(),
 		"a released cursor is not a look input")
 	look.mouse_capture_override = true

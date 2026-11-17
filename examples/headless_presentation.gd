@@ -25,7 +25,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("game-g2gfast: the presentation layer")
+	print("game-airdrift: the presentation layer")
 
 	_test_a_runner_is_not_shaken()
 	_test_the_sounds_are_the_run()
@@ -62,7 +62,7 @@ func _run() -> void:
 func _test_a_runner_is_not_shaken() -> void:
 	_section("A shaken camera on a surf ramp is a lost run")
 
-	var s := G2GPresentation.schema()
+	var s := AirdriftPresentation.schema()
 	_check(s.validate().ok, "the schema validates")
 
 	# The disagreement with every other game in the family, and it is a default rather
@@ -83,12 +83,12 @@ func _test_a_runner_is_not_shaken() -> void:
 		"and the Audio page has its slider")
 	_check(s.find(&"snd_wind_min") != null and s.find(&"snd_wind_max") != null
 		and s.find(&"snd_wind_full_speed") != null, "the wind curve is three settings")
-	var calm := G2GPresentation.wind_level(0.0, 0.3, 1.1, 1500.0)
-	var half := G2GPresentation.wind_level(750.0, 0.3, 1.1, 1500.0)
-	var full := G2GPresentation.wind_level(9000.0, 0.3, 1.1, 1500.0)
+	var calm := AirdriftPresentation.wind_level(0.0, 0.3, 1.1, 1500.0)
+	var half := AirdriftPresentation.wind_level(750.0, 0.3, 1.1, 1500.0)
+	var full := AirdriftPresentation.wind_level(9000.0, 0.3, 1.1, 1500.0)
 	_check(is_equal_approx(calm, 0.3) and calm < half and half < full and is_equal_approx(full, 1.1),
 		"the wind rises with speed and stops at snd_wind_max", "%.2f %.2f %.2f" % [calm, half, full])
-	_check(is_equal_approx(G2GPresentation.wind_level(500.0, 0.3, 1.1, 0.0), 1.1),
+	_check(is_equal_approx(AirdriftPresentation.wind_level(500.0, 0.3, 1.1, 0.0), 1.1),
 		"and a full speed of zero is a step, not a division")
 	_check(
 		s.find(&"shake_scale").max_value > 0.0,
@@ -219,24 +219,24 @@ func _test_the_sounds_follow_the_timer() -> void:
 func _test_a_run_is_drawn() -> void:
 	_section("A start and a finish are drawn where the runner crossed them")
 
-	var missing := G2GPresentation.fx_catalogue().missing_scenes()
+	var missing := AirdriftPresentation.fx_catalogue().missing_scenes()
 	_check(
 		missing.is_empty(),
 		"every scene the effect catalogue names is present (missing: %s)" % ", ".join(missing)
 	)
 
 	# No script and no external resource, so a delivered pack has no path inside the scene
-	# to rewrite: `FX_DIR` goes through `G2GPaths.rebase` and that is the only path there is.
+	# to rewrite: `FX_DIR` goes through `AirdriftPaths.rebase` and that is the only path there is.
 	var self_contained := true
 	for id in [&"start_gate", &"finish_gate"]:
-		var def := G2GPresentation.fx_catalogue().find(id)
+		var def := AirdriftPresentation.fx_catalogue().find(id)
 		var text := FileAccess.get_file_as_string(def.scene_path) if def != null else ""
 		if text.is_empty() or text.contains("ext_resource") or text.contains("script"):
 			self_contained = false
 	_check(self_contained, "and each is one file, with no script and nothing it loads")
 
 	# And no script of this game loads one of its own files by a bare res:// path: delivered,
-	# that names the host project's root. g2g_game.gd's bots layer did (0ae6117), and a
+	# that names the host project's root. airdrift_game.gd's bots layer did (0ae6117), and a
 	# delivered server had no bots and stopped building its layers at that line.
 	# The host's addons are where they are named, so a load of res://addons/ is not one of these.
 	var own := RegEx.create_from_string('load\\("res://(?!addons/)')
@@ -456,7 +456,7 @@ func _test_console_is_prefixed() -> void:
 	_check(p.console != null and p.console_panel != null, "there is a console and a panel")
 
 	var missing := PackedStringArray()
-	for key in G2GPresentation.schema().keys():
+	for key in AirdriftPresentation.schema().keys():
 		if not p.console.all_names().has(String(key)):
 			missing.append(String(key))
 	_check(missing.is_empty(), "every setting is reachable (%s)" % ", ".join(missing))
@@ -513,24 +513,24 @@ func _test_every_key_is_the_players() -> void:
 	var p := _make()
 
 	var bound := 0
-	for row in G2GBindings.ROWS:
+	for row in AirdriftBindings.ROWS:
 		# Jump also has the wheel's two extra rows (Space stays the first).
 		var events := 3 if row["action"] == &"dot_fps_jump" else 1
 		if InputMap.action_get_events(row["action"]).size() == events \
 				and DotInputBinding.describe_action(row["action"]).begins_with(str(row["default"])):
 			bound += 1
-	_check(bound == G2GBindings.ROWS.size(),
-		"every action is on its default and on one key only (%d of %d)" % [bound, G2GBindings.ROWS.size()])
+	_check(bound == AirdriftBindings.ROWS.size(),
+		"every action is on its default and on one key only (%d of %d)" % [bound, AirdriftBindings.ROWS.size()])
 
 	var declared := 0
-	for row in G2GBindings.ROWS:
+	for row in AirdriftBindings.ROWS:
 		var def := p.settings.schema.find(row["setting"])
 		if def != null and def.kind == DotSettingsDef.Kind.BINDING:
 			declared += 1
-	_check(declared == G2GBindings.ROWS.size(), "and every one is a binding in the settings document")
+	_check(declared == AirdriftBindings.ROWS.size(), "and every one is a binding in the settings document")
 
 	var clash := ""
-	for row in G2GBindings.ROWS:
+	for row in AirdriftBindings.ROWS:
 		var other := p.bindings.row_using(str(row["default"]), row["setting"], p.settings)
 		if not other.is_empty():
 			clash = "%s and %s" % [row["label"], other["label"]]
@@ -549,7 +549,7 @@ func _test_every_key_is_the_players() -> void:
 		"a binding that names no key falls back to the default rather than unbinding")
 
 	var escape := false
-	for row in G2GBindings.ROWS:
+	for row in AirdriftBindings.ROWS:
 		if str(row["default"]) == "Escape":
 			escape = true
 	_check(not escape, "and nothing is on Escape, which is the menu and the browser's own")
@@ -559,7 +559,7 @@ func _test_every_key_is_the_players() -> void:
 
 	# A document from before stores "Tab" for the next style, because a document stores
 	# defaults too; keeping it would put two actions on one key.
-	var step: Callable = G2GPresentation.migrations()[2]
+	var step: Callable = AirdriftPresentation.migrations()[2]
 	_check(not (step.call({"bind_style_next": "Tab"}) as Dictionary).has("bind_style_next")
 		and str((step.call({"bind_style_next": "G"}) as Dictionary)["bind_style_next"]) == "G",
 		"a stored Tab for the next style is dropped, and a key somebody chose is kept")
@@ -572,7 +572,7 @@ func _test_the_flashlight_reaches_unshaded_maps() -> void:
 	_section("A flashlight lights the maps that ignore every light")
 
 	var code_ok := 0
-	for path in ["res://game/g2g_bsp_lightmapped.gdshader", "res://game/g2g_bsp_translucent.gdshader"]:
+	for path in ["res://game/airdrift_bsp_lightmapped.gdshader", "res://game/airdrift_bsp_translucent.gdshader"]:
 		var text := FileAccess.get_file_as_string(path)
 		if text.contains("uniform sampler2D flashlight_tex : hint_default_black") \
 				and text.contains("flashlight(world, normal)"):
@@ -580,10 +580,10 @@ func _test_the_flashlight_reaches_unshaded_maps() -> void:
 	_check(code_ok == 2, "both imported-map shaders compute the cone, off by default (%d of 2)" % code_ok,
 		"an unshaded surface ignores a SpotLight3D, so the shader is the only way to light one")
 
-	var light := G2GFlashlight.new()
+	var light := AirdriftFlashlight.new()
 	add_child(light)
-	var shader := load("res://game/g2g_bsp_lightmapped.gdshader") as Shader
-	_check(shader != null and shader.get_default_texture_parameter(G2GFlashlight.SHADER_PARAMETER) == light._texture,
+	var shader := load("res://game/airdrift_bsp_lightmapped.gdshader") as Shader
+	_check(shader != null and shader.get_default_texture_parameter(AirdriftFlashlight.SHADER_PARAMETER) == light._texture,
 		"it hands the shader its parameters as the shader's own default, never per material")
 	_check(light._image.get_pixel(0, 0).a == 0.0, "and starts off")
 
@@ -602,6 +602,6 @@ func _test_the_flashlight_reaches_unshaded_maps() -> void:
 
 	remove_child(light)
 	light.free()
-	_check(shader.get_default_texture_parameter(G2GFlashlight.SHADER_PARAMETER) == null,
+	_check(shader.get_default_texture_parameter(AirdriftFlashlight.SHADER_PARAMETER) == null,
 		"and a client that goes away takes its texture back off the shader")
 	_done()

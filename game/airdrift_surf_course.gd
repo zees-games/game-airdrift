@@ -1,0 +1,297 @@
+extends DotBotSurfCourse
+
+## One stage of a map as a surf bot sees it, read from the timer's zones: the adapter between
+## this game and dot-bot's surf planner and pilot ([DotBotSurfPlanner], [DotBotSurfPilot]).
+##
+## [b]Read from the timer's zones, never written per map.[/b] The start is the stage zone's own
+## destination and yaw (what `!s<n>` does to a player); the goal is the next stage's zone, the
+## finish, and every door whose destination lies in one of them (on a staged surf map the way out
+## of a stage is a teleport, and the player is sent into the next stage's zone by it); a pit is
+## every RESPAWN and SLAY zone and every other door. A door that does not lead on is a pit for the
+## bot even when it is a shortcut, because nothing here can tell a shortcut from a way back.
+##
+## Progress and energy are dot-bot's ([method DotBotSurfCourse.score]). The simulator is
+## dot-player-controller's ([DotFpsSimulator]); what this game runs beside the motor (the map's
+## pushes, gravity volumes and lethal hurt, [AirdriftMapMechanics]) is its [code]mechanics[/code]
+## hook, on a rider of the simulation's own ([method simulator_for]). The volume modes (water,
+## ladders) come with the motor's registered modes. The rider memory of pushes and sinking
+## blocks is not branched with the state; nothing on a planned stage uses it.
+
+const AirdriftMapMechanics := preload("airdrift_map_mechanics.gd")
+const AirdriftPaths := preload("airdrift_paths.gd")
+const AirdriftUnits := preload("airdrift_units.gd")
+
+## How far under the lowest goal a ride is given up on, genre units. The floor is measured from
+## the goals alone, not under every pit slab as it once was: a line that fell to the water at
+## the bottom of a stage and skimmed along it toward a door 450 units above scored as progress
+## and filled the beam (surf_beginner stage 3). A door is only ever reached from above or level: nothing on these
+## stages rises 256 units.
+const BELOW_UNITS := 256.0
+## Downward speed, m/s (2400 u/s), past which a state counts as fallen into a pit.
+const STUCK_FALL := 45.7
+## Metres around the start inside which a pit box is not believed.
+const START_PIT_MARGIN := 2.0
+
+var map_id: StringName = &""
+var stage := 1
+var goal_zones: Array[DotTimerZone] = []
+var pit_zones: Array[DotTimerZone] = []
+## Score per metre a line is under the guide's height at its own place along it; 0 keeps the
+## guide to plan only. For a stage whose way on is a climb the energy term cannot ask for.
+var height_weight := 0.0
+
+
+## The course for stage [param number] of the main track of the map [param game] has loaded (0 is
+## the whole run, from the spawn to the finish). Null, with the reason in [param why], when the
+## map has no such stage.
+static func for_stage(game: Node, number: int, why: Array = []) -> DotBotSurfCourse:
+	var zones: DotTimerZoneSet = game.timers.zones
+	var track := DotTimerTrack.MAIN
+	var total := zones.stage_count(track)
+	var course: DotBotSurfCourse = (load(AirdriftPaths.rebase("res://game/airdrift_surf_course.gd")) as GDScript).new()
+	course.map_id = game.maps.current.id
+	course.stage = number
+	course.gravity = AirdriftUnits.to_metres(800.0)
+	course.below_margin = AirdriftUnits.to_metres(BELOW_UNITS)
+	var map: Node = game.current_map_node()
+	if number == 0:
+		course.start = map.spawn_for(track)
+		course.start_yaw = map.spawn_yaw_for(track)
+	else:
+		var from := zones.stage_zone(track, number)
+		if from == null:
+			why.append("no stage %d on main (it has %d)" % [number, total])
+			return null
+		course.start = from.destination
+		course.start_yaw = from.destination_yaw
+	var goals: Array[DotTimerZone] = []
+	var pits: Array[DotTimerZone] = []
+	if number > 0 and number < total:
+		goals.append(zones.stage_zone(track, number + 1))
+	# The finish is a goal only of the last stage: from any other it is at the far end of the map,
+	# and as a goal it dragged the floor down to its own height.
+	if number == 0 or number >= total:
+		for zone: DotTimerZone in zones.of_kind(DotTimerZone.Kind.END, track):
+			goals.append(zone)
+	for zone: DotTimerZone in zones.of_kind(DotTimerZone.Kind.TELEPORT):
+		var leads_on := false
+		for goal: DotTimerZone in goals.duplicate():
+			if goal.contains(zone.destination):
+				leads_on = true
+		if leads_on:
+			goals.append(zone)
+		else:
+			pits.append(zone)
+	for kind: DotTimerZone.Kind in [DotTimerZone.Kind.RESPAWN, DotTimerZone.Kind.SLAY]:
+		for zone: DotTimerZone in zones.of_kind(kind):
+			pits.append(zone)
+	if goals.is_empty():
+		why.append("stage %d has nowhere to arrive" % number)
+		return null
+	course.goal_zones = goals
+	course.pit_zones = pits.filter(func(z: DotTimerZone) -> bool: return not _hugs_start(z, course.start))
+	course.settle_zones()
+	course.guide = guide_from_cache(course.map_id, number, course.start)
+	return course
+
+
+## Whether a pit box holds, or comes within START_PIT_MARGIN of, the start. An inflated RESPAWN or
+## teleport box that overlaps the floor the stage starts on is a map artefact: a bot hopping at the
+## spawn touches it and is put back every few ticks, so it never leaves.
+static func _hugs_start(zone: DotTimerZone, start: Vector3) -> bool:
+	if zone.shape != DotTimerZone.Shape.BOX:
+		return false
+	return AABB(zone.from, zone.to - zone.from).abs().grow(START_PIT_MARGIN).has_point(start)
+
+
+## The guide polyline a stage's cache carries (genre units, Godot axes, in `"guide"`), from
+## [param start] on, in metres; empty for a stage that runs straight.
+##
+## [b]Why it lives in the cache, not in code.[/b] Progress is distance along the start-to-goal
+## line, so a stage that turns far from that line (a hairpin) scores its own correct ride as
+## going backwards and the beam drops it. The points are a property of the ride the planner
+## was given, so they are saved with its rides, and the pilot's veto, which scores futures with
+## the same course, reads them back from the same place.
+static func guide_from_cache(id: StringName, number: int, start: Vector3) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	var data: Dictionary = read_stage(id, number)
+	var points: Array = data.get("guide", [])
+	if points.size() < 1:
+		return out
+	out.append(start)
+	for p: Array in points:
+		out.append(AirdriftUnits.vector_to_metres(Vector3(float(p[0]), float(p[1]), float(p[2]))))
+	return out
+
+
+## Metres along the guide, measured on the floor plan only. The base class takes the nearest
+## point of the polyline in three dimensions, which on a stage that doubles back lets a line
+## that falls off the first ramp land nearer the last segment in height than the ramp it left in
+## plan, and score as if it had ridden the whole stage (surf_beginner stage 3, 2.6 s: 80 against
+## 21 for the line that stayed on the ramp). Drops are not progress, so height is left to the
+## energy term.
+func progress(p: Vector3) -> float:
+	if guide.size() < 2:
+		return super.progress(p)
+	var flat := Vector3(p.x, 0.0, p.z)
+	var best_d := INF
+	var best := 0.0
+	var along := 0.0
+	for i in range(guide.size() - 1):
+		var a := Vector3(guide[i].x, 0.0, guide[i].z)
+		var b := Vector3(guide[i + 1].x, 0.0, guide[i + 1].z)
+		var seg := b - a
+		var length := seg.length()
+		var t := clampf((flat - a).dot(seg) / maxf(length * length, 0.0001), 0.0, 1.0)
+		var d := flat.distance_squared_to(a + seg * t)
+		if d < best_d:
+			best_d = d
+			best = along + t * length
+		along += length
+	return best
+
+
+func score(state: Variant) -> float:
+	var s := super.score(state)
+	if height_weight <= 0.0 or guide.size() < 2:
+		return s
+	var p: Vector3 = state.position
+	var flat := Vector3(p.x, 0.0, p.z)
+	var best_d := INF
+	var want := p.y
+	for i in range(guide.size() - 1):
+		var a := guide[i]
+		var b := guide[i + 1]
+		var fa := Vector3(a.x, 0.0, a.z)
+		var seg := Vector3(b.x, 0.0, b.z) - fa
+		var t := clampf((flat - fa).dot(seg) / maxf(seg.length_squared(), 0.0001), 0.0, 1.0)
+		var d := flat.distance_squared_to(fa + seg * t)
+		if d < best_d:
+			best_d = d
+			want = lerpf(a.y, b.y, t)
+	return s - height_weight * maxf(0.0, want - p.y)
+
+
+## The door nearest the start is what the straight line aims at: a stage's own exit, not the
+## finish at the far end of the map. The next stage's zone is only the room a door lands in, so
+## it is aimed at only when no door leads on (the last stage's finish): on surf_beginner stage 2
+## the room is 230 units above the start and 2,200 away, the door that sends you there is 1,000
+## units below it and 1,700 away in another direction. The floor is [constant BELOW_UNITS] under
+## the lowest goal.
+func settle_zones() -> void:
+	var best := INF
+	# The start counts too: a stage that climbs to its goal starts below the goals, and a floor
+	# measured from them alone sits above the start and puts the bot back every tick.
+	var lowest := start.y
+	var has_door := goal_zones.any(func(z: DotTimerZone) -> bool: return z.kind == DotTimerZone.Kind.TELEPORT)
+	for goal: DotTimerZone in goal_zones:
+		var d := goal.centre().distance_to(start)
+		if d < best and (goal.kind == DotTimerZone.Kind.TELEPORT or not has_door):
+			best = d
+			goal_centre = goal.centre()
+		lowest = minf(lowest, minf(goal.from.y, goal.to.y))
+	floor_y = lowest - below_margin
+	var _settled := settle()
+
+
+## What [param state] is in: in a goal zone, in a pit, below the course, or none of those.
+func event_at(state: Variant) -> int:
+	var position: Vector3 = state.position
+	if position.y < floor_y:
+		return EVENT_BELOW
+	# A fall faster than any drop on these maps is a motor exploit (a state frozen in a pit slab
+	# while vy grows), not a ride.
+	if state.velocity.y < -STUCK_FALL:
+		return EVENT_PIT
+	if goal_fn.is_valid() and bool(goal_fn.call(state)):
+		return EVENT_GOAL
+	for goal: DotTimerZone in goal_zones:
+		if goal.contains(position):
+			return EVENT_GOAL
+	for pit: DotTimerZone in pit_zones:
+		if pit.contains(position):
+			return EVENT_PIT
+	return EVENT_NONE
+
+
+## The simulator the planner and the pilot ride this course on: the player's own motor copied,
+## the map's mechanics run after each tick on a rider of its own (a lethal hurt is a pit), and
+## this course as the oracle.
+func simulator_for(controller: DotFpsController, mechanics: AirdriftMapMechanics) -> DotFpsSimulator:
+	var sim := controller.simulator()
+	if sim == null:
+		return null
+	if mechanics != null:
+		var rider := AirdriftMapMechanics.Rider.new()
+		sim.mechanics = func(state: DotFpsState, motor: DotFpsMotor, delta: float, _start: Vector3) -> int:
+			return EVENT_PIT if mechanics.simulate(rider, motor, state, delta) == AirdriftMapMechanics.Event.HURT else EVENT_NONE
+	sim.oracle = event_at
+	return sim
+
+
+## The legacy single-file cache of a map (every stage in one file); still read, no longer written.
+static func cache_path(id: StringName) -> String:
+	return "res://maps/routes/%s.surf.json" % id
+
+
+## The directory holding one `<stage>.json` per stage.
+static func cache_dir(id: StringName) -> String:
+	return "res://maps/routes/%s.surf" % id
+
+
+## The file one stage is saved at.
+static func stage_path(id: StringName, number: int) -> String:
+	return "%s/%d.json" % [cache_dir(id), number]
+
+
+## True when the map has a cache in either layout.
+static func has_cache(id: StringName) -> bool:
+	return not read_cache(id).get("stages", {}).is_empty()
+
+
+## A map's whole cache as `{"id", "stages": {"<n>": stage}}`, from either layout. A stage file
+## wins over the legacy file's entry for the same stage.
+static func read_cache(id: StringName) -> Dictionary:
+	return read_cache_at(cache_path(id), cache_dir(id))
+
+
+## [method read_cache] over explicit paths, so a check can read a layout it wrote elsewhere.
+static func read_cache_at(legacy: String, dir: String) -> Dictionary:
+	var stages := {}
+	var legacy_abs := ProjectSettings.globalize_path(legacy)
+	if FileAccess.file_exists(legacy_abs):
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(legacy_abs))
+		if typeof(parsed) == TYPE_DICTIONARY and typeof(parsed.get("stages")) == TYPE_DICTIONARY:
+			stages = (parsed["stages"] as Dictionary).duplicate()
+	var dir_abs := ProjectSettings.globalize_path(dir)
+	if not DirAccess.dir_exists_absolute(dir_abs):
+		return {"id": dir.get_file().get_basename().get_basename(), "stages": stages}
+	for file in DirAccess.get_files_at(dir_abs):
+		if not file.ends_with(".json") or not file.get_basename().is_valid_int():
+			continue
+		var one: Variant = JSON.parse_string(FileAccess.get_file_as_string(dir_abs.path_join(file)))
+		if typeof(one) == TYPE_DICTIONARY:
+			stages[file.get_basename()] = one
+	return {"id": dir.get_file().get_basename().get_basename(), "stages": stages}
+
+
+## One stage of a map's cache, empty when it has none.
+static func read_stage(id: StringName, number: int) -> Dictionary:
+	return read_cache(id).get("stages", {}).get(str(number), {})
+
+
+## Writes every stage of the legacy file at [param legacy] as its own file in [param dir];
+## returns the number of stages written.
+static func split_cache(legacy: String, dir: String) -> int:
+	var stages: Dictionary = read_cache_at(legacy, "").get("stages", {})
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
+	for key: String in stages:
+		write_stage_file("%s/%s.json" % [dir, key], stages[key])
+	return stages.size()
+
+
+## Writes one stage's dictionary to [param path].
+static func write_stage_file(path: String, stage: Dictionary) -> void:
+	var f := FileAccess.open(ProjectSettings.globalize_path(path), FileAccess.WRITE)
+	f.store_string(JSON.stringify(stage, "", false))
+	f.close()

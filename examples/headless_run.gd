@@ -1,13 +1,13 @@
 extends "headless_run_bank.gd"
 
-## Runs g2gfast headless: units, the genre field of view, a stock avatar on a rig,
+## Runs Airdrift headless: units, the genre field of view, a stock avatar on a rig,
 ## first and third person, auto-bhop gated by the config, and a bot down both maps.
 ##
 ## [codeblock]
 ## godot --headless --path . res://examples/headless_run.tscn
 ## [/codeblock]
 
-const G2GProgress := preload("../game/g2g_progress.gd")
+const AirdriftProgress := preload("../game/airdrift_progress.gd")
 
 const CHECKS := 262
 
@@ -23,7 +23,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("g2gfast — headless run")
+	print("Airdrift — headless run")
 	print("")
 
 	# `-- --only=<method>[,<method>...]` boots and runs those sections in that order, for
@@ -117,79 +117,79 @@ func _test_progression() -> void:
 	_done()
 
 
-func _progression_stats(progress: G2GProgress) -> void:
+func _progression_stats(progress: AirdriftProgress) -> void:
 	# The reporter drops an unpublished stat with "will not be reported why=unpublished",
 	# so the two the e2e run saw rejected must be published in the declared schema.
-	var schema := G2GStats.schema()
-	for id: StringName in [G2GStats.RUNS_STARTED, G2GStats.STRAFES]:
+	var schema := AirdriftStats.schema()
+	for id: StringName in [AirdriftStats.RUNS_STARTED, AirdriftStats.STRAFES]:
 		var published := false
 		for d: DotStatsDef in schema.stats:
 			if d.id == id:
 				published = d.publish
 		_check(published, "%s is published to the site" % id)
 	var held := DotStatsValues.new()
-	held.values = {String(G2GStats.RUNS_FINISHED): 10.0}
+	held.values = {String(AirdriftStats.RUNS_FINISHED): 10.0}
 	progress.rank.seed_baseline(&"bot", held)
 	var life: float = progress.rank.publish_lifetime(&"bot", DotStatsValues.new(), progress.stats.schema)
-	_check(schema.has(G2GStats.RANK_SCORE) and life == 10.0,
+	_check(schema.has(AirdriftStats.RANK_SCORE) and life == 10.0,
 		"rank_score is declared and ranks on a stored lifetime baseline", "%.1f" % life)
 	progress.rank.forget(&"bot")
 	var values := progress.session_values(&"bot")
 
 	_check(
-		values.get_value(G2GStats.RUNS_STARTED, 0.0) > 0.0,
+		values.get_value(AirdriftStats.RUNS_STARTED, 0.0) > 0.0,
 		"runs started were counted",
-		"%d" % int(values.get_value(G2GStats.RUNS_STARTED, 0.0))
+		"%d" % int(values.get_value(AirdriftStats.RUNS_STARTED, 0.0))
 	)
 	_check(
-		values.get_value(G2GStats.RUNS_FINISHED, 0.0) > 0.0,
+		values.get_value(AirdriftStats.RUNS_FINISHED, 0.0) > 0.0,
 		"and so were finishes",
-		"%d" % int(values.get_value(G2GStats.RUNS_FINISHED, 0.0))
+		"%d" % int(values.get_value(AirdriftStats.RUNS_FINISHED, 0.0))
 	)
 
 	# A best time is LOWEST, and the distinction between "held zero" and "never seen"
 	# is what stops every player's personal best being zero the moment the feature
 	# ships. A finished run means there IS a time, so it must be above zero.
 	_check(
-		values.get_value(G2GStats.BEST_TIME, 0.0) > 0.0,
+		values.get_value(AirdriftStats.BEST_TIME, 0.0) > 0.0,
 		"a best time was filed as a time rather than as a zero",
-		"%.3f s" % values.get_value(G2GStats.BEST_TIME, 0.0)
+		"%.3f s" % values.get_value(AirdriftStats.BEST_TIME, 0.0)
 	)
 
 	_check(
-		values.get_value(G2GStats.JUMPS, 0.0) > 0.0,
+		values.get_value(AirdriftStats.JUMPS, 0.0) > 0.0,
 		"the movement counters were read off the controller",
-		"%d jumps" % int(values.get_value(G2GStats.JUMPS, 0.0))
+		"%d jumps" % int(values.get_value(AirdriftStats.JUMPS, 0.0))
 	)
 
 	# The counters are a running total the game RESETS on every finish, so filing the
 	# total on each sample would add the whole history every tick. At 128 Hz over the
 	# runs above that would be six figures for a few hundred jumps.
 	_check(
-		values.get_value(G2GStats.JUMPS, 0.0) < 100000.0,
+		values.get_value(AirdriftStats.JUMPS, 0.0) < 100000.0,
 		"and filed as deltas rather than as the running total each tick",
-		"%d" % int(values.get_value(G2GStats.JUMPS, 0.0))
+		"%d" % int(values.get_value(AirdriftStats.JUMPS, 0.0))
 	)
 
 	_check(
-		values.get_value(G2GStats.PERFECT_JUMPS, 0.0)
-			<= values.get_value(G2GStats.JUMPS, 0.0),
+		values.get_value(AirdriftStats.PERFECT_JUMPS, 0.0)
+			<= values.get_value(AirdriftStats.JUMPS, 0.0),
 		"perfect jumps never exceed jumps"
 	)
 
 	# In units, because everything a player reads in this game is. A top speed under
 	# a hundred would be metres per second wearing the wrong label.
 	_check(
-		values.get_value(G2GStats.TOP_SPEED, 0.0) > 100.0,
+		values.get_value(AirdriftStats.TOP_SPEED, 0.0) > 100.0,
 		"top speed was filed in genre units",
-		"%.0f u/s" % values.get_value(G2GStats.TOP_SPEED, 0.0)
+		"%.0f u/s" % values.get_value(AirdriftStats.TOP_SPEED, 0.0)
 	)
 
 	# Distance is the one figure this layer measures itself, and it refuses a jump of
 	# more than half a metre in one tick — a respawn, a stage warp or a `!r`. The bot
 	# above was teleported into the finish zone at least once, so a distance equal to
 	# the map's whole length would mean the guard is not working.
-	var distance := values.get_value(G2GStats.DISTANCE, 0.0)
+	var distance := values.get_value(AirdriftStats.DISTANCE, 0.0)
 	_check(distance > 0.0, "distance was measured", "%.0f m" % distance)
 	_check(
 		distance < 100000.0,
@@ -199,7 +199,7 @@ func _progression_stats(progress: G2GProgress) -> void:
 
 
 
-func _progression_achievements(progress: G2GProgress) -> void:
+func _progression_achievements(progress: AirdriftProgress) -> void:
 	var values := progress.session_values(&"bot")
 
 	_check(
@@ -214,13 +214,13 @@ func _progression_achievements(progress: G2GProgress) -> void:
 	if held != null:
 		_check(
 			absf(
-				held.value_of(G2GStats.RUNS_FINISHED)
-					- values.get_value(G2GStats.RUNS_FINISHED, 0.0)
+				held.value_of(AirdriftStats.RUNS_FINISHED)
+					- values.get_value(AirdriftStats.RUNS_FINISHED, 0.0)
 			) < 0.001,
 			"lifetime finishes equal session finishes, so the link differences",
 			"%.0f vs %.0f" % [
-				held.value_of(G2GStats.RUNS_FINISHED),
-				values.get_value(G2GStats.RUNS_FINISHED, 0.0),
+				held.value_of(AirdriftStats.RUNS_FINISHED),
+				values.get_value(AirdriftStats.RUNS_FINISHED, 0.0),
 			]
 		)
 
@@ -229,13 +229,13 @@ func _progression_achievements(progress: G2GProgress) -> void:
 		# and dot-achievements' link says so.
 		_check(
 			absf(
-				held.value_of(G2GStats.BEST_TIME)
-					- values.get_value(G2GStats.BEST_TIME, 0.0)
+				held.value_of(AirdriftStats.BEST_TIME)
+					- values.get_value(AirdriftStats.BEST_TIME, 0.0)
 			) < 0.001,
 			"and a best time is passed through rather than differenced",
 			"%.3f vs %.3f" % [
-				held.value_of(G2GStats.BEST_TIME),
-				values.get_value(G2GStats.BEST_TIME, 0.0),
+				held.value_of(AirdriftStats.BEST_TIME),
+				values.get_value(AirdriftStats.BEST_TIME, 0.0),
 			]
 		)
 

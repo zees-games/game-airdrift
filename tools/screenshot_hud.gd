@@ -1,10 +1,10 @@
 extends SceneTree
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GHud := preload("../game/g2g_hud.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
-const G2GPresentation := preload("../game/g2g_presentation.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftHud := preload("../game/airdrift_hud.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
+const AirdriftPresentation := preload("../game/airdrift_presentation.gd")
 
 ## Renders this game's HUD to `screenshots/` so a person can look at it.
 ##
@@ -48,10 +48,10 @@ const OUT_DIR := "res://screenshots"
 ## filled in — which looks exactly like the bug where they never are.
 const SETTLE := 4
 
-var _game: G2GGame = null
-var _hud: G2GHud = null
-var _player: G2GPlayer = null
-var _other: G2GPlayer = null
+var _game: AirdriftGame = null
+var _hud: AirdriftHud = null
+var _player: AirdriftPlayer = null
+var _other: AirdriftPlayer = null
 var _shots: Array[Dictionary] = []
 var _at := 0
 var _wait := SETTLE
@@ -61,7 +61,7 @@ var _done := false
 var _fx_only := false
 ## Set by `--splits`: one frame, `hud_splits`, mid-run on bhop_g2g_stages.
 var _splits_only := false
-var _presentation: G2GPresentation = null
+var _presentation: AirdriftPresentation = null
 
 ## How far into its own life each effect is captured, in seconds of the effect's time, and
 ## the slow-down that makes that moment reachable under a software renderer.
@@ -76,22 +76,22 @@ func _initialize() -> void:
 	_splits_only = "--splits" in OS.get_cmdline_user_args()
 	if _splits_only:
 		# A staged map, so the stage splits panel has sections to draw.
-		OS.set_environment("G2G_INITIAL_MAP", "bhop_g2g_stages")
+		OS.set_environment("AIRDRIFT_INITIAL_MAP", "bhop_g2g_stages")
 	DirAccess.make_dir_recursive_absolute(OUT_DIR)
 
 	# The movement actions, because the sampler reads them and an unregistered action
-	# pushes an engine error per action per tick. `G2GClient` registers the same set.
+	# pushes an engine error per action per tick. `AirdriftClient` registers the same set.
 	DotFpsSampler.register_default_actions()
 
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.auto_bhop = true
 
-	_game = G2GGame.new()
+	_game = AirdriftGame.new()
 	_game.name = "Game"
 	_game.config = config
 	root.add_child(_game)
 
-	_hud = G2GHud.new()
+	_hud = AirdriftHud.new()
 	_hud.name = "Hud"
 	root.add_child(_hud)
 
@@ -133,11 +133,11 @@ func _process(delta: float) -> bool:
 		_stage()
 		return false
 
-	# Every player drawn every frame, as `G2GClient._process` does: the camera and the
+	# Every player drawn every frame, as `AirdriftClient._process` does: the camera and the
 	# beacon are both placed by `present`, and a frame nobody presented is a camera at
 	# the origin and no marker at all.
 	for id in _game.players:
-		(_game.players[id] as G2GPlayer).present(delta)
+		(_game.players[id] as AirdriftPlayer).present(delta)
 
 	if _at < _shots.size():
 		var shot: Dictionary = _shots[_at]
@@ -334,7 +334,7 @@ func _arrange_action(kind: StringName, action: String) -> void:
 ## a software renderer's four settle frames outlive a real marker's quarter second.
 func _arrange_hit() -> void:
 	_other.beacon = false
-	# The weapon in hand, as `G2GCombat` writes it offline and `net_weapon` sends it to a
+	# The weapon in hand, as `AirdriftCombat` writes it offline and `net_weapon` sends it to a
 	# client: its name bottom right, and no count, because neither weapon has a magazine.
 	_player.held_weapon = &"deagle"
 	_hud.hit_marker.hit_sec = 30.0
@@ -348,7 +348,7 @@ func _arrange_blind() -> void:
 
 
 ## The cover a networked client shows while the server is on a map it has not loaded.
-## Pushed by hand here, as `G2GClient._process` pushes it from the bridge.
+## Pushed by hand here, as `AirdriftClient._process` pushes it from the bridge.
 func _arrange_loading() -> void:
 	_player.blinded = false
 	var cover := DotLoadingCover.new()
@@ -361,7 +361,7 @@ func _arrange_loading() -> void:
 # --- --fx -------------------------------------------------------------------
 
 func _stage_fx() -> void:
-	_presentation = G2GPresentation.new()
+	_presentation = AirdriftPresentation.new()
 	_presentation.name = "Presentation"
 	root.add_child(_presentation)
 	var built := _presentation.setup()

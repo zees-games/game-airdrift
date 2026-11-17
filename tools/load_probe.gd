@@ -11,22 +11,22 @@ extends Node
 ## the player count -- every snapshot carries every player, to every player -- is
 ## invisible to all of them, and "can it hold a full server" had no number at all.
 ##
-## This is the real server half: [G2GGame] on an imported map, a [DotNetManager] and a
-## [G2GNetBridge], with the socket replaced by a counter. Each player is admitted the way
+## This is the real server half: [AirdriftGame] on an imported map, a [DotNetManager] and a
+## [AirdriftNetBridge], with the socket replaced by a counter. Each player is admitted the way
 ## a real peer is (`add_player`, then `_admit`) and holds a command every tick, running
 ## and turning, so the motor, the zones and the replication all do the work they would.
 ## The budget is one tick at the server's own rate: 7.8 ms at 128.
 ##
-## [b]LOAD_ACKS=1 is the shape a real server has.[/b] A real g2gfast client acknowledges
+## [b]LOAD_ACKS=1 is the shape a real server has.[/b] A real Airdrift client acknowledges
 ## every snapshot it applies (`encode_ack` -> the bridge -> `receive_ack_payload`), and an
 ## acknowledging peer changes what a snapshot costs: `sync_peer_acks` retires what landed
 ## and `trim_pending` has nothing left to age out. Without it every peer is the no-ack
 ## host, which is a real shape too (an old client) but not the usual one. With it each
 ## peer acks the snapshot ACK_LAG before the newest, as a client ~60 ms away does at 32/s.
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GNetBridge := preload("../game/net/g2g_net_bridge.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftNetBridge := preload("../game/net/airdrift_net_bridge.gd")
 
 const WARMUP_TICKS := 128
 const MEASURED_TICKS := 640
@@ -80,7 +80,7 @@ func _measure(map_id: StringName, players: int) -> void:
 
 	var net := _build_net(game, side)
 
-	var bridge := G2GNetBridge.new()
+	var bridge := AirdriftNetBridge.new()
 	side.add_child(bridge)
 	var attached := bridge.attach(game, net, net)
 	if not attached.ok:
@@ -143,7 +143,7 @@ func _make_commands(players: int) -> Array[DotFpsCommand]:
 
 
 ## Gives every player the next command of its turn.
-func _drive(bridge: G2GNetBridge, commands: Array[DotFpsCommand]) -> void:
+func _drive(bridge: AirdriftNetBridge, commands: Array[DotFpsCommand]) -> void:
 	var k := 0
 	for session_id in bridge._behaviours:
 		var behaviour = bridge._behaviours[session_id]
@@ -156,20 +156,20 @@ func _drive(bridge: G2GNetBridge, commands: Array[DotFpsCommand]) -> void:
 
 
 ## Determinism gate: every player's exact float bits.
-func _hash_states(bridge: G2GNetBridge) -> void:
+func _hash_states(bridge: AirdriftNetBridge) -> void:
 	for session_id in bridge._behaviours:
 		var st: DotFpsState = bridge._behaviours[session_id].player.controller.state
 		_hash = hash([_hash, st.position, st.velocity, st.mode, st.ground_normal])
 
 
 ## The game for one row on [param map_id], added under [param side]; null when the map never loads.
-func _start_game(map_id: StringName, players: int, side: Node) -> G2GGame:
-	var config := G2GConfig.new()
+func _start_game(map_id: StringName, players: int, side: Node) -> AirdriftGame:
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = map_id
 	config.authoritative = true
-	var game := G2GGame.new()
+	var game := AirdriftGame.new()
 	game.config = config
 	game.service_scope = StringName("load%d" % players)
 	side.add_child(game)
@@ -184,7 +184,7 @@ func _start_game(map_id: StringName, players: int, side: Node) -> G2GGame:
 
 
 ## Admits [param players] peers the way a real server does.
-func _admit_players(bridge: G2GNetBridge, players: int) -> void:
+func _admit_players(bridge: AirdriftNetBridge, players: int) -> void:
 	for i in range(players):
 		var peer := i + 2
 		var added: DotResult = bridge.add_player(peer, peer, "load%d" % i)
@@ -196,7 +196,7 @@ func _admit_players(bridge: G2GNetBridge, players: int) -> void:
 
 ## One server tick with the phases taken apart; returns the microsecond stamps
 ## [started, mid (the game is done), ended (snapshots are sent)].
-func _tick_once(bridge: G2GNetBridge, net: DotNetManager, tick: int) -> PackedInt64Array:
+func _tick_once(bridge: AirdriftNetBridge, net: DotNetManager, tick: int) -> PackedInt64Array:
 	var started := Time.get_ticks_usec()
 	bridge._tick = tick
 	bridge._game_ticked_for = -1
@@ -232,7 +232,7 @@ func _tick_once(bridge: G2GNetBridge, net: DotNetManager, tick: int) -> PackedIn
 
 
 ## The server-side net manager for one row, added under [param side].
-func _build_net(game: G2GGame, side: Node) -> DotNetManager:
+func _build_net(game: AirdriftGame, side: Node) -> DotNetManager:
 	var net := DotNetManager.new()
 	net.name = "Server"
 	net.is_server = true
@@ -257,7 +257,7 @@ func _build_net(game: G2GGame, side: Node) -> DotNetManager:
 	return net
 
 
-func _report_row(players: int, game: G2GGame, net: DotNetManager, times: PackedFloat64Array, net_ms: float, game_ms: float) -> void:
+func _report_row(players: int, game: AirdriftGame, net: DotNetManager, times: PackedFloat64Array, net_ms: float, game_ms: float) -> void:
 	var sorted := Array(times)
 	sorted.sort()
 	var mean := 0.0

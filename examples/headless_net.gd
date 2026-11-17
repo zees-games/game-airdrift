@@ -2,7 +2,7 @@ extends "headless_net_views.gd"
 
 ## game-airdrift's netcode, end to end, in one process.
 ##
-## A server game and a client game, each with its own [DotNetManager] and [G2GNetBridge], with a
+## A server game and a client game, each with its own [DotNetManager] and [AirdriftNetBridge], with a
 ## lossy loopback where the socket would be. This proves the bridge, not dot-net.
 ##
 ## [b]The client's tick lead is hand-stamped[/b] (INPUT_LEAD): a command for tick N
@@ -29,7 +29,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("game-g2gfast: netcode")
+	print("game-airdrift: netcode")
 	print("")
 	_test_command_wire()
 	_test_neutralise()
@@ -76,7 +76,7 @@ func _run() -> void:
 
 func _test_command_wire() -> void:
 	_section("a command survives the wire")
-	var packet := G2GNetCommand.new()
+	var packet := AirdriftNetCommand.new()
 	packet.tick = 77
 	packet.delta = 1.0 / 128.0
 	packet.move.move = Vector2(-1.0, 0.5)
@@ -87,7 +87,7 @@ func _test_command_wire() -> void:
 
 	var writer := DotNetWriter.new()
 	packet.write(writer)
-	var back := G2GNetCommand.new()
+	var back := AirdriftNetCommand.new()
 	back.read(DotNetReader.new(writer.to_bytes()))
 
 	_check(back.tick == 77, "tick")
@@ -97,7 +97,7 @@ func _test_command_wire() -> void:
 	# Quantised once is quantised for good: a second trip must change nothing.
 	var again := DotNetWriter.new()
 	back.write(again)
-	var twice := G2GNetCommand.new()
+	var twice := AirdriftNetCommand.new()
 	twice.read(DotNetReader.new(again.to_bytes()))
 	_check(twice.equals(back), "and is stable under a second trip, which is what input compression rests on")
 	_done()
@@ -105,7 +105,7 @@ func _test_command_wire() -> void:
 
 func _test_neutralise() -> void:
 	_section("a silent player's command lets go")
-	var command := G2GNetCommand.new()
+	var command := AirdriftNetCommand.new()
 	command.attack = true
 	command.move.move = Vector2(0.0, 1.0)
 	command.move.yaw = 40.0
@@ -119,28 +119,28 @@ func _test_neutralise() -> void:
 
 func _test_movement_wire() -> void:
 	_section("the movement configuration travels")
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.air_accelerate = 1000.0
 	config.gravity = 600.0
 	config.auto_bhop = false
 
-	var reader := DotNetReader.new(G2GEvents.write_movement(config))
-	var received := G2GConfig.new()
-	var fingerprint := G2GEvents.read_movement(reader, received)
+	var reader := DotNetReader.new(AirdriftEvents.write_movement(config))
+	var received := AirdriftConfig.new()
+	var fingerprint := AirdriftEvents.read_movement(reader, received)
 
 	_check(received.air_accelerate == 1000.0 and received.gravity == 600.0, "cvars arrive")
 	_check(received.auto_bhop == false, "and the autobhop switch")
-	_check(G2GMovement.tunables_for(received).fingerprint() == fingerprint,
+	_check(AirdriftMovement.tunables_for(received).fingerprint() == fingerprint,
 		"and the receiver derives the same tunables the sender fingerprinted")
-	_check(G2GMovement.tunables_for(config).fingerprint() == fingerprint, "which are the sender's")
+	_check(AirdriftMovement.tunables_for(config).fingerprint() == fingerprint, "which are the sender's")
 	_done()
 
 
 func _test_hello_wire() -> void:
 	_section("hello")
-	var config := G2GConfig.new()
-	var reader := DotNetReader.new(G2GEvents.write_hello(128, 7, 2, 4096, config))
-	var hello := G2GEvents.read_hello(reader)
+	var config := AirdriftConfig.new()
+	var reader := DotNetReader.new(AirdriftEvents.write_hello(128, 7, 2, 4096, config))
+	var hello := AirdriftEvents.read_hello(reader)
 	_check(bool(hello["ok"]), "parses")
 	_check(int(hello["tick_rate"]) == 128 and int(hello["player_id"]) == 7 and int(hello["peer_id"]) == 2, "with ids")
 	# No map. It carried one, and the client changed to it by id out of its own build —
@@ -152,30 +152,30 @@ func _test_hello_wire() -> void:
 	map.id = &"surf_g2g_intro"
 	map.scene_path = "res://maps/surf_g2g_intro.tscn"
 	map.tier = 4
-	var announce := G2GEvents.read_map_message(DotNetReader.new(
-		G2GEvents.write_map_message(DotMapMessage.announce(map))))
+	var announce := AirdriftEvents.read_map_message(DotNetReader.new(
+		AirdriftEvents.write_map_message(DotMapMessage.announce(map))))
 	var back := DotMapDef.from_dictionary(announce.get("map", {}))
 	_check(DotMapMessage.kind_of(announce) == DotMapMessage.KIND_ANNOUNCE and back.id == map.id
 		and back.tier == 4 and back.version == map.version and back.is_local(),
 		"a map announce survives the wire, tier and all", str(announce))
 	var huge := DotMapMessage.announce(map)
-	(huge["map"] as Dictionary)["description"] = "x".repeat(G2GEvents.MAP_MESSAGE_BYTES)
-	_check(G2GEvents.write_map_message(huge).is_empty(),
+	(huge["map"] as Dictionary)["description"] = "x".repeat(AirdriftEvents.MAP_MESSAGE_BYTES)
+	_check(AirdriftEvents.write_map_message(huge).is_empty(),
 		"one too big to send is refused whole rather than cut into JSON nobody can parse")
 	var garbage := DotNetWriter.new()
-	garbage.write_string("{not json", G2GEvents.MAP_REPLY_BYTES)
-	_check(G2GEvents.read_map_message(DotNetReader.new(garbage.to_bytes()), G2GEvents.MAP_REPLY_BYTES).is_empty(),
+	garbage.write_string("{not json", AirdriftEvents.MAP_REPLY_BYTES)
+	_check(AirdriftEvents.read_map_message(DotNetReader.new(garbage.to_bytes()), AirdriftEvents.MAP_REPLY_BYTES).is_empty(),
 		"and a reply that is not a JSON object reads as nothing, which dot-map ignores")
 	# A kind goes out in a fixed field the writer masks without a word, so one past it aliases a
 	# smaller kind: game-zombie-zone sent HURT and AMMO as HELLO and MAP that way. The track has
 	# no field limit: dot-timer's escape carries any number, checked just below.
-	_check(G2GEvent.fits(), "every event kind fits the event's kind field",
-		"%d kinds in %d bits" % [G2GEvents.Kind.size(), G2GEvent.KIND_BITS])
-	_check(G2GRequest.fits(), "every request kind fits the request's kind field",
-		"%d kinds in %d bits" % [G2GEvents.Ask.size(), G2GRequest.KIND_BITS])
+	_check(AirdriftEvent.fits(), "every event kind fits the event's kind field",
+		"%d kinds in %d bits" % [AirdriftEvents.Kind.size(), AirdriftEvent.KIND_BITS])
+	_check(AirdriftRequest.fits(), "every request kind fits the request's kind field",
+		"%d kinds in %d bits" % [AirdriftEvents.Ask.size(), AirdriftRequest.KIND_BITS])
 	for joined_track in [0, 8, 14, 15, 40, 100000]:
-		var join_bytes := G2GEvents.write_join(1, 2, 3, "a", null, 0, joined_track)
-		var join_back := G2GEvents.read_join(DotNetReader.new(join_bytes))
+		var join_bytes := AirdriftEvents.write_join(1, 2, 3, "a", null, 0, joined_track)
+		var join_back := AirdriftEvents.read_join(DotNetReader.new(join_bytes))
 		_check(int(join_back["track"]) == joined_track,
 			"JOIN carries track %d unchanged (got %s)" % [joined_track, join_back["track"]])
 	_done()
@@ -247,10 +247,10 @@ func _build() -> bool:
 	var lead_bit := int((DotNetMessageRegistry as Script).get_script_constant_map().get("FEATURE_INPUT_LEAD", 0))
 	_client_net.messages.features &= ~lead_bit
 
-	_server_bridge = G2GNetBridge.new()
+	_server_bridge = AirdriftNetBridge.new()
 	_server_bridge.name = "Bridge"
 	server_side.add_child(_server_bridge)
-	_client_bridge = G2GNetBridge.new()
+	_client_bridge = AirdriftNetBridge.new()
 	_client_bridge.name = "Bridge"
 	client_side.add_child(_client_bridge)
 
@@ -260,7 +260,7 @@ func _build() -> bool:
 	var client_attached := _client_bridge.attach(_client_game, _client_net, _client_net)
 	_check(client_attached.ok, "the client bridge attaches", str(client_attached.error) if not client_attached.ok else "")
 
-	var wrong := G2GNetBridge.new()
+	var wrong := AirdriftNetBridge.new()
 	add_child(wrong)
 	var refused := wrong.attach(_client_game, _server_net, self)
 	_check(not refused.ok and refused.error.code == DotError.CODE_STATE, "a client game on a server manager is refused")
@@ -295,7 +295,7 @@ func _test_handshake() -> void:
 	var hellos := []
 	# [b]Whether the local player exists at the moment HELLO says who you are.[/b] It does
 	# not — `_apply_join` is what calls `game.add_player` — and a client that resolved its
-	# own player on `hello_received` therefore held null for the whole session. G2GClient
+	# own player on `hello_received` therefore held null for the whole session. AirdriftClient
 	# did exactly that, and the symptom was the entire keyboard and mouse dead on a client
 	# whose HUD, movement and camera all worked: everything below its `player == null`
 	# guard is mouse look and the keybinds, while movement is polled from the InputMap and
@@ -305,7 +305,7 @@ func _test_handshake() -> void:
 	# exchange returns JOIN has been applied and the answer is yes either way.
 	var local_at_hello := []
 	var added_locally: Array[StringName] = []
-	_client_game.player_added.connect(func(p: G2GPlayer) -> void: added_locally.append(p.player_id))
+	_client_game.player_added.connect(func(p: AirdriftPlayer) -> void: added_locally.append(p.player_id))
 	_client_bridge.hello_received.connect(func(id: int) -> void:
 		hellos.append(id)
 		local_at_hello.append(_client_game.players.has(StringName("u%d" % id)))
@@ -362,24 +362,24 @@ func _handshake_stage_ref() -> void:
 		"wr": {"splits": {1: 9.0, 2: 20.0, 3: 29.5}, "total": 31.75},
 		"bests": {1: 9.5, 3: 11.0, 4: 12.0},
 	}
-	var wire := G2GEvents.read_stage_ref(DotNetReader.new(G2GEvents.write_stage_ref(SESSION, sent)))
+	var wire := AirdriftEvents.read_stage_ref(DotNetReader.new(AirdriftEvents.write_stage_ref(SESSION, sent)))
 	_check(bool(wire["ok"]) and int(wire["stages"]) == 3 and is_equal_approx(float(wire["pb"]["total"]), 33.125)
 		and wire["pb"]["splits"].size() == 2 and is_equal_approx(float(wire["wr"]["splits"][3]), 29.5)
 		and wire["bests"].size() == 3 and not wire["bests"].has(2),
 		"a splits comparison survives the wire, absent splits staying absent", str(wire))
 	_check(wire["map"] == "bhop_x", "carrying the map it was worked out for", str(wire.get("map")))
 	# A message from before the map id was added ends after the bests: refused whole.
-	var short := G2GEvents.write_stage_ref(SESSION, sent)
+	var short := AirdriftEvents.write_stage_ref(SESSION, sent)
 	short = short.slice(0, short.size() - 1 - "bhop_x".length())
-	var old_wire := G2GEvents.read_stage_ref(DotNetReader.new(short))
+	var old_wire := AirdriftEvents.read_stage_ref(DotNetReader.new(short))
 	_check(not bool(old_wire["ok"]), "and one without a map id is refused, not guessed at", str(old_wire.get("ok")))
-	_server_game.stage_reference_changed.emit(G2GNetBridge._player_key(SESSION), sent)
+	_server_game.stage_reference_changed.emit(AirdriftNetBridge._player_key(SESSION), sent)
 	_exchange()
 	_check(reference_in.size() == 1 and reference_in[0]["style"] == "normal"
 		and is_equal_approx(float(reference_in[0]["wr"]["total"]), 31.75),
 		"and the server sends the owner their comparison when it changes", str(reference_in))
 	_check(reference_in.size() == 1 and reference_in[0]["map"] == "bhop_x", "map id included", str(reference_in))
-	_check(G2GEvent.fits(), "and the new message kind still fits the kind field")
+	_check(AirdriftEvent.fits(), "and the new message kind still fits the kind field")
 
 
 ## HELLO moves the client game, timers, clock and engine to the server's tick rate.
@@ -403,7 +403,7 @@ func _handshake_tick_rate(local_at_hello: Array) -> void:
 	)
 	# [b]And the ENGINE's, which is the half that decides whether it looks smooth.[/b]
 	# The three rates above make the simulation correct; this one makes it drawable.
-	# `G2GClient._physics_process` asks the clock how many ticks a frame is worth, so a
+	# `AirdriftClient._physics_process` asks the clock how many ticks a frame is worth, so a
 	# client on a 60 Hz engine against a 128-tick server simulated the right number of
 	# ticks — in bursts of two and three. Nothing renders between ticks, so the camera
 	# advanced 74 mm on six frames out of seven and 112 mm on the seventh: a 47% change
@@ -422,7 +422,7 @@ func _handshake_tick_rate(local_at_hello: Array) -> void:
 	# moved the player off the spawn pad. Measured through real slow frames, because a
 	# setting that is written and not obeyed is this family's most repeated bug. Armed:
 	# without `_keep_up_through_slow_frames` both fail (8 steps; about 53 ticks a second).
-	var wanted_steps := ceili(G2GNetBridge.SLOW_FRAME_SECONDS * float(_server_game.tick_rate))
+	var wanted_steps := ceili(AirdriftNetBridge.SLOW_FRAME_SECONDS * float(_server_game.tick_rate))
 	_check(
 		Engine.max_physics_steps_per_frame >= wanted_steps,
 		"HELLO lets the engine run a quarter second of ticks in one frame",
@@ -520,10 +520,10 @@ func _test_pit_respawn_predicted() -> void:
 	_client_game.mechanics.hurt.append(box.duplicate())
 	var hits := {"server": 0, "client": 0}
 	var on_server := func(event: int, _index: int) -> void:
-		if event == G2GPlayer.G2GMapMechanics.Event.HURT:
+		if event == AirdriftPlayer.AirdriftMapMechanics.Event.HURT:
 			hits["server"] += 1
 	var on_client := func(event: int, _index: int) -> void:
-		if event == G2GPlayer.G2GMapMechanics.Event.HURT:
+		if event == AirdriftPlayer.AirdriftMapMechanics.Event.HURT:
 			hits["client"] += 1
 	server.map_event.connect(on_server)
 	client.map_event.connect(on_client)
@@ -559,7 +559,7 @@ func _test_pit_zone_predicted() -> void:
 	_server_game.spawn_player(server.player_id)
 	_steps(30)
 	var added: Array[DotTimerZone] = []
-	for game: G2GGame in [_server_game, _client_game]:
+	for game: AirdriftGame in [_server_game, _client_game]:
 		var zone := DotTimerZone.make(DotTimerZone.Kind.RESPAWN, DotTimerTrack.MAIN).set_box(
 			pit - Vector3(1.0, 1.0, 1.0), pit + Vector3(1.0, 1.0, 1.0))
 		game.timers.zones.add(zone)
@@ -580,7 +580,7 @@ func _test_pit_zone_predicted() -> void:
 	_server_game.timers.effect_requested.disconnect(on_server)
 	_client_game.timers.effect_requested.disconnect(on_client)
 	for i in range(2):
-		var game: G2GGame = [_server_game, _client_game][i]
+		var game: AirdriftGame = [_server_game, _client_game][i]
 		game.timers.zones.remove_id(added[i].id)
 		game.timers.set_zones(game.timers.zones)
 	var worst: float = _client_net.predictor.get("_worst_error")
@@ -606,7 +606,7 @@ func _test_prediction() -> void:
 	var forward := _forward()
 	_steps(96, forward)
 
-	_check(G2GUnits.to_units(server.speed()) > 200.0, "the server player moves on the client's input", G2GUnits.format_speed(server.speed()))
+	_check(AirdriftUnits.to_units(server.speed()) > 200.0, "the server player moves on the client's input", AirdriftUnits.format_speed(server.speed()))
 	_check(client.global_position.distance_to(server.global_position) < 0.5, "and the client shows it where the server has it",
 		"%.3f m apart" % client.global_position.distance_to(server.global_position))
 	var rate := _client_net.predictor.correction_rate()
@@ -632,7 +632,7 @@ func _test_timer() -> void:
 	_steps(120, hold)
 
 	_check(server.timer.run.is_running(), "the server's run starts when its player hops off the pad",
-		"in start: %s, %s" % [server.timer.in_zone(DotTimerZone.Kind.START), G2GUnits.format_speed(server.speed())])
+		"in start: %s, %s" % [server.timer.in_zone(DotTimerZone.Kind.START), AirdriftUnits.format_speed(server.speed())])
 	_check(client.timer.run.is_running(), "and the client's mirror is running too")
 	_check(client.timer.run.style_id == server.timer.run.style_id, "in the same style")
 	var drift := absf(client.timer.run.time() - server.timer.run.time())
@@ -715,7 +715,7 @@ func _test_style_and_track() -> void:
 
 func _test_avatar() -> void:
 	_section("an avatar published by the client")
-	var avatar := G2GAvatars.stock_avatar(&"someone-else")
+	var avatar := AirdriftAvatars.stock_avatar(&"someone-else")
 	var before := _server_player().rig.avatar.to_dict() if _server_player().rig.avatar != null else {}
 	_client_bridge.publish_avatar(avatar)
 	_exchange()

@@ -95,7 +95,7 @@ For the next batch, work down the likes list as well as the views list: skill-su
 
 ## The batch imported 2026-10-05, ranked by what is wrong with it
 
-Worst first. Own is the share of a map's triangles drawn in a texture its own pakfile carried; stand-ins adds `G2GStockSubstitutes`' replacements for the stock textures it did not carry, and the rest is the prototype grid. Props are static props placed against those the map did not carry (and so are not drawn). This list feeds g2g-maps-stock-1.
+Worst first. Own is the share of a map's triangles drawn in a texture its own pakfile carried; stand-ins adds `AirdriftStockSubstitutes`' replacements for the stock textures it did not carry, and the rest is the prototype grid. Props are static props placed against those the map did not carry (and so are not drawn). This list feeds g2g-maps-stock-1.
 
 | Map | Course? | Own | With stand-ins | Props missing | Notes from the frames |
 | --- | --- | ---: | ---: | --- | --- |

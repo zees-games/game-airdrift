@@ -1,27 +1,27 @@
 extends SceneTree
 
-## The third-person camera (G2GCamera's boom, dot-core's DotCameraBoom) flown round the walls
+## The third-person camera (AirdriftCamera's boom, dot-core's DotCameraBoom) flown round the walls
 ## of the start map, armed; `mp_forceview` and the older `sv_allow_thirdperson` through the
 ## camera's own path; with a display, both views of the real player.
 ##
 ##   godot --headless --path . --script tools/camera_check.gd          # the checks
 ##   xvfb-run -a godot --path . --resolution 1280x720 --script tools/camera_check.gd   # and frames
 
-const G2GCamera := preload("../game/g2g_camera.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
+const AirdriftCamera := preload("../game/airdrift_camera.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
 
-var _game: G2GGame = null
+var _game: AirdriftGame = null
 var _failed := false
 
 
 func _initialize() -> void:
 	DotLog.set_level(DotLog.Level.ERROR)
 	DotFpsSampler.register_default_actions()
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.auto_bhop = true
-	_game = G2GGame.new()
+	_game = AirdriftGame.new()
 	_game.name = "Game"
 	_game.config = config
 	root.add_child(_game)
@@ -36,7 +36,7 @@ func _run() -> void:
 	for i in 6:
 		await physics_frame
 
-	var camera: G2GCamera = me.camera
+	var camera: AirdriftCamera = me.camera
 	var offset := Vector3(0.0, camera.third_person_height, camera.third_person_distance)
 	var pivots := DotCameraCheck.pivots_near_walls(root.get_world_3d(), AABB(Vector3(-200, -60, -200), Vector3(400, 160, 400)), 1, 1.6, 4.0, 3.0, 40)
 	var got := {}
@@ -54,16 +54,16 @@ func _run() -> void:
 
 	if DisplayServer.get_name() != "headless":
 		DirAccess.make_dir_recursive_absolute("screenshots/cameras")
-		var _first := camera.set_mode(G2GCamera.Mode.FIRST_PERSON)
+		var _first := camera.set_mode(AirdriftCamera.Mode.FIRST_PERSON)
 		await _shot(me, "g2gfast_view_first")
-		var _third := camera.set_mode(G2GCamera.Mode.THIRD_PERSON)
+		var _third := camera.set_mode(AirdriftCamera.Mode.THIRD_PERSON)
 		await _shot(me, "g2gfast_view_third")
 
 	print("all passed" if not _failed else "FAILED")
 	quit(1 if _failed else 0)
 
 
-func _shot(me: G2GPlayer, file: String) -> void:
+func _shot(me: AirdriftPlayer, file: String) -> void:
 	for i in 10:
 		me.present(1.0 / 60.0)
 		await process_frame

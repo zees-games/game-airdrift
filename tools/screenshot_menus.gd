@@ -1,6 +1,6 @@
 extends SceneTree
 
-const G2GClient := preload("../game/g2g_client.gd")
+const AirdriftClient := preload("../game/airdrift_client.gd")
 
 ## Renders the real offline client's Escape menu, help screen and flashlight to
 ## `screenshots/`, so a person can look at them.
@@ -9,7 +9,7 @@ const G2GClient := preload("../game/g2g_client.gd")
 ## tools/screenshot_menus.sh [map] [yaw] [pitch]
 ## [/codeblock]
 ##
-## The real client, not the pieces: `game/g2g.tscn`, offline, on [param map] (default the
+## The real client, not the pieces: `game/airdrift.tscn`, offline, on [param map] (default the
 ## client's own default), with the player's view turned to [param yaw] and [param pitch] so
 ## the flashlight frames can be aimed at something. Frames, in order:
 ##
@@ -47,7 +47,7 @@ const OUT_DIR := "res://screenshots"
 ## two, and a capture on the first catches them at nought by nought.
 const SETTLE := 6
 
-var _client: G2GClient = null
+var _client: AirdriftClient = null
 var _steps: Array[Callable] = []
 var _wait := 0
 var _loaded := 0
@@ -62,13 +62,13 @@ func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0 and args[0] != "":
 		# The client reads its layered configuration, argv included.
-		OS.set_environment("G2G_INITIAL_MAP", args[0])
+		OS.set_environment("AIRDRIFT_INITIAL_MAP", args[0])
 	if args.size() > 1:
 		_yaw = float(args[1])
 	if args.size() > 2:
 		_pitch = float(args[2])
 
-	_client = (load("res://game/g2g.tscn") as PackedScene).instantiate() as G2GClient
+	_client = (load("res://game/airdrift.tscn") as PackedScene).instantiate() as AirdriftClient
 	_client.force_offline = true
 	root.add_child(_client)
 

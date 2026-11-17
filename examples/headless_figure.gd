@@ -1,12 +1,12 @@
 extends DotGameCheckSuite
 
-## The runner's drawn person (G2GRig's DotHumanoidFigure) against DotClipMetrics: foot slide, floor contact and bone pops at the paces this game moves at,
+## The runner's drawn person (AirdriftRig's DotHumanoidFigure) against DotClipMetrics: foot slide, floor contact and bone pops at the paces this game moves at,
 ## with the limits of tools/filmstrip_thresholds.json (the same file the filmstrip clips use).
 ## Run: godot --headless --path . res://examples/headless_figure.tscn
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GMovement := preload("../game/g2g_movement.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftMovement := preload("../game/airdrift_movement.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 const THRESHOLDS := "res://tools/filmstrip_thresholds.json"
 const SECTIONS := 4
 const FPS := 60.0
@@ -25,8 +25,8 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("g2gfast: figure metrics")
-	var top := G2GUnits.to_metres(G2GConfig.new().max_speed)
+	print("Airdrift: figure metrics")
+	var top := AirdriftUnits.to_metres(AirdriftConfig.new().max_speed)
 	for pace: float in [2.0, top * 0.6, top]:
 		_section("the figure at %.1f m/s" % pace)
 		_pace(pace, "run%.1f" % pace, FPS)
@@ -44,7 +44,7 @@ func _section(title: String) -> void:
 func _pace(pace: float, clip: String, fps: float) -> void:
 	var figure := DotHumanoidFigure.new()
 	add_child(figure)
-	figure.build(DotHumanoidLook.stock(9), G2GMovement.player_height())
+	figure.build(DotHumanoidLook.stock(9), AirdriftMovement.player_height())
 	var metrics := DotClipMetrics.new()
 	var dt := 1.0 / fps
 	var speed := 0.0

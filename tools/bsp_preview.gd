@@ -1,8 +1,8 @@
 extends Node3D
 
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
-const G2GMap := preload("../game/g2g_map.gd")
-const G2GMapCatalogue := preload("../game/g2g_map_catalogue.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
+const AirdriftMap := preload("../game/airdrift_map.gd")
+const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
 
 ## Renders an imported map to PNGs and exits. `tools/bsp_preview.sh <id> <out.png>`.
 ##
@@ -19,7 +19,7 @@ func _ready() -> void:
 
 	# Through the catalogue, like everything else -- an imported map has no scene of
 	# its own any more, so resolving one by path only works for the hand-written ones.
-	var catalogue := G2GMapCatalogue.discover()
+	var catalogue := AirdriftMapCatalogue.discover()
 	var def := catalogue.get_map(StringName(id))
 	if def == null:
 		push_error("no map '%s'. Known: %s" % [id, ", ".join(
@@ -32,10 +32,10 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 	var map: Node3D = packed.instantiate()
-	if map is G2GBspMap:
+	if map is AirdriftBspMap:
 		# With PREVIEW_WORLDS=1 it is drawn from the dot-map world document (g2g_global_worlds).
-		(map as G2GBspMap).global_worlds = OS.get_environment("PREVIEW_WORLDS") == "1"
-		(map as G2GBspMap).build_from(def)
+		(map as AirdriftBspMap).global_worlds = OS.get_environment("PREVIEW_WORLDS") == "1"
+		(map as AirdriftBspMap).build_from(def)
 	add_child(map)
 	await get_tree().process_frame
 
@@ -62,8 +62,8 @@ func _ready() -> void:
 	var pitch := -0.15
 	if OS.get_environment("PREVIEW_PITCH").is_valid_float():
 		pitch = float(OS.get_environment("PREVIEW_PITCH"))
-	if from_spawn and map is G2GMap:
-		eye = (map as G2GMap).spawn_for(0) + Vector3(0.0, 1.2, 0.0)
+	if from_spawn and map is AirdriftMap:
+		eye = (map as AirdriftMap).spawn_for(0) + Vector3(0.0, 1.2, 0.0)
 	# Set PREVIEW_EYE="x,y,z" (metres, Godot axes) stands somewhere other than the spawn --
 	# ON a ramp, say, because a face that draws from across the canyon and vanishes when
 	# a player is riding it is invisible from every spawn frame. PREVIEW_YAW turns the

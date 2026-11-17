@@ -1,11 +1,11 @@
 extends DotGameNetchaosServer
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
 
 ## g2gfast's side of `tools/netchaos.sh` (dot-game's DotGameNetchaosServer): a timer server, no bots.
 
-var _game: G2GGame = null
+var _game: AirdriftGame = null
 
 
 func _configure() -> void:
@@ -13,12 +13,12 @@ func _configure() -> void:
 
 
 func _boot_world() -> void:
-	var cfg := G2GConfig.new()
+	var cfg := AirdriftConfig.new()
 	cfg.records_directory = ""
 	cfg.records_database = ""
 	cfg.map_seconds = 0.0
 	cfg.initial_map = StringName(map_id)
-	_game = G2GGame.new()
+	_game = AirdriftGame.new()
 	_game.name = "Game"
 	_game.config = cfg
 	add_child(_game)
@@ -32,7 +32,7 @@ func _boot_world() -> void:
 	var deadline := Time.get_ticks_msec() + 15000
 	while (_game.maps == null or _game.maps.current == null) and Time.get_ticks_msec() < deadline:
 		await get_tree().process_frame
-	var loaded: DotResult = await server.modules.load_module("res://game/g2g_module.gd")
+	var loaded: DotResult = await server.modules.load_module("res://game/airdrift_module.gd")
 	if not loaded.ok:
 		printerr("netchaos server: ", loaded.error)
 		return

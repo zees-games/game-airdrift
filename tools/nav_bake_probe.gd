@@ -1,8 +1,8 @@
 extends Node3D
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GBotNav := preload("../game/g2g_bot_nav.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftBotNav := preload("../game/airdrift_bot_nav.gd")
 
 ## Plans a route on a loaded map three times and prints the phases of each: pass 0 with the bake cache off, pass 1 writing it, pass 2 as a round change would, from it.
 ##
@@ -15,11 +15,11 @@ func _ready() -> void:
 
 func _run() -> void:
 	var id := StringName(OS.get_cmdline_user_args()[0])
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = id
-	var game := G2GGame.new()
+	var game := AirdriftGame.new()
 	game.config = config
 	add_child(game)
 	for _i in range(240):
@@ -33,7 +33,7 @@ func _run() -> void:
 		finish = z.centre()
 	var body: DotFpsTunables = DotFpsTunables.new()
 	for pass_no in range(3):
-		var nav := G2GBotNav.new()
+		var nav := AirdriftBotNav.new()
 		var t := Time.get_ticks_usec()
 		nav.begin(map, map.get_world_3d(), body, spawn, finish, PackedVector3Array([spawn]), "user://nav_probe_ann", Callable(), String(id) if pass_no > 0 else "")
 		while nav.step(2000):

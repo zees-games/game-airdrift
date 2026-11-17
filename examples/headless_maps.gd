@@ -1,12 +1,12 @@
 extends DotGameCheckSuite
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GMap := preload("../game/g2g_map.gd")
-const G2GMapCatalogue := preload("../game/g2g_map_catalogue.gd")
-const G2GMapSurvey := preload("../game/g2g_map_survey.gd")
-const G2GMovement := preload("../game/g2g_movement.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftMap := preload("../game/airdrift_map.gd")
+const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
+const AirdriftMapSurvey := preload("../game/airdrift_map_survey.gd")
+const AirdriftMovement := preload("../game/airdrift_movement.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 const SurfIntro := preload("res://maps/surf_g2g_intro.gd")
 const BhopStages := preload("res://maps/bhop_g2g_stages.gd")
 
@@ -53,7 +53,7 @@ const SECTIONS := 9
 const STANDABLE_RAMPS := {}
 
 ## A game whose boot map takes a while to arrive, as a download does.
-class SlowBootGame extends G2GGame:
+class SlowBootGame extends AirdriftGame:
 	var boot_id: StringName = &"bhop_g2g_intro"
 	var boot_waiting := false
 
@@ -66,7 +66,7 @@ class SlowBootGame extends G2GGame:
 
 var _entered := 0
 var _completed := 0
-var game: G2GGame = null
+var game: AirdriftGame = null
 
 
 func _ready() -> void:
@@ -75,7 +75,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("g2gfast — map discovery")
+	print("Airdrift — map discovery")
 	print("")
 	_test_discovery()
 	_test_scan_order()
@@ -108,7 +108,7 @@ func _done() -> void:
 
 func _test_discovery() -> void:
 	_section("discovery")
-	var catalogue := G2GMapCatalogue.discover()
+	var catalogue := AirdriftMapCatalogue.discover()
 	_check(catalogue.size() >= 3, "the hand-written maps are found without being named",
 		"%d maps" % catalogue.size())
 	_check(catalogue.has(&"surf_g2g_intro") and catalogue.has(&"bhop_g2g_intro")
@@ -141,7 +141,7 @@ func _test_discovery() -> void:
 		# the build, and its identity is a manifest path. A per-map scene under
 		# res://maps/imported/ would be baked in at export and could never arrive
 		# afterwards, which is the whole failure this shape exists to avoid.
-		_check(one.scene_path == G2GMapCatalogue.IMPORTED_SCENE
+		_check(one.scene_path == AirdriftMapCatalogue.IMPORTED_SCENE
 			and ResourceLoader.exists(one.scene_path),
 			"an imported map uses the shared scene that ships in the build",
 			one.scene_path)
@@ -214,7 +214,7 @@ func _test_scan_order() -> void:
 		", ".join(name_order.slice(0, 4)))
 
 	var scanned: Array[String] = []
-	for map in G2GMapCatalogue.scan(PackedStringArray([root])):
+	for map in AirdriftMapCatalogue.scan(PackedStringArray([root])):
 		scanned.append(String(map.id))
 	var sorted := scanned.duplicate()
 	sorted.sort()
@@ -228,7 +228,7 @@ func _test_scan_order() -> void:
 		"%d found" % fixtures.size())
 
 	var listed: Array[String] = []
-	for map in G2GMapCatalogue.discover(PackedStringArray([root])).maps:
+	for map in AirdriftMapCatalogue.discover(PackedStringArray([root])).maps:
 		listed.append(String(map.id))
 	_check(listed == scanned, "and the catalogue a rotation cycles keeps that order")
 
@@ -243,29 +243,29 @@ func _test_scan_order() -> void:
 
 func _test_derivations() -> void:
 	_section("derivations")
-	_check(G2GMapCatalogue.kind_of(&"surf_kitsune") == DotMapDef.KIND_SURF,
+	_check(AirdriftMapCatalogue.kind_of(&"surf_kitsune") == DotMapDef.KIND_SURF,
 		"a surf_ prefix means surf")
-	_check(G2GMapCatalogue.kind_of(&"bhop_g2g_stages") == DotMapDef.KIND_BHOP,
+	_check(AirdriftMapCatalogue.kind_of(&"bhop_g2g_stages") == DotMapDef.KIND_BHOP,
 		"a bhop_ prefix means bhop")
 	# The fallback has to be a real kind, not the empty StringName: DotMapDef.kind
 	# feeds the rotation's filter, and a map of kind "" is a map nothing selects.
-	_check(G2GMapCatalogue.kind_of(&"something_else") != &"",
+	_check(AirdriftMapCatalogue.kind_of(&"something_else") != &"",
 		"and an unprefixed id still gets a kind")
-	_check(G2GMapCatalogue.default_name(&"surf_kitsune") == "surf: kitsune",
+	_check(AirdriftMapCatalogue.default_name(&"surf_kitsune") == "surf: kitsune",
 		"a name is derived when the map does not carry one",
-		G2GMapCatalogue.default_name(&"surf_kitsune"))
+		AirdriftMapCatalogue.default_name(&"surf_kitsune"))
 	_done()
 
 
 func _test_rescan() -> void:
 	_section("rescan")
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	# The default first map is an imported one, which a checkout without airdrift-maps (CI)
 	# does not hold; that logs an ERR for a map this section never looks at.
 	config.initial_map = &"bhop_g2g_intro"
-	game = G2GGame.new()
+	game = AirdriftGame.new()
 	game.config = config
 	add_child(game)
 	for _i in range(120):
@@ -311,7 +311,7 @@ func _test_rescan() -> void:
 ## the one the server ends on, even when the boot fetch finishes later.
 func _test_boot_race() -> void:
 	_section("boot race")
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = &"bhop_g2g_intro"
@@ -374,13 +374,13 @@ func _test_rotation_file() -> void:
 
 func _test_client_config() -> void:
 	_section("client configuration")
-	# A client that built a bare G2GConfig would read no layer and could not be
+	# A client that built a bare AirdriftConfig would read no layer and could not be
 	# configured. This asserts the layering runs at
 	# all; which layer wins is DotConfig's own contract and is tested there.
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	var before := config.initial_map
 	var layered := config.load_layered()
-	_check(layered.ok, "a G2GConfig loads its layers",
+	_check(layered.ok, "a AirdriftConfig loads its layers",
 		layered.error.message if not layered.ok else "")
 	_check(config.initial_map != &"" or before == &"",
 		"and still names a map afterwards", String(config.initial_map))
@@ -414,7 +414,7 @@ func _test_zones_have_floor() -> void:
 
 	for id in _hand_written_map_ids():
 		var scene: PackedScene = load("res://maps/%s.tscn" % id)
-		var map := scene.instantiate() as G2GMap
+		var map := scene.instantiate() as AirdriftMap
 		add_child(map)
 
 		# Two, because `add_child` puts the bodies in the space and the space is
@@ -470,7 +470,7 @@ func _test_zones_have_floor() -> void:
 
 ## Every hand-written map, swept for slots narrower than a player, ground no spawn and no
 ## `!s<n>` reaches, ground that leads nowhere, and starts that stand on nothing
-## (`[gate-sweep-1]`, `[gate-sweep-2]`). See [G2GMapSurvey] for what reach means here and
+## (`[gate-sweep-1]`, `[gate-sweep-2]`). See [AirdriftMapSurvey] for what reach means here and
 ## why a surf ramp is a surface slid on rather than a floor.
 ##
 ## [b]The survey is asked about a fixture first, so a sweep that finds nothing is known to
@@ -478,7 +478,7 @@ func _test_zones_have_floor() -> void:
 ## the fixture has one of each thing it looks for, and each is asserted found.
 func _test_maps_are_surveyed() -> void:
 	_section("the hand-written maps, surveyed for slots, unreached ground and traps")
-	var t := G2GMovement.tunables_for(G2GConfig.new())
+	var t := AirdriftMovement.tunables_for(AirdriftConfig.new())
 	var tick_rate := Engine.physics_ticks_per_second
 
 	_the_survey_sees_what_it_looks_for(t, tick_rate)
@@ -492,11 +492,11 @@ func _test_maps_are_surveyed() -> void:
 		var starts: Array[Vector3] = []
 		for zone in zones.zones:
 			if zone.kind == DotTimerZone.Kind.SPAWN or zone.kind == DotTimerZone.Kind.STAGE:
-				starts.append(G2GUnits.vector_to_units(zone.destination))
+				starts.append(AirdriftUnits.vector_to_units(zone.destination))
 
 		var declared := _survey_declared(id)
 		var started := Time.get_ticks_msec()
-		var found: Dictionary = G2GMapSurvey.survey(map, zones, starts, declared, t, tick_rate)
+		var found: Dictionary = AirdriftMapSurvey.survey(map, zones, starts, declared, t, tick_rate)
 		map.free()
 
 		print("    %s: %d standable cells (%d reached) in %d regions, %d starts, %d declared, %d course links, %d ms" % [
@@ -613,22 +613,22 @@ func _stages_declared() -> Array:
 ## player can stand on.
 func _the_survey_sees_what_it_looks_for(t: DotFpsTunables, tick_rate: int) -> void:
 	var tilt := func(degrees: float) -> Basis: return Basis(Vector3.FORWARD, deg_to_rad(degrees))
-	var solids: Array[G2GMapSurvey.Solid] = [
-		G2GMapSurvey.solid(Vector3(0.0, -16.0, 0.0), Vector3(1024.0, 32.0, 1024.0)),
+	var solids: Array[AirdriftMapSurvey.Solid] = [
+		AirdriftMapSurvey.solid(Vector3(0.0, -16.0, 0.0), Vector3(1024.0, 32.0, 1024.0)),
 		# The slot: two walls 20 units apart, side by side for 64.
-		G2GMapSurvey.solid(Vector3(-200.0, 64.0, -300.0), Vector3(128.0, 128.0, 64.0)),
-		G2GMapSurvey.solid(Vector3(-52.0, 64.0, -300.0), Vector3(128.0, 128.0, 64.0)),
+		AirdriftMapSurvey.solid(Vector3(-200.0, 64.0, -300.0), Vector3(128.0, 128.0, 64.0)),
+		AirdriftMapSurvey.solid(Vector3(-52.0, 64.0, -300.0), Vector3(128.0, 128.0, 64.0)),
 		# Out of reach: 300 up, nothing to climb.
-		G2GMapSurvey.solid(Vector3(-300.0, 300.0, 300.0), Vector3(192.0, 16.0, 192.0)),
+		AirdriftMapSurvey.solid(Vector3(-300.0, 300.0, 300.0), Vector3(192.0, 16.0, 192.0)),
 		# The cellar: 200 under the floor's east edge, walled on its other three sides.
-		G2GMapSurvey.solid(Vector3(704.0, -216.0, 0.0), Vector3(384.0, 32.0, 384.0)),
-		G2GMapSurvey.solid(Vector3(912.0, -50.0, 0.0), Vector3(32.0, 300.0, 448.0)),
-		G2GMapSurvey.solid(Vector3(704.0, -50.0, 208.0), Vector3(448.0, 300.0, 32.0)),
-		G2GMapSurvey.solid(Vector3(704.0, -50.0, -208.0), Vector3(448.0, 300.0, 32.0)),
+		AirdriftMapSurvey.solid(Vector3(704.0, -216.0, 0.0), Vector3(384.0, 32.0, 384.0)),
+		AirdriftMapSurvey.solid(Vector3(912.0, -50.0, 0.0), Vector3(32.0, 300.0, 448.0)),
+		AirdriftMapSurvey.solid(Vector3(704.0, -50.0, 208.0), Vector3(448.0, 300.0, 32.0)),
+		AirdriftMapSurvey.solid(Vector3(704.0, -50.0, -208.0), Vector3(448.0, 300.0, 32.0)),
 		# A surf face, far from everything, over a pit.
-		G2GMapSurvey.solid(Vector3(3000.0, 0.0, 0.0), Vector3(512.0, 32.0, 512.0), tilt.call(60.0)),
+		AirdriftMapSurvey.solid(Vector3(3000.0, 0.0, 0.0), Vector3(512.0, 32.0, 512.0), tilt.call(60.0)),
 		# A slab steep enough to look like one and shallow enough to stand on.
-		G2GMapSurvey.solid(Vector3(-3000.0, 0.0, 0.0), Vector3(512.0, 32.0, 512.0), tilt.call(45.0)),
+		AirdriftMapSurvey.solid(Vector3(-3000.0, 0.0, 0.0), Vector3(512.0, 32.0, 512.0), tilt.call(45.0)),
 	]
 
 	# Everything nobody is meant to reach — wall tops, both slabs' edges — declared the
@@ -641,10 +641,10 @@ func _the_survey_sees_what_it_looks_for(t: DotFpsTunables, tick_rate: int) -> vo
 	var starts: Array[Vector3] = [spawn, Vector3(0.0, 100.0, 5000.0), Vector3(3000.0, 400.0, 0.0)]
 	var pits := DotTimerZoneSet.new()
 	var under_ramp := DotTimerZone.make(DotTimerZone.Kind.RESPAWN)
-	under_ramp.set_box(G2GUnits.vector_to_metres(Vector3(2000.0, -2000.0, -1000.0)),
-		G2GUnits.vector_to_metres(Vector3(4000.0, -600.0, 1000.0)))
+	under_ramp.set_box(AirdriftUnits.vector_to_metres(Vector3(2000.0, -2000.0, -1000.0)),
+		AirdriftUnits.vector_to_metres(Vector3(4000.0, -600.0, 1000.0)))
 	pits.add(under_ramp)
-	var found: Dictionary = G2GMapSurvey.survey_solids(solids, pits, starts, walls, t, tick_rate)
+	var found: Dictionary = AirdriftMapSurvey.survey_solids(solids, pits, starts, walls, t, tick_rate)
 
 	_check((found["slots"] as Array).size() == 1 and str(found["slots"][0]).begins_with("20 u"),
 		"the survey finds the fixture's one slot", "; ".join(found["slots"]))
@@ -669,11 +669,11 @@ func _the_survey_sees_what_it_looks_for(t: DotFpsTunables, tick_rate: int) -> vo
 	declared.append({"box": AABB(Vector3(-400.0, 290.0, 200.0), Vector3(200.0, 30.0, 200.0)), "why": "fixture"})
 	var reset := DotTimerZoneSet.new()
 	var pit := DotTimerZone.make(DotTimerZone.Kind.RESPAWN)
-	pit.set_box(G2GUnits.vector_to_metres(Vector3(520.0, -200.0, -190.0)),
-		G2GUnits.vector_to_metres(Vector3(890.0, 0.0, 190.0)))
+	pit.set_box(AirdriftUnits.vector_to_metres(Vector3(520.0, -200.0, -190.0)),
+		AirdriftUnits.vector_to_metres(Vector3(890.0, 0.0, 190.0)))
 	reset.add(pit)
 	var just_spawn: Array[Vector3] = [spawn]
-	var quiet: Dictionary = G2GMapSurvey.survey_solids(solids, reset, just_spawn, declared, t, tick_rate)
+	var quiet: Dictionary = AirdriftMapSurvey.survey_solids(solids, reset, just_spawn, declared, t, tick_rate)
 
 	_check((quiet["unreached"] as Array).is_empty() and (quiet["trapped"] as Array).is_empty()
 			and (quiet["startless"] as Array).is_empty(),
@@ -688,7 +688,7 @@ func _the_survey_sees_what_it_looks_for(t: DotFpsTunables, tick_rate: int) -> vo
 ## `headless_imported`, which drives a timer over each one's own zone set.
 func _hand_written_map_ids() -> Array:
 	var out: Array = []
-	for map in G2GMapCatalogue.scan():
+	for map in AirdriftMapCatalogue.scan():
 		if not bool(map.meta.get("imported", false)):
 			out.append(String(map.id))
 	out.sort()

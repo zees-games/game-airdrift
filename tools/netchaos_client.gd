@@ -4,7 +4,7 @@ extends DotGameNetchaosClient
 
 
 func _configure() -> void:
-	client_scene = "res://game/g2g.tscn"
+	client_scene = "res://game/airdrift.tscn"
 
 
 func _roster() -> Array:

@@ -10,7 +10,7 @@ extends SceneTree
 func _init() -> void:
 	var failures := 0
 	# Every hand-written map on disk, not a list. This file carried the third copy of
-	# the three map ids -- after G2GGame and the export scripts -- and a map added
+	# the three map ids -- after AirdriftGame and the export scripts -- and a map added
 	# without editing it got no zones file, which the suite then reported as the map
 	# disagreeing with its own zones rather than as never having been exported.
 	var ids := _map_ids()

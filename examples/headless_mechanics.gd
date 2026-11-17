@@ -1,11 +1,11 @@
 extends DotGameCheckSuite
 
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GMapMechanics := preload("../game/g2g_map_mechanics.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftMapMechanics := preload("../game/airdrift_map_mechanics.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 
 ## What an imported map's brush entities do, asked of every imported map with a player on
 ## it: where each teleport sends you, whether a sinking block takes you off it (and only
@@ -53,7 +53,7 @@ const DESTINATIONS_THAT_FALL := {"bhop_pharma": ["(14792 -2843 14884) falls free
 ## standing still cost nothing. Armed by putting `setdefault` back in parse_entities.
 const TRAP_BLOCK_FLOORS := {&"bhop_japan": 200, &"bhop_interloper": 400, &"bhop_arcane_v2": 300}
 
-var game: G2GGame = null
+var game: AirdriftGame = null
 var _map_id: StringName = &""
 var _entered := 0
 var _completed := 0
@@ -67,7 +67,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("g2gfast — what an imported map's brush entities do")
+	print("Airdrift — what an imported map's brush entities do")
 	var ids := _imported_ids()
 	if ids.is_empty():
 		print("nothing in maps/imported/ — nothing to check")
@@ -133,12 +133,12 @@ func _done() -> void:
 
 
 func _load(id: StringName) -> void:
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = id
 	config.map_rotation_file = ""
-	game = G2GGame.new()
+	game = AirdriftGame.new()
 	game.config = config
 	add_child(game)
 	for _i in range(120):
@@ -147,8 +147,8 @@ func _load(id: StringName) -> void:
 			break
 
 
-func _bot() -> G2GPlayer:
-	var bot: G2GPlayer = game.players.get(&"bot")
+func _bot() -> AirdriftPlayer:
+	var bot: AirdriftPlayer = game.players.get(&"bot")
 	if bot == null:
 		bot = game.add_player(&"bot", "Bot", true)
 		bot.sampler = null
@@ -165,7 +165,7 @@ static func _sample(list: Array, n: int) -> Array:
 
 
 func _u(v: Vector3) -> String:
-	var u := G2GUnits.vector_to_units(v)
+	var u := AirdriftUnits.vector_to_units(v)
 	return "(%d %d %d)" % [roundi(u.x), roundi(u.y), roundi(u.z)]
 
 
@@ -178,7 +178,7 @@ func _test_pits() -> void:
 	var dests := {}
 	if zones != null:
 		for zone: DotTimerZone in zones.of_kind(DotTimerZone.Kind.RESPAWN):
-			if zone.payload.has(G2GBspMap.SENDS_TO):
+			if zone.payload.has(AirdriftBspMap.SENDS_TO):
 				var key := _u(zone.destination)
 				if not dests.has(key):
 					dests[key] = zone
@@ -187,7 +187,7 @@ func _test_pits() -> void:
 	var sending := 0
 	if zones != null:
 		for z: DotTimerZone in zones.of_kind(DotTimerZone.Kind.RESPAWN):
-			if z.payload.has(G2GBspMap.SENDS_TO):
+			if z.payload.has(AirdriftBspMap.SENDS_TO):
 				sending += 1
 	_planned += 1
 	_check(total_pits == 0 or sending * 2 >= total_pits,
@@ -251,7 +251,7 @@ func _test_pit_keeps_the_run() -> void:
 	var start: DotTimerZone = null
 	if zones != null:
 		for z: DotTimerZone in zones.of_kind(DotTimerZone.Kind.RESPAWN, DotTimerTrack.MAIN):
-			if z.payload.has(G2GBspMap.SENDS_TO):
+			if z.payload.has(AirdriftBspMap.SENDS_TO):
 				pit = z
 				break
 		start = zones.first_of_kind(DotTimerZone.Kind.START, DotTimerTrack.MAIN)
@@ -282,15 +282,15 @@ func _test_pit_keeps_the_run() -> void:
 
 ## A trap's sheet can be taller than the block under it and span platforms with bare pit floor
 ## between them, so ray-cast a grid and return the highest solid hit.
-func _block_floor(bot: G2GPlayer, box: AABB) -> Dictionary:
+func _block_floor(bot: AirdriftPlayer, box: AABB) -> Dictionary:
 	var hit := {}
 	for ix in range(5):
 		for iz in range(5):
 			var gx := lerpf(box.position.x, box.end.x, (ix + 0.5) / 5.0)
 			var gz := lerpf(box.position.z, box.end.z, (iz + 0.5) / 5.0)
 			var q := PhysicsRayQueryParameters3D.create(
-				Vector3(gx, box.end.y + G2GUnits.to_metres(2.0), gz),
-				Vector3(gx, box.position.y - G2GUnits.to_metres(64.0), gz))
+				Vector3(gx, box.end.y + AirdriftUnits.to_metres(2.0), gz),
+				Vector3(gx, box.position.y - AirdriftUnits.to_metres(64.0), gz))
 			var h := bot.get_world_3d().direct_space_state.intersect_ray(q)
 			if not h.is_empty() and (hit.is_empty() or (h["position"] as Vector3).y > (hit["position"] as Vector3).y):
 				hit = h
@@ -298,13 +298,13 @@ func _block_floor(bot: G2GPlayer, box: AABB) -> Dictionary:
 
 
 ## Land and leave on the next tick, as a clean run does: true when the block did not take the bot.
-func _hop_stays(bot: G2GPlayer, dest: Vector3) -> bool:
+func _hop_stays(bot: AirdriftPlayer, dest: Vector3) -> bool:
 	for _i in range(int(0.3 * game.tick_rate)):
 		await get_tree().physics_frame
 		if bot.controller.state.is_grounded():
-			bot.controller.state.velocity.y = G2GUnits.to_metres(G2GUnits.JUMP_VELOCITY)
+			bot.controller.state.velocity.y = AirdriftUnits.to_metres(AirdriftUnits.JUMP_VELOCITY)
 			bot.controller.motor.set_mode(bot.controller.state, DotFpsState.Mode.AIR)
-		if bot.global_position.distance_to(dest) < G2GUnits.to_metres(32.0):
+		if bot.global_position.distance_to(dest) < AirdriftUnits.to_metres(32.0):
 			return false
 	return true
 
@@ -340,9 +340,9 @@ func _test_blocks() -> void:
 		var box: AABB = b["box"]
 		var hit := _block_floor(bot, box)
 		# Floor only far below the sheet means no block under it to land on.
-		if hit.is_empty() or (hit["position"] as Vector3).y < box.position.y - G2GUnits.to_metres(8.0):
+		if hit.is_empty() or (hit["position"] as Vector3).y < box.position.y - AirdriftUnits.to_metres(8.0):
 			continue
-		var top: Vector3 = (hit["position"] as Vector3) + Vector3(0, G2GUnits.to_metres(2.0), 0)
+		var top: Vector3 = (hit["position"] as Vector3) + Vector3(0, AirdriftUnits.to_metres(2.0), 0)
 		# A block too narrow for the hull or under a ceiling is checked by its neighbours.
 		bot.teleport(top, 0.0, true)
 		bot.controller.state.velocity = Vector3.ZERO
@@ -354,7 +354,7 @@ func _test_blocks() -> void:
 				break
 		if not landed:
 			# Taken before it was ever seen standing: a pit slab overlaps the block's top.
-			if bot.global_position.distance_to(b["destination"]) < G2GUnits.to_metres(64.0):
+			if bot.global_position.distance_to(b["destination"]) < AirdriftUnits.to_metres(64.0):
 				arrived_taken += 1
 			continue
 		tried += 1
@@ -364,13 +364,13 @@ func _test_blocks() -> void:
 		for _i in range(ticks):
 			await get_tree().physics_frame
 		var dest: Vector3 = b["destination"]
-		if bot.global_position.distance_to(dest) < G2GUnits.to_metres(64.0) \
-				or bot.global_position.distance_to(on_since) > G2GUnits.to_metres(48.0):
+		if bot.global_position.distance_to(dest) < AirdriftUnits.to_metres(64.0) \
+				or bot.global_position.distance_to(on_since) > AirdriftUnits.to_metres(48.0):
 			sank += 1
 		else:
 			wrong.append("%s stayed at %s" % [_u(top), _u(bot.global_position)])
 		stood += 1
-		bot.teleport(top + Vector3(0, G2GUnits.to_metres(40.0), 0), 0.0, true)
+		bot.teleport(top + Vector3(0, AirdriftUnits.to_metres(40.0), 0), 0.0, true)
 		bot.controller.state.velocity = Vector3.ZERO
 		var hop_ok := await _hop_stays(bot, dest)
 		if hop_ok:
@@ -397,7 +397,7 @@ func _test_boosters() -> void:
 	var boosters: Array = []
 	if m != null:
 		for p: Dictionary in m.pushes:
-			if p["leave"] and (p["push"] as Vector3).length() > G2GUnits.to_metres(50.0):
+			if p["leave"] and (p["push"] as Vector3).length() > AirdriftUnits.to_metres(50.0):
 				boosters.append(p)
 	if boosters.is_empty():
 		_planned += 1
@@ -415,7 +415,7 @@ func _test_boosters() -> void:
 		var box: AABB = p["box"]
 		var push: Vector3 = p["push"]
 		var dir := push.normalized()
-		var at := Vector3(box.get_center().x, box.position.y + G2GUnits.to_metres(0.5), box.get_center().z)
+		var at := Vector3(box.get_center().x, box.position.y + AirdriftUnits.to_metres(0.5), box.get_center().z)
 		if bot.controller.motor.would_overlap(bot.controller.state, at) or _in_pit(at):
 			continue    # a pad sunk into its block or over a pit: its neighbours answer
 		bot.teleport(at, 0.0, true)
@@ -427,7 +427,7 @@ func _test_boosters() -> void:
 		if standing < push.length() * 0.25:
 			stood += 1
 		else:
-			lame.append("%s pushed %.0f u/s while standing" % [_u(at), G2GUnits.to_units(standing)])
+			lame.append("%s pushed %.0f u/s while standing" % [_u(at), AirdriftUnits.to_units(standing)])
 		# Jump off and look for the tick the impulse lands: a velocity change of at least half
 		# the booster. Only upward pads are left this way; a sideways one is left along a route,
 		# which a box cannot say.
@@ -435,7 +435,7 @@ func _test_boosters() -> void:
 			sideways += 1
 			continue
 		lifted += 1
-		bot.controller.state.velocity = Vector3.UP * G2GUnits.to_metres(600.0)
+		bot.controller.state.velocity = Vector3.UP * AirdriftUnits.to_metres(600.0)
 		bot.controller.motor.set_mode(bot.controller.state, DotFpsState.Mode.AIR)
 		var last := bot.controller.state.velocity.dot(dir)
 		var kick := -INF
@@ -445,14 +445,14 @@ func _test_boosters() -> void:
 			var now := bot.controller.state.velocity.dot(dir)
 			kick = maxf(kick, now - last)
 			last = now
-			if not box.grow(G2GUnits.to_metres(2.0)).has_point(bot.global_position):
+			if not box.grow(AirdriftUnits.to_metres(2.0)).has_point(bot.global_position):
 				out_for += 1
 				if out_for > 2:
 					break
 		if kick > push.length() * 0.5:
 			launched += 1
 		else:
-			lame.append("%s gained at most %.0f u/s in a tick off a %.0f u/s booster" % [_u(at), G2GUnits.to_units(kick), G2GUnits.to_units(push.length())])
+			lame.append("%s gained at most %.0f u/s in a tick off a %.0f u/s booster" % [_u(at), AirdriftUnits.to_units(kick), AirdriftUnits.to_units(push.length())])
 	_planned += 2
 	_check(stood == tried, "a player standing on a booster is not launched (%d of %d)" % [stood, tried], ", ".join(lame))
 	_check(launched == lifted, "a player jumping off an upward booster is (%d of %d; %d sideways not asked)" % [launched, lifted, sideways], ", ".join(lame))
@@ -466,7 +466,7 @@ func _test_pushes() -> void:
 	var pushes: Array = []
 	if m != null:
 		for p: Dictionary in m.pushes:
-			if (p["push"] as Vector3).length() > G2GUnits.to_metres(50.0) and not p["leave"]:
+			if (p["push"] as Vector3).length() > AirdriftUnits.to_metres(50.0) and not p["leave"]:
 				pushes.append(p)
 	if pushes.is_empty():
 		_planned += 1
@@ -480,11 +480,11 @@ func _test_pushes() -> void:
 	for p: Dictionary in _sample(pushes, SAMPLE):
 		var box: AABB = p["box"]
 		var push: Vector3 = p["push"]
-		var at := Vector3(box.get_center().x, box.position.y + G2GUnits.to_metres(1.0), box.get_center().z)
+		var at := Vector3(box.get_center().x, box.position.y + AirdriftUnits.to_metres(1.0), box.get_center().z)
 		if bot.controller.motor.would_overlap(bot.controller.state, at) or _in_pit(at):
 			continue    # a push box sunk into a floor or over a pit: its neighbours answer
 		var ahead := bot.controller.motor.probe(bot.controller.state, at,
-			push.normalized() * G2GUnits.to_metres(32.0))
+			push.normalized() * AirdriftUnits.to_metres(32.0))
 		if ahead != null and ahead.hit:
 			continue    # pushing into a wall a hull's width away: a push that has nowhere to go
 		bot.teleport(at, 0.0, true)
@@ -506,12 +506,12 @@ func _test_pushes() -> void:
 		# Eight ticks of the push, or the velocity it left: a quarter of either is a push.
 		# Or out of the volume altogether, along it: a small booster's job is done once
 		# it has put the player out of its own box.
-		var left_it := not box.grow(G2GUnits.to_metres(2.0)).has_point(bot.global_position) and along > 0.0
+		var left_it := not box.grow(AirdriftUnits.to_metres(2.0)).has_point(bot.global_position) and along > 0.0
 		if left_it or along > push.length() * (8.0 / float(game.tick_rate)) * 0.25 or \
 				bot.controller.state.velocity.dot(push.normalized()) > push.length() * 0.25:
 			moved += 1
 		else:
-			lame.append("%s pushed %.0f along %s" % [_u(at), G2GUnits.to_units(along), _u(push)])
+			lame.append("%s pushed %.0f along %s" % [_u(at), AirdriftUnits.to_units(along), _u(push)])
 	_planned += 1
 	_check(moved == tried, "a player inside a push is pushed along it (%d of %d placed)" % [moved, tried],
 		", ".join(lame))
@@ -538,19 +538,19 @@ func _test_ladders() -> void:
 	var climbed := 0
 	var slow := PackedStringArray()
 	for box: AABB in _sample(m.ladders, 4):
-		if box.size.y < G2GUnits.to_metres(128.0):
+		if box.size.y < AirdriftUnits.to_metres(128.0):
 			continue
 		var away := Vector3(1, 0, 0) if box.size.x < box.size.z else Vector3(0, 0, 1)
 		var half := box.size.x / 2.0 if away.x != 0.0 else box.size.z / 2.0
 		var picked := false
 		for side in [1.0, -1.0]:
 			var out: Vector3 = away * side
-			var foot := Vector3(box.get_center().x, box.position.y + G2GUnits.to_metres(2.0), box.get_center().z) \
-				+ out * (half + G2GUnits.to_metres(17.0))
+			var foot := Vector3(box.get_center().x, box.position.y + AirdriftUnits.to_metres(2.0), box.get_center().z) \
+				+ out * (half + AirdriftUnits.to_metres(17.0))
 			# The climbing side has room up the ladder as well as at its foot: on
 			# surf_greatriver_v4 one side of a ladder runs under a ledge, a climber there
 			# stops 11 units up, and so would one in the source game.
-			var up := foot + Vector3(0.0, G2GUnits.to_metres(96.0), 0.0)
+			var up := foot + Vector3(0.0, AirdriftUnits.to_metres(96.0), 0.0)
 			if bot.controller.motor.would_overlap(bot.controller.state, foot) \
 					or bot.controller.motor.would_overlap(bot.controller.state, up) or _in_pit(foot):
 				continue
@@ -567,7 +567,7 @@ func _test_ladders() -> void:
 		for _i in range(64):
 			bot.controller.apply_command(command)
 			await get_tree().physics_frame
-		var rose := G2GUnits.to_units(bot.global_position.y - y0)
+		var rose := AirdriftUnits.to_units(bot.global_position.y - y0)
 		if rose > 85.0:
 			climbed += 1
 		else:
@@ -586,14 +586,14 @@ func _in_pit(at: Vector3) -> bool:
 	if zones == null:
 		return false
 	for z: DotTimerZone in zones.of_kind(DotTimerZone.Kind.RESPAWN):
-		if z.contains(at) or z.contains(at + Vector3.UP * G2GUnits.to_metres(36.0)):
+		if z.contains(at) or z.contains(at + Vector3.UP * AirdriftUnits.to_metres(36.0)):
 			return true
 	return false
 
 
 func _in_push(at: Vector3) -> bool:
 	for p: Dictionary in game.mechanics.pushes:
-		if (p["box"] as AABB).has_point(at) or (p["box"] as AABB).has_point(at + Vector3.UP * G2GUnits.to_metres(36.0)):
+		if (p["box"] as AABB).has_point(at) or (p["box"] as AABB).has_point(at + Vector3.UP * AirdriftUnits.to_metres(36.0)):
 			return true
 	return false
 
@@ -605,9 +605,9 @@ func _test_water() -> void:
 	var pools: Array = []
 	if m != null:
 		for w: AABB in m.water:
-			if w.size.y > G2GUnits.to_metres(80.0) and w.size.x > G2GUnits.to_metres(64.0) \
-					and w.size.z > G2GUnits.to_metres(64.0) \
-					and not _in_pit(Vector3(w.get_center().x, w.end.y - G2GUnits.to_metres(70.0), w.get_center().z)):
+			if w.size.y > AirdriftUnits.to_metres(80.0) and w.size.x > AirdriftUnits.to_metres(64.0) \
+					and w.size.z > AirdriftUnits.to_metres(64.0) \
+					and not _in_pit(Vector3(w.get_center().x, w.end.y - AirdriftUnits.to_metres(70.0), w.get_center().z)):
 				pools.append(w)
 	if pools.is_empty():
 		_planned += 1
@@ -621,13 +621,13 @@ func _test_water() -> void:
 	var placed := 0
 	var tried := 0
 	for w: AABB in _sample(pools, 4):
-		var feet := Vector3(w.get_center().x, w.end.y - G2GUnits.to_metres(70.0), w.get_center().z)
+		var feet := Vector3(w.get_center().x, w.end.y - AirdriftUnits.to_metres(70.0), w.get_center().z)
 		if bot.controller.motor.would_overlap(bot.controller.state, feet) or _in_push(feet):
 			continue    # under a floor, or in a current: surf_grave_reloaded's pools pull you down
 		bot.teleport(feet, 0.0, true)
 		await get_tree().physics_frame
 		await get_tree().physics_frame
-		if bot.global_position.distance_to(feet) > G2GUnits.to_metres(64.0):
+		if bot.global_position.distance_to(feet) > AirdriftUnits.to_metres(64.0):
 			continue    # something on the map took the player away (a teleport in the pool)
 		placed += 1
 		if bot.controller.state.mode != bot.swim.mode_id:
@@ -640,12 +640,12 @@ func _test_water() -> void:
 		for _i in range(32):
 			bot.controller.apply_command(command)
 			await get_tree().physics_frame
-		if bot.global_position.y > y0 + G2GUnits.to_metres(8.0) \
+		if bot.global_position.y > y0 + AirdriftUnits.to_metres(8.0) \
 				or bot.controller.state.mode != bot.swim.mode_id:
 			rose += 1
 		else:
-			stuck.append("%s %.0f -> %.0f u, mode %d, surface %.0f" % [_u(feet), G2GUnits.to_units(y0),
-				G2GUnits.to_units(bot.global_position.y), bot.controller.state.mode, G2GUnits.to_units(w.end.y)])
+			stuck.append("%s %.0f -> %.0f u, mode %d, surface %.0f" % [_u(feet), AirdriftUnits.to_units(y0),
+				AirdriftUnits.to_units(bot.global_position.y), bot.controller.state.mode, AirdriftUnits.to_units(w.end.y)])
 		bot.controller.apply_command(DotFpsCommand.new())
 	_planned += 2
 	_check(tried == placed, "a player put in the water swims (%d of %d pools)" % [tried, placed], "nobody entered the swim mode")

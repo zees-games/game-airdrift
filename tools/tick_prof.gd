@@ -1,17 +1,17 @@
 extends Node
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
 
 ## Server tick profile: the game on one map with N bots, driven tick by tick (external tick), each phase of
-## G2GGame._simulate_tick timed in microseconds, and with `--script-top N` (Godot started with -d) the N GDScript
+## AirdriftGame._simulate_tick timed in microseconds, and with `--script-top N` (Godot started with -d) the N GDScript
 ## functions with the most self time. `--phases 0` runs the plain tick_once instead (the A/B timing: `--ticks N`).
 ## Run: godot --headless --path . res://tools/tick_prof.tscn -- --map bhop_g2g_intro --bots 16 --ticks 3000 [--script-top 30]
 ## Prints TICKPROF lines (phase, mean and p99 us per tick) and one TICKTOTAL line (mean us per tick).
 
 const TICK_RATE := 128
 
-var _game: G2GGame
+var _game: AirdriftGame
 var _tick := 0
 
 
@@ -35,11 +35,11 @@ func _run() -> void:
 	var warm := int(_arg("warm", "600"))
 	var phases := _arg("phases", "1") == "1"
 	var script_top := int(_arg("script-top", "0"))
-	var cfg := G2GConfig.new()
+	var cfg := AirdriftConfig.new()
 	cfg.records_directory = ""
 	cfg.map_seconds = 0.0
 	cfg.initial_map = &"bhop_g2g_intro"
-	_game = G2GGame.new()
+	_game = AirdriftGame.new()
 	_game.config = cfg
 	_game.external_tick = true
 	add_child(_game)

@@ -2,7 +2,7 @@ extends RefCounted
 
 ## A bot that drives the REAL movement along a recorded run, and says where it could not.
 ##
-## [b]Why not play the replay.[/b] A ghost (G2GPlayer.replay) puts each frame's pose
+## [b]Why not play the replay.[/b] A ghost (AirdriftPlayer.replay) puts each frame's pose
 ## straight into the state: it goes through walls, never lands, and finishes every map
 ## whatever the map's collision is. That shows a run; it proves nothing about the map.
 ## This one is the opposite. It has only commands -- the same `DotFpsCommand` a person
@@ -22,7 +22,7 @@ extends RefCounted
 ## the place: "left the recorded line at frame N, (x, y, z)". That spot is where to look
 ## for the collision fault.
 
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 
 ## Units from the nearest frame beyond which the bot is off the line.
 const LEAVE_UNITS := 64.0
@@ -54,7 +54,7 @@ var first := 0
 var last := 0
 ## The nearest recorded frame, updated each tick.
 var index := 0
-var leave_distance := G2GUnits.to_metres(LEAVE_UNITS)
+var leave_distance := AirdriftUnits.to_metres(LEAVE_UNITS)
 var leave_ticks := LEAVE_TICKS
 ## Set once the bot has been off the line too long: {"frame", "at" (units), "off" (units)}.
 var left_at: Dictionary = {}
@@ -122,9 +122,9 @@ func left_while_off(at: Vector3) -> bool:
 	var here: DotTimerReplay.Frame = replay.frames[index]
 	left_at = {
 		"frame": index,
-		"at": G2GUnits.vector_to_units(here.position).round(),
-		"was": G2GUnits.vector_to_units(at).round(),
-		"off": G2GUnits.to_units(at.distance_to(here.position)),
+		"at": AirdriftUnits.vector_to_units(here.position).round(),
+		"was": AirdriftUnits.vector_to_units(at).round(),
+		"off": AirdriftUnits.to_units(at.distance_to(here.position)),
 	}
 	return true
 
@@ -142,14 +142,14 @@ func command(state: DotFpsState, tunables: DotFpsTunables, delta: float) -> DotF
 		if _off_for > leave_ticks:
 			left_at = {
 				"frame": index,
-				"at": G2GUnits.vector_to_units(here.position).round(),
-				"was": G2GUnits.vector_to_units(at).round(),
-				"off": G2GUnits.to_units(off),
+				"at": AirdriftUnits.vector_to_units(here.position).round(),
+				"was": AirdriftUnits.vector_to_units(at).round(),
+				"off": AirdriftUnits.to_units(off),
 			}
 			return c
 	else:
 		_off_for = 0
-		worst = maxf(worst, G2GUnits.to_units(off))
+		worst = maxf(worst, AirdriftUnits.to_units(off))
 
 	var next: DotTimerReplay.Frame = replay.frames[mini(index + 1, replay.frames.size() - 1)]
 	var ahead: DotTimerReplay.Frame = replay.frames[mini(index + LEAD_FRAMES, replay.frames.size() - 1)]
@@ -170,7 +170,7 @@ func command(state: DotFpsState, tunables: DotFpsTunables, delta: float) -> DotF
 		# velocity lags its aim on a bend and the point ahead does not.
 		var back := Vector3(here.position.x - at.x, 0.0, here.position.z - at.z)
 		var go := Vector3(line_velocity.x, 0.0, line_velocity.z) + back * GROUND_PULL
-		if go.length() < G2GUnits.to_metres(5.0):
+		if go.length() < AirdriftUnits.to_metres(5.0):
 			go = Vector3(ahead.position.x - at.x, 0.0, ahead.position.z - at.z)
 		# Steer the velocity, not the heading: the wish is the change wanted this tick
 		# (the line's velocity less the velocity after this tick's friction), and its size
@@ -182,7 +182,7 @@ func command(state: DotFpsState, tunables: DotFpsTunables, delta: float) -> DotF
 			want_v = want_v.normalized() * tunables.max_speed
 		var err := want_v - kept
 		var need := err.length()
-		if need < G2GUnits.to_metres(2.0):
+		if need < AirdriftUnits.to_metres(2.0):
 			c.yaw = rad_to_deg(atan2(-go.x, -go.z)) if go.length() > 0.01 else here.yaw
 			c.move = Vector2(0.0, clampf(want_v.length() / tunables.max_speed, 0.0, 1.0)) \
 				if go.length() > 0.01 else Vector2.ZERO
@@ -240,8 +240,8 @@ func _air_command(c: DotFpsCommand, state: DotFpsState, tunables: DotFpsTunables
 	# Short of speed: a full strafe at right angles adds the most any wish can, and on
 	# the side the line bends toward it turns as well -- which is what a player's strafe
 	# is. Only with no turn wanted does it alternate sides, gaining straight on.
-	if short > G2GUnits.to_metres(SPEED_DEADBAND):
-		if absf(across) > G2GUnits.to_metres(TURN_DEADBAND):
+	if short > AirdriftUnits.to_metres(SPEED_DEADBAND):
+		if absf(across) > AirdriftUnits.to_metres(TURN_DEADBAND):
 			_side = signf(across)
 		else:
 			_side = -_side
@@ -249,12 +249,12 @@ func _air_command(c: DotFpsCommand, state: DotFpsState, tunables: DotFpsTunables
 		c.yaw = rad_to_deg(atan2(-w.x, -w.z))
 		c.move = Vector2(0.0, 1.0)
 		return c
-	if absf(across) > G2GUnits.to_metres(TURN_DEADBAND):
+	if absf(across) > AirdriftUnits.to_metres(TURN_DEADBAND):
 		var w := side * signf(across)
 		c.yaw = rad_to_deg(atan2(-w.x, -w.z))
 		c.move = Vector2(0.0, clampf(absf(across) / run, 0.0, 1.0))
 		return c
-	if short < -G2GUnits.to_metres(SPEED_DEADBAND):
+	if short < -AirdriftUnits.to_metres(SPEED_DEADBAND):
 		var w := -heading
 		c.yaw = rad_to_deg(atan2(-w.x, -w.z))
 		c.move = Vector2(0.0, clampf(-short / (tunables.air_accelerate * run * delta), 0.0, 1.0))
@@ -301,7 +301,7 @@ func _wants_jump(state: DotFpsState, at: Vector3) -> bool:
 	# the bot on the ground while the recording is in the air above it. Jump again.
 	var here: DotTimerReplay.Frame = replay.frames[index]
 	if not (here.flags & DotTimerReplay.FLAG_GROUNDED) \
-			and here.position.y - at.y > G2GUnits.to_metres(STEP_UNITS):
+			and here.position.y - at.y > AirdriftUnits.to_metres(STEP_UNITS):
 		return true
 	var take_off: Vector3 = replay.frames[_jump_at].position
 	var before: Vector3 = replay.frames[maxi(_jump_at - 1, first)].position
@@ -373,7 +373,7 @@ static func drive(game: Node, bot: Node, replay: DotTimerReplay, seconds: float)
 				# A pit that ends an excursion already off the line is the line being
 				# left, not the map failing a bot that was on it: report the frame.
 				if put_back.is_empty() and not follow.left_while_off(follow.last_seen):
-					put_back.append(G2GUnits.vector_to_units(follow.last_seen).round())
+					put_back.append(AirdriftUnits.vector_to_units(follow.last_seen).round())
 			DotTimerZone.Kind.TELEPORT:
 				(func() -> void: follow.teleported(bot.controller.state.position)).call_deferred()
 	var on_finish := func(run: DotTimerRun) -> void:
@@ -404,10 +404,10 @@ static func drive(game: Node, bot: Node, replay: DotTimerReplay, seconds: float)
 			var f: DotTimerReplay.Frame = replay.frames[follow.index]
 			var f2: DotTimerReplay.Frame = replay.frames[mini(follow.index + 1, replay.frames.size() - 1)]
 			print("[follow]   t %5d  frame %5d  at %s u  line %s u  %4.0f u/s (line %4.0f)  %s  move %s yaw %.0f%s" % [
-				t, follow.index, str(G2GUnits.vector_to_units(s.position).round()),
-				str(G2GUnits.vector_to_units(f.position).round()),
-				G2GUnits.to_units(Vector2(s.velocity.x, s.velocity.z).length()),
-				G2GUnits.to_units(Vector2(f2.position.x - f.position.x, f2.position.z - f.position.z).length() * float(replay.tick_rate)),
+				t, follow.index, str(AirdriftUnits.vector_to_units(s.position).round()),
+				str(AirdriftUnits.vector_to_units(f.position).round()),
+				AirdriftUnits.to_units(Vector2(s.velocity.x, s.velocity.z).length()),
+				AirdriftUnits.to_units(Vector2(f2.position.x - f.position.x, f2.position.z - f.position.z).length() * float(replay.tick_rate)),
 				"ground" if s.is_grounded() else "air", str(c.move.snapped(Vector2.ONE * 0.01)), c.yaw,
 				" JUMP" if c.is_pressed(DotFpsCommand.BUTTON_JUMP) else ""])
 		follow.last_seen = bot.controller.state.position

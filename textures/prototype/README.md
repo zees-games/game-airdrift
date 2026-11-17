@@ -1,6 +1,6 @@
 # The prototype texture set
 
-Six PNGs, one per [G2GTextures] `Role`. Dropping them here is the whole installation: `G2GTextures._texture_for` looks each role up by the name in `ROLE_FILES` and falls back to the generated grid when a file is absent, so nothing here is a dependency and removing a file is a supported state rather than a break.
+Six PNGs, one per [AirdriftTextures] `Role`. Dropping them here is the whole installation: `AirdriftTextures._texture_for` looks each role up by the name in `ROLE_FILES` and falls back to the generated grid when a file is absent, so nothing here is a dependency and removing a file is a supported state rather than a break.
 
 These are **Kenney's Prototype Textures 1.0** (`kenney.nl`), released under **CC0 1.0** — public domain, no attribution required, which is strictly more permissive than the MIT this repository ships under. `LICENSE.txt` is Kenney's own, copied unchanged. Only the six files actually referenced are vendored; the kit itself is 6 colours × 13 patterns and the rest is not needed here.
 
@@ -13,7 +13,7 @@ These are **Kenney's Prototype Textures 1.0** (`kenney.nl`), released under **CC
 | `end.png` | `END` | `PNG/Red/texture_02.png` | Inside the finish zone |
 | `bonus.png` | `BONUS` | `PNG/Purple/texture_02.png` | A bonus route, visibly not the main one |
 
-**The set carries its own colour, so the role tint stops applying.** The generated grid is greyscale and is multiplied by `ROLE_COLOURS`; these are not, and multiplying Kenney's orange by the RAMP blue is a double tint that produces mud. `G2GTextures.material_for` therefore paints an installed set white. That is why the roles are distinguished by *file* here rather than by tint.
+**The set carries its own colour, so the role tint stops applying.** The generated grid is greyscale and is multiplied by `ROLE_COLOURS`; these are not, and multiplying Kenney's orange by the RAMP blue is a double tint that produces mud. `AirdriftTextures.material_for` therefore paints an installed set white. That is why the roles are distinguished by *file* here rather than by tint.
 
 **One square is 64 units, on every surface in the game.** Kenney's tile is 8 squares across where the generated one is 4, so `INSTALLED_SQUARES_PER_TILE` is what keeps the two the same size in the world — swapping the set must not change how fast the ground appears to move, because that appearance is how a player judges their speed.
 

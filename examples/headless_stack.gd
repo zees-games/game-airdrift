@@ -1,8 +1,8 @@
 extends DotGameCheckSuite
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GPlayerStack := preload("../game/g2g_player_stack.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftPlayerStack := preload("../game/airdrift_player_stack.gd")
 
 ## The player stack, run against a real timer server rather than against a stub.
 ##
@@ -30,7 +30,7 @@ const CHECKS := 29
 var _section_count := 0
 var _sections := 0
 
-var _game: G2GGame = null
+var _game: AirdriftGame = null
 
 
 func _ready() -> void:
@@ -39,7 +39,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("g2gfast player stack")
+	print("Airdrift player stack")
 	print("")
 
 	if not await _build():
@@ -59,10 +59,10 @@ func _run() -> void:
 func _build() -> bool:
 	_sections = 5
 
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.initial_map = &"bhop_g2g_intro"
 
-	_game = G2GGame.new()
+	_game = AirdriftGame.new()
 	_game.name = "Game"
 	_game.config = config
 	add_child(_game)
@@ -80,7 +80,7 @@ func _build() -> bool:
 	return true
 
 
-func _stack() -> G2GPlayerStack:
+func _stack() -> AirdriftPlayerStack:
 	return _game.player_stack
 
 

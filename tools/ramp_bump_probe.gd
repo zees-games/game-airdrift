@@ -1,9 +1,9 @@
 extends Node3D
 
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GMovement := preload("../game/g2g_movement.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftMovement := preload("../game/airdrift_movement.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 
 ## Rides ramps with the real motor and counts the ticks a camera would see JUMP.
 ##
@@ -48,13 +48,13 @@ func _ready() -> void:
 	entry = float(args[2]) if args.size() > 2 else 900.0
 	strafe = args.size() > 3 and args[3] == "1"
 
-	var map := G2GBspMap.new()
+	var map := AirdriftBspMap.new()
 	add_child(map)
 	map.build_from_path("res://maps/imported/%s/%s.json" % [id, id])
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 
-	tunables = G2GMovement.tunables_for(G2GConfig.new())
+	tunables = AirdriftMovement.tunables_for(AirdriftConfig.new())
 	motor = DotFpsMotor.new(tunables, DotFpsPhysicsBody.for_node(self))
 	var samples := _ramp_samples(map)
 	samples.resize(mini(runs, samples.size()))
@@ -71,19 +71,19 @@ func _ride(sample: Array) -> void:
 	var step := 1.0 / 128.0
 	var state := DotFpsState.new()
 	var n: Vector3 = sample[1]
-	state.position = sample[0] + n * G2GUnits.to_metres(8.0)
+	state.position = sample[0] + n * AirdriftUnits.to_metres(8.0)
 	var along := (Vector3.DOWN - n * n.dot(Vector3.DOWN))
 	along.y = 0.0
 	if along.length_squared() < 1e-9:
 		return
 	# Across the slope, the way a rider meets it.
 	var across := Vector3(-along.z, 0.0, along.x).normalized()
-	state.velocity = across * G2GUnits.to_metres(entry)
+	state.velocity = across * AirdriftUnits.to_metres(entry)
 	var command := DotFpsCommand.new()
 	var prev := state.position
 	var prev_step := Vector3.ZERO
 	var h0 := motor._height(state)
-	if motor.body.rest_contact(motor._capsule_centre(state.position, h0), h0, tunables.radius).depth > G2GUnits.to_metres(1.0):
+	if motor.body.rest_contact(motor._capsule_centre(state.position, h0), h0, tunables.radius).depth > AirdriftUnits.to_metres(1.0):
 		skipped += 1
 		return
 	rides += 1
@@ -113,7 +113,7 @@ func _ride(sample: Array) -> void:
 		if t > 2 and _touching(motor, state, n):
 			ticks_on_ramp += 1
 			# The step this tick against the last one, less what gravity adds.
-			var jerk := G2GUnits.to_units((moved - prev_step).length())
+			var jerk := AirdriftUnits.to_units((moved - prev_step).length())
 			if jerk > BUMP_UNITS:
 				_count_bump(jerk, state, sample, dep, stuck, dup)
 		prev_step = moved
@@ -127,10 +127,10 @@ func _trace_tick(t: int, state: DotFpsState, n: Vector3, pre, dep: int, dup: int
 	var hit := sp.intersect_ray(q)
 	var gap := -1.0
 	if not hit.is_empty():
-		gap = G2GUnits.to_units((foot + n * 2.0).distance_to(hit["position"])) - G2GUnits.to_units(2.0)
+		gap = AirdriftUnits.to_units((foot + n * 2.0).distance_to(hit["position"])) - AirdriftUnits.to_units(2.0)
 	print("[trace] t%d pos %s vel %s pre_depth %.2f pre_n %s dep %s dup %s grounded %s face_gap %.1f" % [t,
-		G2GUnits.vector_to_units(state.position).round(), G2GUnits.vector_to_units(state.velocity).round(),
-		G2GUnits.to_units(pre.depth) if pre.hit else -1.0, pre.normal.snapped(Vector3.ONE * 0.01),
+		AirdriftUnits.vector_to_units(state.position).round(), AirdriftUnits.vector_to_units(state.velocity).round(),
+		AirdriftUnits.to_units(pre.depth) if pre.hit else -1.0, pre.normal.snapped(Vector3.ONE * 0.01),
 		motor.depenetrated_ticks > dep, motor.duplicate_plane_ticks > dup, state.is_grounded(), gap])
 
 
@@ -139,11 +139,11 @@ func _count_depenetration(pre, pre_kind: String, n: Vector3, t: int, prev: Vecto
 		state: DotFpsState, ride_deep: bool) -> bool:
 	var push := minf(pre.depth + tunables.skin_width, maxf(tunables.step_height, tunables.skin_width * 2.0))
 	var key := "%s depth<%s normal_vs_face=%s" % [pre_kind,
-		_bucket(G2GUnits.to_units(pre.depth), [0.1, 1.0, 5.0, 17.0]),
+		_bucket(AirdriftUnits.to_units(pre.depth), [0.1, 1.0, 5.0, 17.0]),
 		_bucket(rad_to_deg(pre.normal.angle_to(n)), [3.0, 20.0, 60.0, 120.0])]
 	dep_kinds[key] = int(dep_kinds.get(key, 0)) + 1
-	dep_push += G2GUnits.to_units(push)
-	if G2GUnits.to_units(pre.depth) <= 1.0:
+	dep_push += AirdriftUnits.to_units(push)
+	if AirdriftUnits.to_units(pre.depth) <= 1.0:
 		return ride_deep
 	deep += 1
 	if ride_deep:
@@ -151,9 +151,9 @@ func _count_depenetration(pre, pre_kind: String, n: Vector3, t: int, prev: Vecto
 	rides_deep += 1
 	if deep_where.size() < 15:
 		deep_where.append("ride %d tick %d: %s depth %.1f u, normal %s vs face %s (%.0f deg), from %s, v %s u/s" % [
-			rides, t, pre_kind, G2GUnits.to_units(pre.depth), pre.normal.snapped(Vector3.ONE * 0.01),
+			rides, t, pre_kind, AirdriftUnits.to_units(pre.depth), pre.normal.snapped(Vector3.ONE * 0.01),
 			n.snapped(Vector3.ONE * 0.01), rad_to_deg(pre.normal.angle_to(n)),
-			G2GUnits.vector_to_units(prev).round(), G2GUnits.vector_to_units(state.velocity).round()])
+			AirdriftUnits.vector_to_units(prev).round(), AirdriftUnits.vector_to_units(state.velocity).round()])
 	return true
 
 
@@ -171,8 +171,8 @@ func _count_bump(jerk: float, state: DotFpsState, sample: Array, dep: int, stuck
 	depth_hist[bucket] = int(depth_hist.get(bucket, 0)) + 1
 	if worst.size() < 12:
 		worst.append("%s jerk %.1f u at %s (%s) v=%d u/s" % [cause, jerk,
-			G2GUnits.vector_to_units(state.position).round(),
-			sample[2], int(G2GUnits.to_units(state.velocity.length()))])
+			AirdriftUnits.vector_to_units(state.position).round(),
+			sample[2], int(AirdriftUnits.to_units(state.velocity.length()))])
 
 
 func _report(id: String, sample_count: int) -> void:
@@ -212,7 +212,7 @@ func _touching(_motor: DotFpsMotor, state: DotFpsState, _n: Vector3) -> bool:
 	return false
 
 
-func _ramp_samples(map: G2GBspMap) -> Array:
+func _ramp_samples(map: AirdriftBspMap) -> Array:
 	var mi := map.get_node_or_null("World") as MeshInstance3D
 	var out: Array = []
 	var surfaces: Array = map.manifest.get("surfaces", [])

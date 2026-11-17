@@ -1,12 +1,12 @@
 extends SceneTree
 
-const G2GClient := preload("../game/g2g_client.gd")
+const AirdriftClient := preload("../game/airdrift_client.gd")
 
 ## The real offline client's map menu (M) with a Workshop map in it, to
 ## `screenshots/workshop_maplist_<page>.png`.
 ##
 ## The map is a fixture in a [DotContentIndex] this script registers as the shared one before
-## the client is built, so the rows are the ones `G2GGame.map_rows` makes from a catalogue
+## the client is built, so the rows are the ones `AirdriftGame.map_rows` makes from a catalogue
 ## that followed it; nothing is drawn by hand. The fixture is `examples/workshop_fixture`.
 ## Run: `xvfb-run -a godot --path . --resolution 1600x900 --script tools/screenshot_workshop.gd`.
 ## Not `--headless`: a null renderer saves empty frames.
@@ -15,7 +15,7 @@ const OUT_DIR := "res://screenshots"
 const SETTLE := 6
 const FIRST_PAGE := 3
 
-var _client: G2GClient = null
+var _client: AirdriftClient = null
 var _wait := 0
 var _loaded := 0
 var _step := 0
@@ -38,8 +38,8 @@ func _initialize() -> void:
 		]},
 	})
 	DotRegistry.register(DotContentIndex.SERVICE, index)
-	OS.set_environment("G2G_INITIAL_MAP", "bhop_g2g_intro")
-	_client = (load("res://game/g2g.tscn") as PackedScene).instantiate() as G2GClient
+	OS.set_environment("AIRDRIFT_INITIAL_MAP", "bhop_g2g_intro")
+	_client = (load("res://game/airdrift.tscn") as PackedScene).instantiate() as AirdriftClient
 	_client.force_offline = true
 	root.add_child(_client)
 

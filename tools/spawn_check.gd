@@ -1,9 +1,9 @@
 extends SceneTree
 
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GMovement := preload("../game/g2g_movement.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftMovement := preload("../game/airdrift_movement.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 
 ## Is every spawn point on an imported map somewhere a player can actually be?
 ##
@@ -42,7 +42,7 @@ func _init() -> void:
 				if FileAccess.file_exists("res://maps/imported/%s/%s.json" % [name, name]):
 					ids.append(name)
 
-	var tunables := G2GMovement.tunables_for(G2GConfig.new())
+	var tunables := AirdriftMovement.tunables_for(AirdriftConfig.new())
 	var bad_total := 0
 	var checked_total := 0
 
@@ -51,7 +51,7 @@ func _init() -> void:
 		root.name = "Probe_%s" % id
 		get_root().add_child(root)
 
-		var map := G2GBspMap.new()
+		var map := AirdriftBspMap.new()
 		root.add_child(map)
 		map.build_from_path("res://maps/imported/%s/%s.json" % [id, id])
 
@@ -67,7 +67,7 @@ func _init() -> void:
 			# Where the player's CENTRE goes: a spawn names the floor, and the hull
 			# stands on it.
 			var centre: Vector3 = at + Vector3.UP * (float(tunables.stand_height) * 0.5
-				+ G2GUnits.to_metres(LIFT_UNITS))
+				+ AirdriftUnits.to_metres(LIFT_UNITS))
 			if not body.overlaps(centre, float(tunables.stand_height), float(tunables.radius)):
 				continue
 
@@ -76,7 +76,7 @@ func _init() -> void:
 			var lift := LIFT_UNITS * 2.0
 			while lift <= PROOF_UNITS:
 				var higher: Vector3 = at + Vector3.UP * (float(tunables.stand_height) * 0.5
-					+ G2GUnits.to_metres(lift))
+					+ AirdriftUnits.to_metres(lift))
 				if not body.overlaps(higher, float(tunables.stand_height),
 						float(tunables.radius)):
 					clear_at = lift
@@ -103,7 +103,7 @@ func _init() -> void:
 
 ## Every place this map can put a player: the main spawn, the per-track spawns, and the
 ## destination of every zone that teleports one.
-func _spawn_points(map: G2GBspMap) -> Array:
+func _spawn_points(map: AirdriftBspMap) -> Array:
 	var out: Array = []
 	var manifest := map.manifest
 
@@ -130,5 +130,5 @@ func _spawn_points(map: G2GBspMap) -> Array:
 func _vec(value: Variant) -> Vector3:
 	if value is Array and (value as Array).size() >= 3:
 		var a: Array = value
-		return Vector3(float(a[0]), float(a[1]), float(a[2])) * G2GUnits.METRES_PER_UNIT
+		return Vector3(float(a[0]), float(a[1]), float(a[2])) * AirdriftUnits.METRES_PER_UNIT
 	return Vector3.ZERO

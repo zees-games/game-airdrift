@@ -4,7 +4,7 @@ Three maps are scenes and scripts in this repository: `bhop_g2g_intro`, `bhop_g2
 
 ## The default map is an imported one
 
-`G2GConfig.initial_map` is `surf_mesa`. A straight line of blocks over a flat plane is what a *suite* should run, and every example still names one explicitly, but it is not what a player arriving at a server should be met by. It also makes the imported half the default path rather than the one nothing reaches unless somebody types a map name: a built-in map is a scene and a script and can never fail to be there, and an imported map is data at a path that has to be found, parsed and built.
+`AirdriftConfig.initial_map` is `surf_mesa`. A straight line of blocks over a flat plane is what a *suite* should run, and every example still names one explicitly, but it is not what a player arriving at a server should be met by. It also makes the imported half the default path rather than the one nothing reaches unless somebody types a map name: a built-in map is a scene and a script and can never fail to be there, and an imported map is data at a path that has to be found, parsed and built.
 
 ## Geometry and zones come from one description
 
@@ -36,16 +36,16 @@ Its first bonus is a **surf** descent on a bhop map, deliberately: a bonus track
 
 ## Surfaces are roles, not colours
 
-`G2GGeometry.box` takes a role, and `G2GTextures` supplies a triplanar pattern in **world** space, one square per 64 units (the grid this genre's maps are built on), on every surface whatever its size. A flat tone is not cosmetic here: a surf ramp is ridden at 30 m/s and a bhop block cleared in eight ticks, and the only cue for how fast a surface is going past is a repeating pattern of known size. The old `COLOUR_*` constants are role ids now and kept their names, so no map file changed.
+`AirdriftGeometry.box` takes a role, and `AirdriftTextures` supplies a triplanar pattern in **world** space, one square per 64 units (the grid this genre's maps are built on), on every surface whatever its size. A flat tone is not cosmetic here: a surf ramp is ridden at 30 m/s and a bhop block cleared in eight ticks, and the only cue for how fast a surface is going past is a repeating pattern of known size. The old `COLOUR_*` constants are role ids now and kept their names, so no map file changed.
 
 The hand-built maps draw the generated grid, not the installed Kenney prototype set. That kit's *Light* set is too low-contrast at this tiling (a near-flat saturated panel whose lines are gone by mid-distance, under six brand colours rather than a palette), and on a sunlit `StandardMaterial3D` over a large plane that is a floor with no readable scale. The imported maps are a different pipeline and do use the kit (see [map-rendering.md](map-rendering.md#textures-the-bsp-did-not-carry)). What would be better for the hand-built half is a light, high-contrast set whose line weight survives the tiling; the generated grid is the specification for it.
 
 ## Every hand-built map is surveyed
 
-`G2GMapSurvey` (game-playlot's survey reimplemented in genre units) runs over every hand-built map in `headless_maps`' last section, after a built-in bad map that has one of everything it looks for. Per map it asserts: every spawn and `!s<n>` destination lands on standable ground; no two solids leave a slot narrower than the hull; nothing standable is out of reach of every start unless declared, and no declaration covers ground that is reached; nothing a start reaches is a trap (no finish, pit or spawn out); every declared CHAIN course is a way forward; and the tilted slabs a player can stand on are exactly `STANDABLE_RAMPS`.
+`AirdriftMapSurvey` (game-playlot's survey reimplemented in genre units) runs over every hand-built map in `headless_maps`' last section, after a built-in bad map that has one of everything it looks for. Per map it asserts: every spawn and `!s<n>` destination lands on standable ground; no two solids leave a slot narrower than the hull; nothing standable is out of reach of every start unless declared, and no declaration covers ground that is reached; nothing a start reaches is a trap (no finish, pit or spawn out); every declared CHAIN course is a way forward; and the tilted slabs a player can stand on are exactly `STANDABLE_RAMPS`.
 
 - The numbers are the tunables' own (see [movement.md](movement.md#numbers-that-explain-the-hull)); the grid is 16 u, half the hull, so a cell's eight neighbours are the hull.
-- **A CHAIN course is linked body to body when `G2GReach.chain` says a perfect strafe runs it**, because the main routes' gaps (up to 288 u) are past any RUN jump by design.
+- **A CHAIN course is linked body to body when `AirdriftReach.chain` says a perfect strafe runs it**, because the main routes' gaps (up to 288 u) are past any RUN jump by design.
 - **On a surf map the survey stops short, on purpose.** A ramp is slid on, not stood on, and where a rider gets to is decided by speed that is theirs to make; any bound on it is "everywhere" or a guess at skill. The survey floods only what needs none (walking, a step, a drop, a RUN jump, a slide straight down a face's fall line) and a surface reached by a carried flight is declared, naming the check that rides it.
 - The declarations live in `headless_maps._survey_declared`, not on the maps as game-playlot has them. Moving them is not yet done.
 

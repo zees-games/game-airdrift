@@ -1,13 +1,13 @@
 extends DotGameCheckSuite
-const G2GTestPorts := preload("test_ports.gd")
+const AirdriftTestPorts := preload("test_ports.gd")
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
-const G2GSurfCourse := preload("../game/g2g_surf_course.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
+const AirdriftSurfCourse := preload("../game/airdrift_surf_course.gd")
 
-## The server's bots on a live server: a real `DotServer` with `G2GModule` at 128 ticks, the
-## bots asked for through `bot_quota`, and what each map gives them to ride (`g2g_bots.gd`).
+## The server's bots on a live server: a real `DotServer` with `AirdriftModule` at 128 ticks, the
+## bots asked for through `bot_quota`, and what each map gives them to ride (`airdrift_bots.gd`).
 ##
 ## [codeblock]
 ## godot --headless --path . res://examples/headless_bots.tscn
@@ -20,9 +20,9 @@ const G2GSurfCourse := preload("../game/g2g_surf_course.gd")
 ## missing, as `headless_imported` does. The cost a bot's driving adds per tick is printed: it is
 ## the number docs/routes.md quotes.
 ##
-## Armed by having `G2GBots._ensure_course` skip the cache (the pilot check fails: the route bot
+## Armed by having `AirdriftBots._ensure_course` skip the cache (the pilot check fails: the route bot
 ## wedges on the first ramp's ridge and never arrives) and by dropping `bots.drive` from
-## `G2GGame._simulate_tick` (every bot stands still and nothing arrives).
+## `AirdriftGame._simulate_tick` (every bot stands still and nothing arrives).
 
 const SECTIONS := 6
 const CHECKS := 25
@@ -55,7 +55,7 @@ const NAV_STEP_LIMIT_MS := 150.0
 const NAV_CACHE := "user://g2g_bots_nav_cache"
 
 var server: DotServer = null
-var game: G2GGame = null
+var game: AirdriftGame = null
 
 var _entered := 0
 var _completed := 0
@@ -67,7 +67,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("g2gfast — bots on a live server")
+	print("Airdrift — bots on a live server")
 	DotPaths.remove_tree(SERVER_DIR)
 	DirAccess.make_dir_recursive_absolute(SERVER_DIR)
 
@@ -96,7 +96,7 @@ func _boot() -> void:
 	var config := DotServerConfig.new()
 	config.startup_config = cfg_path
 	config.autoexec_config = ""
-	config.port = G2GTestPorts.free_port()
+	config.port = AirdriftTestPorts.free_port()
 	config.max_players = 8
 	config.hibernate_when_empty = false
 	config.query_enabled = false
@@ -113,12 +113,12 @@ func _boot() -> void:
 			break
 	_check(server.state == DotServer.State.RUNNING, "the server boots")
 
-	var g2g_config := G2GConfig.new()
-	g2g_config.records_directory = ""
-	g2g_config.map_seconds = 0.0
-	g2g_config.initial_map = &"bhop_g2g_intro"
-	game = G2GGame.new()
-	game.config = g2g_config
+	var airdrift_config := AirdriftConfig.new()
+	airdrift_config.records_directory = ""
+	airdrift_config.map_seconds = 0.0
+	airdrift_config.initial_map = &"bhop_g2g_intro"
+	game = AirdriftGame.new()
+	game.config = airdrift_config
 	add_child(game)
 	for _i in range(60):
 		await get_tree().process_frame
@@ -127,8 +127,8 @@ func _boot() -> void:
 	_check(game.maps.current != null and game.tick_rate == 128, "the game loads its first map at 128 ticks",
 		"tick rate %d" % game.tick_rate)
 
-	(load("res://game/g2g_module.gd") as GDScript).set("punishments_file", "%s/punishments.json" % SERVER_DIR)
-	var loaded: DotResult = await server.modules.load_module("res://game/g2g_module.gd")
+	(load("res://game/airdrift_module.gd") as GDScript).set("punishments_file", "%s/punishments.json" % SERVER_DIR)
+	var loaded: DotResult = await server.modules.load_module("res://game/airdrift_module.gd")
 	_check(loaded.ok and server.console.find_cvar("bot_quota") != null,
 		"the module loads and registers bot_quota", loaded.error.message if not loaded.ok else "")
 	_check(server.console.find_cvar("bot_quota").get_string() == "0" and (game.bots.get("ids") as Array).is_empty(),
@@ -148,7 +148,7 @@ func _test_a_bot_without_a_cache() -> void:
 			_check(false, "(no bot)")
 		_done()
 		return
-	var bot: G2GPlayer = game.players.get(ids[0])
+	var bot: AirdriftPlayer = game.players.get(ids[0])
 	var described: Dictionary = game.bots.call("describe")
 	_check(bot != null and bot.is_bot and bot.timer == null,
 		"a player with no timer, so nothing it does is filed", str(bot.describe()) if bot != null else "")
@@ -171,14 +171,14 @@ func _test_a_bot_without_a_cache() -> void:
 ## and a stage file wins over the legacy file's entry.
 func _test_surf_cache_layouts() -> void:
 	_section("the surf cache reads the same in either layout")
-	var legacy := G2GSurfCourse.cache_path(SURF_MAP)
-	if not FileAccess.file_exists(ProjectSettings.globalize_path(legacy)) and not G2GSurfCourse.has_cache(SURF_MAP):
+	var legacy := AirdriftSurfCourse.cache_path(SURF_MAP)
+	if not FileAccess.file_exists(ProjectSettings.globalize_path(legacy)) and not AirdriftSurfCourse.has_cache(SURF_MAP):
 		for what in ["the cache splits into one file per stage", "the split cache reads identically to the single file",
 				"a stage file wins over the single file's entry", "the shipped cache holds stage 1"]:
 			_check(true, what, "no surf cache for %s" % SURF_MAP)
 		_done()
 		return
-	var shipped: Dictionary = G2GSurfCourse.read_cache(SURF_MAP)
+	var shipped: Dictionary = AirdriftSurfCourse.read_cache(SURF_MAP)
 	var tmp := "user://g2g_surf_layouts"
 	DotPaths.remove_tree(tmp)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(tmp))
@@ -187,17 +187,17 @@ func _test_surf_cache_layouts() -> void:
 	var f := FileAccess.open(ProjectSettings.globalize_path(single), FileAccess.WRITE)
 	f.store_string(JSON.stringify({"id": "x", "stages": shipped["stages"]}, "", false))
 	f.close()
-	var count := G2GSurfCourse.split_cache(single, tmp + "/x.surf")
+	var count := AirdriftSurfCourse.split_cache(single, tmp + "/x.surf")
 	_check(count == shipped["stages"].size() and count > 0, "the cache splits into one file per stage", "%d of %d" % [count, shipped["stages"].size()])
-	var from_single := G2GSurfCourse.read_cache_at(single, tmp + "/none.surf")
-	var from_split := G2GSurfCourse.read_cache_at(tmp + "/none.json", tmp + "/x.surf")
+	var from_single := AirdriftSurfCourse.read_cache_at(single, tmp + "/none.surf")
+	var from_split := AirdriftSurfCourse.read_cache_at(tmp + "/none.json", tmp + "/x.surf")
 	_check(from_single["stages"] == shipped["stages"] and from_split["stages"] == shipped["stages"],
 		"the split cache reads identically to the single file")
 	var first := String(shipped["stages"].keys()[0])
 	var changed: Dictionary = (shipped["stages"][first] as Dictionary).duplicate()
 	changed["reference_yaw"] = 123.0
-	G2GSurfCourse.write_stage_file(tmp + "/x.surf/%s.json" % first, changed)
-	var both := G2GSurfCourse.read_cache_at(single, tmp + "/x.surf")
+	AirdriftSurfCourse.write_stage_file(tmp + "/x.surf/%s.json" % first, changed)
+	var both := AirdriftSurfCourse.read_cache_at(single, tmp + "/x.surf")
 	_check(both["stages"][first]["reference_yaw"] == 123.0 and both["stages"].size() == shipped["stages"].size(),
 		"a stage file wins over the single file's entry")
 	_check(shipped["stages"].has("1") and not (shipped["stages"]["1"].get("entries", []) as Array).is_empty(), "the shipped cache holds stage 1")
@@ -311,7 +311,7 @@ func _test_quota_zero_takes_them_away() -> void:
 	_section("bot_quota 0 takes them away")
 	_run_command("bot_quota 0")
 	await _ticks(80)
-	var bot_players := game.players.values().filter(func(p: G2GPlayer) -> bool: return p.is_bot)
+	var bot_players := game.players.values().filter(func(p: AirdriftPlayer) -> bool: return p.is_bot)
 	_check((game.bots.get("ids") as Array).is_empty() and bot_players.is_empty(), "now, not next map",
 		"%d left" % bot_players.size())
 	_run_command("bot_quota 2")

@@ -2,7 +2,7 @@
 
 A bunny-hop and surf timer server in the competitive-shooter shape: the genre's movement, units and cvars, a timer with zones, stages, bonuses, styles, records and a replay ghost, and the genre's `.bsp` maps imported as content (game-playlot is a sandbox with a surf ramp; this is the *timer server* a records community would migrate to). It ships as a signed dot-cloud pack (`game.yml`) into dot-server-deploy's client shell; imported maps are their own packs from the airdrift-maps repository (checked out as `../g2gfast-maps`).
 
-The game is **Zee's Airdrift** (it was G2G Fast; the repository was game-g2gfast, its maps repository was g2gfast-maps, renamed airdrift-maps; the checkouts keep their old directory names). The maps collection is `gamemann/airdrift-maps` (`gamemann/airdrift-maps/*` in a server's map list); the old id `gamemann/g2gfast-maps` is an alias until its removal date in the maps repository's `CLAUDE.md`. **Wire and storage ids keep the old name on purpose**: the pack ids `gamemann/game-g2gfast` and the per-map `gamemann/<map id>` packs, the publish id `game-g2gfast`, the cfg game id `game-g2gfast` (`cfg/game/game-g2gfast/`), `game.sh` PACK `g2gfast`, the module name and game id `g2gfast` (the dot-server-deploy pack is `airdrift` with `g2gfast` as its former id), the site app slug `g2gfast` until the owner runs the slug migration, `user://g2gfast/*` and `user://cfg/g2gfast_*` paths, the settings namespace `game_g2gfast`, the log channel `g2g`, node names, the `g2g_` cvars, map ids, the dot-map-convert adapter `game-g2gfast` and the `G2G*` class and file names. Change one only together with dot-server-deploy, website-city and dot-cloud.
+The game is **Zee's Airdrift** (it was G2G Fast; the repository was game-g2gfast, its maps repository was g2gfast-maps, renamed airdrift-maps; the checkouts keep their old directory names). The maps collection is `gamemann/airdrift-maps` (`gamemann/airdrift-maps/*` in a server's map list); the old id `gamemann/g2gfast-maps` is an alias until its removal date in the maps repository's `CLAUDE.md`. **Wire and storage ids keep the old name on purpose**: the pack ids `gamemann/game-g2gfast` and the per-map `gamemann/<map id>` packs, the publish id `game-g2gfast`, the cfg game id `game-g2gfast` (`cfg/game/game-g2gfast/`), `game.sh` PACK `g2gfast`, the module name and game id `g2gfast` (the dot-server-deploy pack is `airdrift` with `g2gfast` as its former id), the site app slug `g2gfast` until the owner runs the slug migration, `user://g2gfast/*` and `user://cfg/g2gfast_*` paths, the settings namespace `game_g2gfast`, the log channel `g2g`, node names, the `g2g_` cvars, map ids, the dot-map-convert adapter `game-g2gfast`, the `G2G_*` environment and `--g2g-*` argument prefixes (still read under the new `AIRDRIFT_*` / `--airdrift-*`, which win), and the shims `game/g2g_{module,game,config}.gd`, `game/g2g.tscn` and `scenes/g2g_server.tscn` (old paths that dot-server-deploy and published manifests load). Change one only together with dot-server-deploy, website-city and dot-cloud. The classes are `Airdrift*` and the files `airdrift_*` (2026-11-17); the phase-2 plan for the rest is on nightly item rename-playlot-airdrift-1.
 
 **Movement and the timer are the core**: read [movement](docs/movement.md) and [timer](docs/timer.md) before touching either. Read the family [CLAUDE.md](../../CLAUDE.md) and each addon's `CLAUDE.md` first. **The detail is in [docs/](docs/README.md)**.
 
@@ -31,7 +31,7 @@ The game is **Zee's Airdrift** (it was G2G Fast; the repository was game-g2gfast
 
 ## Layout
 
-`game/` is the simulation (`g2g_game.gd`; units, config and movement are the only boundary into metres), the player, the layers over the timer (combat, hunters, blocks, spectating, bots), hand-built and imported maps, and the client (`g2g_client.gd`, `g2g_hud.gd`, `ui/`; never loaded by a server); `game/net/` the bridge and wire. `maps/` holds the three hand-built maps, `imported/` (linked from airdrift-maps), `zones/` and `routes/`; `examples/` the suites, `tools/` the tools. **The file-by-file table is in [docs/README.md](docs/README.md#layout).**
+`game/` is the simulation (`airdrift_game.gd`; units, config and movement are the only boundary into metres), the player, the layers over the timer (combat, hunters, blocks, spectating, bots), hand-built and imported maps, and the client (`airdrift_client.gd`, `airdrift_hud.gd`, `ui/`; never loaded by a server); `game/net/` the bridge and wire. `maps/` holds the three hand-built maps, `imported/` (linked from airdrift-maps), `zones/` and `routes/`; `examples/` the suites, `tools/` the tools. **The file-by-file table is in [docs/README.md](docs/README.md#layout).**
 
 ## Running and testing
 
@@ -48,16 +48,16 @@ Short forms; the reasoning is in the linked file.
 
 **Units and movement**
 
-- Genre units everywhere an operator or player looks; metres only past `G2GMovement.tunables_for`; the ratio only in `G2GUnits` (0.01905 m); the jump is a launch velocity. [movement](docs/movement.md#everything-the-operator-touches-is-in-genre-units)
+- Genre units everywhere an operator or player looks; metres only past `AirdriftMovement.tunables_for`; the ratio only in `AirdriftUnits` (0.01905 m); the jump is a launch velocity. [movement](docs/movement.md#everything-the-operator-touches-is-in-genre-units)
 - A movement change abandons every run; styles' `auto_hop`/`easy_bhop` are `INHERIT` (except `prebhop`); validate a cvar on a copy before writing it. [movement](docs/movement.md#auto-bhop-is-the-servers-and-the-styles-defer-to-it)
 - A bot walks before it hops: a held jump from standstill creeps at 30 u/s, faithfully. [movement](docs/movement.md#a-held-jump-from-a-standstill-creeps-at-30-us-and-that-is-faithful)
 - A movement effect is refused during a ranked run, classified by what the definition changes, never by id. [movement](docs/movement.md#a-movement-effect-is-a-style-and-a-style-you-did-not-choose-is-a-record-you-did-not-set)
-- Third person is `G2GCamera` over one motor, never `DotTpsController`; arm `DotCameraBoom`, decided by `mp_forceview`; `tools/camera_check.gd` after touching either. [movement](docs/movement.md#third-person-is-cosmetic-and-stays-g2gcameras)
+- Third person is `AirdriftCamera` over one motor, never `DotTpsController`; arm `DotCameraBoom`, decided by `mp_forceview`; `tools/camera_check.gd` after touching either. [movement](docs/movement.md#third-person-is-cosmetic-and-stays-g2gcameras)
 - A ladder wins over water; the ladder mode never calls `categorise_ground`. [movement](docs/movement.md#ladders-and-water)
 
-- A map may change movement cvars through `cfg/game/game-g2gfast/dot_map/map/%.yml` (`G2GMapConfig`; default `sv_airaccelerate` 1000 for every map, 100 for the two maps that ask for it), restored on the next map. [movement](docs/movement.md#a-map-may-change-some-movement-cvars)
+- A map may change movement cvars through `cfg/game/game-g2gfast/dot_map/map/%.yml` (`AirdriftMapConfig`; default `sv_airaccelerate` 1000 for every map, 100 for the two maps that ask for it), restored on the next map. [movement](docs/movement.md#a-map-may-change-some-movement-cvars)
 
-- Every `G2GConfig` field is also a `g2g_<field>` cvar (not where an `sv_` one exists: `G2GModule.HAND_CVARS`), a key in one of four `cfg/game/game-g2gfast/config_<movement|content|modes|server>/game.yml` files (`G2GConfig.CFG_FILES` maps each `@export_group`; `G2GConfig.make_binder` is what the game, the client and the suites all use; every key is shipped commented out at its default by `addons/dot_game/qa/dot_game_cfg_templates.gd`, which `headless_config` holds in step; a key in the wrong file fails a dedicated boot) and a dot-workbench set per file; add a tunable as a documented `@export` there, never as a constant. Strict on a dedicated server. `mp_solidplayers` (1) gives every player a physics hull (`g2g_player_bodies.gd`) and `mp_teamblock`/`mp_enemyblock`/`!block`/`!noblock` decide which pairs stop; the genre default is `mp_enemyblock 0`, so runners still pass until an admin or a pair of `!block` requests says otherwise. A client meets a remote's hull where it is drawn (interpolated), not lagged back as game-fatal-contact does. [README](README.md#every-setting-as-a-file-a-cvar-and-a-panel)
+- Every `AirdriftConfig` field is also a `g2g_<field>` cvar (not where an `sv_` one exists: `AirdriftModule.HAND_CVARS`), a key in one of four `cfg/game/game-g2gfast/config_<movement|content|modes|server>/game.yml` files (`AirdriftConfig.CFG_FILES` maps each `@export_group`; `AirdriftConfig.make_binder` is what the game, the client and the suites all use; every key is shipped commented out at its default by `addons/dot_game/qa/dot_game_cfg_templates.gd`, which `headless_config` holds in step; a key in the wrong file fails a dedicated boot) and a dot-workbench set per file; add a tunable as a documented `@export` there, never as a constant. Strict on a dedicated server. `mp_solidplayers` (1) gives every player a physics hull (`airdrift_player_bodies.gd`) and `mp_teamblock`/`mp_enemyblock`/`!block`/`!noblock` decide which pairs stop; the genre default is `mp_enemyblock 0`, so runners still pass until an admin or a pair of `!block` requests says otherwise. A client meets a remote's hull where it is drawn (interpolated), not lagged back as game-fatal-contact does. [README](README.md#every-setting-as-a-file-a-cvar-and-a-panel)
 
 **Timer**
 
@@ -73,8 +73,8 @@ Short forms; the reasoning is in the linked file.
 - Geometry, zones and the bot read one list per route; `_pad_centre()` answers "where is the finish". [maps](docs/maps.md#geometry-and-zones-come-from-one-description)
 - Every route needs a start, a finish, a spawn and a pit of its own; every zone must hang over something. [maps](docs/maps.md#every-route-has-a-start-a-finish-a-spawn-and-a-pit-of-its-own)
 - The surf bot plans on a second motor (`DotFpsSimulator`), never a model of one; regenerate `maps/routes/<id>.surf.json` (`tools/surf_plan.tscn`) after a movement or collision change. [routes](docs/routes.md#a-surf-bot-planned-on-the-motor)
-- Server bots: `bot_quota` 0 by default, no timer (never filed), put back by the course; the surf pilot with no forecast (`veto_horizon` 0) where a cache exists, else the route bot, planned through dot-npc-ai's link annotations (`bot_nav`, `g2g_bot_nav.gd`) when the map has no route file. [routes](docs/routes.md#bots-on-a-server)
-- A new bonus is a RUN route sized inside `G2GReach`, declared with `add_course`, driven pad to finish with no reset and a pace check. [routes](docs/routes.md#how-the-bots-drive)
+- Server bots: `bot_quota` 0 by default, no timer (never filed), put back by the course; the surf pilot with no forecast (`veto_horizon` 0) where a cache exists, else the route bot, planned through dot-npc-ai's link annotations (`bot_nav`, `airdrift_bot_nav.gd`) when the map has no route file. [routes](docs/routes.md#bots-on-a-server)
+- A new bonus is a RUN route sized inside `AirdriftReach`, declared with `add_course`, driven pad to finish with no reset and a pace check. [routes](docs/routes.md#how-the-bots-drive)
 - There is no list of maps anywhere; discover. [map-delivery](docs/map-delivery.md#maps-are-dropped-in-not-listed)
 
 **Imported maps**
@@ -91,8 +91,8 @@ Short forms; the reasoning is in the linked file.
 
 **Rendering**
 
-- Hand-built maps: pastel `G2GTextures.ROLE_COLOURS` and `G2GLighting.DAYLIGHT` via `builtin()`, turned down under Compatibility; imported maps keep their own. [map-rendering](docs/map-rendering.md#the-hand-built-maps-pastel-grid-daylight-document)
-- A new drawing rule goes in `G2GBspMap._material_for` / `G2GLighting`, so published packs get it without a republish. [map-rendering](docs/map-rendering.md#a-rule-that-applies-at-build-time-reaches-published-packs)
+- Hand-built maps: pastel `AirdriftTextures.ROLE_COLOURS` and `AirdriftLighting.DAYLIGHT` via `builtin()`, turned down under Compatibility; imported maps keep their own. [map-rendering](docs/map-rendering.md#the-hand-built-maps-pastel-grid-daylight-document)
+- A new drawing rule goes in `AirdriftBspMap._material_for` / `AirdriftLighting`, so published packs get it without a republish. [map-rendering](docs/map-rendering.md#a-rule-that-applies-at-build-time-reaches-published-packs)
 - Never write `ALPHA` unconditionally. The water shader is copied in game-fatal-contact; keep the two in step. [map-rendering](docs/map-rendering.md#opaque-unless-the-material-says-translucent)
 - `$additive` surfaces draw with `blend_add` (manifest `additive`); a dark spawn view is in `DARK_SPAWNS` with why, or it is a bug. [map-rendering](docs/map-rendering.md#opaque-unless-the-material-says-translucent)
 - The atlas is expose-clip-gamma from the median luxel; never /255, never a tone map; displacements sample over the flat quad. [map-rendering](docs/map-rendering.md#the-lightmap-atlas-keeps-the-maps-contrast)
@@ -119,14 +119,14 @@ Short forms; the reasoning is in the linked file.
 
 **Client**
 
-- No `[input]` block; `G2GBindings.ROWS` is the one key list. A settings migration drops exactly the old default value. [client](docs/client.md#input-one-table-of-keys-and-no-input-block)
+- No `[input]` block; `AirdriftBindings.ROWS` is the one key list. A settings migration drops exactly the old default value. [client](docs/client.md#input-one-table-of-keys-and-no-input-block)
 - Pointer lock only on a click; Escape releases, never toggles. [client](docs/client.md#the-pointer-asked-for-never-told)
 - The rig's layers: set only the one `visible_to_owner` asks for. [client](docs/client.md#the-camera-the-rig-and-the-players-own-body)
 - The menu is dot-menu's and a view of the settings; the shell must be built with dot-menu. [client](docs/client.md#menus-are-dot-menus-the-pages-are-this-games)
 - The HUD follows the menu's theme (`apply_theme`, and `follow_hud(hud, null, false)` for dot-ui's pieces), never `hud_scale`. [client](docs/client.md#the-hud)
 - The flashlight is a shader default texture, never a `global uniform`. [client](docs/client.md#the-flashlight-lights-unshaded-surfaces-too)
 - Shake 0, flashes off, effect budget 24; emitters `local_coords`. [client](docs/client.md#presentation-settings-sound-and-effects)
-- **The loading cover is dot-game's `DotGameClient`** (`G2GClient.platform`, `gate` is `platform.gate`), with settings, console and pointer left to this client (`use_settings`, `use_console`, `capture_pointer` off; a partial migration like FC and playlot, because the menu pages, console, click-to-play pointer and roster board are the presentation's). `platform.busy_fn` (`_input_busy`) and `input_blocked_changed` suspend the samplers, so the cover stills them too, and the platform flushes the browser's filesystem: the menu and console are `G2GPresentation`'s and `G2GMenuPages`'s, the click-to-play notice is `_grab_mouse`'s. `tools/gate_shot.gd` renders the cover and the lift. `headless_maps` runs dot-core's `DotCollisionAudit` over each hand-built map and fails on a finding; `headless_imported` prints the count per imported map and fails on none (the Sky mesh is opted out with `dot_no_collision`).
+- **The loading cover is dot-game's `DotGameClient`** (`AirdriftClient.platform`, `gate` is `platform.gate`), with settings, console and pointer left to this client (`use_settings`, `use_console`, `capture_pointer` off; a partial migration like FC and playlot, because the menu pages, console, click-to-play pointer and roster board are the presentation's). `platform.busy_fn` (`_input_busy`) and `input_blocked_changed` suspend the samplers, so the cover stills them too, and the platform flushes the browser's filesystem: the menu and console are `AirdriftPresentation`'s and `AirdriftMenuPages`'s, the click-to-play notice is `_grab_mouse`'s. `tools/gate_shot.gd` renders the cover and the lift. `headless_maps` runs dot-core's `DotCollisionAudit` over each hand-built map and fails on a finding; `headless_imported` prints the count per imported map and fails on none (the Sky mesh is opted out with `dot_no_collision`).
 - Typing suspends the sampler as well as swallowing input; the console is a menu overlay, built after the menu (`build_console(menu)`). [client](docs/client.md#the-chat-box-and-a-run-nobody-may-lose-to-a-keystroke)
 
 **Services and layers**
@@ -134,12 +134,12 @@ Short forms; the reasoning is in the linked file.
 - One chat path: `player_chat` and `player_command` are hooked and cancelled; dot-moderation is built first. [services](docs/services.md#chat-is-the-policy-dot-server-stays-the-transport)
 - One rock-the-vote; the vote's clock is the one every screen shows; the session's clock ends no map while there is a vote. [services](docs/services.md#the-vote)
 - The fire command is a bit on the command, consumed on read, never retained over a lost packet; never `get_meta(key, null)`. [modes](docs/modes.md#the-trigger-is-one-ticks-input)
-- Weapon rows set `authored_tick_rate` (128). The held weapon reaches its owner only (`net_weapon`, `G2GArsenal.WIRE_IDS` appended). [modes](docs/modes.md#deathmatch-is-a-layer)
+- Weapon rows set `authored_tick_rate` (128). The held weapon reaches its owner only (`net_weapon`, `AirdriftArsenal.WIRE_IDS` appended). [modes](docs/modes.md#deathmatch-is-a-layer)
 - Entity ids from `DotEntityTable`, never derived; the userid is a separate thing. [modes](docs/modes.md#deathmatch-is-a-layer)
 - Hunters have no navigation graph (`require_navigable_spawn` off). Practice blocks spawn frozen, `only_practice` on. [modes](docs/modes.md#a-timer-map-is-a-critical-path-so-the-hunters-have-no-navigation-graph)
 - A hunter brain seeds from `npc.seed`, never `npc.instance_id`. dot-npc `docs/runtime.md`
 - Spectating: `force_camera` 0 unless deathmatch; `sv_spec_list` gated on the server. [modes](docs/modes.md#spectating)
-- A death's fall is the server's (`G2GCombat.decide_death`), sent as DEATH, undone by ALIVE; every `DotDamage` carries `tick`. [modes](docs/modes.md#a-dead-player-falls)
+- A death's fall is the server's (`AirdriftCombat.decide_death`), sent as DEATH, undone by ALIVE; every `DotDamage` carries `tick`. [modes](docs/modes.md#a-dead-player-falls)
 
 ## Not here yet
 

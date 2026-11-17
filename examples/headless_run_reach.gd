@@ -6,18 +6,18 @@ extends "headless_run_base.gd"
 ## unfinishable past platform three and game-fatal-contact's three maps had routes nothing had
 ## ever climbed, and every check over all of them passed, because a box count and a
 ## zone file cannot tell a platform from a wall. Each map here says which of its bodies
-## are a route and which reach a route is sized for (`G2GMap.add_course`); the rise and
-## the gap are read off the geometry by [G2GReach], and the reach is read off the
+## are a route and which reach a route is sized for (`AirdriftMap.add_course`); the rise and
+## the gap are read off the geometry by [AirdriftReach], and the reach is read off the
 ## tunables the server applies. Nothing in this function is a number about a map.
 func _test_reach() -> void:
 	_section("what the movement can reach")
 
-	var t := G2GMovement.tunables_for(game.config)
+	var t := AirdriftMovement.tunables_for(game.config)
 	var sweep := reach_sweep(t, game.tick_rate)
 
 	# The one number here that is written down, and it is the genre's rather than a
 	# map's: 301.99 u/s against 800 must peak at 57, or the units crossed wrongly.
-	_near(G2GReach.apex(t), 57.0, 0.5, "a jump peaks at the 57 units the genre's players know")
+	_near(AirdriftReach.apex(t), 57.0, 0.5, "a jump peaks at the 57 units the genre's players know")
 
 	for line in sweep["lines"]:
 		print(line)
@@ -54,14 +54,14 @@ func _test_reach() -> void:
 	# route asks for a period no such hop spans. That is a property of the map a server
 	# operator needs to know before turning the cvar off, and it is also the proof that
 	# the chain arithmetic refuses something rather than approving everything.
-	var capped_config: G2GConfig = game.config.duplicate()
+	var capped_config: AirdriftConfig = game.config.duplicate()
 	capped_config.enable_bunnyhopping = false
-	var capped := G2GMovement.tunables_for(capped_config)
+	var capped := AirdriftMovement.tunables_for(capped_config)
 	var intro := _built_map("bhop_g2g_intro")
-	var main_routes := G2GReach.measure((intro.courses[0] as Object).get("bodies"))
-	var verdict := G2GReach.chain(main_routes, capped, game.tick_rate, 1.0)
+	var main_routes := AirdriftReach.measure((intro.courses[0] as Object).get("bodies"))
+	var verdict := AirdriftReach.chain(main_routes, capped, game.tick_rate, 1.0)
 	print("  ..    with sv_enablebunnyhopping 0, bhop_g2g_intro's main line falls at %s (%.0f u short)"
-		% [(main_routes[int(verdict["at"])] as G2GReach.Route).name if not verdict["ok"] else "nothing", float(verdict["short"])])
+		% [(main_routes[int(verdict["at"])] as AirdriftReach.Route).name if not verdict["ok"] else "nothing", float(verdict["short"])])
 	_check(
 		not bool(verdict["ok"]),
 		"and with the landing cap on, bhop_g2g_intro's main line is not a route at all",
@@ -82,9 +82,9 @@ func reach_sweep(t: DotFpsTunables, tick_rate: int) -> Dictionary:
 
 	out["lines"].append(
 		"  ..    a jump peaks at %.1f u, climbs %.1f; from the lip at %.0f u/s it clears %.0f flat, %.0f onto +24, %.0f down 48; a perfect strafe adds %.0f u/s a tick"
-		% [G2GReach.apex(t), G2GReach.climb_limit(t), G2GReach.run_speed(t),
-			G2GReach.run_reach(0.0, t), G2GReach.run_reach(24.0, t), G2GReach.run_reach(-48.0, t),
-			G2GReach.strafe_gain(t, tick_rate)]
+		% [AirdriftReach.apex(t), AirdriftReach.climb_limit(t), AirdriftReach.run_speed(t),
+			AirdriftReach.run_reach(0.0, t), AirdriftReach.run_reach(24.0, t), AirdriftReach.run_reach(-48.0, t),
+			AirdriftReach.strafe_gain(t, tick_rate)]
 	)
 
 	for id in _hand_written_map_ids():
@@ -99,29 +99,29 @@ func reach_sweep(t: DotFpsTunables, tick_rate: int) -> Dictionary:
 
 		for course: Object in courses:
 			var refused: Array = []
-			var routes := G2GReach.measure(course.get("bodies"), refused)
+			var routes := AirdriftReach.measure(course.get("bodies"), refused)
 			var label := "%s %s" % [id, course.get("name")]
 
 			for index in refused:
 				out["refused"].append("%s body %d" % [label, index])
 
 			var widest := 0.0
-			var widest_route: G2GReach.Route = null
+			var widest_route: AirdriftReach.Route = null
 
-			for route: G2GReach.Route in routes:
+			for route: AirdriftReach.Route in routes:
 				widest = maxf(widest, route.gap)
 				if widest_route == null or route.gap > widest_route.gap:
 					widest_route = route
 
-				if G2GReach.walked(route, t):
+				if AirdriftReach.walked(route, t):
 					continue
 
-				if route.rise > G2GReach.climb_limit(t):
+				if route.rise > AirdriftReach.climb_limit(t):
 					out["too_high"].append("%s %s rises %.0f u" % [label, route.name, route.rise])
 					continue
 
-				if int(course.get("kind")) == G2GReach.Kind.RUN:
-					var reach := G2GReach.run_reach(route.rise, t)
+				if int(course.get("kind")) == AirdriftReach.Kind.RUN:
+					var reach := AirdriftReach.run_reach(route.rise, t)
 					if route.gap > reach:
 						out["too_far"].append("%s %s is %.0f u against %.0f" % [label, route.name, route.gap, reach])
 
@@ -129,17 +129,17 @@ func reach_sweep(t: DotFpsTunables, tick_rate: int) -> Dictionary:
 			# check above asks. This printed the flat reach whatever the landing, so the
 			# ridge read "widest 192 u against a standing jump's 189" -- a failure on the
 			# page for a gap that is a drop of 48 with 222 to spare, and passing.
-			if int(course.get("kind")) == G2GReach.Kind.RUN:
+			if int(course.get("kind")) == AirdriftReach.Kind.RUN:
 				out["lines"].append("  ..    %s: RUN, %d jumps, widest %s" % [
 					label, routes.size(), _reach_text(widest_route, t)])
 				continue
 
-			var needed := G2GReach.strafe_needed(routes, t, tick_rate)
-			var from_start := G2GReach.chain(routes, t, tick_rate, 1.0)
+			var needed := AirdriftReach.strafe_needed(routes, t, tick_rate)
+			var from_start := AirdriftReach.chain(routes, t, tick_rate, 1.0)
 
 			if not bool(from_start["ok"]):
 				out["unchainable"].append("%s falls at %s, %.0f u short" % [
-					label, (routes[int(from_start["at"])] as G2GReach.Route).name, float(from_start["short"])
+					label, (routes[int(from_start["at"])] as AirdriftReach.Route).name, float(from_start["short"])
 				])
 
 			out["lines"].append("  ..    %s: CHAIN, %d hops, widest %.0f u, from the start line needs %s"
@@ -152,16 +152,16 @@ func reach_sweep(t: DotFpsTunables, tick_rate: int) -> Dictionary:
 				if zone.kind != DotTimerZone.Kind.STAGE or zone.track != int(course.get("track")):
 					continue
 
-				var at := G2GUnits.vector_to_units(zone.destination)
+				var at := AirdriftUnits.vector_to_units(zone.destination)
 				var from_index := -1
 
 				for i in range(routes.size()):
-					var landing := G2GReach.footprint((routes[i] as G2GReach.Route).to_body)
+					var landing := AirdriftReach.footprint((routes[i] as AirdriftReach.Route).to_body)
 					if Geometry2D.is_point_in_polygon(Vector2(at.x, at.z), landing["corners"]):
 						from_index = i + 1
 						break
 
-				var restart := G2GReach.strafe_needed(routes, t, tick_rate, from_index) if from_index >= 0 else 2.0
+				var restart := AirdriftReach.strafe_needed(routes, t, tick_rate, from_index) if from_index >= 0 else 2.0
 				out["restarts"].append([label, int(zone.number), restart])
 				out["lines"].append("  ..      !s%d from a standstill%s: needs %s" % [
 					int(zone.number),
@@ -176,7 +176,7 @@ func reach_sweep(t: DotFpsTunables, tick_rate: int) -> Dictionary:
 
 ## "192 u down 48, inside the 222 a jump from its lip reaches": a RUN gap beside the
 ## reach [method reach_sweep] judges it by, which depends on the landing's height.
-static func _reach_text(route: G2GReach.Route, t: DotFpsTunables) -> String:
+static func _reach_text(route: AirdriftReach.Route, t: DotFpsTunables) -> String:
 	if route == null:
 		return "none"
 	var height := ""
@@ -184,7 +184,7 @@ static func _reach_text(route: G2GReach.Route, t: DotFpsTunables) -> String:
 		height = " onto +%.0f" % route.rise
 	elif route.rise < -0.5:
 		height = " down %.0f" % -route.rise
-	var reach := G2GReach.run_reach(route.rise, t)
+	var reach := AirdriftReach.run_reach(route.rise, t)
 	return "%.0f u%s, %s the %.0f a jump from its lip reaches there" % [
 		route.gap, height, "inside" if route.gap <= reach else "PAST", reach]
 
@@ -203,7 +203,7 @@ static func _percent(fraction: float) -> String:
 ## the run. `[stage-yaw-1]` found nothing listened to `stage_requested`.
 func _test_stage_command() -> void:
 	_section("a stage restart")
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
@@ -228,7 +228,7 @@ func _test_stage_command() -> void:
 	_done()
 
 
-## R and R twice: `G2GGame.restart`, which both the offline client and the server's
+## R and R twice: `AirdriftGame.restart`, which both the offline client and the server's
 ## RESTART request call. One R is the start of the stage you are in, and the start of the
 ## track when you are in none; two are the main start zone, from a bonus too.
 func _test_restart_key() -> void:
@@ -236,8 +236,8 @@ func _test_restart_key() -> void:
 	var loaded: DotResult = await game.change_map(&"bhop_g2g_intro")
 	_check(loaded.ok, "bhop_g2g_intro loads, for its staged main route and its bonuses")
 	await get_tree().physics_frame
-	var bot: G2GPlayer = game.players[&"bot"]
-	var map: G2GMap = game.current_map_node() as G2GMap
+	var bot: AirdriftPlayer = game.players[&"bot"]
+	var map: AirdriftMap = game.current_map_node() as AirdriftMap
 	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
@@ -248,7 +248,7 @@ func _test_restart_key() -> void:
 	bot.teleport(start + Vector3(0.0, 0.0, -40.0), 0.0)
 	bot.timer.run.status = DotTimerRun.Status.RUNNING
 	bot.timer.run.stage = 2
-	var once := game.restart(&"bot", G2GEvents.RESTART_STAGE)
+	var once := game.restart(&"bot", AirdriftEvents.RESTART_STAGE)
 	var stage_two := game.timers.zones.stage_zone(DotTimerTrack.MAIN, 2)
 	_check(once.ok and stage_two != null and bot.global_position.distance_to(stage_two.destination) < 0.01,
 		"one R in stage 2 is the start of stage 2", "%s" % bot.global_position)
@@ -257,28 +257,28 @@ func _test_restart_key() -> void:
 	bot.teleport(start + Vector3(0.0, 0.0, -40.0), 0.0)
 	bot.timer.run.status = DotTimerRun.Status.RUNNING
 	bot.timer.run.stage = 1
-	var _first := game.restart(&"bot", G2GEvents.RESTART_STAGE)
+	var _first := game.restart(&"bot", AirdriftEvents.RESTART_STAGE)
 	_check(bot.global_position.distance_to(start) < 0.01, "in stage 1 it is the start zone")
 
 	bot.teleport(start + Vector3(0.0, 0.0, -40.0), 0.0)
 	bot.timer.run.status = DotTimerRun.Status.STOPPED
 	bot.timer.run.stage = 3
-	var _idle := game.restart(&"bot", G2GEvents.RESTART_STAGE)
+	var _idle := game.restart(&"bot", AirdriftEvents.RESTART_STAGE)
 	_check(bot.global_position.distance_to(start) < 0.01, "and with no run going it is the start zone too")
 
 	game.timers.set_player_track(&"bot", 1)
 	var bonus_spawn := map.spawn_for(1) if map != null else Vector3.ZERO
-	var _bonus := game.restart(&"bot", G2GEvents.RESTART_STAGE)
+	var _bonus := game.restart(&"bot", AirdriftEvents.RESTART_STAGE)
 	_check(bot.timer.track == 1 and bot.global_position.distance_to(bonus_spawn) < 1.0,
 		"on a bonus one R is the bonus's start", "%s vs %s" % [bot.global_position, bonus_spawn])
-	var _twice := game.restart(&"bot", G2GEvents.RESTART_MAIN)
+	var _twice := game.restart(&"bot", AirdriftEvents.RESTART_MAIN)
 	_check(bot.timer.track == DotTimerTrack.MAIN and bot.global_position.distance_to(start) < 0.01,
 		"and two are the main start zone")
 
 	var watcher := game.add_player(&"watcher", "Watcher", false)
 	await get_tree().physics_frame
 	var _watching := game.spectate.watch(&"watcher", &"bot")
-	var _r := game.restart(&"watcher", G2GEvents.RESTART_STAGE)
+	var _r := game.restart(&"watcher", AirdriftEvents.RESTART_STAGE)
 	_check(not game.spectate.is_spectating(&"watcher"), "R stops spectating: a player who pressed it wants to run")
 	game.remove_player(&"watcher")
 
@@ -289,7 +289,7 @@ func _test_restart_key() -> void:
 
 func _test_bhop_run() -> void:
 	_section("a bhop run")
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
 
@@ -317,7 +317,7 @@ func _test_bhop_run() -> void:
 	# Kept, not gained: a straight-line hopper has no strafe to gain from, so the
 	# most it can do is not lose the prestrafe to friction — which a held key on a
 	# server with autobhop does, and a tapped one usually does not.
-	_check(G2GUnits.to_units(top) >= 240.0, "and hopping keeps the run speed friction would have taken", "%s u/s" % G2GUnits.format_speed(top))
+	_check(AirdriftUnits.to_units(top) >= 240.0, "and hopping keeps the run speed friction would have taken", "%s u/s" % AirdriftUnits.format_speed(top))
 	_check(bot.controller.stats.perfect_ratio() > 0.9, "with the hops perfect, because the key is held", "%.2f" % bot.controller.stats.perfect_ratio())
 
 	# A straight-line bot cannot strafe, so it falls at the wide gaps — and the
@@ -400,7 +400,7 @@ func _needle_jumps_at(z_units: float) -> bool:
 func _test_needle_bonus() -> void:
 	_section("the needle, run end to end")
 
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	var needle := DotTimerTrack.of_bonus(2)
 
 	_check(game.timers.set_player_track(&"bot", needle), "a player can switch to the needle")
@@ -460,12 +460,12 @@ func _test_needle_bonus() -> void:
 		c.move = Vector2(0.0, 1.0)
 		c.set_button(
 			DotFpsCommand.BUTTON_JUMP,
-			_needle_jumps_at(G2GUnits.vector_to_units(bot.global_position).z)
+			_needle_jumps_at(AirdriftUnits.vector_to_units(bot.global_position).z)
 		)
 		bot.controller.apply_command(c)
 		await get_tree().physics_frame
-		top = maxf(top, G2GUnits.to_units(bot.speed()))
-		deepest = minf(deepest, G2GUnits.vector_to_units(bot.global_position).z)
+		top = maxf(top, AirdriftUnits.to_units(bot.speed()))
+		deepest = minf(deepest, AirdriftUnits.vector_to_units(bot.global_position).z)
 
 		if reset[0]:
 			resets += 1
@@ -493,8 +493,8 @@ func _test_needle_bonus() -> void:
 		"crossing both of its stage lines, in order",
 		"%s, ended at %s u, %s u/s" % [
 			str(splits),
-			str(G2GUnits.vector_to_units(bot.global_position).round()),
-			G2GUnits.format_speed(bot.speed())
+			str(AirdriftUnits.vector_to_units(bot.global_position).round()),
+			AirdriftUnits.format_speed(bot.speed())
 		]
 	)
 	_check(
@@ -533,7 +533,7 @@ func _test_ridge_bonus() -> void:
 	var changed: DotResult = await game.change_map(&"bhop_g2g_stages")
 	_check(changed.ok, "the stages map loads")
 
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	var ridge := DotTimerTrack.of_bonus(2)
 	var zones := game.timers.zones
 	_check(zones != null and zones.playable_tracks() == PackedInt32Array([0, 1, 2, 3, 4])
@@ -574,7 +574,7 @@ func _test_ridge_bonus() -> void:
 	var top := 0.0
 	var deepest := 0.0
 	var highest := -INF
-	var entry := G2GUnits.vector_to_units(bot.global_position)
+	var entry := AirdriftUnits.vector_to_units(bot.global_position)
 	var descent := _DescentLedger.new()
 
 	for _i in range(4000):
@@ -582,15 +582,15 @@ func _test_ridge_bonus() -> void:
 		c.move = Vector2(0.0, 1.0)
 		c.set_button(
 			DotFpsCommand.BUTTON_JUMP,
-			_ridge_jumps_at(G2GUnits.vector_to_units(bot.global_position).z)
+			_ridge_jumps_at(AirdriftUnits.vector_to_units(bot.global_position).z)
 		)
-		var before := G2GUnits.vector_to_units(bot.global_position)
+		var before := AirdriftUnits.vector_to_units(bot.global_position)
 		bot.controller.apply_command(c)
 		await get_tree().physics_frame
-		var at := G2GUnits.vector_to_units(bot.global_position)
+		var at := AirdriftUnits.vector_to_units(bot.global_position)
 		if not reset[0]:
 			descent.add(before.y - at.y, bot.controller.state)
-		top = maxf(top, G2GUnits.to_units(bot.speed()))
+		top = maxf(top, AirdriftUnits.to_units(bot.speed()))
 		deepest = minf(deepest, at.z)
 		highest = maxf(highest, at.y)
 		if reset[0]:
@@ -622,7 +622,7 @@ func _test_ridge_bonus() -> void:
 	_check(
 		finished.size() == 1 and finished[0].track == ridge,
 		"and the finish line ends the run, on the bonus's own track",
-		"%d finished, ended at %s u" % [finished.size(), str(G2GUnits.vector_to_units(bot.global_position).round())]
+		"%d finished, ended at %s u" % [finished.size(), str(AirdriftUnits.vector_to_units(bot.global_position).round())]
 	)
 
 	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)

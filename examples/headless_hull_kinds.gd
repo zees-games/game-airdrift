@@ -1,10 +1,10 @@
 extends DotGameCheckSuite
 
 ## The importer's per-hull kinds reach the scene: a manifest with `collision.hull_kinds` tags those shapes (meta `hull_kind`) and an older manifest loads as all solid.
-## Run: G2G_HULL_KIND_DIR=<dir of migrated maps, <id>/<id>.json> (or a copy in .hull_kinds_local/, never committed) godot --headless --path . res://examples/headless_hull_kinds.tscn
+## Run: AIRDRIFT_HULL_KIND_DIR=<dir of migrated maps, <id>/<id>.json> (or a copy in .hull_kinds_local/, never committed) godot --headless --path . res://examples/headless_hull_kinds.tscn
 ## The migrated maps are made locally by dot-map-convert/adapters/game-g2gfast/migrate_batch.py and never committed.
 
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
 const OLD := "res://maps/imported/bhop_eazy/bhop_eazy.json"
 var _entered := 0
 var _completed := 0
@@ -16,8 +16,10 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("game-g2gfast: collision hull kinds")
-	var root := OS.get_environment("G2G_HULL_KIND_DIR")
+	print("game-airdrift: collision hull kinds")
+	var root := OS.get_environment("AIRDRIFT_HULL_KIND_DIR")
+	if root == "":
+		root = OS.get_environment("G2G_HULL_KIND_DIR")
 	# An offloaded run does not carry the environment: a local, uncommitted copy of the migrated maps can sit in the worktree instead.
 	if root.is_empty() and DirAccess.dir_exists_absolute(ProjectSettings.globalize_path("res://.hull_kinds_local")):
 		root = ProjectSettings.globalize_path("res://.hull_kinds_local")
@@ -27,7 +29,7 @@ func _run() -> void:
 			if FileAccess.file_exists(root.path_join(id).path_join("%s.json" % id)):
 				ids.append(id)
 	if ids.is_empty():
-		print("SKIP: G2G_HULL_KIND_DIR names no migrated maps")
+		print("SKIP: AIRDRIFT_HULL_KIND_DIR names no migrated maps")
 		get_tree().quit(0)
 		return
 	ids.sort()
@@ -76,8 +78,8 @@ func _run() -> void:
 	_report_sections(_entered, _completed, ids.size() + 1)
 
 
-func _build(path: String) -> G2GBspMap:
-	var map := (load("res://game/g2g_bsp_map.gd") as GDScript).new() as G2GBspMap
+func _build(path: String) -> AirdriftBspMap:
+	var map := (load("res://game/airdrift_bsp_map.gd") as GDScript).new() as AirdriftBspMap
 	map.build_from_path(path)
 	add_child(map)
 	return map

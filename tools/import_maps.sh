@@ -7,7 +7,7 @@
 #   tools/import_maps.sh --force                # re-import everything
 #
 # This is the "drop a map in" half. The other half is that nothing keeps a list:
-# G2GMapCatalogue scans maps/imported/ at boot, and `maps_reload` on a running server
+# AirdriftMapCatalogue scans maps/imported/ at boot, and `maps_reload` on a running server
 # rescans it, so a map appears by existing and disappears by not existing.
 #
 # It re-runs `godot --import` at the end and NOT once per map, because the PNGs each

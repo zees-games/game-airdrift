@@ -271,8 +271,8 @@ case "$cmd" in
         check_addons
         [ -z "${1:-}" ] || [ "$1" = "--check" ] || die "usage: ./game.sh defs [--check]" 2
         rc=0
-        defs_run dot_achievements "res://game/g2g_awards.gd:catalogue" deployment/achievement-defs.json "$@" || rc=1
-        defs_run dot_leaderboard "res://game/g2g_game_state.gd:board_definitions" deployment/leaderboard-defs.json "$@" || rc=1
+        defs_run dot_achievements "res://game/airdrift_awards.gd:catalogue" deployment/achievement-defs.json "$@" || rc=1
+        defs_run dot_leaderboard "res://game/airdrift_game_state.gd:board_definitions" deployment/leaderboard-defs.json "$@" || rc=1
         exit "$rc"
         ;;
     play)

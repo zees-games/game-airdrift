@@ -1,7 +1,7 @@
-extends "../game/g2g_map.gd"
+extends "../game/airdrift_map.gd"
 
-const G2GGeometry := preload("../game/g2g_geometry.gd")
-const G2GReach := preload("../game/g2g_reach.gd")
+const AirdriftGeometry := preload("../game/airdrift_geometry.gd")
+const AirdriftReach := preload("../game/airdrift_reach.gd")
 
 ## `bhop_g2g_intro` — sixteen blocks with widening gaps, three stages, and four bonuses.
 ##
@@ -74,7 +74,7 @@ const NEEDLE_LAST_WIDTH := 48.0
 ## are), and each faces the direction the route LEAVES it in, which is the direction a
 ## restarting player has to go.
 ##
-## [b]Every gap is a RUN gap, sized with [G2GReach] under the shipped cvars[/b] — 189
+## [b]Every gap is a RUN gap, sized with [AirdriftReach] under the shipped cvars[/b] — 189
 ## flat, 166 onto +24, 222 down 48 — and each is at least 29 units inside it, so a
 ## player who lands anywhere can run to the lip and take the next one. That is what a
 ## corner needs: a turn costs the speed a chain would be carrying, so a turning route
@@ -114,7 +114,7 @@ const HAIRPIN_LEGS: Array = [
 ## finish colour, as the ridge's and the hairpin's splits are.
 ##
 ## [b]A stone is sized FROM the reach, not inside it.[/b] A jump taken at the lip at run
-## speed comes down a fixed distance on (G2GReach RUN: 189 flat, 166 onto +24, 222 down
+## speed comes down a fixed distance on (AirdriftReach RUN: 189 flat, 166 onto +24, 222 down
 ## 48), and a stone has to contain the landing: its gap is chosen so that distance
 ## lands about 40 to 60 units onto a 96-unit block. A 128 gap before a stone at the same
 ## height, 112 before a step up, 144 before a step down 24, 160 before a drop of 48. A
@@ -153,81 +153,81 @@ const STUTTER_BLOCKS: Array = [
 
 func _build() -> void:
 	tier = 2
-	G2GGeometry.sun(self)
+	AirdriftGeometry.sun(self)
 	fallback_spawn_units = Vector3(0.0, FLOOR_Y + 8.0, START_Z + 320.0)
 
 	# The start pad, long enough to build speed on.
-	var main: Array = [G2GGeometry.box(
+	var main: Array = [AirdriftGeometry.box(
 		self, Vector3(0.0, FLOOR_Y - BLOCK_THICKNESS * 0.5, START_Z + 256.0),
-		Vector3(BLOCK_WIDTH, BLOCK_THICKNESS, 512.0), G2GGeometry.COLOUR_START
+		Vector3(BLOCK_WIDTH, BLOCK_THICKNESS, 512.0), AirdriftGeometry.COLOUR_START
 	)]
 
 	var z := START_Z
 
 	for i in range(BLOCKS):
-		main.append(G2GGeometry.box(
+		main.append(AirdriftGeometry.box(
 			self,
 			Vector3(0.0, FLOOR_Y - BLOCK_THICKNESS * 0.5, z - BLOCK_LENGTH * 0.5),
 			Vector3(BLOCK_WIDTH, BLOCK_THICKNESS, BLOCK_LENGTH),
-			G2GGeometry.COLOUR_PLATFORM
+			AirdriftGeometry.COLOUR_PLATFORM
 		))
 		z -= BLOCK_LENGTH + gap_at(i)
 
 	# The finish pad.
-	main.append(G2GGeometry.box(
+	main.append(AirdriftGeometry.box(
 		self, Vector3(0.0, FLOOR_Y - BLOCK_THICKNESS * 0.5, z - 192.0),
-		Vector3(BLOCK_WIDTH, BLOCK_THICKNESS, 384.0), G2GGeometry.COLOUR_END
+		Vector3(BLOCK_WIDTH, BLOCK_THICKNESS, 384.0), AirdriftGeometry.COLOUR_END
 	))
 
 	# [b]A CHAIN, and the map's own sentence says why.[/b] From the ninth gap on (198
 	# units) nothing crosses without speed a standing jump does not have, so the whole
-	# line is sized for hops carried at course speed — see G2GReach.
-	add_course("main", DotTimerTrack.MAIN, G2GReach.Kind.CHAIN, main)
+	# line is sized for hops carried at course speed — see AirdriftReach.
+	add_course("main", DotTimerTrack.MAIN, AirdriftReach.Kind.CHAIN, main)
 
 	# The bonus: off to the right of the start pad, three big platforms and a pad.
 	var warm_up: Array = []
 
 	for i in range(3):
-		warm_up.append(G2GGeometry.box(
+		warm_up.append(AirdriftGeometry.box(
 			self,
 			Vector3(640.0 + float(i) * 320.0, FLOOR_Y - BLOCK_THICKNESS * 0.5, START_Z + 256.0),
-			Vector3(192.0, BLOCK_THICKNESS, 192.0), G2GGeometry.COLOUR_BONUS
+			Vector3(192.0, BLOCK_THICKNESS, 192.0), AirdriftGeometry.COLOUR_BONUS
 		))
 
-	warm_up.append(G2GGeometry.box(
+	warm_up.append(AirdriftGeometry.box(
 		self, Vector3(1600.0, FLOOR_Y - BLOCK_THICKNESS * 0.5, START_Z + 256.0),
-		Vector3(256.0, BLOCK_THICKNESS, 256.0), G2GGeometry.COLOUR_END
+		Vector3(256.0, BLOCK_THICKNESS, 256.0), AirdriftGeometry.COLOUR_END
 	))
 
 	# A warm-up is a RUN course: every gap in it is a jump from the lip at run speed,
 	# which is what "a warm-up" has to mean for a player who cannot chain yet.
-	add_course("warm-up", DotTimerTrack.of_bonus(1), G2GReach.Kind.RUN, warm_up)
+	add_course("warm-up", DotTimerTrack.of_bonus(1), AirdriftReach.Kind.RUN, warm_up)
 
 	# Bonus 2, `the needle`. Its own start pad west of the main one, then ten blocks at a
 	# constant 96-unit gap whose width closes from 192 to 48, and a finish wide enough
 	# to land on after the last of them.
-	var needle: Array = [G2GGeometry.box(
+	var needle: Array = [AirdriftGeometry.box(
 		self, Vector3(NEEDLE_X, FLOOR_Y - BLOCK_THICKNESS * 0.5, START_Z + 256.0),
-		Vector3(256.0, BLOCK_THICKNESS, 512.0), G2GGeometry.COLOUR_START
+		Vector3(256.0, BLOCK_THICKNESS, 512.0), AirdriftGeometry.COLOUR_START
 	)]
 
 	for i in range(NEEDLE_BLOCKS):
-		needle.append(G2GGeometry.box(
+		needle.append(AirdriftGeometry.box(
 			self,
 			Vector3(NEEDLE_X, FLOOR_Y - BLOCK_THICKNESS * 0.5, needle_z(i) - BLOCK_LENGTH * 0.5),
 			Vector3(needle_width(i), BLOCK_THICKNESS, BLOCK_LENGTH),
-			G2GGeometry.COLOUR_BONUS
+			AirdriftGeometry.COLOUR_BONUS
 		))
 
-	needle.append(G2GGeometry.box(
+	needle.append(AirdriftGeometry.box(
 		self,
 		Vector3(NEEDLE_X, FLOOR_Y - BLOCK_THICKNESS * 0.5, needle_end_z() - 192.0),
-		Vector3(256.0, BLOCK_THICKNESS, 384.0), G2GGeometry.COLOUR_END
+		Vector3(256.0, BLOCK_THICKNESS, 384.0), AirdriftGeometry.COLOUR_END
 	))
 
 	# RUN, and it is the whole design of the route: "no hop on it is ever about carrying
 	# speed", which is what makes it the one a scripted bot finishes.
-	add_course("the needle", DotTimerTrack.of_bonus(2), G2GReach.Kind.RUN, needle)
+	add_course("the needle", DotTimerTrack.of_bonus(2), AirdriftReach.Kind.RUN, needle)
 
 	_build_hairpin()
 	_build_stutter()
@@ -235,61 +235,61 @@ func _build() -> void:
 
 ## Bonus 3, `the hairpin`. See [constant HAIRPIN_LEGS].
 func _build_hairpin() -> void:
-	var bodies: Array = [G2GGeometry.box(
+	var bodies: Array = [AirdriftGeometry.box(
 		self,
 		Vector3(HAIRPIN_X, FLOOR_Y - BLOCK_THICKNESS * 0.5, START_Z + HAIRPIN_PAD_LENGTH * 0.5),
-		Vector3(HAIRPIN_PAD_WIDTH, BLOCK_THICKNESS, HAIRPIN_PAD_LENGTH), G2GGeometry.COLOUR_START
+		Vector3(HAIRPIN_PAD_WIDTH, BLOCK_THICKNESS, HAIRPIN_PAD_LENGTH), AirdriftGeometry.COLOUR_START
 	)]
 
 	for block: Dictionary in hairpin_blocks():
 		var centre: Vector3 = block["centre"]
 		var extent: Vector2 = block["extent"]
-		bodies.append(G2GGeometry.box(
+		bodies.append(AirdriftGeometry.box(
 			self,
 			Vector3(centre.x, centre.y - BLOCK_THICKNESS * 0.5, centre.z),
 			Vector3(extent.x, BLOCK_THICKNESS, extent.y),
 			# A corner carries a stage line and is drawn in the finish colour: a split a
 			# player can see, and the block they are about to turn on.
-			G2GGeometry.COLOUR_END if int(block["stage"]) > 0 else G2GGeometry.COLOUR_BONUS
+			AirdriftGeometry.COLOUR_END if int(block["stage"]) > 0 else AirdriftGeometry.COLOUR_BONUS
 		))
 
 	var pad := hairpin_pad()
-	bodies.append(G2GGeometry.box(
+	bodies.append(AirdriftGeometry.box(
 		self, Vector3(pad.x, pad.y - BLOCK_THICKNESS * 0.5, pad.z),
-		Vector3(HAIRPIN_PAD_WIDTH, BLOCK_THICKNESS, HAIRPIN_FINISH_LENGTH), G2GGeometry.COLOUR_END
+		Vector3(HAIRPIN_PAD_WIDTH, BLOCK_THICKNESS, HAIRPIN_FINISH_LENGTH), AirdriftGeometry.COLOUR_END
 	))
 
 	# RUN, for the reason in [constant HAIRPIN_LEGS]: every corner spends the speed.
-	add_course("the hairpin", DotTimerTrack.of_bonus(3), G2GReach.Kind.RUN, bodies)
+	add_course("the hairpin", DotTimerTrack.of_bonus(3), AirdriftReach.Kind.RUN, bodies)
 
 
 ## Bonus 4, `the stutter`. See [constant STUTTER_BLOCKS].
 func _build_stutter() -> void:
-	var bodies: Array = [G2GGeometry.box(
+	var bodies: Array = [AirdriftGeometry.box(
 		self,
 		Vector3(STUTTER_X, FLOOR_Y - BLOCK_THICKNESS * 0.5, START_Z + STUTTER_PAD_LENGTH * 0.5),
-		Vector3(STUTTER_PAD_WIDTH, BLOCK_THICKNESS, STUTTER_PAD_LENGTH), G2GGeometry.COLOUR_START
+		Vector3(STUTTER_PAD_WIDTH, BLOCK_THICKNESS, STUTTER_PAD_LENGTH), AirdriftGeometry.COLOUR_START
 	)]
 
 	for block: Dictionary in stutter_blocks():
 		var centre: Vector3 = block["centre"]
 		var extent: Vector2 = block["extent"]
-		bodies.append(G2GGeometry.box(
+		bodies.append(AirdriftGeometry.box(
 			self,
 			Vector3(centre.x, centre.y - BLOCK_THICKNESS * 0.5, centre.z),
 			Vector3(extent.x, BLOCK_THICKNESS, extent.y),
-			G2GGeometry.COLOUR_END if int(block["stage"]) > 0 else G2GGeometry.COLOUR_BONUS
+			AirdriftGeometry.COLOUR_END if int(block["stage"]) > 0 else AirdriftGeometry.COLOUR_BONUS
 		))
 
 	var pad := stutter_pad()
-	bodies.append(G2GGeometry.box(
+	bodies.append(AirdriftGeometry.box(
 		self, Vector3(pad.x, pad.y - BLOCK_THICKNESS * 0.5, pad.z),
-		Vector3(STUTTER_PAD_WIDTH, BLOCK_THICKNESS, STUTTER_FINISH_LENGTH), G2GGeometry.COLOUR_END
+		Vector3(STUTTER_PAD_WIDTH, BLOCK_THICKNESS, STUTTER_FINISH_LENGTH), AirdriftGeometry.COLOUR_END
 	))
 
 	# RUN: every gap is a jump from the lip, and the stones are sized so that is also
 	# the jump that lands on them. See [constant STUTTER_BLOCKS].
-	add_course("the stutter", DotTimerTrack.of_bonus(4), G2GReach.Kind.RUN, bodies)
+	add_course("the stutter", DotTimerTrack.of_bonus(4), AirdriftReach.Kind.RUN, bodies)
 
 
 ## Every block of the stutter in order, in the hairpin's shape (`centre`, `extent`,

@@ -1,9 +1,9 @@
 extends DotGameCheckSuite
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GMapCatalogue := preload("../game/g2g_map_catalogue.gd")
-const G2GVoteMapSource := preload("../game/g2g_vote_map_source.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
+const AirdriftVoteMapSource := preload("../game/airdrift_vote_map_source.gd")
 
 ## What a subscribed map pack does to this game, against a fixture [DotContentIndex]
 ## registered as the process's shared one for the length of the run.
@@ -26,7 +26,7 @@ const PREFIX := "res://examples/workshop_fixture/"
 var _entered := 0
 var _completed := 0
 var _index: DotContentIndex = null
-var _game: G2GGame = null
+var _game: AirdriftGame = null
 
 
 func _ready() -> void:
@@ -35,7 +35,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("g2gfast — Workshop maps")
+	print("Airdrift — Workshop maps")
 	_index = _make_index(DotContentIndex.SESSION_SOLO)
 	DotRegistry.register(DotContentIndex.SERVICE, _index)
 	_test_accepts()
@@ -78,7 +78,7 @@ func _names(rows: Array) -> PackedStringArray:
 
 func _ballot_labels(catalogue: DotMapCatalogue) -> PackedStringArray:
 	var out := PackedStringArray()
-	var source := G2GVoteMapSource.new()
+	var source := AirdriftVoteMapSource.new()
 	source.catalogue = catalogue
 	for choice in source.choices():
 		out.append(choice.label())
@@ -89,7 +89,7 @@ func _test_accepts() -> void:
 	_entered += 1
 	print("")
 	print("what the game accepts")
-	var kinds := G2GMapCatalogue.accepted_map_kinds()
+	var kinds := AirdriftMapCatalogue.accepted_map_kinds()
 	_check(kinds == PackedStringArray(["surf", "bhop", "kz", "race"]), "provides.json accepts surf, bhop, kz and race", str(kinds))
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://provides.json"))
 	var accepts: Dictionary = (parsed as Dictionary).get("accepts", {})
@@ -102,31 +102,31 @@ func _test_catalogue() -> void:
 	_entered += 1
 	print("")
 	print("solo catalogue and ballot")
-	var catalogue := G2GMapCatalogue.discover(PackedStringArray(), _index)
+	var catalogue := AirdriftMapCatalogue.discover(PackedStringArray(), _index)
 	var def := catalogue.get_map(MAP)
 	_check(def != null, "the accepted map is in the catalogue")
 	_check(def != null and def.label() == "Fixture Hill [Fixture Pack]", "its label names the pack")
-	_check(def != null and def.kind == &"surf" and G2GMapCatalogue.is_workshop(def), "it is a surf Workshop map")
+	_check(def != null and def.kind == &"surf" and AirdriftMapCatalogue.is_workshop(def), "it is a surf Workshop map")
 	_check(def != null and def.zones_path == PREFIX + "zones.json", "its zones file is the pack's own")
 	_check(catalogue.get_map(OTHER_KIND) == null, "a map kind the game does not accept is filtered out")
 	var own := catalogue.get_map(&"surf_g2g_intro")
-	_check(own != null and not G2GMapCatalogue.is_workshop(own) and own.label() == own.name_or_id(),
+	_check(own != null and not AirdriftMapCatalogue.is_workshop(own) and own.label() == own.name_or_id(),
 		"a pack map claiming a built-in id does not replace it")
 	var labels := _ballot_labels(catalogue)
 	_check(labels.has("Fixture Hill [Fixture Pack]"), "the ballot lists it as Name [Pack]", str(labels))
 	_check(not labels.has("Fixture Sandbox [Fixture Pack]"), "and not the other kind")
-	var rescan := G2GMapCatalogue.rescan(catalogue)
+	var rescan := AirdriftMapCatalogue.rescan(catalogue)
 	_check(catalogue.has(MAP) and not (rescan["removed"] as Array).has(MAP),
 		"a disk rescan does not drop a Workshop map for not being on disk")
 	_completed += 1
 
 
 func _boot() -> void:
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = &"bhop_g2g_intro"
-	_game = G2GGame.new()
+	_game = AirdriftGame.new()
 	_game.config = config
 	add_child(_game)
 	for _i in range(120):
@@ -144,7 +144,7 @@ func _test_game() -> void:
 	var rows := _game.map_rows()
 	_check(_names(rows).has("Fixture Hill [Fixture Pack]"), "the M rows name it Name [Pack]")
 	_check(not _names(rows).has("Fixture Sandbox [Fixture Pack]"), "and not the other kind")
-	var menu := G2GGame.menu_rows(rows)
+	var menu := AirdriftGame.menu_rows(rows)
 	var tagged := menu.filter(func(r: Dictionary) -> bool: return str(r["name"]).begins_with("Fixture Hill"))
 	_check(tagged.size() == 1 and (tagged[0]["tags"] as Array).has("Workshop"), "the menu tags it Workshop")
 	_check(_ballot_labels(_game.maps.catalogue).has("Fixture Hill [Fixture Pack]"), "the game's ballot lists it")
@@ -183,13 +183,13 @@ func _test_online() -> void:
 	_entered += 1
 	print("")
 	print("online")
-	var catalogue := G2GMapCatalogue.discover(PackedStringArray(), _index)
+	var catalogue := AirdriftMapCatalogue.discover(PackedStringArray(), _index)
 	_check(catalogue.get_map(MAP) != null, "listed while the index is solo")
 	_index.set_session(DotContentIndex.SESSION_ONLINE)
 	_check(catalogue.get_map(MAP) == null, "gone from the same catalogue when the session turns online")
 	_check(not _ballot_labels(catalogue).has("Fixture Hill [Fixture Pack]"), "gone from the ballot")
 	var late := _make_index(DotContentIndex.SESSION_SOLO)
 	late.set_session(DotContentIndex.SESSION_ONLINE)
-	_check(G2GMapCatalogue.discover(PackedStringArray(), late).get_map(MAP) == null,
+	_check(AirdriftMapCatalogue.discover(PackedStringArray(), late).get_map(MAP) == null,
 		"a catalogue built online never lists it")
 	_completed += 1

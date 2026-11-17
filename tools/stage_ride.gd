@@ -1,12 +1,12 @@
 extends Node3D
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
-const RouteBot := preload("../game/g2g_route_bot.gd")
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
-const G2GSurfCourse := preload("../game/g2g_surf_course.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
+const RouteBot := preload("../game/airdrift_route_bot.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
+const AirdriftSurfCourse := preload("../game/airdrift_surf_course.gd")
 
 ## Rides a stage of a map from where `!s<n>` puts a player, and says where it got to.
 ##
@@ -50,7 +50,7 @@ const TRACE_UNITS := 160.0
 const LOG_EVERY := 64
 
 
-var game: G2GGame = null
+var game: AirdriftGame = null
 var _heading := 0.0
 var _top := 0.0
 var _lowest := 0.0
@@ -97,7 +97,7 @@ func _run() -> void:
 	var arrival: Vector3 = map.spawn_for(track) if whole else from.destination
 	var arrival_yaw: float = map.spawn_yaw_for(track) if whole else from.destination_yaw
 	if override:
-		arrival = G2GUnits.vector_to_metres(
+		arrival = AirdriftUnits.vector_to_metres(
 			Vector3(float(args[3]), float(args[4]), float(args[5])))
 		arrival_yaw = float(args[6])
 	if whole and game.mechanics != null:
@@ -106,7 +106,7 @@ func _run() -> void:
 	await get_tree().physics_frame
 	print("[ride] %s !s%d: arrives at %s u facing yaw %.0f%s" % [
 		id, number,
-		str(G2GUnits.vector_to_units(bot.global_position).round()), bot.controller.state.yaw,
+		str(AirdriftUnits.vector_to_units(bot.global_position).round()), bot.controller.state.yaw,
 		" (a candidate, not the zone's)" if override else ""])
 
 	var goals := _goals_for(zones, track, number, total, whole)
@@ -144,7 +144,7 @@ func _run() -> void:
 		at_tick = t
 		var state := bot.controller.state
 		var flat := Vector3(state.velocity.x, 0.0, state.velocity.z)
-		if flat.length() > G2GUnits.to_metres(60.0):
+		if flat.length() > AirdriftUnits.to_metres(60.0):
 			_heading = rad_to_deg(atan2(-flat.x, -flat.z))
 		var ramp := Vector3.ZERO if router != null or pilot != null else _ramp_under(bot, flat, limit)
 		var c := _command_for(bot, flat, ramp, pilot, router, aim_at_finish, finish)
@@ -173,25 +173,25 @@ func _run() -> void:
 	get_tree().quit(0 if reached.begins_with("REACHED") or reached.begins_with("FINISHED") else 2)
 
 
-func _print_summary(bot: G2GPlayer, id: StringName, events: Array[String], reached: String,
+func _print_summary(bot: AirdriftPlayer, id: StringName, events: Array[String], reached: String,
 		at_tick: int, start: Vector3) -> void:
 	for line in events:
 		print("[ride]   %s" % line)
 	var end := bot.controller.state.position
 	print("[ride] %s after %.2f s: %s; %.0f u from the arrival, %.0f u lower at the deepest, top %.0f u/s, %d ticks surfing, %d grounded" % [
 		id, float(at_tick + 1) / float(game.tick_rate),
-		reached if reached != "" else "nowhere, time ran out at %s u" % str(G2GUnits.vector_to_units(end).round()),
-		G2GUnits.to_units(end.distance_to(start)), G2GUnits.to_units(start.y - _lowest),
-		G2GUnits.to_units(_top), _surfed, _grounded])
+		reached if reached != "" else "nowhere, time ran out at %s u" % str(AirdriftUnits.vector_to_units(end).round()),
+		AirdriftUnits.to_units(end.distance_to(start)), AirdriftUnits.to_units(start.y - _lowest),
+		AirdriftUnits.to_units(_top), _surfed, _grounded])
 
 
 ## Builds the game on [param id] and waits for its map. False once the failure is reported.
 func _load_game(id: StringName) -> bool:
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = id
-	game = G2GGame.new()
+	game = AirdriftGame.new()
 	game.config = config
 	add_child(game)
 	for _i in range(240):
@@ -225,7 +225,7 @@ func _finish_of(goals: Array, arrival: Vector3) -> Vector3:
 	return finish
 
 
-## The whole run follows the map's route (`maps/routes/<id>.json`, see game/g2g_route_bot.gd)
+## The whole run follows the map's route (`maps/routes/<id>.json`, see game/airdrift_route_bot.gd)
 ## when it has one, and otherwise its stage lines in order and then the finish.
 func _route_for(id: StringName, zones: DotTimerZoneSet, track: int, total: int, finish: Vector3) -> RouteBot:
 	var why: Array = []
@@ -233,7 +233,7 @@ func _route_for(id: StringName, zones: DotTimerZoneSet, track: int, total: int, 
 	if route.is_empty():
 		for n in range(1, total + 1):
 			route.append({"at": zones.stage_zone(track, n).centre(),
-				"radius": G2GUnits.to_metres(RouteBot.DEFAULT_RADIUS), "max": 0.0, "walk": false, "hop": false, "land": false, "door": false})
+				"radius": AirdriftUnits.to_metres(RouteBot.DEFAULT_RADIUS), "max": 0.0, "walk": false, "hop": false, "land": false, "door": false})
 		print("[ride] %s: %s; following its %d stage lines" % [id, why[0], route.size()])
 	else:
 		print("[ride] %s: following its route, %d points" % [id, route.size()])
@@ -241,13 +241,13 @@ func _route_for(id: StringName, zones: DotTimerZoneSet, track: int, total: int, 
 
 
 ## Connects the effect and finish watchers; returns them as [effect, finish] to disconnect.
-func _watch_timers(bot: G2GPlayer, router: RouteBot, events: Array[String], put_back: Array[bool],
+func _watch_timers(bot: AirdriftPlayer, router: RouteBot, events: Array[String], put_back: Array[bool],
 		finished_replay: Array[DotTimerReplay]) -> Array[Callable]:
 	var on_effect := func(pid: StringName, zone: DotTimerZone) -> void:
 		if pid != &"bot":
 			return
 		# A pit the route walks into on purpose (a stage trigger the planner reads as a door) is a door.
-		var planned := zone.kind == DotTimerZone.Kind.RESPAWN and zone.payload.has(G2GBspMap.SENDS_TO) \
+		var planned := zone.kind == DotTimerZone.Kind.RESPAWN and zone.payload.has(AirdriftBspMap.SENDS_TO) \
 			and router != null and router.index < router.points.size() \
 			and bool(router.points[router.index]["door"]) and zone.contains(router.points[router.index]["at"])
 		match zone.kind:
@@ -259,8 +259,8 @@ func _watch_timers(bot: G2GPlayer, router: RouteBot, events: Array[String], put_
 				if router != null:
 					router.teleported.call_deferred()
 				events.append("a door at %s u -> %s u" % [
-					str(G2GUnits.vector_to_units(bot.global_position).round()),
-					str(G2GUnits.vector_to_units(zone.destination).round())])
+					str(AirdriftUnits.vector_to_units(bot.global_position).round()),
+					str(AirdriftUnits.vector_to_units(zone.destination).round())])
 	game.timers.effect_requested.connect(on_effect)
 	var on_finished := func(pid: StringName, _run) -> void:
 		var p := game.timers.player(pid)
@@ -271,7 +271,7 @@ func _watch_timers(bot: G2GPlayer, router: RouteBot, events: Array[String], put_
 
 
 ## One tick's command: the pilot's, the route's, a strafe into a face, or forward and hop.
-func _command_for(bot: G2GPlayer, flat: Vector3, ramp: Vector3, pilot: DotBotSurfPilot, router: RouteBot,
+func _command_for(bot: AirdriftPlayer, flat: Vector3, ramp: Vector3, pilot: DotBotSurfPilot, router: RouteBot,
 		aim_at_finish: bool, finish: Vector3) -> DotFpsCommand:
 	var state := bot.controller.state
 	var c := DotFpsCommand.new()
@@ -287,7 +287,7 @@ func _command_for(bot: G2GPlayer, flat: Vector3, ramp: Vector3, pilot: DotBotSur
 		var along := Vector3(inward.z, 0.0, -inward.x)
 		# The way the route goes, not the way the bot happens to be moving: a
 		# landing deflects a rider sideways, and following that climbs the face.
-		var going := flat if G2GUnits.to_units(flat.length()) > 300.0 \
+		var going := flat if AirdriftUnits.to_units(flat.length()) > 300.0 \
 			else DotFpsMotor.forward_for(_heading)
 		if along.dot(going) < 0.0:
 			along = -along
@@ -304,32 +304,32 @@ func _command_for(bot: G2GPlayer, flat: Vector3, ramp: Vector3, pilot: DotBotSur
 		# A jump from a standstill creeps at the air cap for ever (headless_run's
 		# `_prestrafe`), so only once walking has built the speed.
 		c.set_button(DotFpsCommand.BUTTON_JUMP,
-			state.is_grounded() and G2GUnits.to_units(flat.length()) > 230.0)
+			state.is_grounded() and AirdriftUnits.to_units(flat.length()) > 230.0)
 	return c
 
 
-func _log_tick(bot: G2GPlayer, t: int, at: Vector3, ramp: Vector3, router: RouteBot, log_every: int) -> void:
+func _log_tick(bot: AirdriftPlayer, t: int, at: Vector3, ramp: Vector3, router: RouteBot, log_every: int) -> void:
 	if t % log_every != 0:
 		return
 	print("[ride]   t %5.2f s  at %s u  %4.0f u/s  %s" % [
-		float(t) / float(game.tick_rate), str(G2GUnits.vector_to_units(at).round()),
-		G2GUnits.to_units(bot.speed()),
+		float(t) / float(game.tick_rate), str(AirdriftUnits.vector_to_units(at).round()),
+		AirdriftUnits.to_units(bot.speed()),
 		("surfing, face %s" % str(ramp.snapped(Vector3.ONE * 0.01))) if ramp != Vector3.ZERO else ("grounded" if bot.controller.state.is_grounded() else "air")])
 	if router != null:
 		print("[ride]            -> point %d/%d at %s u" % [router.index + 1, router.points.size(),
-			str(G2GUnits.vector_to_units(router.target()).round())])
+			str(AirdriftUnits.vector_to_units(router.target()).round())])
 
 
 ## How the ride ended at [param at], or "" while it has not.
 func _reached_at(at: Vector3, finished: Array[float], put_back: bool, goals: Array) -> String:
 	if not finished.is_empty():
-		return "FINISHED the run in %.2f s at %s u" % [finished[0], str(G2GUnits.vector_to_units(at).round())]
+		return "FINISHED the run in %.2f s at %s u" % [finished[0], str(AirdriftUnits.vector_to_units(at).round())]
 	if put_back:
-		return "PUT BACK by a pit at %s u (last at %s u, route point %d)" % [str(G2GUnits.vector_to_units(at).round()),
-			str(G2GUnits.vector_to_units(_last_good).round()), _point_index]
+		return "PUT BACK by a pit at %s u (last at %s u, route point %d)" % [str(AirdriftUnits.vector_to_units(at).round()),
+			str(AirdriftUnits.vector_to_units(_last_good).round()), _point_index]
 	for goal: Array in goals:
 		if (goal[1] as DotTimerZone).contains(at):
-			return "REACHED %s at %s u" % [goal[0], str(G2GUnits.vector_to_units(at).round())]
+			return "REACHED %s at %s u" % [goal[0], str(AirdriftUnits.vector_to_units(at).round())]
 	return ""
 
 
@@ -350,12 +350,12 @@ func _save_replay(id: StringName, save_to: String, replay: DotTimerReplay) -> vo
 ## The normal of a surf face under or beside the player, or ZERO. Traced straight down
 ## and down-and-out to either side of the direction of travel, because a rider on a
 ## face is beside it as much as over it.
-func _ramp_under(bot: G2GPlayer, flat: Vector3, limit: float) -> Vector3:
+func _ramp_under(bot: AirdriftPlayer, flat: Vector3, limit: float) -> Vector3:
 	var space := get_world_3d().direct_space_state
-	var feet := bot.controller.state.position + Vector3.UP * G2GUnits.to_metres(8.0)
+	var feet := bot.controller.state.position + Vector3.UP * AirdriftUnits.to_metres(8.0)
 	var ahead := flat.normalized() if flat.length() > 0.01 else Vector3.FORWARD
 	var side := Vector3(-ahead.z, 0.0, ahead.x)
-	var reach := G2GUnits.to_metres(TRACE_UNITS)
+	var reach := AirdriftUnits.to_metres(TRACE_UNITS)
 	for dir: Vector3 in [Vector3.DOWN, (Vector3.DOWN + side).normalized(), (Vector3.DOWN - side).normalized()]:
 		var query := PhysicsRayQueryParameters3D.create(feet, feet + dir * reach)
 		var hit := space.intersect_ray(query)
@@ -369,16 +369,16 @@ func _ramp_under(bot: G2GPlayer, flat: Vector3, limit: float) -> Vector3:
 
 
 ## The pilot over this stage's cached line, or null when the map has no cache for it.
-func _pilot_for(id: StringName, number: int, bot: G2GPlayer) -> DotBotSurfPilot:
-	var data: Dictionary = G2GSurfCourse.read_stage(id, number)
+func _pilot_for(id: StringName, number: int, bot: AirdriftPlayer) -> DotBotSurfPilot:
+	var data: Dictionary = AirdriftSurfCourse.read_stage(id, number)
 	if data.is_empty():
 		return null
 	var why: Array = []
-	var course := G2GSurfCourse.for_stage(game, number, why)
+	var course := AirdriftSurfCourse.for_stage(game, number, why)
 	if course == null:
 		return null
 	var pilot := DotBotSurfPilot.new()
-	pilot.load_stage(data, G2GUnits.METRES_PER_UNIT)
+	pilot.load_stage(data, AirdriftUnits.METRES_PER_UNIT)
 	pilot.sim = course.simulator_for(bot.controller, game.mechanics)
 	pilot.score = course.score
 	pilot.reset()

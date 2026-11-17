@@ -1,15 +1,15 @@
 extends RefCounted
 
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GProps := preload("../game/g2g_props.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftProps := preload("../game/airdrift_props.gd")
 
 ## The hunter and placed-block sections of `dedicated.gd`'s modes test, run against the suite's own game.
 
 var s: DotGameCheckSuite
-var game: G2GGame
+var game: AirdriftGame
 
 
-func _init(suite: DotGameCheckSuite, g: G2GGame) -> void:
+func _init(suite: DotGameCheckSuite, g: AirdriftGame) -> void:
 	s = suite
 	game = g
 
@@ -46,7 +46,7 @@ func run() -> void:
 
 	if game.props != null:
 		var placed := game.props.place(
-			&"u1", G2GProps.BLOCK, Vector3(0.0, 2.0, 0.0), true
+			&"u1", AirdriftProps.BLOCK, Vector3(0.0, 2.0, 0.0), true
 		)
 		s._check(placed != null, "an admin can place a block")
 		s._check(game.props.count() == 1, "and it is in the world")

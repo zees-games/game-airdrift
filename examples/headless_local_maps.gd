@@ -1,11 +1,11 @@
 extends DotGameCheckSuite
 
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GMapCatalogue := preload("../game/g2g_map_catalogue.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
 
-## Maps copied in by hand: a raw dot-map convert folder under `res://addons/maps/` or `user://maps/` is listed as `<name>_local` only while `G2GMapCatalogue.list_local` is on (the offline client), and a game loads it with a spawn that stands on its floor. The fixture runs everywhere; `-- --source=<a map's convert folder>` repeats it on a real map.
+## Maps copied in by hand: a raw dot-map convert folder under `res://addons/maps/` or `user://maps/` is listed as `<name>_local` only while `AirdriftMapCatalogue.list_local` is on (the offline client), and a game loads it with a spawn that stands on its floor. The fixture runs everywhere; `-- --source=<a map's convert folder>` repeats it on a real map.
 ## [codeblock] ./game.sh test headless_local_maps ./game.sh test headless_local_maps -- --source=/path/to/gm_fork/convert
 ## [/codeblock]
 
@@ -54,15 +54,15 @@ func _run() -> void:
 			_clean()
 			_copy_tree(_source, USER_FOLDER)
 			await _test_load(id, "user://maps")
-	# Drops and zips need dot-map API 24; an older host plays copied folders only (G2GMapCatalogue.can_drop).
-	if G2GMapCatalogue.can_drop():
+	# Drops and zips need dot-map API 24; an older host plays copied folders only (AirdriftMapCatalogue.can_drop).
+	if AirdriftMapCatalogue.can_drop():
 		expected += 1
 		_clean()
 		await _test_drops()
 	else:
-		print("-- drops skipped: dot-map API %d < %d" % [DotAddonApi.build_level("dot_map"), G2GMapCatalogue.DROP_LEVEL])
+		print("-- drops skipped: dot-map API %d < %d" % [DotAddonApi.build_level("dot_map"), AirdriftMapCatalogue.DROP_LEVEL])
 	_clean()
-	G2GMapCatalogue.list_local = false
+	AirdriftMapCatalogue.list_local = false
 	_report_sections(_entered, _finished, expected)
 
 
@@ -70,23 +70,23 @@ func _test_listing() -> void:
 	_entered += 1
 	print("-- listed offline only")
 	_copy_tree(FIXTURE_DIR, RES_FOLDER.path_join("convert"), ["fixture.json", "fixture.bin"])
-	G2GMapCatalogue.list_local = false
+	AirdriftMapCatalogue.list_local = false
 	_check(not _ids().has(&"fixture_local"), "a server's catalogue never lists a local map")
-	G2GMapCatalogue.list_local = true
+	AirdriftMapCatalogue.list_local = true
 	var def: DotMapDef = null
-	for map in G2GMapCatalogue.scan():
+	for map in AirdriftMapCatalogue.scan():
 		if map.id == &"fixture_local":
 			def = map
 	_check(def != null, "an offline catalogue lists the copy as fixture_local", str(_ids()))
 	_check(def != null and def.display_name.ends_with(DotMapLocalMaps.TAG), "titled (local)",
 		"" if def == null else def.display_name)
-	_check(def != null and def.scene_path == G2GMapCatalogue.IMPORTED_SCENE, "built by the imported map scene")
+	_check(def != null and def.scene_path == AirdriftMapCatalogue.IMPORTED_SCENE, "built by the imported map scene")
 	# user://maps holds legacy imported maps too, at <id>/<id>.json, the layout this copy also has.
 	DirAccess.make_dir_recursive_absolute(USER_FOLDER)
 	for ext in [".json", ".bin"]:
 		DirAccess.copy_absolute(FIXTURE_DIR.path_join("fixture" + ext), USER_FOLDER.path_join("zz_local_maps_suite" + ext))
 	_check(_ids().has(&"zz_local_maps_suite_local"), "a copy named like its folder is listed as local")
-	var legacy_ids := G2GMapCatalogue.scan().filter(func(m: DotMapDef) -> bool: return m.id == &"zz_local_maps_suite")
+	var legacy_ids := AirdriftMapCatalogue.scan().filter(func(m: DotMapDef) -> bool: return m.id == &"zz_local_maps_suite")
 	_check(legacy_ids.is_empty(), "the mesh folder is not read as a legacy imported map")
 	_finished += 1
 
@@ -94,14 +94,14 @@ func _test_listing() -> void:
 func _test_load(id: StringName, root: String) -> void:
 	_entered += 1
 	print("-- %s from %s" % [id, root])
-	G2GMapCatalogue.list_local = true
+	AirdriftMapCatalogue.list_local = true
 	var found := DotMapLocalMaps.find(id)
 	_check(str(found.get("root", "")) == root, "found under %s" % root, str(found))
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = id
-	var game := G2GGame.new()
+	var game := AirdriftGame.new()
 	game.config = config
 	add_child(game)
 	for _i in range(240):
@@ -110,7 +110,7 @@ func _test_load(id: StringName, root: String) -> void:
 			break
 	var loaded := game.maps != null and game.maps.current != null and game.maps.current.id == id
 	_check(loaded, "the game loads it", "" if not loaded else String(game.maps.current.id))
-	var bsp := game.current_map_node() as G2GBspMap
+	var bsp := game.current_map_node() as AirdriftBspMap
 	_check(bsp != null and bsp.local_prefix == str(found.get("prefix", "")), "its world is the copied folder",
 		"" if bsp == null else bsp.local_prefix)
 	_check(bsp != null and bsp.global_world != null and bsp.global_world.get_child_count() > 0, "the world is built")
@@ -129,7 +129,7 @@ func _test_load(id: StringName, root: String) -> void:
 func _test_drops() -> void:
 	_entered += 1
 	print("-- dropped onto the window: a folder, a zip, and junk")
-	G2GMapCatalogue.list_local = true
+	AirdriftMapCatalogue.list_local = true
 	var local_maps: Object = DotMapLocalMaps  # API 24 by name, so this parses on API 23
 	var player_cache: Variant = local_maps.get(&"zip_cache")
 	local_maps.set(&"zip_cache", ZIP_CACHE)
@@ -137,11 +137,11 @@ func _test_drops() -> void:
 	DirAccess.make_dir_recursive_absolute(USER_FOLDER)
 	for ext in [".json", ".bin"]:
 		DirAccess.copy_absolute(FIXTURE_DIR.path_join("fixture" + ext), USER_FOLDER.path_join("zz_local_maps_suite" + ext))
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = &"zz_local_maps_suite_local"
-	var game := G2GGame.new()
+	var game := AirdriftGame.new()
 	game.config = config
 	add_child(game)
 	for _i in range(240):
@@ -161,7 +161,7 @@ func _test_drops() -> void:
 			return row["id"] == "fixture_local" and str(row["name"]).ends_with(DotMapLocalMaps.TAG)),
 		"the solo menu offers it as (local)")
 	var started: DotResult = await game.change_map(&"fixture_local", true)
-	var bsp := game.current_map_node() as G2GBspMap
+	var bsp := game.current_map_node() as AirdriftBspMap
 	_check(started.ok and bsp != null and bsp.local_prefix.begins_with(DROPPED_FOLDER), "the dropped map plays",
 		"" if bsp == null else bsp.local_prefix)
 	_wipe(DROPPED_FOLDER)
@@ -207,7 +207,7 @@ func _zip_fixture(zip_path: String) -> bool:
 
 
 func _ids() -> Array:
-	return G2GMapCatalogue.scan().map(func(m: DotMapDef) -> StringName: return m.id)
+	return AirdriftMapCatalogue.scan().map(func(m: DotMapDef) -> StringName: return m.id)
 
 
 func _clean() -> void:

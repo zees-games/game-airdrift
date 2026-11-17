@@ -1,15 +1,15 @@
 extends DotGameCheckSuite
 
-## Maps handed to Airdrift through dot-map's DotMapDropIntake (G2GMapDrop, API 26): dragged onto the window, dropped on
+## Maps handed to Airdrift through dot-map's DotMapDropIntake (AirdriftMapDrop, API 26): dragged onto the window, dropped on
 ## the executable or named by `--map-path=`, all through the one intake and the one HUD line. A path that holds no
 ## converted map is refused out loud with what the game takes. Folder/zip copying itself: headless_local_maps.
 ## [codeblock] ./game.sh test headless_mapdrop [/codeblock]
 
-const G2GClient := preload("../game/g2g_client.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GMapCatalogue := preload("../game/g2g_map_catalogue.gd")
-const G2GMapDrop := preload("../game/g2g_map_drop.gd")
+const AirdriftClient := preload("../game/airdrift_client.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
+const AirdriftMapDrop := preload("../game/airdrift_map_drop.gd")
 
 const FIXTURE_DIR := "res://examples/local_maps"
 ## Built outside the maps roots, then dropped.
@@ -22,7 +22,7 @@ const MAP := "zz_mapdrop_drop"
 const DROPPED := "user://maps/zz_mapdrop_drop"
 const SECTIONS := 3
 
-var _game: G2GGame = null
+var _game: AirdriftGame = null
 
 
 func _ready() -> void:
@@ -31,8 +31,8 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	if DotAddonApi.build_level("dot_map") < G2GMapDrop.NEEDS_LEVEL:
-		print("-- skipped: dot-map API %d < %d (no DotMapDropIntake)" % [DotAddonApi.build_level("dot_map"), G2GMapDrop.NEEDS_LEVEL])
+	if DotAddonApi.build_level("dot_map") < AirdriftMapDrop.NEEDS_LEVEL:
+		print("-- skipped: dot-map API %d < %d (no DotMapDropIntake)" % [DotAddonApi.build_level("dot_map"), AirdriftMapDrop.NEEDS_LEVEL])
 		_report_sections(0, 0, 0)
 		return
 	var entered := 0
@@ -52,7 +52,7 @@ func _run() -> void:
 		_game.queue_free()
 		await get_tree().process_frame
 	_clean()
-	G2GMapCatalogue.list_local = false
+	AirdriftMapCatalogue.list_local = false
 	_report_sections(entered, finished, SECTIONS)
 
 
@@ -60,34 +60,34 @@ func _test_args() -> void:
 	print("-- the command line: config options are not drops, --map-path and bare paths are")
 	var folder := ProjectSettings.globalize_path(SOURCE.path_join("args"))
 	DirAccess.make_dir_recursive_absolute(folder)
-	var kept := G2GMapDrop.drop_args(PackedStringArray(["--g2g-records_directory", folder, "--dot_net.port", folder,
-		"--g2g-auto_bhop", folder, "--g2g-no_such_key", folder, "--g2g-map_seconds=5", "--headless"]))
+	var kept := AirdriftMapDrop.drop_args(PackedStringArray(["--airdrift-records_directory", folder, "--dot_net.port", folder,
+		"--airdrift-auto_bhop", folder, "--g2g-no_such_key", folder, "--g2g-map_seconds=5", "--headless"]))
 	_check(kept == PackedStringArray([folder, folder, "--headless"]),
-		"a --g2g-<key> and --<addon>.<key> value is no drop; a --g2g-<bool> switch and an unknown key take none", str(kept))
-	var intake := G2GMapDrop.make()
+		"a --airdrift-<key> (or old-prefix) and --<addon>.<key> value is no drop; a --airdrift-<bool> switch and an unknown key take none", str(kept))
+	var intake := AirdriftMapDrop.make()
 	if not _check(intake != null, "dot-map 26 makes the shared intake"):
 		return
 	_check(not bool(intake.get(&"watch_window")), "it leaves the window to the client (one HUD line for every drop)")
 	_check((intake.call(&"accepted_kinds") as PackedStringArray).size() == 1, "it takes converted maps")
-	var paths := G2GMapDrop.paths_in(intake, PackedStringArray(["--path", folder, "--config", folder, "--map-path=" + folder]))
+	var paths := AirdriftMapDrop.paths_in(intake, PackedStringArray(["--path", folder, "--config", folder, "--map-path=" + folder]))
 	_check(paths == PackedStringArray([folder]), "--map-path= is a drop; --path and --config values are not", str(paths))
-	paths = G2GMapDrop.paths_in(intake, PackedStringArray([folder, "--g2g-records_directory", folder]))
+	paths = AirdriftMapDrop.paths_in(intake, PackedStringArray([folder, "--airdrift-records_directory", folder]))
 	_check(paths == PackedStringArray([folder]), "a bare path is a drop (the executable's drop)", str(paths))
-	paths = G2GMapDrop.paths_in(intake, PackedStringArray(["--map-path=/no/such/zz_mapdrop_drop"]))
+	paths = AirdriftMapDrop.paths_in(intake, PackedStringArray(["--map-path=/no/such/zz_mapdrop_drop"]))
 	_check(paths == PackedStringArray(["/no/such/zz_mapdrop_drop"]), "a --map-path that does not exist is kept, to be refused", str(paths))
-	paths = G2GMapDrop.paths_in(intake, PackedStringArray(["--headless", "res://examples/headless_mapdrop.tscn"]))
+	paths = AirdriftMapDrop.paths_in(intake, PackedStringArray(["--headless", "res://examples/headless_mapdrop.tscn"]))
 	_check(paths.is_empty(), "no path on a plain start", str(paths))
 	intake.free()
 
 
 func _start_game() -> bool:
-	G2GMapCatalogue.list_local = true
+	AirdriftMapCatalogue.list_local = true
 	_pack_as(START_FOLDER, START)
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = StringName(START + DotMapLocalMaps.ID_SUFFIX)
-	_game = G2GGame.new()
+	_game = AirdriftGame.new()
 	_game.config = config
 	add_child(_game)
 	for _i in range(240):
@@ -96,7 +96,7 @@ func _start_game() -> bool:
 			break
 	if not _check(_game.maps != null and _game.maps.current != null, "a solo game is up on a local map"):
 		return false
-	_game.map_drop = G2GMapDrop.make()
+	_game.map_drop = AirdriftMapDrop.make()
 	_game.add_child(_game.map_drop)
 	return _check(_game.map_drop != null, "with the intake every drop goes through")
 
@@ -136,7 +136,7 @@ func _test_window() -> void:
 
 func _test_cmdline() -> void:
 	print("-- dropped on the executable / --map-path: added and said like a window drop")
-	var client := G2GClient.new()
+	var client := AirdriftClient.new()
 	client.game = _game
 	var id := StringName(MAP + DotMapLocalMaps.ID_SUFFIX)
 	var folder := SOURCE.path_join("exe").path_join(MAP)

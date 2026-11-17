@@ -3,7 +3,7 @@ extends SceneTree
 ## Half a turn about Y: from the kit's +Z forward to the player's -Z. See [method _write].
 const FACE_FORWARD := Basis(Vector3.UP, PI)
 
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 
 ## Generates the avatar part scenes from Kenney's Blocky Characters.
 ##
@@ -21,7 +21,7 @@ const G2GUnits := preload("../game/g2g_units.gd")
 ## the kit gaining a nineteenth character would mean noticing.
 ##
 ## The split is by slot, not by file: a "body" is everything except the head, because
-## [G2GAvatars] has a head slot and a player who picks a different head must not get
+## [AirdriftAvatars] has a head slot and a player who picks a different head must not get
 ## two.
 ##
 ## [b]Two corrections a straight export does not make, and both are invisible in the
@@ -29,7 +29,7 @@ const G2GUnits := preload("../game/g2g_units.gd")
 ## which is 1.372 m -- so an imported character is very nearly TWICE the size of the
 ## thing it represents, standing with its head above the camera and its shoulders
 ## through every doorway, with every property of every node correct. And the parts are
-## authored in the character's own space (feet at 0, head at 1.9) while [G2GRig] mounts
+## authored in the character's own space (feet at 0, head at 1.9) while [AirdriftRig] mounts
 ## each slot at a point and expects the part to be centred on it, the way the capsule
 ## primitives that came first are. Both are applied here rather than asked of the rig,
 ## because the rig is right and the art is what has to fit it.
@@ -74,7 +74,7 @@ func _init() -> void:
 	var scale := _fit_scale(load("%s/character-%s.glb" % [KENNEY_DIR, letters[0]]))
 	print("scaling Kenney's %.2f m character to the %.0f-unit hull: x%.4f"
 		% [_height(load("%s/character-%s.glb" % [KENNEY_DIR, letters[0]])),
-		   G2GUnits.PLAYER_HEIGHT, scale])
+		   AirdriftUnits.PLAYER_HEIGHT, scale])
 
 	var written := 0
 	var failed := 0
@@ -121,11 +121,11 @@ func _write(source: Node, letter: String, head_only: bool, scale: float) -> int:
 		root.free()
 		return 1
 
-	# Scale to the hull, then place the part relative to the mount [G2GRig] will put
+	# Scale to the hull, then place the part relative to the mount [AirdriftRig] will put
 	# it on.
 	#
 	# The head is centred on its mount, like the stock capsules. The BODY is not: it is
-	# aligned so its feet land on the floor. `G2GRig` mounts the body at 42% of the
+	# aligned so its feet land on the floor. `AirdriftRig` mounts the body at 42% of the
 	# hull and the stock capsule is centred there, which leaves it floating about
 	# 13 cm -- invisible on a capsule, and a character standing in mid-air the moment
 	# the part has legs. The rig is not changed for this because FC mounts the same
@@ -133,7 +133,7 @@ func _write(source: Node, letter: String, head_only: bool, scale: float) -> int:
 	var box := _bounds(root)
 	var centre := box.get_center()
 	if not head_only:
-		var mount := G2GUnits.to_metres(G2GUnits.PLAYER_HEIGHT) * 0.42
+		var mount := AirdriftUnits.to_metres(AirdriftUnits.PLAYER_HEIGHT) * 0.42
 		centre.y = box.position.y + mount / scale
 	for child in root.get_children():
 		var mi := child as MeshInstance3D
@@ -186,7 +186,7 @@ func _fit_scale(packed: PackedScene) -> float:
 	var h := _height(packed)
 	if h <= 0.0:
 		return 1.0
-	return G2GUnits.to_metres(G2GUnits.PLAYER_HEIGHT) / h
+	return AirdriftUnits.to_metres(AirdriftUnits.PLAYER_HEIGHT) / h
 
 
 ## A node tree's bounds, in the tree root's own space.

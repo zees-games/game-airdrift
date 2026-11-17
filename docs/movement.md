@@ -4,17 +4,17 @@ The movement is the product. Everything here is about keeping a run set on this 
 
 ## Everything the operator touches is in genre units
 
-`sv_airaccelerate 1000`, `sv_gravity 800`, a run speed of 250 u/s, a surf ramp "1024 wide at 60°". A bhop server operator knows what those mean and nobody knows what 19.05 m/s² is. So every cvar, every config field, every HUD number and every map file speaks genre units, and **the conversion to the metres the simulation runs in happens at exactly one boundary, `G2GMovement.tunables_for`**, with `G2GUnits` as the only definition of the ratio. A conversion anywhere else is a second copy of the ratio, and two copies drift.
+`sv_airaccelerate 1000`, `sv_gravity 800`, a run speed of 250 u/s, a surf ramp "1024 wide at 60°". A bhop server operator knows what those mean and nobody knows what 19.05 m/s² is. So every cvar, every config field, every HUD number and every map file speaks genre units, and **the conversion to the metres the simulation runs in happens at exactly one boundary, `AirdriftMovement.tunables_for`**, with `AirdriftUnits` as the only definition of the ratio. A conversion anywhere else is a second copy of the ratio, and two copies drift.
 
 The ratio is **1 unit = 0.01905 m** (0.75 inch), the scale the genre's maps were built at, not the 1-inch figure sometimes quoted. It is what the 72-unit hull, the 64-unit eye and every map in the genre were built against; at the wrong scale a surf ramp is one the movement cannot hold. It is also why an imported `.bsp` needs no scale conversion at all (see [imported-maps.md](imported-maps.md#scale-and-axes)).
 
 The jump is specified as a **launch velocity** (301.99 u/s) and converted to the height the tunables want with `h = v²/2g`: 57 units under 800, the number every bhop player knows. Specifying the velocity keeps it honest when an operator changes `sv_gravity`.
 
-The client's configuration is layered like the server's (`G2GClient` calls `load_layered()`), so `--g2g-initial-map` works offline as well. It once built a bare `G2GConfig`, and no suite could see it because every suite sets `config.initial_map` directly. Only an authoritative instance chooses a map: `validate()` accepts an empty `initial_map` on a client, which the server decides.
+The client's configuration is layered like the server's (`AirdriftClient` calls `load_layered()`), so `--airdrift-initial-map` works offline as well. It once built a bare `AirdriftConfig`, and no suite could see it because every suite sets `config.initial_map` directly. Only an authoritative instance chooses a map: `validate()` accepts an empty `initial_map` on a client, which the server decides.
 
 ## Auto-bhop is the server's, and the styles defer to it
 
-`sv_autobunnyhopping` (`G2GConfig.auto_bhop`) is the setting this game exists to expose. It reaches every player through `G2GGame.apply_movement`, which rebuilds the tunables and hands them to everybody, **abandoning every run in progress**, because a run half on one movement and half on another is a run on neither. Same rule as a tick-rate change.
+`sv_autobunnyhopping` (`AirdriftConfig.auto_bhop`) is the setting this game exists to expose. It reaches every player through `AirdriftGame.apply_movement`, which rebuilds the tunables and hands them to everybody, **abandoning every run in progress**, because a run half on one movement and half on another is a run on neither. Same rule as a tick-rate change.
 
 **The shipped `DotFpsStyle.defaults()` force auto-hop ON**, which is right for a game with no cvar and wrong here: left as shipped, `sv_autobunnyhopping 0` reached every player's tunables and was then silently undone by the style on top. `_build_styles` sets every style's `auto_hop` and `easy_bhop` to `INHERIT`, except `prebhop`, whose whole identity is "no auto-hop".
 
@@ -28,33 +28,33 @@ A player holding jump from a standstill creeps at exactly 30 u/s, the air cap, f
 
 ## A movement effect is a style, and a style you did not choose is a record you did not set
 
-Everything in this game exists to make a run comparable with one somebody else set: sub-tick zone crossings, a rate taken from `sv_tickrate` rather than an export, styles paired between dot-player-controller and dot-timer by id. **An effect that quietly multiplies `max_speed` by 0.65 undoes all of it**, and the player has no way of knowing it happened. So `G2GEffects` splits effects, and enforces the split:
+Everything in this game exists to make a run comparable with one somebody else set: sub-tick zone crossings, a rate taken from `sv_tickrate` rather than an export, styles paired between dot-player-controller and dot-timer by id. **An effect that quietly multiplies `max_speed` by 0.65 undoes all of it**, and the player has no way of knowing it happened. So `AirdriftEffects` splits effects, and enforces the split:
 
 | | |
 | --- | --- |
 | **Combat effects** (a bleed, a burn) | Anybody, any time. They cannot change a time. |
 | **Movement effects** (a maul, a haste) | **Refused** while a ranked run is live. |
 
-`G2GEffects.is_movement()` asks the *definition* whether it changes `move_speed_scale` or `jump_scale`, rather than consulting a list of ids, so an effect added later is classified by what it does. A server that wants hunted runs to count anyway sets `allow_movement_during_runs`, and every such run is **tainted** (see [timer.md](timer.md#what-taints-a-run)).
+`AirdriftEffects.is_movement()` asks the *definition* whether it changes `move_speed_scale` or `jump_scale`, rather than consulting a list of ids, so an effect added later is classified by what it does. A server that wants hunted runs to count anyway sets `allow_movement_during_runs`, and every such run is **tainted** (see [timer.md](timer.md#what-taints-a-run)).
 
 ## The player layer
 
-`G2GPlayerStack` joins dot-spawn, dot-player and the rest to the controller.
+`AirdriftPlayerStack` joins dot-spawn, dot-player and the rest to the controller.
 
 - **The spawn director chooses the start, and the map is the fallback.** What it adds over the map is the per-site cooldown, the occupancy check and, with `sv_deathmatch` on, the protection window, which `DotSpawnProtection.grant` only ever opens from inside `DotSpawnDirector.choose`.
 - **A start is per TRACK.** `DotSpawnConditions.MetaMatchesRequest` (added to dot-spawn for this game) compares a site against the *request*, and `DotSpawnRequest.make` carries an `extra` dictionary for it. `MetaEquals` compares against a constant, which would have meant one director per track.
 - **The sites are checked against the loaded map rather than trusted to arrive in order.** `map_ready` and the respawn that follows a map change are not ordered, and losing that race means answering confidently from the previous map (family [bugs-found.md](../../../docs/bugs-found.md)).
-- **`sv_deathmatch` is what opens the protection window**, and it is shut on a pure timer server: a window with no attacker is a rule with no purpose. The duration is `G2GArsenal`'s own match rule rather than a second copy.
+- **`sv_deathmatch` is what opens the protection window**, and it is shut on a pure timer server: a window with no attacker is a rule with no purpose. The duration is `AirdriftArsenal`'s own match rule rather than a second copy.
 
-## Third person is cosmetic, and stays `G2GCamera`'s
+## Third person is cosmetic, and stays `AirdriftCamera`'s
 
-`G2GCamera` flips between two cameras over **one motor**, so a run set in third person is comparable with one set in first. game-playlot runs dot-player-controller's third-person controller over a `DotPlayerControllerSwitch`; **this game deliberately does not.** `DotTpsController` is a different motor (camera-relative input, its own acceleration, coyote time, a jump buffer), and a player who could switch to it mid-run would be setting a time on movement nobody else was using. `sv_allow_thirdperson 0` is server-side because third person sees over ledges first person cannot, and it puts anybody already in it back. It now writes the family's `mp_forceview` (dot-player-controller's `DotPlayerViewRules`: 0 the player's choice, 1 first person only, 2 third person only), which `G2GGame` keeps every camera under (`G2GCamera.follow_view_rules`) and which is bound REPLICATED and followed through the link, on top of RULES' `thirdperson` for an older server.
+`AirdriftCamera` flips between two cameras over **one motor**, so a run set in third person is comparable with one set in first. game-playlot runs dot-player-controller's third-person controller over a `DotPlayerControllerSwitch`; **this game deliberately does not.** `DotTpsController` is a different motor (camera-relative input, its own acceleration, coyote time, a jump buffer), and a player who could switch to it mid-run would be setting a time on movement nobody else was using. `sv_allow_thirdperson 0` is server-side because third person sees over ledges first person cannot, and it puts anybody already in it back. It now writes the family's `mp_forceview` (dot-player-controller's `DotPlayerViewRules`: 0 the player's choice, 1 first person only, 2 third person only), which `AirdriftGame` keeps every camera under (`AirdriftCamera.follow_view_rules`) and which is bound REPLICATED and followed through the link, on top of RULES' `thirdperson` for an older server.
 
 The third-person camera hangs on dot-core's `DotCameraBoom` (it was a `SpringArm3D`, which cast a ray and snapped); a `DotCameraFade` on each camera is handed the other players, hiding one at the lens and fading one between the third-person camera and you. `tools/camera_check.gd` flies the camera round the start map's walls (armed) and checks the rule both ways; under xvfb it draws both views.
 
 ## Ladders and water
 
-- **Ladders** (`CONTENTS_LADDER` brushes in imported maps) are climbed through `G2GLadderMode`, a `DotFpsMoveMode` using the engine's own decomposition (the wish into the face becomes up the face). It lives in the game, not the addon, so a delivered pack names no new class. It must not call the motor's `categorise_ground` every tick: that writes AIR for anybody rising who was not grounded, and every climber was dropped each tick and bounced up at a quarter speed. **A ladder wins over water**, as in the engine these maps come from: a climb-out pit of ladder walls over water otherwise hands every climber back to the swim mode.
+- **Ladders** (`CONTENTS_LADDER` brushes in imported maps) are climbed through `AirdriftLadderMode`, a `DotFpsMoveMode` using the engine's own decomposition (the wish into the face becomes up the face). It lives in the game, not the addon, so a delivered pack names no new class. It must not call the motor's `categorise_ground` every tick: that writes AIR for anybody rising who was not grounded, and every climber was dropped each tick and bounced up at a quarter speed. **A ladder wins over water**, as in the engine these maps come from: a climb-out pit of ladder walls over water otherwise hands every climber back to the swim mode.
 - **Water** registers dot-player-controller's `DotFpsSwimMode` on every player (200 u/s, with `idle_sink_speed` so a player who lets go sinks at 60 u/s the way the genre's water does; holding jump rises). Which volumes are water is the importer's (see [imported-maps.md](imported-maps.md#what-a-maps-brush-entities-do)).
 
 ## Ramps and the motor
@@ -80,16 +80,16 @@ The survey and the reach use the tunables' own numbers in units: hull `2 × radi
 
 ## Two names for a movement setting
 
-`G2GConfig` is the one source of truth; the cvars are g2g's own (`sv_maxspeed` is the run speed), and the family's shared spellings (dot-player-controller's `DotFpsTunables`, dot-game's `bind_movement_cvars`) are an adapter over it, `game/g2g_movement_names.gd`. A write through either name goes through `G2GConfig.validate` on a copy, then `apply_movement` (every run abandoned, new fingerprint), and the other name follows. The old g2g names stay as they were, so `game.sh` and `cfg/` files keep working. Ten names are spelled alike in both sets (`sv_gravity`, `sv_accelerate`, `sv_airaccelerate`, `sv_friction`, `sv_stopspeed`, `sv_maxvelocity`, `sv_stepsize`, `sv_edgefriction` and the like) and need no table.
+`AirdriftConfig` is the one source of truth; the cvars are Airdrift's own (`sv_maxspeed` is the run speed), and the family's shared spellings (dot-player-controller's `DotFpsTunables`, dot-game's `bind_movement_cvars`) are an adapter over it, `game/airdrift_movement_names.gd`. A write through either name goes through `AirdriftConfig.validate` on a copy, then `apply_movement` (every run abandoned, new fingerprint), and the other name follows. The old Airdrift names stay as they were, so `game.sh` and `cfg/` files keep working. Ten names are spelled alike in both sets (`sv_gravity`, `sv_accelerate`, `sv_airaccelerate`, `sv_friction`, `sv_stopspeed`, `sv_maxvelocity`, `sv_stepsize`, `sv_edgefriction` and the like) and need no table.
 
-| Shared name | g2g cvar | `G2GConfig` field |
+| Shared name | Airdrift cvar | `AirdriftConfig` field |
 | --- | --- | --- |
 | `sv_runspeed` | `sv_maxspeed` | `max_speed` |
 | `sv_airwishspeed` | `sv_airwishcap` | `air_wish_cap` |
 | `sv_autohop` | `sv_autobunnyhopping` | `auto_bhop` |
 
-The shared `sv_maxspeed` (a ceiling on a key's wish speed) is **not** g2g's `sv_maxspeed` (the run speed) and is never forwarded; `sv_jumpheight`, `sv_bhopcap` and `sv_movement_profile` have no g2g field and are not bound. A map file may use `sv_runspeed` and `sv_airwishspeed`, never `sv_autohop`. Checks: `examples/dedicated` ("the shared movement names"), `examples/headless_mapcfg`.
+The shared `sv_maxspeed` (a ceiling on a key's wish speed) is **not** Airdrift's `sv_maxspeed` (the run speed) and is never forwarded; `sv_jumpheight`, `sv_bhopcap` and `sv_movement_profile` have no Airdrift field and are not bound. A map file may use `sv_runspeed` and `sv_airwishspeed`, never `sv_autohop`. Checks: `examples/dedicated` ("the shared movement names"), `examples/headless_mapcfg`.
 
 ## A map may change some movement cvars
 
-`cfg/game/game-g2gfast/dot_map/map/<name>.yml` (a map id or a glob; the operator overrides in `cfg/server/game/game-g2gfast/dot_map/map/`) sets `sv_airaccelerate`, `sv_accelerate`, `sv_gravity`, `sv_friction`, `sv_maxspeed`, `sv_maxvelocity`, `sv_airwishcap` and `sv_enablebunnyhopping` through `G2GMapConfig` (server cvars, and the client's config), and the next map puts them back; never auto-bhop. The default is 1000 everywhere (`game.yml`, `G2GConfig`); `%.yml` sets nothing, so a map without its own file keeps the cvar as the operator left it. 1000 is also written in `bhop_%` and `kz_bhop_%`; 100 for the two maps whose own entities ask for it. Check: `examples/headless_mapcfg`.
+`cfg/game/game-g2gfast/dot_map/map/<name>.yml` (a map id or a glob; the operator overrides in `cfg/server/game/game-g2gfast/dot_map/map/`) sets `sv_airaccelerate`, `sv_accelerate`, `sv_gravity`, `sv_friction`, `sv_maxspeed`, `sv_maxvelocity`, `sv_airwishcap` and `sv_enablebunnyhopping` through `AirdriftMapConfig` (server cvars, and the client's config), and the next map puts them back; never auto-bhop. The default is 1000 everywhere (`game.yml`, `AirdriftConfig`); `%.yml` sets nothing, so a map without its own file keeps the cvar as the operator left it. 1000 is also written in `bhop_%` and `kz_bhop_%`; 100 for the two maps whose own entities ask for it. Check: `examples/headless_mapcfg`.

@@ -23,7 +23,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("game-g2gfast: what a connected player sees, through a real socket")
+	print("game-airdrift: what a connected player sees, through a real socket")
 	DotPaths.remove_tree(DATA)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(DATA))
 
@@ -123,7 +123,7 @@ func _test_key_to_motion() -> void:
 ## The server moves the local player 30 cm sideways, as a misprediction does, and the eye
 ## is watched frame by frame. The simulation must take the correction at once -- the
 ## predictor rewinds and replays -- and the eye must not: a jump of the whole correction
-## in one frame is what the player sees as a hitch. See G2GPlayer.drawn_offset.
+## in one frame is what the player sees as a hitch. See AirdriftPlayer.drawn_offset.
 func _test_a_correction_is_eased() -> void:
 	_section("a correction moves the simulation at once and the eye over a moment")
 	_set_link(WINDOWS[1])
@@ -148,7 +148,7 @@ func _test_a_correction_is_eased() -> void:
 	for _i in range(30):
 		await get_tree().process_frame
 
-	var server_me: G2GPlayer = _game.players.get(StringName("u%d" % _session()), null)
+	var server_me: AirdriftPlayer = _game.players.get(StringName("u%d" % _session()), null)
 	var nudge := Vector3.ZERO
 	if server_me != null:
 		var forward := Vector3(server_me.controller.state.velocity.x, 0.0, server_me.controller.state.velocity.z).normalized()
@@ -200,7 +200,7 @@ func _test_a_correction_is_eased() -> void:
 ## drift does now and then while it settles on the server (dot-net's `MAX_DRIFT_RATE`, and
 ## the input lead's steering at up to 12%), and the eye is watched frame by frame while the
 ## player runs. First the control, with the clock's slip forgotten as soon as it is counted
-## (the engine's fraction alone, how the eye was drawn before `G2GClient._fold_clock`), then
+## (the engine's fraction alone, how the eye was drawn before `AirdriftClient._fold_clock`), then
 ## as the client draws it. A stalled frame moved under half of what its time asked, a
 ## doubled one over one and a half.
 func _test_a_clock_slip() -> void:
@@ -427,7 +427,7 @@ func _play_window(window: Array) -> void:
 	_check(frames > int(window[5]) * 20, "frames were drawn", "%d" % frames)
 	# Every frame turns while the mouse moves. The view was the last tick's, so a frame
 	# that ran no tick -- one in nine at 144 Hz against 128 -- stood still and the next
-	# turned double. See G2GPlayer.view_now.
+	# turned double. See AirdriftPlayer.view_now.
 	_check(stalled == 0 and doubled == 0,
 		"the view turned on every frame the mouse moved, and never double",
 		"%d of %d frames still, %d double" % [stalled, turns.size(), doubled])

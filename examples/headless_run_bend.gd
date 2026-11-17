@@ -24,11 +24,11 @@ func _test_stages_descent() -> void:
 		return
 	# The movement a fresh server has: the sections before this one set what they need and
 	# do not all put it back (in the full run the ride got two thirds of the way; alone, all).
-	var fresh := G2GConfig.new()
-	for field in G2GConfig.MOVEMENT_FIELDS:
+	var fresh := AirdriftConfig.new()
+	for field in AirdriftConfig.MOVEMENT_FIELDS:
 		game.config.set(field, fresh.get(field))
 	game.apply_movement()
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	var surf := DotTimerTrack.of_bonus(1)
 	_check(game.timers.set_player_track(&"bot", surf), "a player can switch to the surf bonus")
 	game.spawn_player(&"bot")
@@ -52,7 +52,7 @@ func _test_stages_descent() -> void:
 	# slabs' low edges are 318 u apart, and a player walking straight off the pad falls
 	# between them into the pit. So sideways first, to 200 u west of the centre line,
 	# then forward along -Z and nothing else.
-	var entry := G2GUnits.vector_to_units(bot.global_position)
+	var entry := AirdriftUnits.vector_to_units(bot.global_position)
 	var deepest := entry.z
 	var descent := _DescentLedger.new()
 	var ticks := 0
@@ -61,7 +61,7 @@ func _test_stages_descent() -> void:
 	# while below a line partway up it, let go above, and forward throughout.
 	var hold_line := BhopStages.BONUS_X - 520.0
 	for i in range(2400):
-		var at := G2GUnits.vector_to_units(bot.global_position)
+		var at := AirdriftUnits.vector_to_units(bot.global_position)
 		var c := DotFpsCommand.new()
 		c.yaw = 0.0
 		if at.y > 900.0:
@@ -78,7 +78,7 @@ func _test_stages_descent() -> void:
 		bot.controller.apply_command(c)
 		await get_tree().physics_frame
 		ticks = i + 1
-		var now := G2GUnits.vector_to_units(bot.global_position)
+		var now := AirdriftUnits.vector_to_units(bot.global_position)
 		if reset[0] or finished[0]:
 			break
 		descent.add(at.y - now.y, bot.controller.state)
@@ -128,7 +128,7 @@ func _test_weave_bonus() -> void:
 	var changed: DotResult = await game.change_map(&"bhop_g2g_stages")
 	_check(changed.ok, "the stages map loads")
 
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	var weave := DotTimerTrack.of_bonus(3)
 	var zones := game.timers.zones
 	_check(zones != null and zones.stage_count(weave) == 2,
@@ -165,11 +165,11 @@ func _test_weave_bonus() -> void:
 	var piece := -1
 	var covered := 0.0
 	var run_ticks := 0
-	var previous := G2GUnits.vector_to_units(bot.global_position)
+	var previous := AirdriftUnits.vector_to_units(bot.global_position)
 	var goal := 0
 
 	for _i in range(4000):
-		var here := G2GUnits.vector_to_units(bot.global_position)
+		var here := AirdriftUnits.vector_to_units(bot.global_position)
 		var at := Vector2(here.x, here.z)
 		piece = _hairpin_piece(blocks, piece, at)
 		var rect := start_rect if piece < 0 else _block_rect(blocks[piece])
@@ -197,7 +197,7 @@ func _test_weave_bonus() -> void:
 		bot.controller.apply_command(c)
 		await get_tree().physics_frame
 
-		var now := G2GUnits.vector_to_units(bot.global_position)
+		var now := AirdriftUnits.vector_to_units(bot.global_position)
 		if bot.timer.run.is_active():
 			covered += Vector2(now.x - previous.x, now.z - previous.z).length()
 			run_ticks += 1
@@ -213,7 +213,7 @@ func _test_weave_bonus() -> void:
 
 	_unwatch_run(watch, bot)
 
-	var run_speed := G2GUnits.to_units(game.tunables.max_speed)
+	var run_speed := AirdriftUnits.to_units(game.tunables.max_speed)
 	var pace := covered / (float(run_ticks) / float(game.tick_rate)) if run_ticks > 0 else 0.0
 	print("  ..    weave: %.0f u covered of a %.0f u route in %d ticks, %.0f u/s against a run of %.0f, block %d of %d, %d resets, %s" % [
 		covered, route_length, run_ticks, pace, run_speed, furthest + 1, blocks.size(), resets,
@@ -241,7 +241,7 @@ func _test_bend_bonus() -> void:
 	var changed: DotResult = await game.change_map(&"bhop_g2g_stages")
 	_check(changed.ok, "the stages map loads")
 
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	var bend := DotTimerTrack.of_bonus(4)
 	var zones := game.timers.zones
 	_check(zones != null and zones.stage_count(bend) == 2,
@@ -285,10 +285,10 @@ func _test_bend_bonus() -> void:
 	var goal := 0
 	var covered := 0.0
 	var run_ticks := 0
-	var previous := G2GUnits.vector_to_units(bot.global_position)
+	var previous := AirdriftUnits.vector_to_units(bot.global_position)
 
 	for _i in range(4000):
-		var here := G2GUnits.vector_to_units(bot.global_position)
+		var here := AirdriftUnits.vector_to_units(bot.global_position)
 		var at := Vector2(here.x, here.z)
 		for i in range(pieces.size() - 1, piece, -1):
 			if _bend_local(pieces[i], at).has_point(Vector2.ZERO):
@@ -317,7 +317,7 @@ func _test_bend_bonus() -> void:
 		bot.controller.apply_command(c)
 		await get_tree().physics_frame
 
-		var now := G2GUnits.vector_to_units(bot.global_position)
+		var now := AirdriftUnits.vector_to_units(bot.global_position)
 		if bot.timer.run.is_active():
 			covered += Vector2(now.x - previous.x, now.z - previous.z).length()
 			run_ticks += 1
@@ -334,7 +334,7 @@ func _test_bend_bonus() -> void:
 
 	_unwatch_run(watch, bot)
 
-	var run_speed := G2GUnits.to_units(game.tunables.max_speed)
+	var run_speed := AirdriftUnits.to_units(game.tunables.max_speed)
 	var pace := covered / (float(run_ticks) / float(game.tick_rate)) if run_ticks > 0 else 0.0
 	print("  ..    bend: %.0f u covered of a %.0f u route in %d ticks, %.0f u/s against a run of %.0f, piece %d of %d, %d resets, %s" % [
 		covered, route_length, run_ticks, pace, run_speed, furthest + 1, pieces.size(), resets,
@@ -348,7 +348,7 @@ func _test_bend_bonus() -> void:
 
 ## Listeners for a bonus run by [param bot]: {splits, finished, reset, and the three callables}.
 ## The reset flag is an array because a lambda captures a local by value.
-func _watch_run(bot: G2GPlayer) -> Dictionary:
+func _watch_run(bot: AirdriftPlayer) -> Dictionary:
 	var splits: Array[int] = []
 	var finished: Array[DotTimerRun] = []
 	var reset: Array[bool] = [false]
@@ -366,25 +366,25 @@ func _watch_run(bot: G2GPlayer) -> Dictionary:
 		"on_split": on_split, "on_effect": on_effect, "on_finished": on_finished}
 
 
-func _unwatch_run(watch: Dictionary, bot: G2GPlayer) -> void:
+func _unwatch_run(watch: Dictionary, bot: AirdriftPlayer) -> void:
 	game.timers.player_staged.disconnect(watch["on_split"])
 	game.timers.effect_requested.disconnect(watch["on_effect"])
 	bot.timer.run_finished.disconnect(watch["on_finished"])
 
 
 ## The checks both bonus routes end on.
-func _check_bonus_end(bot: G2GPlayer, splits: Array[int], resets: int, resets_detail: String,
+func _check_bonus_end(bot: AirdriftPlayer, splits: Array[int], resets: int, resets_detail: String,
 		finished: Array[DotTimerRun], track: int, pace: float, run_speed: float) -> void:
 	_check(splits == [1, 2], "crossing both of its stage lines, in order", str(splits))
 	_check(resets == 0, "without ever being put back", resets_detail)
 	_check(finished.size() == 1 and finished[0].track == track,
 		"and the finish line ends the run, on the bonus's own track",
-		"%d finished, ended at %s u" % [finished.size(), str(G2GUnits.vector_to_units(bot.global_position).round())])
+		"%d finished, ended at %s u" % [finished.size(), str(AirdriftUnits.vector_to_units(bot.global_position).round())])
 	_check(pace >= run_speed * 0.8, "at no less than 80% of run speed: every jump is taken on the move",
 		"%.0f u/s against %.0f" % [pace, run_speed])
 
 
-func _back_to_main(bot: G2GPlayer) -> void:
+func _back_to_main(bot: AirdriftPlayer) -> void:
 	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
@@ -467,7 +467,7 @@ func _check_hairpin_run(started: bool, furthest: int, block_count: int, highest:
 	_check(
 		finished.size() == 1 and finished[0].track == DotTimerTrack.of_bonus(3),
 		"and the finish line ends the run, on the bonus's own track",
-		"%d finished, ended at %s u" % [finished.size(), str(G2GUnits.vector_to_units((game.players[&"bot"] as G2GPlayer).global_position).round())]
+		"%d finished, ended at %s u" % [finished.size(), str(AirdriftUnits.vector_to_units((game.players[&"bot"] as AirdriftPlayer).global_position).round())]
 	)
 
 
@@ -495,7 +495,7 @@ func _test_hairpin_bonus() -> void:
 	var changed: DotResult = await game.change_map(&"bhop_g2g_intro")
 	_check(changed.ok, "the intro map loads")
 
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	var hairpin := DotTimerTrack.of_bonus(3)
 	var zones := game.timers.zones
 	_check(zones != null and zones.stage_count(hairpin) == 2,
@@ -538,10 +538,10 @@ func _test_hairpin_bonus() -> void:
 	var furthest := -1
 	var piece := -1
 	var covered := 0.0
-	var previous := G2GUnits.vector_to_units(bot.global_position)
+	var previous := AirdriftUnits.vector_to_units(bot.global_position)
 
 	for _i in range(5000):
-		var here := G2GUnits.vector_to_units(bot.global_position)
+		var here := AirdriftUnits.vector_to_units(bot.global_position)
 		var at := Vector2(here.x, here.z)
 		piece = _hairpin_piece(blocks, piece, at)
 
@@ -549,10 +549,10 @@ func _test_hairpin_bonus() -> void:
 		bot.controller.apply_command(c)
 		await get_tree().physics_frame
 
-		var now := G2GUnits.vector_to_units(bot.global_position)
+		var now := AirdriftUnits.vector_to_units(bot.global_position)
 		covered += Vector2(now.x - previous.x, now.z - previous.z).length()
 		previous = now
-		top = maxf(top, G2GUnits.to_units(bot.speed()))
+		top = maxf(top, AirdriftUnits.to_units(bot.speed()))
 		highest = maxf(highest, now.y)
 		furthest = maxi(furthest, piece)
 		if reset[0]:
@@ -594,7 +594,7 @@ func _test_stutter_bonus() -> void:
 	var changed: DotResult = await game.change_map(&"bhop_g2g_intro")
 	_check(changed.ok, "the intro map loads")
 
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	var stutter := DotTimerTrack.of_bonus(4)
 	var zones := game.timers.zones
 	_check(zones != null and zones.stage_count(stutter) == 2,
@@ -640,10 +640,10 @@ func _test_stutter_bonus() -> void:
 	var piece := -1
 	var covered := 0.0
 	var run_ticks := 0
-	var previous := G2GUnits.vector_to_units(bot.global_position)
+	var previous := AirdriftUnits.vector_to_units(bot.global_position)
 
 	for _i in range(4000):
-		var here := G2GUnits.vector_to_units(bot.global_position)
+		var here := AirdriftUnits.vector_to_units(bot.global_position)
 		var at := Vector2(here.x, here.z)
 		piece = _hairpin_piece(blocks, piece, at)
 
@@ -660,7 +660,7 @@ func _test_stutter_bonus() -> void:
 		bot.controller.apply_command(c)
 		await get_tree().physics_frame
 
-		var now := G2GUnits.vector_to_units(bot.global_position)
+		var now := AirdriftUnits.vector_to_units(bot.global_position)
 		if bot.timer.run.is_active():
 			covered += Vector2(now.x - previous.x, now.z - previous.z).length()
 			run_ticks += 1
@@ -688,7 +688,7 @@ func _test_stutter_bonus() -> void:
 	game.timers.effect_requested.disconnect(on_effect)
 	bot.timer.run_finished.disconnect(on_finished)
 
-	var run_speed := G2GUnits.to_units(game.tunables.max_speed)
+	var run_speed := AirdriftUnits.to_units(game.tunables.max_speed)
 	var shallow := INF
 	var deep := -INF
 	for d in landed_at:
@@ -709,7 +709,7 @@ func _test_stutter_bonus() -> void:
 	_check(resets == 0, "without ever being put back", "%d resets" % resets)
 	_check(finished.size() == 1 and finished[0].track == stutter,
 		"and the finish line ends the run, on the bonus's own track",
-		"%d finished, ended at %s u" % [finished.size(), str(G2GUnits.vector_to_units(bot.global_position).round())])
+		"%d finished, ended at %s u" % [finished.size(), str(AirdriftUnits.vector_to_units(bot.global_position).round())])
 	_check(pace >= run_speed * 0.8, "at no less than 80% of run speed: every stone is left on the move",
 		"%.0f u/s against %.0f" % [pace, run_speed])
 

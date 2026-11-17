@@ -1,6 +1,6 @@
 extends Node3D
 
-const G2GMapCatalogue := preload("../game/g2g_map_catalogue.gd")
+const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
 
 ## Renders ONE TRACK of a hand-written map, from its own spawn, looking down the route.
 ##
@@ -34,7 +34,7 @@ func _ready() -> void:
 	# a pad with some sky over it.
 	var aim := float(args[5]) if args.size() > 5 else 0.0
 
-	var catalogue := G2GMapCatalogue.discover()
+	var catalogue := AirdriftMapCatalogue.discover()
 	var def := catalogue.get_map(StringName(id))
 	if def == null:
 		push_error("no map '%s'" % id)

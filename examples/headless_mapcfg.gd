@@ -3,9 +3,9 @@ extends DotGameCheckSuite
 ## A map gets its shipped movement settings and the next map restores them, on the server's cvars and on a client's config.
 ## Run: godot --headless --path . res://examples/headless_mapcfg.tscn
 
-const G2GMapConfig := preload("../game/g2g_map_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
+const AirdriftMapConfig := preload("../game/airdrift_map_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
 
 const CHECKS := 18
 const SECTIONS := 2
@@ -20,20 +20,20 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("game-g2gfast: per-map settings from cfg/game/game-g2gfast/dot_map/map")
+	print("game-airdrift: per-map settings from cfg/game/game-g2gfast/dot_map/map")
 	_section("map files change the cvars")
 	var console := DotConsole.new()
 	add_child(console)
 	console.cvar("sv_airaccelerate", "1000", "", DotConVar.FLAG_ARCHIVE)
 	console.cvar("sv_gravity", "800", "", DotConVar.FLAG_ARCHIVE)
 	console.cvar("sv_replay_bot", "1", "", DotConVar.FLAG_ARCHIVE)
-	var cfg := G2GMapConfig.build(console)
+	var cfg := AirdriftMapConfig.build(console)
 	var air := console.find_cvar("sv_airaccelerate")
 
 	cfg.apply("surf_beginner")
 	var capped := []
-	for k: String in G2GMapConfig.KEYS:
-		if (G2GMapConfig.KEYS[k] as Dictionary).has("max"):
+	for k: String in AirdriftMapConfig.KEYS:
+		if (AirdriftMapConfig.KEYS[k] as Dictionary).has("max"):
 			capped.append(k)
 	_check(capped.is_empty(), "no map key has an arbitrary max (%s)" % [capped])
 	_check(air.get_float() == 1000.0, "a surf map with no file of its own keeps the game default 1000 (%s)" % air.get_string())
@@ -51,7 +51,7 @@ func _run() -> void:
 	cfg.apply("surf_thriller")
 	_check(air.get_float() == 100.0, "armed: a map's own file does lower it")
 	air.set_value("1000")
-	var dir := "res://cfg/server/game/%s/dot_map/map" % G2GMapConfig.GAME_ID
+	var dir := "res://cfg/server/game/%s/dot_map/map" % AirdriftMapConfig.GAME_ID
 	DirAccess.make_dir_recursive_absolute(dir)
 	var op := "%s/zz_operator_test.yml" % dir
 	var f := FileAccess.open(op, FileAccess.WRITE)
@@ -60,7 +60,7 @@ func _run() -> void:
 	cfg.apply("zz_operator_test")
 	var op_won := air.get_float() == 321.0
 	DirAccess.remove_absolute(op)
-	DirAccess.remove_absolute("res://cfg/server/game/%s/dot_map/map" % G2GMapConfig.GAME_ID)
+	DirAccess.remove_absolute("res://cfg/server/game/%s/dot_map/map" % AirdriftMapConfig.GAME_ID)
 	_check(op_won, "a cfg/server file beats the shipped default (%s)" % air.get_string())
 	cfg.apply("something_else")
 	_check(air.get_float() == 1000.0, "and the next map restores 1000")
@@ -69,16 +69,16 @@ func _run() -> void:
 	_check(air.get_float() == 1000.0, "restore puts the operator's value back")
 
 	# The shared spellings are accepted keys (docs/movement.md); sv_autohop never is.
-	_check(G2GMapConfig.KEYS.has("sv_runspeed") and G2GMapConfig.FIELDS["sv_runspeed"] == "max_speed", "a map file may use the shared sv_runspeed")
-	_check(G2GMapConfig.KEYS.has("sv_airwishspeed") and G2GMapConfig.FIELDS["sv_airwishspeed"] == "air_wish_cap", "and sv_airwishspeed")
-	_check(not G2GMapConfig.KEYS.has("sv_autohop") and not G2GMapConfig.KEYS.has("sv_autobunnyhopping"), "but never either auto-hop spelling")
+	_check(AirdriftMapConfig.KEYS.has("sv_runspeed") and AirdriftMapConfig.FIELDS["sv_runspeed"] == "max_speed", "a map file may use the shared sv_runspeed")
+	_check(AirdriftMapConfig.KEYS.has("sv_airwishspeed") and AirdriftMapConfig.FIELDS["sv_airwishspeed"] == "air_wish_cap", "and sv_airwishspeed")
+	_check(not AirdriftMapConfig.KEYS.has("sv_autohop") and not AirdriftMapConfig.KEYS.has("sv_autobunnyhopping"), "but never either auto-hop spelling")
 
 	_done()
 	_section("the client follows the map")
-	var game := G2GGame.new()
-	game.config = G2GConfig.new()
+	var game := AirdriftGame.new()
+	game.config = AirdriftConfig.new()
 	var client := DotGameClient.new()
-	G2GMapConfig.wire_client(client, game)
+	AirdriftMapConfig.wire_client(client, game)
 	client.map_changed("surf_beginner")
 	_check(game.config.air_accelerate == 1000.0, "the client's config keeps 1000 on a surf map with no file")
 	client.map_changed("bhop_eazy")

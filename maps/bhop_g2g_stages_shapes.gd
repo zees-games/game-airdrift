@@ -1,9 +1,9 @@
-extends "../game/g2g_map.gd"
+extends "../game/airdrift_map.gd"
 
 ## The constants and block shapes of bhop_g2g_stages.
 
-const G2GGeometry := preload("../game/g2g_geometry.gd")
-const G2GReach := preload("../game/g2g_reach.gd")
+const AirdriftGeometry := preload("../game/airdrift_geometry.gd")
+const AirdriftReach := preload("../game/airdrift_reach.gd")
 
 ## `bhop_g2g_stages` — five stages, two bonuses, and a different idea in each stage.
 ##
@@ -35,7 +35,7 @@ const G2GReach := preload("../game/g2g_reach.gd")
 ##
 ## [b]Everything is derived from a cursor.[/b] `_course()` walks a position and a
 ## heading and returns every block; the geometry and the zones both read that one list,
-## so a stage line cannot drift from the block it is drawn on. That is `G2GMap`'s rule
+## so a stage line cannot drift from the block it is drawn on. That is `AirdriftMap`'s rule
 ## and it matters more here than on a straight course — a hand-placed line on a map that
 ## turns is a leaderboard nobody can compare.
 
@@ -84,7 +84,7 @@ const RIDGE_X := 3072.0
 ## `headless_run`'s bot, for the reason [constant STAGES] is one list. `rise` is per
 ## block; a section's first gap is the gap onto its first block.
 ##
-## [b]Every gap is a RUN gap, sized with [G2GReach] under the shipped cvars[/b] — a jump
+## [b]Every gap is a RUN gap, sized with [AirdriftReach] under the shipped cvars[/b] — a jump
 ## from the lip at 250 u/s clears 189 flat, 166 onto +24 and 222 down 48 — and each is at
 ## least 29 units inside it, so a player who lands anywhere on a block can run to its
 ## edge and still make the next one. That is the route's whole promise: it is the
@@ -156,7 +156,7 @@ const BEND_BLOCK_LENGTH := 160.0
 ## leaves a runner with carried about 230 units and landed on the last 10-20 units of a
 ## 160-unit block, and the next take-off, from its very edge and turned 22.5 degrees, went
 ## off the side of the last block. At 30 degrees the drop's gap is the length its longer
-## flight wants. Every gap is a RUN gap inside `G2GReach` (`headless_run`'s reach sweep).
+## flight wants. Every gap is a RUN gap inside `AirdriftReach` (`headless_run`'s reach sweep).
 const BEND_SECTIONS: Array = [
 	{"kind": "bend", "blocks": 4, "rise": 0.0, "step": 22.5,
 		"first_width": 160.0, "last_width": 160.0},

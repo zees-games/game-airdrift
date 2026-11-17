@@ -1,7 +1,7 @@
 extends Node3D
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
 
 ## Bakes and annotates a loaded map the way the bots do and prints counts and timings.
 ##
@@ -14,11 +14,11 @@ func _ready() -> void:
 
 func _run() -> void:
 	var id := StringName(OS.get_cmdline_user_args()[0])
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = id
-	var game := G2GGame.new()
+	var game := AirdriftGame.new()
 	game.config = config
 	add_child(game)
 	for _i in range(240):

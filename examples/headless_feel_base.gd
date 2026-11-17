@@ -1,12 +1,12 @@
 extends DotGameCheckSuite
-const G2GTestPorts := preload("test_ports.gd")
+const AirdriftTestPorts := preload("test_ports.gd")
 
 ## Constants, the stand-in client and server, and the sampling harness of headless_feel.
 
-const G2GClient := preload("../game/g2g_client.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
+const AirdriftClient := preload("../game/airdrift_client.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
 
 ## dot-net's lossy UDP relay, by path (it has no class_name; see dot-net's CLAUDE.md).
 const Relay := preload("res://addons/dot_net/testing/dot_net_udp_relay.gd")
@@ -22,7 +22,7 @@ const Relay := preload("res://addons/dot_net/testing/dot_net_udp_relay.gd")
 ##
 ## Every other suite here asserts a simulated value, and `jitter_probe` measures a render
 ## path with a hand-made clock that never drifts. This one stands up a dual-stack
-## `DotServer` running `G2GModule`, connects the real `G2GClient` to it -- over ENet through
+## `DotServer` running `AirdriftModule`, connects the real `AirdriftClient` to it -- over ENet through
 ## dot-net's UDP relay (delay, jitter, loss), or with `--ws` over WebSocket through
 ## [TcpDelay] (delay, and retransmit stalls that hold the whole stream) -- holds a key and
 ## moves the mouse the way a player does, and samples what each rendered frame shows: the
@@ -31,8 +31,8 @@ const Relay := preload("res://addons/dot_net/testing/dot_net_udp_relay.gd")
 ## physics runs at the server's 128, as the bridge sets it on HELLO.
 ##
 ## Checked: a key moves the eye on the next frame; a 30 cm correction is eased rather than
-## drawn in one frame (G2GPlayer.drawn_offset); and in every window the view turns on every
-## frame the mouse moves (G2GPlayer.view_now). Printed per window, and the reason this
+## drawn in one frame (AirdriftPlayer.drawn_offset); and in every window the view turns on every
+## frame the mouse moves (AirdriftPlayer.view_now). Printed per window, and the reason this
 ## exists: for the LOCAL player, the eye's frame-to-frame motion against its speed, frames
 ## it went backwards, frames more than 2 cm off steady motion, the share of server ticks
 ## that had this client's command, and every correction and its size; for the REMOTE
@@ -40,7 +40,7 @@ const Relay := preload("res://addons/dot_net/testing/dot_net_udp_relay.gd")
 ## timeline going back, and frames extrapolated. The numbers are this suite's output, not
 ## the docs': docs/netcode.md "What a connected player sees" says what each fix was for.
 
-var PORT := G2GTestPorts.free_port(2)
+var PORT := AirdriftTestPorts.free_port(2)
 const DATA := "user://g2g_feel"
 const MAP := &"bhop_g2g_intro"
 const BOT_SESSION := 900001
@@ -79,14 +79,14 @@ var _completed := 0
 
 var _server_side: Node = null
 var _server: DotServer = null
-var _game: G2GGame = null
+var _game: AirdriftGame = null
 var _relay = null
 var _tcp: TcpDelay = null
 var _ws := false
 var _client_side: Node = null
 var _link: DotClientLink = null
-var _client: G2GClient = null
-var _bot: G2GPlayer = null
+var _client: AirdriftClient = null
+var _bot: AirdriftPlayer = null
 
 ## The per-frame drivers run while true.
 var _driving := false
@@ -163,7 +163,7 @@ func _module() -> Object:
 # --- Boot -------------------------------------------------------------------
 
 func _boot() -> bool:
-	_section("a dual-stack g2gfast server, and the relay in front of its UDP port")
+	_section("a dual-stack Airdrift server, and the relay in front of its UDP port")
 	Engine.physics_ticks_per_second = 128
 
 	_server_side = Node.new()
@@ -172,7 +172,7 @@ func _boot() -> bool:
 	get_tree().set_multiplayer(MultiplayerAPI.create_default_interface(), _server_side.get_path())
 
 	var config := DotServerConfig.new()
-	config.hostname = "g2gfast feel"
+	config.hostname = "Airdrift feel"
 	config.port = PORT
 	config.bind_address = "127.0.0.1"
 	config.transport_mode = "dual"
@@ -203,26 +203,26 @@ func _boot() -> bool:
 		_done()
 		return false
 
-	var g2g_config := G2GConfig.new()
-	g2g_config.records_directory = ""
-	g2g_config.map_seconds = 0.0
-	g2g_config.initial_map = MAP
-	_game = G2GGame.new()
+	var airdrift_config := AirdriftConfig.new()
+	airdrift_config.records_directory = ""
+	airdrift_config.map_seconds = 0.0
+	airdrift_config.initial_map = MAP
+	_game = AirdriftGame.new()
 	_game.name = "Game"
-	_game.config = g2g_config
+	_game.config = airdrift_config
 	_server_side.add_child(_game)
 	await _until(func() -> bool: return _game.maps != null and _game.maps.current != null, 10.0)
 
-	(load("res://game/g2g_module.gd") as GDScript).set("punishments_file", "%s/punishments.json" % DATA)
-	var loaded: DotResult = await _server.modules.load_module("res://game/g2g_module.gd")
-	if not _check(loaded.ok, "the g2gfast module loads on %s" % MAP, str(loaded.error)):
+	(load("res://game/airdrift_module.gd") as GDScript).set("punishments_file", "%s/punishments.json" % DATA)
+	var loaded: DotResult = await _server.modules.load_module("res://game/airdrift_module.gd")
+	if not _check(loaded.ok, "the Airdrift module loads on %s" % MAP, str(loaded.error)):
 		_done()
 		return false
 
 	var bridge: Object = _module().get("bridge")
 	var added: DotResult = bridge.call("add_player", 0, BOT_SESSION, "Runner B")
 	_check(added.ok, "the server seats a runner for the client to watch", str(added.error))
-	_bot = added.value as G2GPlayer if added.ok else null
+	_bot = added.value as AirdriftPlayer if added.ok else null
 
 	_relay = Relay.new()
 	_relay.seed = 20261010
@@ -261,7 +261,7 @@ func _connect() -> bool:
 	_link.spawned.connect(func() -> void: spawned[0] = true)
 	await _until(func() -> bool: return spawned[0] or _link.is_playing(), 30.0)
 
-	_client = (load("res://game/g2g.tscn") as PackedScene).instantiate() as G2GClient
+	_client = (load("res://game/airdrift.tscn") as PackedScene).instantiate() as AirdriftClient
 	_client_side.add_child(_client)
 	_client.mouse_capture_override = true
 	_client.presentation.settings.local_store = DotSettingsStoreMemory.new()
@@ -284,11 +284,11 @@ func _connect() -> bool:
 	return playing and sees_bot
 
 
-func _remote_bot() -> G2GPlayer:
+func _remote_bot() -> AirdriftPlayer:
 	if _client == null or _client.game == null:
 		return null
 	for id in _client.game.players:
-		var p: G2GPlayer = _client.game.players[id]
+		var p: AirdriftPlayer = _client.game.players[id]
 		if p != _client.player and String(id).ends_with(str(BOT_SESSION)):
 			return p
 	return null
@@ -359,7 +359,7 @@ func _late_physics() -> void:
 	var server_tick: int = _game.current_tick()
 	if _bot != null:
 		_bot_track[server_tick] = _bot.controller.state.position
-	var me: G2GPlayer = _game.players.get(StringName("u%d" % _session()), null) if _session() > 0 else null
+	var me: AirdriftPlayer = _game.players.get(StringName("u%d" % _session()), null) if _session() > 0 else null
 	if me != null:
 		_a_track[server_tick] = me.controller.state.position
 	if _client == null or _client.net == null or _client.player == null:

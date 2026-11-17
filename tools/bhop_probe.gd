@@ -1,9 +1,9 @@
 extends Node3D
 
-const G2GBspMap := preload("../game/g2g_bsp_map.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GMovement := preload("../game/g2g_movement.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftMovement := preload("../game/airdrift_movement.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 
 ## Bunny-hops across a map with the real motor and reports anybody who leaves it.
 ##
@@ -38,13 +38,13 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 
-	var map := G2GBspMap.new()
+	var map := AirdriftBspMap.new()
 	add_child(map)
 	map.build_from_path(manifest_path)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 
-	var tunables := G2GMovement.tunables_for(G2GConfig.new())
+	var tunables := AirdriftMovement.tunables_for(AirdriftConfig.new())
 	var body := DotFpsPhysicsBody.for_node(self)
 	var motor := DotFpsMotor.new(tunables, body)
 
@@ -65,9 +65,9 @@ func _ready() -> void:
 	for sample: Array in starts_at:
 		var state := DotFpsState.new()
 		# A hull's worth above the surface, which is where a spawn puts a player.
-		state.position = (sample[0] as Vector3) + Vector3.UP * G2GUnits.to_metres(8.0)
+		state.position = (sample[0] as Vector3) + Vector3.UP * AirdriftUnits.to_metres(8.0)
 		var floor_y: float = (sample[0] as Vector3).y
-		state.velocity = (sample[1] as Vector3) * G2GUnits.to_metres(ENTRY_SPEED_UNITS)
+		state.velocity = (sample[1] as Vector3) * AirdriftUnits.to_metres(ENTRY_SPEED_UNITS)
 
 		var height: float = tunables.stand_height
 		var command := DotFpsCommand.new()
@@ -104,8 +104,8 @@ func _ready() -> void:
 			# one tick that moves further than a tick can. Terminal velocity at 128 tick
 			# is a few units; anything past a hull's height was not fallen, it was
 			# skipped.
-			var dropped := G2GUnits.to_units(previous_y - state.position.y)
-			if dropped > G2GUnits.to_units(height):
+			var dropped := AirdriftUnits.to_units(previous_y - state.position.y)
+			if dropped > AirdriftUnits.to_units(height):
 				verdict = "tunnelled"
 				if worst.is_empty():
 					worst = {"at": state.position, "tick": t,
@@ -113,7 +113,7 @@ func _ready() -> void:
 				break
 			previous_y = state.position.y
 
-			if state.position.y < G2GUnits.to_metres(floor_min) - 1.0:
+			if state.position.y < AirdriftUnits.to_metres(floor_min) - 1.0:
 				verdict = "out"
 				break
 		match verdict:
@@ -132,7 +132,7 @@ func _ready() -> void:
 
 
 ## Centres of upward-facing triangles a player could stand on, with a direction to run.
-func _standable(map: G2GBspMap) -> Array:
+func _standable(map: AirdriftBspMap) -> Array:
 	var mi := map.get_node_or_null("World") as MeshInstance3D
 	if mi == null or mi.mesh == null:
 		return []

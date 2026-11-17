@@ -9,7 +9,7 @@ One subject per file. [CLAUDE.md](../CLAUDE.md) has the rules in one line each; 
 | [maps.md](maps.md) | The three hand-built maps: the default map, geometry and zones from one list, `export_zones`, pits per route, the stages map, surface roles, the survey |
 | [routes.md](routes.md) | What a jump reaches (RUN and CHAIN), every bonus route and how its bot drives it, the route bot and replay follower for imported maps |
 | [imported-maps.md](imported-maps.md) | The importer: scale and axes, zones and the zones file, pits, spawns, the solid as convex brushes, roles from slope, what brush entities do, static props, what is not imported |
-| [brush-entities.md](brush-entities.md) | Every brush entity class and what the importer and `G2GMapMechanics` make of it |
+| [brush-entities.md](brush-entities.md) | Every brush entity class and what the importer and `AirdriftMapMechanics` make of it |
 | [map-rendering.md](map-rendering.md) | Lighting, the lightmap atlas, translucency, glass and water, stand-in textures and the prototype grid, skies, static prop lighting, the surface limit, the preview tool |
 | [map-delivery.md](map-delivery.md) | The catalogue with no list, airdrift-maps and owners, pack versions, the map-change protocol and the trusted template, rotation and the map list |
 | [netcode.md](netcode.md) | The bridge, the movement config on the wire, the tick rate, drawing between ticks, what a connected player sees, wire rules, hunters, what a full server costs |
@@ -26,16 +26,16 @@ One subject per file. [CLAUDE.md](../CLAUDE.md) has the rules in one line each; 
 
 | Path | What |
 | --- | --- |
-| `game/g2g_units.gd`, `g2g_config.gd`, `g2g_movement.gd` | the unit ratio (the ONLY place), every cvar in genre units, the one boundary into metres |
-| `game/g2g_game.gd` | the simulation: maps, timers, boards, players; headless |
-| `game/g2g_player*.gd`, `g2g_rig.gd`, `g2g_camera.gd`, `g2g_avatars.gd`, `g2g_ladder_mode.gd`, `g2g_effects.gd` | the player, its stack, body, camera, climbing, effects |
-| `game/g2g_replays.gd`, `g2g_stats.gd`, `g2g_awards.gd`, `g2g_progress.gd` | replays, statistics, achievements |
-| `game/g2g_module.gd`, `g2g_services.gd`, `g2g_mod_tools.gd`, `g2g_vote.gd`, `g2g_identity.gd`, `g2g_query.gd`, `g2g_party.gd` | the server side |
-| `game/g2g_combat.gd`, `g2g_arsenal.gd`, `g2g_hunter*.gd`, `g2g_props.gd`, `g2g_spectate.gd` | the layers over the timer |
-| `game/g2g_bots.gd`, `g2g_bot_nav.gd`, `g2g_surf_course.gd`, `g2g_route_bot.gd` | the server's bots (`bot_quota`), the stage they ride read from the zones, the rule-based fallback and the route planned for it from dot-npc-ai's links (`tools/nav_probe.tscn` prints a map's links and timings); the simulator, planner and pilot are dot-player-controller's and dot-bot's |
-| `game/g2g_map.gd`, `g2g_geometry.gd`, `g2g_textures.gd`, `g2g_reach.gd`, `g2g_map_survey.gd` | hand-built maps |
-| `game/g2g_bsp_map.gd`, `g2g_map_mechanics.gd`, `g2g_lighting.gd`, `g2g_stock_substitutes.gd`, `*.gdshader`, `g2g_map_catalogue.gd` | imported maps, the catalogue (rotation is dot-map's `DotMapRotationFile`) |
-| `game/g2g_client.gd`, `g2g_hud.gd`, `g2g_presentation.gd`, `g2g_bindings.gd`, `ui/`, and the other client files | the client; never loaded by a server |
+| `game/airdrift_units.gd`, `airdrift_config.gd`, `airdrift_movement.gd` | the unit ratio (the ONLY place), every cvar in genre units, the one boundary into metres |
+| `game/airdrift_game.gd` | the simulation: maps, timers, boards, players; headless |
+| `game/g2g_player*.gd`, `airdrift_rig.gd`, `airdrift_camera.gd`, `airdrift_avatars.gd`, `airdrift_ladder_mode.gd`, `airdrift_effects.gd` | the player, its stack, body, camera, climbing, effects |
+| `game/airdrift_replays.gd`, `airdrift_stats.gd`, `airdrift_awards.gd`, `airdrift_progress.gd` | replays, statistics, achievements |
+| `game/airdrift_module.gd`, `airdrift_services.gd`, `airdrift_mod_tools.gd`, `airdrift_vote.gd`, `airdrift_identity.gd`, `airdrift_query.gd`, `airdrift_party.gd` | the server side |
+| `game/airdrift_combat.gd`, `airdrift_arsenal.gd`, `g2g_hunter*.gd`, `airdrift_props.gd`, `airdrift_spectate.gd` | the layers over the timer |
+| `game/airdrift_bots.gd`, `airdrift_bot_nav.gd`, `airdrift_surf_course.gd`, `airdrift_route_bot.gd` | the server's bots (`bot_quota`), the stage they ride read from the zones, the rule-based fallback and the route planned for it from dot-npc-ai's links (`tools/nav_probe.tscn` prints a map's links and timings); the simulator, planner and pilot are dot-player-controller's and dot-bot's |
+| `game/airdrift_map.gd`, `airdrift_geometry.gd`, `airdrift_textures.gd`, `airdrift_reach.gd`, `airdrift_map_survey.gd` | hand-built maps |
+| `game/airdrift_bsp_map.gd`, `airdrift_map_mechanics.gd`, `airdrift_lighting.gd`, `airdrift_stock_substitutes.gd`, `*.gdshader`, `airdrift_map_catalogue.gd` | imported maps, the catalogue (rotation is dot-map's `DotMapRotationFile`) |
+| `game/airdrift_client.gd`, `airdrift_hud.gd`, `airdrift_presentation.gd`, `airdrift_bindings.gd`, `ui/`, and the other client files | the client; never loaded by a server |
 | `game/net/` | the bridge (its ordering is the file), net classes, the `@rpc` link (identical on both ends), events and requests |
 | `maps/` | the three hand-built maps (+ generated `.zones.json`), `imported_map.tscn`, `imported/` (link to airdrift-maps, checked out as `../g2gfast-maps`), `zones/<id>.json` (hand-written; see its README), `routes/` (route files, recordings, surf caches) |
 | `npcs/`, `props/`, `avatars/`, `textures/`, `scenes/` | hunters, practice blocks, avatar parts, prototype set and Kenney stand-ins, server scene and effect scenes |

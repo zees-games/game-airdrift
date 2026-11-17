@@ -1,6 +1,6 @@
 extends Node3D
 
-const G2GUnits := preload("../game/g2g_units.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 
 ## Renders avatar parts side by side and exits.
 ##
@@ -39,8 +39,8 @@ func _ready() -> void:
 		# At the rig's own mount heights, not at the origin. A part is authored centred
 		# on its slot, so previewing them stacked at 0 draws a head inside a torso and
 		# says nothing about whether the character stands up correctly.
-		var hull := G2GUnits.to_metres(G2GUnits.PLAYER_HEIGHT)
-		var eye := G2GUnits.to_metres(G2GUnits.PLAYER_EYE_HEIGHT)
+		var hull := AirdriftUnits.to_metres(AirdriftUnits.PLAYER_HEIGHT)
+		var eye := AirdriftUnits.to_metres(AirdriftUnits.PLAYER_EYE_HEIGHT)
 		for pair in [["body", hull * 0.42], ["head", eye]]:
 			var path := "res://avatars/%s_kenney_%s.tscn" % [pair[0], letter]
 			if not ResourceLoader.exists(path):
@@ -55,8 +55,8 @@ func _ready() -> void:
 		# answer it.
 		var hull_box := MeshInstance3D.new()
 		var bm := BoxMesh.new()
-		bm.size = Vector3(G2GUnits.to_metres(G2GUnits.PLAYER_HALF_WIDTH * 2.0), hull,
-			G2GUnits.to_metres(G2GUnits.PLAYER_HALF_WIDTH * 2.0))
+		bm.size = Vector3(AirdriftUnits.to_metres(AirdriftUnits.PLAYER_HALF_WIDTH * 2.0), hull,
+			AirdriftUnits.to_metres(AirdriftUnits.PLAYER_HALF_WIDTH * 2.0))
 		hull_box.mesh = bm
 		var m := StandardMaterial3D.new()
 		m.albedo_color = Color(0.4, 0.9, 1.0, 0.13)

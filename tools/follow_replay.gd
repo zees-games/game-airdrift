@@ -1,7 +1,7 @@
 extends Node3D
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
 const ReplayFollow := preload("replay_follow.gd")
 
 ## Drives the real movement along a map's recorded run (`maps/routes/<id>.replay`) and
@@ -14,7 +14,7 @@ const ReplayFollow := preload("replay_follow.gd")
 ## file to follow instead of the map's own -- a person's record from the server's records
 ## directory, before it is copied in beside the route.
 
-var game: G2GGame = null
+var game: AirdriftGame = null
 
 
 func _ready() -> void:
@@ -41,11 +41,11 @@ func _run() -> void:
 		return
 	var seconds := float(args[1]) if args.size() > 1 else replay.duration() * 1.2
 
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = id
-	game = G2GGame.new()
+	game = AirdriftGame.new()
 	game.config = config
 	add_child(game)
 	for _i in range(240):

@@ -21,7 +21,7 @@ func _test_settings_reach_the_engine() -> void:
 		"other players are shown and V-Sync is off until somebody says otherwise")
 
 	# Every document on disk stores 110, the old default that nothing read.
-	var step: Callable = G2GPresentation.migrations()[1]
+	var step: Callable = AirdriftPresentation.migrations()[1]
 	_check(not (step.call({"field_of_view": 110, "sensitivity": 3.0}) as Dictionary).has("field_of_view"),
 		"a stored 110 from before the camera read it is dropped, so the player gets 90")
 	_check(int((step.call({"field_of_view": 100}) as Dictionary)["field_of_view"]) == 100,
@@ -80,7 +80,7 @@ func _test_the_menu_is_a_view_of_the_settings() -> void:
 	menu.open(&"controls")
 	await get_tree().process_frame
 	var keys := _live(menu.screen, "DotMenuKeyButton")
-	_check(keys.size() == G2GBindings.ROWS.size() + 2, "the Controls page has a key per action (plus the wheel's two) (%d)" % keys.size())
+	_check(keys.size() == AirdriftBindings.ROWS.size() + 2, "the Controls page has a key per action (plus the wheel's two) (%d)" % keys.size())
 
 	# Flashlight onto R: R was Restart, so Restart gets F rather than nothing.
 	var _r := p.bindings.rebind(p.bindings.row_for_action(&"g2g_flashlight"), "R", p.settings)
@@ -162,12 +162,12 @@ func _test_help_lists_what_it_is_told() -> void:
 func _test_a_theme_is_every_screen() -> void:
 	_section("A theme reaches the menus and the HUD, and switches while they are open")
 
-	var s := G2GPresentation.schema()
+	var s := AirdriftPresentation.schema()
 	var themes := DotMenuThemes.stock()
 	_check(themes.size() == DotMenuThemes.STOCK.size() and themes.size() >= 7 and s.find(&"ui_theme") != null
 		and StringName(str(s.find(&"ui_theme").default_value)) == &"midnight",
 		"every stock theme (seven or more), offered by a setting whose default is the palette the menus always had")
-	var row := G2GBindings.make().row_for_action(&"g2g_theme_next")
+	var row := AirdriftBindings.make().row_for_action(&"g2g_theme_next")
 	_check(not row.is_empty() and str(row["default"]) == "P", "and a key that cycles them, P unless rebound")
 
 	var p := _make()
@@ -189,7 +189,7 @@ func _test_a_theme_is_every_screen() -> void:
 		"%s against %s" % [fill, ember.accent_deep])
 	_check(menu.is_open() and menu.screen.current_page() == &"hud", "on the page it was showing, still open")
 
-	var hud := G2GHud.new()
+	var hud := AirdriftHud.new()
 	add_child(hud)
 	hud.apply_theme(seen[0] if not seen.is_empty() else null)
 	_check(hud.timer_hud.panel_colour == ember.hud_plate and hud.timer_hud.neutral_colour == ember.hud_text,
@@ -212,14 +212,14 @@ func _test_the_board_is_a_timer_servers() -> void:
 	var host := FakeHost.new()
 	add_child(host)
 	var menu := _menu_for(p, host)
-	var client := G2GClient.new()
+	var client := AirdriftClient.new()
 	client.menu = menu
 	client.call("_wire_scoreboard")
 	await get_tree().process_frame
 
 	var board := menu.scoreboard
 	board.source = func() -> Dictionary:
-		return {"server": {"name": "g2g test", "map": "surf_test", "players": 3, "max": 24}, "you": 7,
+		return {"server": {"name": "Airdrift test", "map": "surf_test", "players": 3, "max": 24}, "you": 7,
 			"players": [
 				{"id": 5, "name": "Ada", "style": "Normal", "best": 61.234, "rank": 2, "of": 9, "seconds": 300, "ping": 40},
 				{"id": 6, "name": "Bea", "style": "Sideways", "best": 58.5, "rank": 1, "of": 9, "seconds": 1200, "ping": 90},
@@ -251,7 +251,7 @@ func _test_the_board_is_a_timer_servers() -> void:
 func _test_the_timer_is_the_players_layout() -> void:
 	_section("The timer's lines and where everything goes are the player's")
 
-	var hud := G2GHud.new()
+	var hud := AirdriftHud.new()
 	add_child(hud)
 	await get_tree().process_frame
 	if hud.size.x <= 0.0:
@@ -268,12 +268,12 @@ func _test_the_timer_is_the_players_layout() -> void:
 	hud.place()
 	_check(t.corner == DotTimerHud.Placement.TOP_LEFT, "and the block goes where the player put it")
 
-	_check(G2GHud.positions_from_text("not json").is_empty() and G2GHud.positions_from_text("").is_empty(),
+	_check(AirdriftHud.positions_from_text("not json").is_empty() and AirdriftHud.positions_from_text("").is_empty(),
 		"a positions setting that is not a layout is the default layout")
-	var read := G2GHud.positions_from_text('{"timer":[0.25,0.5],"bogus":[1,1],"keys":[2,-1]}')
+	var read := AirdriftHud.positions_from_text('{"timer":[0.25,0.5],"bogus":[1,1],"keys":[2,-1]}')
 	_check(read.size() == 2 and read[&"timer"] == Vector2(0.25, 0.5) and read[&"keys"] == Vector2(1, 0),
 		"unknown pieces are dropped and a piece off the screen is put back on it", str(read))
-	_check(G2GHud.positions_from_text(G2GHud.positions_to_text(read)) == read, "and it round-trips")
+	_check(AirdriftHud.positions_from_text(AirdriftHud.positions_to_text(read)) == read, "and it round-trips")
 
 	hud.move_element(&"timer", Vector2(300, 200))
 	var clock := hud.element_rect(&"timer")
@@ -302,7 +302,7 @@ func _test_the_timer_is_the_players_layout() -> void:
 
 	var editor := DotMenuLayoutEditor.new()
 	editor.target = hud
-	editor.pieces = G2GClient.HUD_PIECES
+	editor.pieces = AirdriftClient.HUD_PIECES
 	add_child(editor)
 	var saved: Array[String] = ["unset"]
 	editor.saved.connect(func(text: String) -> void: saved[0] = text)
@@ -311,7 +311,7 @@ func _test_the_timer_is_the_players_layout() -> void:
 	_check(hud.element_rect(&"status").get_center().distance_to(Vector2(400, 500)) < 1.0
 		and saved[0].contains("status"),
 		"the editor moves a piece and saves where it went", saved[0])
-	_check(G2GHud.positions_from_text(saved[0]).has(&"status"),
+	_check(AirdriftHud.positions_from_text(saved[0]).has(&"status"),
 		"in the shape the HUD reads back")
 	_check(editor.piece_at(Vector2(400, 500)) == &"status", "and the piece is picked up where it is drawn")
 	editor.reset_all()
@@ -343,7 +343,7 @@ func _test_the_timer_is_the_players_layout() -> void:
 func _test_a_confirmed_hit_is_drawn() -> void:
 	_section("A hit the server confirmed is drawn, and nothing before it")
 
-	var hud := G2GHud.new()
+	var hud := AirdriftHud.new()
 	add_child(hud)
 	await get_tree().process_frame
 
@@ -366,11 +366,11 @@ func _test_a_confirmed_hit_is_drawn() -> void:
 func _test_the_weapon_in_hand_is_named() -> void:
 	_section("The weapon in hand is named on a deathmatch, and nothing on a timer server")
 
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.initial_map = &"bhop_g2g_intro"
 	config.deathmatch = true
-	var game := G2GGame.new()
+	var game := AirdriftGame.new()
 	game.name = "AmmoGame"
 	game.config = config
 	add_child(game)
@@ -379,8 +379,8 @@ func _test_the_weapon_in_hand_is_named() -> void:
 		if game.maps != null and game.maps.current != null:
 			break
 
-	var ada: G2GPlayer = game.add_player(&"u1", "Ada")
-	var hud := G2GHud.new()
+	var ada: AirdriftPlayer = game.add_player(&"u1", "Ada")
+	var hud := AirdriftHud.new()
 	hud.size = Vector2(1280.0, 720.0)
 	add_child(hud)
 	hud.bind(game, &"u1")
@@ -397,9 +397,9 @@ func _test_the_weapon_in_hand_is_named() -> void:
 			and not hud.ammo.get_global_rect().intersects(hud.element_rect(&"timer")),
 		"drawn bottom right, clear of the clock", "%s / %s" % [hud.ammo.get_global_rect(), hud.element_rect(&"timer")])
 
-	var icons: DotWeaponIconStyle = G2GWeaponIcons.shared
+	var icons: DotWeaponIconStyle = AirdriftWeaponIcons.shared
 	var unmapped := PackedStringArray()
-	for weapon in G2GWeaponIcons.TAGS:
+	for weapon in AirdriftWeaponIcons.TAGS:
 		if not icons.icon_set().has_icon(weapon):
 			unmapped.append(String(weapon))
 	_check(unmapped.is_empty() and hud.weapon_icon.visible and hud.weapon_icon.texture == icons.texture(ada.held_weapon),

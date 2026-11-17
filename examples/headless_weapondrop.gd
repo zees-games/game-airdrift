@@ -1,12 +1,12 @@
 extends DotGameCheckSuite
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GArsenal := preload("../game/g2g_arsenal.gd")
-const G2GEvent := preload("../game/net/g2g_event.gd")
-const G2GEvents := preload("../game/net/g2g_events.gd")
-const G2GRequest := preload("../game/net/g2g_request.gd")
-const G2GWeaponNet := preload("../game/net/g2g_weapon_net.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftArsenal := preload("../game/airdrift_arsenal.gd")
+const AirdriftEvent := preload("../game/net/airdrift_event.gd")
+const AirdriftEvents := preload("../game/net/airdrift_events.gd")
+const AirdriftRequest := preload("../game/net/airdrift_request.gd")
+const AirdriftWeaponNet := preload("../game/net/airdrift_weapon_net.gd")
 
 ## Dropped weapons: the drop key throws the weapon in hand, an empty slot in reach takes it back,
 ## the despawn and cap cvars bite, a kill leaves the dead player's weapon lying, and a client
@@ -21,10 +21,10 @@ const CHECKS := 36
 
 var _entered := 0
 var _completed := 0
-var _server: G2GGame = null
-var _client: G2GGame = null
+var _server: AirdriftGame = null
+var _client: AirdriftGame = null
 var _wire: Array = []
-var _client_net := G2GWeaponNet.new()
+var _client_net := AirdriftWeaponNet.new()
 
 
 func _ready() -> void:
@@ -33,7 +33,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("game-g2gfast: weapon drops")
+	print("game-airdrift: weapon drops")
 	_server = await _make_game(true, &"drops_server")
 	_client = await _make_game(false, &"drops_client")
 	_test_wire()
@@ -44,14 +44,14 @@ func _run() -> void:
 	_report_sections(_entered, _completed, SECTIONS, CHECKS)
 
 
-func _make_game(server: bool, scope: StringName) -> G2GGame:
-	var config := G2GConfig.new()
+func _make_game(server: bool, scope: StringName) -> AirdriftGame:
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = &"bhop_g2g_intro"
 	config.authoritative = server
 	config.deathmatch = server
-	var game := G2GGame.new()
+	var game := AirdriftGame.new()
 	game.name = "Server" if server else "Client"
 	game.config = config
 	game.service_scope = scope
@@ -66,8 +66,8 @@ func _make_game(server: bool, scope: StringName) -> G2GGame:
 func _test_wire() -> void:
 	_entered += 1
 	print("The events fit their wire")
-	_check(G2GEvent.fits(), "every event kind fits its field")
-	_check(G2GRequest.fits(), "every ask fits its field")
+	_check(AirdriftEvent.fits(), "every event kind fits its field")
+	_check(AirdriftRequest.fits(), "every ask fits its field")
 	_check(_server.weapon_layer != null and _server.weapon_layer.drops.is_authority,
 		"the server game builds an authoritative layer")
 	_check(_client.weapon_layer != null and not _client.weapon_layer.drops.is_authority,
@@ -83,7 +83,7 @@ func _test_throw_and_pickup() -> void:
 	var ada := _server.add_player(&"u1", "Ada")
 	var _bea := _server.add_player(&"u2", "Bea")
 	var arsenal := _server.combat.arsenal_of(&"u1")
-	var deagle: int = G2GArsenal.deagle().slot
+	var deagle: int = AirdriftArsenal.deagle().slot
 	if not _check(arsenal != null and arsenal.has_slot(deagle), "an armed player carries the deagle"):
 		return
 
@@ -105,7 +105,7 @@ func _test_throw_and_pickup() -> void:
 	var before := layer.drops.count()
 	var victim := _server.combat.entity_for(&"u2")
 	_server.combat.health_of(&"u2").spawn_protection_ticks = 0
-	_server.combat.manager.apply_damage(DotDamage.make(0, victim, 5000.0, G2GArsenal.world()))
+	_server.combat.manager.apply_damage(DotDamage.make(0, victim, 5000.0, AirdriftArsenal.world()))
 	_check(layer.drops.count() == before + 1, "a kill leaves the dead player's weapon lying")
 
 	layer.clear()
@@ -134,12 +134,12 @@ func _test_throw_and_pickup() -> void:
 func _test_use_key() -> void:
 	_entered += 1
 	print("The use key: tap and hold")
-	_check(G2GEvents.Ask.has("USE_KEY") and G2GRequest.fits(), "the use-key ask fits its field")
+	_check(AirdriftEvents.Ask.has("USE_KEY") and AirdriftRequest.fits(), "the use-key ask fits its field")
 	var layer := _server.weapon_layer
 	layer.clear()
 	var ada: Node = _server.players[&"u1"]
 	var arsenal := _server.combat.arsenal_of(&"u1")
-	var deagle: int = G2GArsenal.deagle().slot
+	var deagle: int = AirdriftArsenal.deagle().slot
 	if not _check(arsenal != null, "an armed player to press the key"):
 		return
 	layer.set_use(&"u1", true)
@@ -148,11 +148,11 @@ func _test_use_key() -> void:
 	_check(not bool(layer.use_down[&"u1"]), "and up")
 	# A deagle lying right at the aim while the same weapon is in hand: a tap takes ammo only, a hold replaces.
 	var _equipped := arsenal.equip(deagle)
-	var state := arsenal.drop_current([G2GArsenal.knife().slot] as Array[int])
+	var state := arsenal.drop_current([AirdriftArsenal.knife().slot] as Array[int])
 	_check(not state.is_empty(), "the weapon in hand can be set down")
 	var _spawned := layer.drops.spawn(state, ada.eye_position() + ada.aim_direction() * 0.8, Vector3.ZERO, _server.combat.entity_for(&"u1"), layer.rules.resolve(null))
 	layer.drops.tick(1.0)
-	var _given := arsenal.give(G2GArsenal.deagle().id, true)
+	var _given := arsenal.give(AirdriftArsenal.deagle().id, true)
 	_equipped = arsenal.equip(deagle)
 	_check(arsenal.has_slot(deagle) and layer.drops.count() == 1, "the same weapon is in hand and on the floor")
 	var info := layer.drops.prompt_for(arsenal, ada.eye_position(), ada.aim_direction())
@@ -215,7 +215,7 @@ func _test_replication() -> void:
 	_entered += 1
 	print("Replicated to clients")
 	var layer := _server.weapon_layer
-	var net := G2GWeaponNet.new(_to_wire)
+	var net := AirdriftWeaponNet.new(_to_wire)
 	net.watch(layer)
 	_hold_deagle(_server.combat.arsenal_of(&"u1"))
 	var id := layer.throw_for(&"u1")
@@ -229,7 +229,7 @@ func _test_replication() -> void:
 	var _settled := rest.size()
 	_pump()
 
-	var joiner := G2GGame.new()
+	var joiner := AirdriftGame.new()
 	joiner.name = "Joiner"
 	joiner.config = _client.config
 	joiner.service_scope = &"drops_joiner"
@@ -248,7 +248,7 @@ func _test_replication() -> void:
 	layer.clear()
 	_pump()
 	_check(mirror.count() == 0, "a round reset reaches the client")
-	_check(not _client_net.apply(G2GEvents.Kind.SHOT, DotNetReader.new(PackedByteArray()), _client.weapon_layer),
+	_check(not _client_net.apply(AirdriftEvents.Kind.SHOT, DotNetReader.new(PackedByteArray()), _client.weapon_layer),
 		"an event that is not a weapon's is left to the bridge")
 	_completed += 1
 
@@ -264,5 +264,5 @@ func _pump() -> void:
 
 
 func _hold_deagle(arsenal: DotWeaponArsenal) -> void:
-	var _given := arsenal.give(G2GArsenal.ITEM_DEAGLE)
-	var _held := arsenal.equip(G2GArsenal.deagle().slot)
+	var _given := arsenal.give(AirdriftArsenal.ITEM_DEAGLE)
+	var _held := arsenal.equip(AirdriftArsenal.deagle().slot)

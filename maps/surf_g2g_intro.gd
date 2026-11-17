@@ -1,6 +1,6 @@
-extends "../game/g2g_map.gd"
+extends "../game/airdrift_map.gd"
 
-const G2GGeometry := preload("../game/g2g_geometry.gd")
+const AirdriftGeometry := preload("../game/airdrift_geometry.gd")
 
 ## `surf_g2g_intro` — two ramps meeting in a valley, descending, with three bonuses.
 ##
@@ -17,7 +17,7 @@ const G2GGeometry := preload("../game/g2g_geometry.gd")
 ## a bot actually rides — and `the fall line`, bonus 3, is the route on this map where
 ## the answer is the ramp. See the constants below it.
 ##
-## [b]It declares no course (`G2GMap.add_course`), and that is an answer rather than an
+## [b]It declares no course (`AirdriftMap.add_course`), and that is an answer rather than an
 ## omission.[/b] Every way from one surface to the next here is a drop onto something
 ## below — a pad onto a bank, a bank onto a bank, a bank's end onto a finish — and the
 ## question a drop asks is whether the thing below is there, which only riding it
@@ -79,7 +79,7 @@ static func bonus_bank_surface_y(x: float) -> float:
 #
 # [b]The route where the descent comes from the ramp.[/b] Every other surface on this
 # map that is called a ramp is banked about the run axis and LEVEL along its length —
-# `G2GGeometry.ramp` rotates about `Vector3.FORWARD`, which tilts a slab in X and Y and
+# `AirdriftGeometry.ramp` rotates about `Vector3.FORWARD`, which tilts a slab in X and Y and
 # leaves its Z extent horizontal — so a player riding one is carried sideways into the
 # valley and every metre they descend afterwards comes from the stepped floor. Driving
 # it says so: a bot on the main track rides under 5% of a 156 m route, crosses neither
@@ -130,14 +130,14 @@ static func fall_point(t: float) -> Vector3:
 
 func _build() -> void:
 	tier = 3
-	G2GGeometry.sun(self)
+	AirdriftGeometry.sun(self)
 	fallback_spawn_units = Vector3(0.0, START_Y + 8.0, START_Z + 256.0)
 
 	# Start platform with a back wall.
-	G2GGeometry.box(self, Vector3(0.0, START_Y - 16.0, START_Z + 256.0),
-		Vector3(768.0, 32.0, 512.0), G2GGeometry.COLOUR_START)
-	G2GGeometry.box(self, Vector3(0.0, START_Y + 64.0, START_Z + 520.0),
-		Vector3(768.0, 160.0, 32.0), G2GGeometry.COLOUR_PLATFORM)
+	AirdriftGeometry.box(self, Vector3(0.0, START_Y - 16.0, START_Z + 256.0),
+		Vector3(768.0, 32.0, 512.0), AirdriftGeometry.COLOUR_START)
+	AirdriftGeometry.box(self, Vector3(0.0, START_Y + 64.0, START_Z + 520.0),
+		Vector3(768.0, 160.0, 32.0), AirdriftGeometry.COLOUR_PLATFORM)
 
 	var length := absf(END_Z - START_Z)
 	var centre_z := (START_Z + END_Z) * 0.5
@@ -145,7 +145,7 @@ func _build() -> void:
 	var out := cos(deg_to_rad(RAMP_ANGLE)) * RAMP_WIDTH * 0.5
 
 	for side in [-1.0, 1.0]:
-		G2GGeometry.ramp(
+		AirdriftGeometry.ramp(
 			self,
 			Vector3(side * (VALLEY_HALF_WIDTH + out), (START_Y + END_Y) * 0.5 + lift, centre_z),
 			Vector3(RAMP_WIDTH, RAMP_THICKNESS, length),
@@ -156,25 +156,25 @@ func _build() -> void:
 	var steps := 16
 	for i in range(steps):
 		var t := float(i) / float(steps - 1)
-		G2GGeometry.box(
+		AirdriftGeometry.box(
 			self,
 			Vector3(0.0, lerpf(START_Y - 256.0, END_Y, t) - 16.0, lerpf(START_Z - 256.0, END_Z + 256.0, t)),
 			Vector3(VALLEY_HALF_WIDTH * 2.0, 32.0, length / float(steps) + 64.0),
-			G2GGeometry.COLOUR_FLOOR
+			AirdriftGeometry.COLOUR_FLOOR
 		)
 
 	# Finish pad.
-	G2GGeometry.box(self, Vector3(0.0, END_Y - 16.0, END_Z - 320.0),
-		Vector3(768.0, 32.0, 640.0), G2GGeometry.COLOUR_END)
+	AirdriftGeometry.box(self, Vector3(0.0, END_Y - 16.0, END_Z - 320.0),
+		Vector3(768.0, 32.0, 640.0), AirdriftGeometry.COLOUR_END)
 
 	# Bonus: a single short ramp beside the start.
-	G2GGeometry.box(self, Vector3(BONUS_X, START_Y - 16.0, START_Z + 256.0),
-		Vector3(384.0, 32.0, 384.0), G2GGeometry.COLOUR_BONUS)
-	G2GGeometry.ramp(self, Vector3(BONUS_BANK_X, BONUS_BANK_Y, BONUS_BANK_Z),
+	AirdriftGeometry.box(self, Vector3(BONUS_X, START_Y - 16.0, START_Z + 256.0),
+		Vector3(384.0, 32.0, 384.0), AirdriftGeometry.COLOUR_BONUS)
+	AirdriftGeometry.ramp(self, Vector3(BONUS_BANK_X, BONUS_BANK_Y, BONUS_BANK_Z),
 		Vector3(BONUS_BANK_WIDTH, RAMP_THICKNESS, BONUS_BANK_LENGTH), -RAMP_ANGLE,
-		Vector3.FORWARD, G2GGeometry.COLOUR_BONUS)
-	G2GGeometry.box(self, Vector3(BONUS_X, BONUS_FINISH_Y - 16.0, BONUS_FINISH_Z),
-		Vector3(BONUS_FINISH_SIZE, 32.0, BONUS_FINISH_LENGTH), G2GGeometry.COLOUR_END)
+		Vector3.FORWARD, AirdriftGeometry.COLOUR_BONUS)
+	AirdriftGeometry.box(self, Vector3(BONUS_X, BONUS_FINISH_Y - 16.0, BONUS_FINISH_Z),
+		Vector3(BONUS_FINISH_SIZE, 32.0, BONUS_FINISH_LENGTH), AirdriftGeometry.COLOUR_END)
 
 	# Bonus 2: the transfer, on the other side of the start.
 	#
@@ -186,11 +186,11 @@ func _build() -> void:
 	# with one ramp never asks the question twice.
 	#
 	# The direction each one throws is worth writing down, because it is the sign that
-	# is wrong first: `G2GGeometry.ramp` rotates about +Z, so a POSITIVE angle lifts
+	# is wrong first: `AirdriftGeometry.ramp` rotates about +Z, so a POSITIVE angle lifts
 	# the -X edge and the player slides toward +X. Bonus 1 uses the negative and runs
 	# the other way, which is why these numbers are not its mirror.
-	G2GGeometry.box(self, Vector3(-1536.0, START_Y - 16.0, START_Z + 256.0),
-		Vector3(384.0, 32.0, 384.0), G2GGeometry.COLOUR_BONUS)
+	AirdriftGeometry.box(self, Vector3(-1536.0, START_Y - 16.0, START_Z + 256.0),
+		Vector3(384.0, 32.0, 384.0), AirdriftGeometry.COLOUR_BONUS)
 
 	# [b]A banked ramp is narrower in X than it is wide.[/b] At 60 degrees a 768-unit
 	# ramp occupies 768 * cos(60) = 384 units of X, so its lip is 192 either side of
@@ -200,9 +200,9 @@ func _build() -> void:
 	#
 	# Ramp one is centred UNDER the pad rather than beside it. The drop is 250 units
 	# onto the middle of the bank, which is a landing rather than an edge catch.
-	G2GGeometry.ramp(self, Vector3(-1536.0, START_Y - 250.0, START_Z - 600.0),
+	AirdriftGeometry.ramp(self, Vector3(-1536.0, START_Y - 250.0, START_Z - 600.0),
 		Vector3(768.0, RAMP_THICKNESS, 1600.0), RAMP_ANGLE, Vector3.FORWARD,
-		G2GGeometry.COLOUR_BONUS)
+		AirdriftGeometry.COLOUR_BONUS)
 
 	# And back the other way. Its high side sits at x -1300, just past where the first
 	# one's lip throws the player out at -1344, and 117 units below it -- so the
@@ -217,9 +217,9 @@ func _build() -> void:
 	# who came off early fell through the gap between them and out of the level. Which
 	# is a route that works if you already know where the catch is, and is nothing if
 	# you do not.
-	G2GGeometry.ramp(self, Vector3(-1492.0, START_Y - 1033.0, START_Z - 1000.0),
+	AirdriftGeometry.ramp(self, Vector3(-1492.0, START_Y - 1033.0, START_Z - 1000.0),
 		Vector3(768.0, RAMP_THICKNESS, 2800.0), -RAMP_ANGLE, Vector3.FORWARD,
-		G2GGeometry.COLOUR_BONUS)
+		AirdriftGeometry.COLOUR_BONUS)
 
 	# A floor under the whole thing, falling toward the finish in steps, the way the
 	# main track's valley does. On a tier-3 map's bonus the punishment for losing the
@@ -228,16 +228,16 @@ func _build() -> void:
 	var bonus_steps := 8
 	for i in range(bonus_steps):
 		var t := float(i) / float(bonus_steps - 1)
-		G2GGeometry.box(
+		AirdriftGeometry.box(
 			self,
 			Vector3(-1500.0, lerpf(START_Y - 700.0, START_Y - 1500.0, t) - 16.0,
 				lerpf(START_Z, START_Z - 3000.0, t)),
 			Vector3(640.0, 32.0, 3000.0 / float(bonus_steps) + 64.0),
-			G2GGeometry.COLOUR_FLOOR
+			AirdriftGeometry.COLOUR_FLOOR
 		)
 
-	G2GGeometry.box(self, Vector3(-1500.0, START_Y - 1560.0 - 16.0, START_Z - 3300.0),
-		Vector3(768.0, 32.0, 640.0), G2GGeometry.COLOUR_END)
+	AirdriftGeometry.box(self, Vector3(-1500.0, START_Y - 1560.0 - 16.0, START_Z - 3300.0),
+		Vector3(768.0, 32.0, 640.0), AirdriftGeometry.COLOUR_END)
 
 	_build_fall_line()
 
@@ -249,11 +249,11 @@ func _build_fall_line() -> void:
 	# is 512 deep rather than 384 and its back edge IS `FALL_TOP_Z`. A pad that stops
 	# short of the thing it feeds is a route that begins with a fall, and a fall is
 	# what the rest of this map already does.
-	G2GGeometry.box(self, Vector3(FALL_X, FALL_TOP_Y - 16.0, START_Z + 192.0),
-		Vector3(384.0, 32.0, 512.0), G2GGeometry.COLOUR_BONUS)
+	AirdriftGeometry.box(self, Vector3(FALL_X, FALL_TOP_Y - 16.0, START_Z + 192.0),
+		Vector3(384.0, 32.0, 512.0), AirdriftGeometry.COLOUR_BONUS)
 
 	# [b]Rotating about +X by a NEGATIVE angle sends the -Z end down[/b], and -Z is the
-	# direction every route on this map runs. `G2GGeometry.ramp` rotates about
+	# direction every route on this map runs. `AirdriftGeometry.ramp` rotates about
 	# `Vector3.FORWARD` instead, which tilts a slab in X and Y and leaves its Z extent
 	# horizontal — which is why every other ramp on this map is level along its length.
 	var pitch := Basis(Vector3.RIGHT, deg_to_rad(-FALL_PITCH))
@@ -268,9 +268,9 @@ func _build_fall_line() -> void:
 	# The bed. `fall_point` is its CENTRE, so the surface ridden on is half a thickness
 	# above the line every zone below is placed off — which is inside the tolerance of
 	# all of them and is why they are all written against one function.
-	G2GGeometry.box(self, centre,
+	AirdriftGeometry.box(self, centre,
 		Vector3(FALL_BED, RAMP_THICKNESS, slab_length),
-		G2GGeometry.COLOUR_RAMP, pitch)
+		AirdriftGeometry.COLOUR_RAMP, pitch)
 
 	var out := cos(deg_to_rad(FALL_BANK)) * FALL_FACE * 0.5
 	var lift := sin(deg_to_rad(FALL_BANK)) * FALL_FACE * 0.5
@@ -284,11 +284,11 @@ func _build_fall_line() -> void:
 		var offset := pitch * Vector3(
 			side * (FALL_BED * 0.5 + out), lift + RAMP_THICKNESS * 0.5, 0.0
 		)
-		G2GGeometry.box(
+		AirdriftGeometry.box(
 			self,
 			centre + offset,
 			Vector3(FALL_FACE, RAMP_THICKNESS, slab_length),
-			G2GGeometry.COLOUR_BONUS,
+			AirdriftGeometry.COLOUR_BONUS,
 			pitch * Basis(Vector3.FORWARD, deg_to_rad(-side * FALL_BANK))
 		)
 
@@ -297,8 +297,8 @@ func _build_fall_line() -> void:
 	# a pad they can overshoot is a route that ends in the pit for the one reason that
 	# is not the player's fault.
 	var bottom := fall_point(1.0)
-	G2GGeometry.box(self, Vector3(FALL_X, bottom.y - 16.0, bottom.z - 768.0),
-		Vector3(1024.0, 32.0, 1536.0), G2GGeometry.COLOUR_END)
+	AirdriftGeometry.box(self, Vector3(FALL_X, bottom.y - 16.0, bottom.z - 768.0),
+		Vector3(1024.0, 32.0, 1536.0), AirdriftGeometry.COLOUR_END)
 
 
 func timer_zones() -> DotTimerZoneSet:

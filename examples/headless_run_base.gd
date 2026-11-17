@@ -1,21 +1,21 @@
 extends DotGameCheckSuite
 
-const G2GAvatars := preload("../game/g2g_avatars.gd")
-const G2GCamera := preload("../game/g2g_camera.gd")
-const G2GClient := preload("../game/g2g_client.gd")
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GEffects := preload("../game/g2g_effects.gd")
-const G2GGame := preload("../game/g2g_game.gd")
-const G2GMapCatalogue := preload("../game/g2g_map_catalogue.gd")
-const G2GEvents := preload("../game/net/g2g_events.gd")
-const G2GMap := preload("../game/g2g_map.gd")
-const G2GMovement := preload("../game/g2g_movement.gd")
-const G2GPlayer := preload("../game/g2g_player.gd")
-const G2GReplays := preload("../game/g2g_replays.gd")
-const G2GRig := preload("../game/g2g_rig.gd")
-const G2GStats := preload("../game/g2g_stats.gd")
-const G2GUnits := preload("../game/g2g_units.gd")
-const G2GReach := preload("../game/g2g_reach.gd")
+const AirdriftAvatars := preload("../game/airdrift_avatars.gd")
+const AirdriftCamera := preload("../game/airdrift_camera.gd")
+const AirdriftClient := preload("../game/airdrift_client.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftEffects := preload("../game/airdrift_effects.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
+const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
+const AirdriftEvents := preload("../game/net/airdrift_events.gd")
+const AirdriftMap := preload("../game/airdrift_map.gd")
+const AirdriftMovement := preload("../game/airdrift_movement.gd")
+const AirdriftPlayer := preload("../game/airdrift_player.gd")
+const AirdriftReplays := preload("../game/airdrift_replays.gd")
+const AirdriftRig := preload("../game/airdrift_rig.gd")
+const AirdriftStats := preload("../game/airdrift_stats.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
+const AirdriftReach := preload("../game/airdrift_reach.gd")
 
 const BhopIntro := preload("res://maps/bhop_g2g_intro.gd")
 const SurfIntro := preload("res://maps/surf_g2g_intro.gd")
@@ -27,7 +27,7 @@ const START_Y := 2048.0
 
 var _entered := 0
 var _completed := 0
-var game: G2GGame = null
+var game: AirdriftGame = null
 
 
 func _section(title: String) -> void:
@@ -58,7 +58,7 @@ func _prestrafe(id: StringName, ticks: int = 80) -> void:
 
 
 func _drive(id: StringName, command: DotFpsCommand, ticks: int) -> void:
-	var player: G2GPlayer = game.players[id]
+	var player: AirdriftPlayer = game.players[id]
 	for _i in range(ticks):
 		player.controller.apply_command(command.duplicate_command())
 		await get_tree().physics_frame
@@ -106,7 +106,7 @@ func _test_spectating() -> void:
 	game.tick_once(game.current_tick() + 1)
 
 	var seen := game.spectate.camera_for(&"watcher")
-	var runner: G2GPlayer = game.players[&"bot"]
+	var runner: AirdriftPlayer = game.players[&"bot"]
 	_check(
 		seen.origin.distance_to(runner.eye_position()) < 0.01,
 		"and the camera is at the runner's eyes rather than at their feet or the origin",
@@ -190,13 +190,13 @@ func _test_effects_and_the_run() -> void:
 		"a plain timer server has no effects layer at all"
 	)
 
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = &"bhop_g2g_intro"
 	config.hunters = true
 
-	var hunted := G2GGame.new()
+	var hunted := AirdriftGame.new()
 	hunted.config = config
 	add_child(hunted)
 
@@ -217,14 +217,14 @@ func _test_effects_and_the_run() -> void:
 	await get_tree().physics_frame
 
 	# Not in a run yet: the slow is allowed.
-	var idle := hunted.effects.apply(G2GEffects.MAULED, &"run")
+	var idle := hunted.effects.apply(AirdriftEffects.MAULED, &"run")
 	_check(idle.ok, "a slow lands on somebody who is not running", str(idle.error))
-	hunted.effects.remove(G2GEffects.MAULED, &"run")
+	hunted.effects.remove(AirdriftEffects.MAULED, &"run")
 
 	# And the movement actually changes, which is the half that has to work for the
 	# refusal below to be worth anything.
 	var base := runner.base_tunables.max_speed
-	var _again := hunted.effects.apply(G2GEffects.MAULED, &"run")
+	var _again := hunted.effects.apply(AirdriftEffects.MAULED, &"run")
 	hunted.tick_once(hunted.current_tick() + 1)
 	_check(
 		runner.controller.tunables.max_speed < base,
@@ -239,11 +239,11 @@ func _test_effects_and_the_run() -> void:
 		"without compounding to a standstill over thirty ticks",
 		"%.4f" % runner.controller.tunables.max_speed
 	)
-	hunted.effects.remove(G2GEffects.MAULED, &"run")
+	hunted.effects.remove(AirdriftEffects.MAULED, &"run")
 
 	# Now in a run. The whole point of the layer.
 	runner.timer.run.status = DotTimerRun.Status.RUNNING
-	var refused := hunted.effects.apply(G2GEffects.MAULED, &"run")
+	var refused := hunted.effects.apply(AirdriftEffects.MAULED, &"run")
 	_check(
 		not refused.ok,
 		"and is REFUSED on a ranked run: a style you did not choose is a record you did "
@@ -257,7 +257,7 @@ func _test_effects_and_the_run() -> void:
 
 	# A bleed is not a movement effect and lands regardless, which is the other half of
 	# the split: being chased still has to hurt.
-	var bled := hunted.effects.apply(G2GEffects.BLEEDING, &"run")
+	var bled := hunted.effects.apply(AirdriftEffects.BLEEDING, &"run")
 	_check(
 		bled.ok or bled.code() != DotError.CODE_FORBIDDEN,
 		"while a bleed lands during a run, because it cannot change a time",
@@ -267,7 +267,7 @@ func _test_effects_and_the_run() -> void:
 	# And the server that wants hunted runs to count anyway pays for it in the field
 	# dot-timer has had since it was written and nothing had ever set.
 	hunted.effects.allow_movement_during_runs = true
-	var tainting := hunted.effects.apply(G2GEffects.MAULED, &"run")
+	var tainting := hunted.effects.apply(AirdriftEffects.MAULED, &"run")
 	_check(tainting.ok, "a server may allow it", str(tainting.error))
 	_check(
 		runner.timer.run.tainted,
@@ -284,17 +284,17 @@ func _test_effects_and_the_run() -> void:
 
 func _test_units() -> void:
 	_section("genre units")
-	_near(G2GUnits.to_metres(72.0), 1.3716, 0.0001, "a 72-unit player is 1.37 m")
-	_near(G2GUnits.to_units(G2GUnits.to_metres(3500.0)), 3500.0, 0.001, "and the round trip is exact")
-	_check(G2GUnits.format_speed(G2GUnits.to_metres(250.0)) == "250", "speed formats as whole units")
-	_near(G2GUnits.sensitivity_to_degrees(2.5), 0.055, 0.0001, "sensitivity 2.5 is 0.055°/count")
+	_near(AirdriftUnits.to_metres(72.0), 1.3716, 0.0001, "a 72-unit player is 1.37 m")
+	_near(AirdriftUnits.to_units(AirdriftUnits.to_metres(3500.0)), 3500.0, 0.001, "and the round trip is exact")
+	_check(AirdriftUnits.format_speed(AirdriftUnits.to_metres(250.0)) == "250", "speed formats as whole units")
+	_near(AirdriftUnits.sensitivity_to_degrees(2.5), 0.055, 0.0001, "sensitivity 2.5 is 0.055°/count")
 	_done()
 
 
 func _test_source_fov() -> void:
 	_section("the genre field of view")
 	# fov_desired 90 is 90° horizontal on a 4:3 frame. Vertical is 2·atan(tan(45°)·3/4).
-	var vertical := G2GUnits.horizontal_fov_to_vertical(90.0)
+	var vertical := AirdriftUnits.horizontal_fov_to_vertical(90.0)
 	_near(vertical, 73.74, 0.01, "fov_desired 90 is 73.74° vertical")
 
 	# On a 16:9 screen that vertical angle widens to what those games show.
@@ -305,39 +305,39 @@ func _test_source_fov() -> void:
 	var naive_16_9 := rad_to_deg(2.0 * atan(tan(deg_to_rad(90.0) * 0.5) * 16.0 / 9.0))
 	_check(naive_16_9 > 120.0, "handing 90 straight to a vertical fov would be over 120° wide", "%.1f" % naive_16_9)
 
-	_near(G2GUnits.horizontal_fov_to_vertical(75.0), 59.8, 0.1, "and 75 is 59.8°")
+	_near(AirdriftUnits.horizontal_fov_to_vertical(75.0), 59.8, 0.1, "and 75 is 59.8°")
 	_done()
 
 
 func _test_movement_from_config() -> void:
 	_section("movement cvars become tunables")
-	var config := G2GConfig.new()
-	var t := G2GMovement.tunables_for(config)
+	var config := AirdriftConfig.new()
+	var t := AirdriftMovement.tunables_for(config)
 
 	_check(t.validate().ok, "the default configuration builds valid tunables", t.validate().error.message if not t.validate().ok else "")
-	_near(t.gravity, G2GUnits.to_metres(800.0), 0.001, "sv_gravity 800 is 15.24 m/s²")
-	_near(t.max_speed, G2GUnits.to_metres(250.0), 0.001, "250 u/s run speed")
-	_near(t.max_air_wish_speed, G2GUnits.to_metres(30.0), 0.001, "the 30 u/s air cap")
+	_near(t.gravity, AirdriftUnits.to_metres(800.0), 0.001, "sv_gravity 800 is 15.24 m/s²")
+	_near(t.max_speed, AirdriftUnits.to_metres(250.0), 0.001, "250 u/s run speed")
+	_near(t.max_air_wish_speed, AirdriftUnits.to_metres(30.0), 0.001, "the 30 u/s air cap")
 	# Jump height reproduces the launch speed: h = v²/2g = 57 units under 800.
-	_near(G2GUnits.to_units(t.jump_height), 57.0, 0.1, "jump height is 57 units, so the launch is 302 u/s")
-	_near(G2GUnits.to_units(t.jump_velocity()), G2GUnits.JUMP_VELOCITY, 0.5, "and the motor's launch speed agrees")
-	_near(t.stand_height, G2GUnits.to_metres(72.0), 0.001, "the hull is 72 units tall")
+	_near(AirdriftUnits.to_units(t.jump_height), 57.0, 0.1, "jump height is 57 units, so the launch is 302 u/s")
+	_near(AirdriftUnits.to_units(t.jump_velocity()), AirdriftUnits.JUMP_VELOCITY, 0.5, "and the motor's launch speed agrees")
+	_near(t.stand_height, AirdriftUnits.to_metres(72.0), 0.001, "the hull is 72 units tall")
 	_check(t.auto_hop, "auto-hop follows the config, on by default")
 	_check(t.bhop_speed_cap_scale == 0.0, "and hopping builds speed")
 
 	config.auto_bhop = false
 	config.enable_bunnyhopping = false
 	config.jump_buffer = 0.05
-	var strict := G2GMovement.tunables_for(config)
+	var strict := AirdriftMovement.tunables_for(config)
 	_check(not strict.auto_hop, "sv_autobunnyhopping 0 turns it off")
 	_near(strict.jump_buffer_time, 0.05, 0.0001, "and the easy-bhop window applies then")
 	_near(strict.bhop_speed_cap_scale, 1.1, 0.0001, "sv_enablebunnyhopping 0 applies CS's landing cap")
 
 	config.air_accelerate = 150.0
-	_near(G2GMovement.tunables_for(config).air_accelerate, 150.0, 0.001, "sv_airaccelerate passes through")
+	_near(AirdriftMovement.tunables_for(config).air_accelerate, 150.0, 0.001, "sv_airaccelerate passes through")
 
 	# The layering an operator uses.
-	var layered := G2GConfig.new()
+	var layered := AirdriftConfig.new()
 	layered.apply_dictionary({"auto_bhop": false, "air_accelerate": 150, "fov_desired": 100})
 	_check(not layered.auto_bhop and layered.air_accelerate == 150.0 and layered.fov_desired == 100.0,
 		"a config file layer moves the cvars")
@@ -372,7 +372,7 @@ class _LoadingGames extends RefCounted:
 ## dot-server builds the game's scene before it applies the descriptor's `cvars:`, and
 ## `sv_map_content_owner` is the module's, registered later still, so the boot fetch used to
 ## run with no owner and ask for the unowned pack. Fails with
-## [method G2GGame._adopt_descriptor_owner] taken out.
+## [method AirdriftGame._adopt_descriptor_owner] taken out.
 func _test_boot_map_owner() -> void:
 	_section("booting: the first map comes from the owner the game descriptor names")
 	const MISSING := &"surf_not_in_this_build"
@@ -382,7 +382,7 @@ func _test_boot_map_owner() -> void:
 	var cloud := _RecordingCloud.new()
 	var games := _LoadingGames.new()
 	games.loading = DotGameDescriptor.new()
-	games.loading.cvars = {G2GConfig.MAP_CONTENT_OWNER_CVAR: "someone"}
+	games.loading.cvars = {AirdriftConfig.MAP_CONTENT_OWNER_CVAR: "someone"}
 	DotRegistry.register(CLOUD, cloud)
 	DotRegistry.register(GAMES, games)
 
@@ -390,15 +390,15 @@ func _test_boot_map_owner() -> void:
 	# missing. pending() is the game that failed; current() is the one being restored.
 	var failed := DotGameDescriptor.new()
 	failed.scene = "res://not_this_game/missing.tscn"
-	failed.cvars = {G2GConfig.MAP_CONTENT_OWNER_CVAR: "the_failed_game"}
+	failed.cvars = {AirdriftConfig.MAP_CONTENT_OWNER_CVAR: "the_failed_game"}
 	var restored := DotGameDescriptor.new()
 	restored.scene = "res://g2g_restored_by_headless_run.tscn"
-	restored.cvars = {G2GConfig.MAP_CONTENT_OWNER_CVAR: "restored"}
+	restored.cvars = {AirdriftConfig.MAP_CONTENT_OWNER_CVAR: "restored"}
 
 	# Fourth: a descriptor that names its maps (DotGameDescriptor.maps), pinned by the
 	# installer. The pinned pack and version win over the owner cvar.
 	var pinned := DotGameDescriptor.new()
-	pinned.cvars = {G2GConfig.MAP_CONTENT_OWNER_CVAR: "someone"}
+	pinned.cvars = {AirdriftConfig.MAP_CONTENT_OWNER_CVAR: "someone"}
 	if "maps" in pinned:
 		pinned.set("maps", PackedStringArray(["pinner/%s@0.0.0-abc123" % MISSING]))
 
@@ -429,9 +429,9 @@ func _test_boot_map_owner() -> void:
 
 func _boot_owner_cases(games: _LoadingGames, cloud_service: StringName, games_service: StringName,
 			missing: StringName, failed: DotGameDescriptor, restored: DotGameDescriptor,
-			pinned: DotGameDescriptor) -> Array[G2GGame]:
+			pinned: DotGameDescriptor) -> Array[AirdriftGame]:
 	# Every case fails its fetch on purpose; the engine's error stream would read as a broken run.
-	var booted: Array[G2GGame] = []
+	var booted: Array[AirdriftGame] = []
 	var mirrored := DotLog.mirror_to_engine
 	DotLog.mirror_to_engine = false
 
@@ -443,11 +443,11 @@ func _boot_owner_cases(games: _LoadingGames, cloud_service: StringName, games_se
 		if case == "pinned":
 			games.loading = pinned
 			games.running = null
-		var config := G2GConfig.new()
+		var config := AirdriftConfig.new()
 		config.records_directory = ""
 		config.map_seconds = 0.0
 		config.initial_map = missing
-		var g := G2GGame.new()
+		var g := AirdriftGame.new()
 		g.config = config
 		g.map_content_service = cloud_service
 		g.game_manager_service = games_service if with_descriptor else &"g2g_headless_run_nothing"
@@ -464,12 +464,12 @@ func _boot_owner_cases(games: _LoadingGames, cloud_service: StringName, games_se
 
 func _test_boot() -> void:
 	_section("booting")
-	var config := G2GConfig.new()
+	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
 	config.initial_map = &"bhop_g2g_intro"
 
-	game = G2GGame.new()
+	game = AirdriftGame.new()
 	game.config = config
 	add_child(game)
 
@@ -500,7 +500,7 @@ func _test_boot() -> void:
 	_check(zones != null and zones.route_problems().is_empty(),
 		"and every bonus here puts a fallen player back",
 		", ".join(zones.route_problems()) if zones else "no zones")
-	_check(zones != null and zones.thin_zones(G2GUnits.to_metres(3500.0), game.tick_rate).is_empty(),
+	_check(zones != null and zones.thin_zones(AirdriftUnits.to_metres(3500.0), game.tick_rate).is_empty(),
 		"and no zone a 3500 u/s player passes through between ticks")
 
 	var bot := game.add_player(&"bot", "Bot", true)
@@ -524,12 +524,12 @@ func _test_avatars() -> void:
 	var schema := game.avatar_schema
 	_check(schema.validate_schema().ok, "the stock schema validates", schema.validate_schema().error.message if not schema.validate_schema().ok else "")
 
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	_check(bot.rig.avatar != null, "the player was dressed")
 
 	# A member's site avatar, translated into this game's schema. The site's document is the
 	# Kenney skins spelt `skin-c`; without a translation every member is stock here.
-	var site_avatars = preload("res://game/g2g_avatars.gd")
+	var site_avatars = preload("res://game/airdrift_avatars.gd")
 	var site_doc := DotAvatar.make(&"builtin")
 	site_doc.set_part(&"top", &"top.skin-c")
 	site_doc.set_part(&"face", &"face.skin-k")
@@ -552,17 +552,17 @@ func _test_avatars() -> void:
 	_check(bot.rig.person != null and bot.rig.person.skeleton() != null and bot.rig.person.skeleton().find_bone("Head") >= 0, "and a head")
 
 	# Deterministic in the id, so the same player is the same character everywhere.
-	var a := G2GAvatars.stock_avatar(&"alice")
-	var b := G2GAvatars.stock_avatar(&"alice")
+	var a := AirdriftAvatars.stock_avatar(&"alice")
+	var b := AirdriftAvatars.stock_avatar(&"alice")
 	_check(a.equals(b), "a stock avatar is the same for the same player every time")
 	_check(schema.validate(a).ok, "and conforms to the schema")
 
 	# A player's own document over the same schema dresses the same rig.
-	var own := DotAvatar.make(G2GAvatars.SCHEMA_ID)
-	own.set_part(G2GAvatars.SLOT_BODY, &"body_slim")
-	own.set_part(G2GAvatars.SLOT_HEAD, &"head_box")
-	own.set_part(G2GAvatars.SLOT_HAT, &"hat_cone")
-	own.set_colour(G2GAvatars.SLOT_BODY, 0, Color.RED)
+	var own := DotAvatar.make(AirdriftAvatars.SCHEMA_ID)
+	own.set_part(AirdriftAvatars.SLOT_BODY, &"body_slim")
+	own.set_part(AirdriftAvatars.SLOT_HEAD, &"head_box")
+	own.set_part(AirdriftAvatars.SLOT_HAT, &"hat_cone")
+	own.set_colour(AirdriftAvatars.SLOT_BODY, 0, Color.RED)
 
 	var dressed := bot.rig.dress(own, schema, game.avatar_catalogue)
 	_check(dressed.ok and int(dressed.value) == 3, "a player's own avatar dresses all three slots", str(dressed.value))
@@ -570,38 +570,38 @@ func _test_avatars() -> void:
 
 	# One from a newer client with a part this build does not have is conformed,
 	# never refused: a player is never invisible because their hat is from the future.
-	var future := DotAvatar.make(G2GAvatars.SCHEMA_ID)
-	future.set_part(G2GAvatars.SLOT_BODY, &"body_stock")
-	future.set_part(G2GAvatars.SLOT_HEAD, &"head_stock")
-	future.set_part(G2GAvatars.SLOT_HAT, &"hat_from_2031")
+	var future := DotAvatar.make(AirdriftAvatars.SCHEMA_ID)
+	future.set_part(AirdriftAvatars.SLOT_BODY, &"body_stock")
+	future.set_part(AirdriftAvatars.SLOT_HEAD, &"head_stock")
+	future.set_part(AirdriftAvatars.SLOT_HAT, &"hat_from_2031")
 	var redressed := bot.rig.dress(future, schema, game.avatar_catalogue)
 	_check(redressed.ok and int(redressed.value) >= 2, "an unknown part is dropped rather than refusing the whole avatar", str(redressed.value))
 
-	bot.rig.dress(G2GAvatars.stock_avatar(&"bot"), schema, game.avatar_catalogue)
+	bot.rig.dress(AirdriftAvatars.stock_avatar(&"bot"), schema, game.avatar_catalogue)
 	_done()
 
 
 func _test_cameras() -> void:
 	_section("first and third person")
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 	var camera := bot.camera
 
-	_check(camera.mode == G2GCamera.Mode.FIRST_PERSON, "starts in first person")
-	_near(camera.vertical_fov(), G2GUnits.horizontal_fov_to_vertical(90.0), 0.01, "with the genre field of view")
+	_check(camera.mode == AirdriftCamera.Mode.FIRST_PERSON, "starts in first person")
+	_near(camera.vertical_fov(), AirdriftUnits.horizontal_fov_to_vertical(90.0), 0.01, "with the genre field of view")
 	_check(camera.first.current, "and the first-person camera active")
-	_check((camera.first.cull_mask & (1 << (G2GRig.LAYER_LOCAL_BODY - 1))) == 0, "which culls the player's own rig")
+	_check((camera.first.cull_mask & (1 << (AirdriftRig.LAYER_LOCAL_BODY - 1))) == 0, "which culls the player's own rig")
 
 	_check(camera.toggle(), "toggling switches to third person")
 	_check(camera.third.current and not camera.first.current, "and the third-person camera takes over")
-	_check(camera.third.cull_mask & (1 << (G2GRig.LAYER_LOCAL_BODY - 1)), "which draws the rig")
+	_check(camera.third.cull_mask & (1 << (AirdriftRig.LAYER_LOCAL_BODY - 1)), "which draws the rig")
 
 	bot.present(1.0 / 60.0)
 	_check(bot.rig.visible_to_owner, "and the rig is shown to its owner")
 
 	camera.allow_third_person = false
-	camera.set_mode(G2GCamera.Mode.FIRST_PERSON)
+	camera.set_mode(AirdriftCamera.Mode.FIRST_PERSON)
 	_check(not camera.toggle(), "a server that forbids third person refuses the toggle")
-	_check(camera.mode == G2GCamera.Mode.FIRST_PERSON, "and the view stays first person")
+	_check(camera.mode == AirdriftCamera.Mode.FIRST_PERSON, "and the view stays first person")
 	camera.allow_third_person = true
 
 	# Both cameras track the aim. Third person is cosmetic: the controller aims from
@@ -619,7 +619,7 @@ func _test_cameras() -> void:
 
 func _test_auto_bhop_gate() -> void:
 	_section("auto-bhop is the server's decision")
-	var bot: G2GPlayer = game.players[&"bot"]
+	var bot: AirdriftPlayer = game.players[&"bot"]
 
 	# With sv_autobunnyhopping 1, holding jump chains hops. This is what the game is for.
 	game.config.auto_bhop = true
@@ -726,7 +726,7 @@ static func _stage_facing_problems(zones: DotTimerZoneSet) -> PackedStringArray:
 ## this suite does not know about is a map the exporter never wrote a file for.
 func _hand_written_map_ids() -> Array:
 	var out: Array = []
-	for map in G2GMapCatalogue.scan():
+	for map in AirdriftMapCatalogue.scan():
 		if not bool(map.meta.get("imported", false)):
 			out.append(String(map.id))
 	out.sort()
@@ -735,7 +735,7 @@ func _hand_written_map_ids() -> Array:
 
 # --- What the movement can reach --------------------------------------------
 
-## A hand-written map's script, built but never added to the tree: [method G2GMap._build]
+## A hand-written map's script, built but never added to the tree: [method AirdriftMap._build]
 ## makes the bodies and declares the courses, and nothing else is needed to read them.
 func _built_map(id: String) -> Node3D:
 	var map: Node3D = (load("res://maps/%s.gd" % id) as GDScript).new()

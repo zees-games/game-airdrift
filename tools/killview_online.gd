@@ -1,7 +1,7 @@
 extends Node
 
-const G2GConfig := preload("../game/g2g_config.gd")
-const G2GGame := preload("../game/g2g_game.gd")
+const AirdriftConfig := preload("../game/airdrift_config.gd")
+const AirdriftGame := preload("../game/airdrift_game.gd")
 
 ## One process of tools/killview_online.sh: a real dedicated server, a killer client and a victim client
 ## over ENet. The server kills the victim once both are seated; the victim saves its screen and logs
@@ -54,20 +54,20 @@ func _serve() -> void:
 		await get_tree().process_frame
 		if server.state == DotServer.State.RUNNING:
 			break
-	var gc := G2GConfig.new()
+	var gc := AirdriftConfig.new()
 	gc.records_directory = ""
 	gc.map_seconds = 0.0
 	gc.initial_map = &"bhop_g2g_intro"
 	gc.deathmatch = true
-	var game := G2GGame.new()
+	var game := AirdriftGame.new()
 	game.config = gc
 	add_child(game)
 	for _i in range(120):
 		await get_tree().process_frame
 		if game.maps != null and game.maps.current != null:
 			break
-	(load("res://game/g2g_module.gd") as GDScript).set("punishments_file", data + "/punishments.json")
-	var loaded: DotResult = await server.modules.load_module("res://game/g2g_module.gd")
+	(load("res://game/airdrift_module.gd") as GDScript).set("punishments_file", data + "/punishments.json")
+	var loaded: DotResult = await server.modules.load_module("res://game/airdrift_module.gd")
 	if not loaded.ok:
 		printerr("server: module failed: ", loaded.error.message)
 		get_tree().quit(1)
@@ -132,7 +132,7 @@ func _play() -> void:
 		printerr("%s: never joined" % role)
 		get_tree().quit(1)
 		return
-	var client: Node = (load("res://game/g2g.tscn") as PackedScene).instantiate()
+	var client: Node = (load("res://game/airdrift.tscn") as PackedScene).instantiate()
 	client.set("mouse_capture_override", true)
 	add_child(client)
 	var settings: Object = client.get("presentation").get("settings")
