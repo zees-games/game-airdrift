@@ -491,19 +491,27 @@ func _build_boards() -> void:
 	# reporter skips an unpublished board, and so a server with report_to_backbone on
 	# sent nothing at all — the site had no records from any g2gfast server, with no
 	# error anywhere, because "this board is not published" is a normal configuration.
+	for def in board_definitions(config.report_to_backbone):
+		boards.define(def)
+
+
+## The boards a server defines, `publish` following its report_to_backbone switch; also what ./game.sh defs exports for the site import.
+static func board_definitions(publish: bool = true) -> Array[DotLeaderboardDef]:
+	var out: Array[DotLeaderboardDef] = []
 	var fastest := DotLeaderboardDef.make(&"fastest", DotLeaderboardDef.Kind.TIME)
 	fastest.display_name = "Fastest time"
-	fastest.publish = config.report_to_backbone
-	boards.define(fastest)
+	fastest.publish = publish
+	out.append(fastest)
 
 	var points := DotLeaderboardDef.make(&"points", DotLeaderboardDef.Kind.POINTS)
 	points.display_name = "Ranking points"
 	points.decimals = 1
-	points.publish = config.report_to_backbone
+	points.publish = publish
 	# A ranking total goes DOWN when somebody else's record moves the scale; a board
 	# that kept each player's best would freeze them at their highest-ever total.
 	points.running_total = true
-	boards.define(points)
+	out.append(points)
+	return out
 
 
 ## Hands the boards' reporter the backbone client the host (or the identity layer) registered.
