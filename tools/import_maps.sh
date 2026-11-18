@@ -46,8 +46,8 @@ for bsp in "$src"/*.bsp; do
     id="$(basename "$bsp" | sed 's/\.[Bb][Ss][Pp]$//' | tr '[:upper:]' '[:lower:]')"
     wanted["$id"]=1
     manifest="$out/$id/$id.json"
-    # kind "arena" maps are written to ../arena-surf-dm-maps/maps by bsp_import.py
-    arena_manifest="$here/../arena-surf-dm-maps/maps/$id/$id.json"
+    # kind "arena" maps are written to $ARENA_SURF_DM_MAPS/maps (default ../arena-surf-dm-maps/maps) by bsp_import.py
+    arena_manifest="${ARENA_SURF_DM_MAPS:-$here/../arena-surf-dm-maps}/maps/$id/$id.json"
     [ -f "$arena_manifest" ] && manifest="$arena_manifest"
     # Up to date when the manifest exists and is newer than the .bsp. Re-importing a
     # map nobody has touched is 4 seconds and 12 MB of writes for no change.

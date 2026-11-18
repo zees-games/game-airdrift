@@ -20,7 +20,7 @@ const SurfPlan := preload("../tools/surf_plan.gd")
 
 ## The imported maps that are deliberately NOT courses (see `maps/zones/README.md`).
 ## `buses_from_hell_fixed` is a vehicle map with no route to time. `bhop_lego2` is a section chain whose END is not labelled, and guessing would give a leaderboard that measures a route the map does not have.
-## Checked both ways so it is not a mute button: a listed map that turns out to HAVE a runnable main track fails, because the list is then the lie. Combat surf maps live in `../fc-surf-dm-maps`.
+## Checked both ways so it is not a mute button: a listed map that turns out to HAVE a runnable main track fails, because the list is then the lie. Combat surf maps live in `../arena-surf-dm-maps`.
 const NOT_COURSES := ["buses_from_hell_fixed", "bhop_lego2", "kz_bhop_yonkoma", "bunnyhop_pro", "surf_animals",
 	"kz_bhop_lucid", "bhop_training_fun"]
 

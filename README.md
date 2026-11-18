@@ -219,7 +219,7 @@ Collision comes from the map's brushes, so invisible player clips and surf ramp 
 
 The map's own volumes work too: teleports keep your run going, boosters push, water is swum in (hold jump to come up), ladders are climbed, conveyors carry you, and a bunny-hop block sends you back if you stand on it. Blocks are timed per player. [`docs/brush-entities.md`](docs/brush-entities.md) covers every brush entity.
 
-**Combat maps.** Some surf maps are for fighting, not timing. Their zones file says `"kind": "arena"` and they live in [fc-surf-dm-maps](https://github.com/zees-games/fc-surf-dm-maps) for Fatal Contact's deathmatch, not in airdrift-maps. `tools/bsp_import.py` writes such a map there. If one is installed here anyway it stays loadable, **M** marks it "combat", and it is left out of the rotation and the vote unless `cfg/maps.yml` lists it.
+**Combat maps.** Some surf maps are for fighting, not timing. Their zones file says `"kind": "arena"` and they live in [arena-surf-dm-maps](https://github.com/zees-games/arena-surf-dm-maps) for Fatal Contact's deathmatch, not in airdrift-maps. `tools/bsp_import.py` writes such a map there. If one is installed here anyway it stays loadable, **M** marks it "combat", and it is left out of the rotation and the vote unless `cfg/maps.yml` lists it.
 
 ### Zones
 
