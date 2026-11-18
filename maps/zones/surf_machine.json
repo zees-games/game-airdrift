@@ -1,0 +1,13 @@
+{
+ "id": "surf_machine",
+ "author": "Z-machine",
+ "attribution": {
+  "author": "Z-machine",
+  "source": "https://gamebanana.com/mods/122477 (submitter Z-machine)",
+  "archive": "surf_machine.rar",
+  "recorded": "2026-11-18"
+ },
+ "notes": "Credit only, and deliberately no zones: combat surf map built to fight on. Teleports are the map's pits. maps-conv-arena-surf-2. Not published.",
+ "kind": "arena",
+ "kind_why": "A combat surf map: built to fight on rather than to time (see notes). 'arena' keeps it out of Airdrift's rotation, vote and nominations and marks it for game-fatal-contact's deathmatch."
+}
