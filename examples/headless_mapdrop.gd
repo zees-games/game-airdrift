@@ -1,6 +1,6 @@
 extends DotGameCheckSuite
 
-## Maps handed to Airdrift through dot-map's DotMapDropIntake (AirdriftMapDrop, API 26): dragged onto the window, dropped on
+## Maps handed to Airdrift through dot-map's DotMapDropIntake (AirdriftMapDrop, API 30): dragged onto the window, dropped on
 ## the executable or named by `--map-path=`, all through the one intake and the one HUD line. A path that holds no
 ## converted map is refused out loud with what the game takes. Folder/zip copying itself: headless_local_maps.
 ## [codeblock] ./game.sh test headless_mapdrop [/codeblock]
@@ -60,22 +60,22 @@ func _test_args() -> void:
 	print("-- the command line: config options are not drops, --map-path and bare paths are")
 	var folder := ProjectSettings.globalize_path(SOURCE.path_join("args"))
 	DirAccess.make_dir_recursive_absolute(folder)
-	var kept := AirdriftMapDrop.drop_args(PackedStringArray(["--airdrift-records_directory", folder, "--dot_net.port", folder,
-		"--airdrift-auto_bhop", folder, "--g2g-no_such_key", folder, "--g2g-map_seconds=5", "--headless"]))
-	_check(kept == PackedStringArray([folder, folder, "--headless"]),
-		"a --airdrift-<key> (or old-prefix) and --<addon>.<key> value is no drop; a --airdrift-<bool> switch and an unknown key take none", str(kept))
 	var intake := AirdriftMapDrop.make()
-	if not _check(intake != null, "dot-map 26 makes the shared intake"):
+	if not _check(intake != null, "dot-map 30 makes the shared intake"):
 		return
 	_check(not bool(intake.get(&"watch_window")), "it leaves the window to the client (one HUD line for every drop)")
+	var kept: PackedStringArray = intake.call(&"strip_config_args", PackedStringArray(["--airdrift-records_directory", folder, "--dot_net.port", folder,
+		"--airdrift-auto_bhop", folder, "--g2g-no_such_key", folder, "--g2g-map_seconds=5", "--headless"]), intake.get(&"config_prefixes"), intake.get(&"option_takes_value"))
+	_check(kept == PackedStringArray([folder, folder, "--headless"]),
+		"a --airdrift-<key> (or old-prefix) and --<addon>.<key> value is no drop; a --airdrift-<bool> switch and an unknown key take none", str(kept))
 	_check((intake.call(&"accepted_kinds") as PackedStringArray).size() == 1, "it takes converted maps")
-	var paths := AirdriftMapDrop.paths_in(intake, PackedStringArray(["--path", folder, "--config", folder, "--map-path=" + folder]))
+	var paths: PackedStringArray = intake.call(&"paths_in", PackedStringArray(["--path", folder, "--config", folder, "--map-path=" + folder]))
 	_check(paths == PackedStringArray([folder]), "--map-path= is a drop; --path and --config values are not", str(paths))
-	paths = AirdriftMapDrop.paths_in(intake, PackedStringArray([folder, "--airdrift-records_directory", folder]))
+	paths = intake.call(&"paths_in", PackedStringArray([folder, "--airdrift-records_directory", folder]))
 	_check(paths == PackedStringArray([folder]), "a bare path is a drop (the executable's drop)", str(paths))
-	paths = AirdriftMapDrop.paths_in(intake, PackedStringArray(["--map-path=/no/such/zz_mapdrop_drop"]))
+	paths = intake.call(&"paths_in", PackedStringArray(["--map-path=/no/such/zz_mapdrop_drop"]))
 	_check(paths == PackedStringArray(["/no/such/zz_mapdrop_drop"]), "a --map-path that does not exist is kept, to be refused", str(paths))
-	paths = AirdriftMapDrop.paths_in(intake, PackedStringArray(["--headless", "res://examples/headless_mapdrop.tscn"]))
+	paths = intake.call(&"paths_in", PackedStringArray(["--headless", "res://examples/headless_mapdrop.tscn"]))
 	_check(paths.is_empty(), "no path on a plain start", str(paths))
 	intake.free()
 

@@ -273,7 +273,7 @@ func _watch_map_drops() -> void:
 func _take_cmdline_drops(args: PackedStringArray) -> String:
 	if game == null or game.map_drop == null:
 		return ""
-	var paths := AirdriftMapDrop.paths_in(game.map_drop, args)
+	var paths: PackedStringArray = game.map_drop.call(&"paths_in", args)
 	if paths.is_empty():
 		return ""
 	var text: String = game.add_dropped_maps(paths, "command line")
