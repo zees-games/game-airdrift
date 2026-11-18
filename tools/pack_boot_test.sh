@@ -21,16 +21,21 @@ CACHE="${GS_PACK_BOOT_CACHE:-$HOME/.cache/pack-boot}"
 HOST="$CACHE/$KEY"
 if [ ! -f "$HOST/.ready" ]; then
     echo "pack_boot: building the host at the addons.lock tags in $HOST" >&2
-    rm -rf "$HOST.part"; mkdir -p "$HOST.part"
-    git -C "$DEPLOY" archive HEAD | tar -x -C "$HOST.part"
-    cp "$LOCK" "$HOST.part/addons.lock"
-    rm -rf "$HOST.part/addons"
-    TMC_SIBLINGS="$SIB" bash "$HOST.part/tools/check-pinned.sh" "$HOST.part/addons" >&2 \
-        || { echo "pack_boot: could not build addons/ at the lock's tags (fetch the sibling repos' tags)" >&2; exit 2; }
-    timeout 1800 "$GODOT" --headless --path "$HOST.part" --import >"$HOST.part/import.log" 2>&1 || true
-    [ -f "$HOST.part/.godot/global_script_class_cache.cfg" ] \
-        || { tail -20 "$HOST.part/import.log" >&2; echo "pack_boot: the host did not import" >&2; exit 2; }
-    rm -rf "$HOST"; mv "$HOST.part" "$HOST"; touch "$HOST/.ready"
+    mkdir -p "$CACHE"
+    # A private build dir: two publishes may build the same host at once.
+    PART="$(mktemp -d "$HOST.part.XXXXXX")"
+    git -C "$DEPLOY" archive HEAD | tar -x -C "$PART"
+    cp "$LOCK" "$PART/addons.lock"
+    rm -rf "$PART/addons"
+    TMC_SIBLINGS="$SIB" bash "$PART/tools/check-pinned.sh" "$PART/addons" >&2 \
+        || { rm -rf "$PART"; echo "pack_boot: could not build addons/ at the lock's tags (fetch the sibling repos' tags)" >&2; exit 2; }
+    timeout 1800 "$GODOT" --headless --path "$PART" --import >"$PART/import.log" 2>&1 || true
+    [ -f "$PART/.godot/global_script_class_cache.cfg" ] \
+        || { tail -20 "$PART/import.log" >&2; rm -rf "$PART"; echo "pack_boot: the host did not import" >&2; exit 2; }
+    touch "$PART/.ready"
+    # The first finished build wins; a later one is dropped.
+    [ -f "$HOST/.ready" ] || rm -rf "$HOST"
+    mv -T "$PART" "$HOST" 2>/dev/null || rm -rf "$PART"
 fi
 mkdir -p "$HOST/pack_boot"
 cp "$HERE/tools/pack_boot_probe.gd" "$HOST/pack_boot/probe.gd"
