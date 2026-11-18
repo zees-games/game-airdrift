@@ -40,40 +40,9 @@ func _run() -> void:
 	var phases := _arg("phases", "1") == "1"
 	var script_top := int(_arg("script-top", "0"))
 	var ab := int(_arg("ab", "0"))
-	var cfg := AirdriftConfig.new()
-	cfg.records_directory = ""
-	cfg.map_seconds = 0.0
-	cfg.initial_map = &"bhop_g2g_intro"
-	_game = AirdriftGame.new()
-	_game.config = cfg
-	_game.external_tick = true
-	add_child(_game)
-	for _i in range(120):
-		await get_tree().process_frame
-		if _game.maps != null and _game.maps.current != null:
-			break
-	if map_id != _game.maps.current.id:
-		var changed: DotResult = await _game.change_map(map_id)
-		if not changed.ok:
-			printerr("TICKPROF map failed: ", changed.error.message)
-			get_tree().quit(2)
-			return
-	for i in range(bots):
-		_game.bots.call("add_bot", "bot%d" % (i + 1))
-	for _i in range(40):
-		await get_tree().process_frame
-	var planned := 0
-	while _game.bots.get("_planning") and planned < 60000:
-		_tick += 1
-		_game.tick_once(_tick)
-		planned += 1
-		if planned % 32 == 0:
-			await get_tree().physics_frame
-	for i in range(warm):
-		_tick += 1
-		_game.tick_once(_tick)
-		if i % 32 == 0:
-			await get_tree().physics_frame
+	if not await _start(map_id, bots, warm):
+		get_tree().quit(2)
+		return
 	var scripts: DotProfilerScripts = null
 	if script_top > 0:
 		scripts = DotProfilerScripts.new()
@@ -126,6 +95,45 @@ func _run() -> void:
 	for _i in range(3):
 		await get_tree().process_frame
 	get_tree().quit(0)
+
+
+## Builds the game on [param map_id] with [param bots] bots, ticks it until the bots have planned their routes, then
+## [param warm] more ticks. False when the map would not load.
+func _start(map_id: StringName, bots: int, warm: int) -> bool:
+	var cfg := AirdriftConfig.new()
+	cfg.records_directory = ""
+	cfg.map_seconds = 0.0
+	cfg.initial_map = &"bhop_g2g_intro"
+	_game = AirdriftGame.new()
+	_game.config = cfg
+	_game.external_tick = true
+	add_child(_game)
+	for _i in range(120):
+		await get_tree().process_frame
+		if _game.maps != null and _game.maps.current != null:
+			break
+	if map_id != _game.maps.current.id:
+		var changed: DotResult = await _game.change_map(map_id)
+		if not changed.ok:
+			printerr("TICKPROF map failed: ", changed.error.message)
+			return false
+	for i in range(bots):
+		_game.bots.call("add_bot", "bot%d" % (i + 1))
+	for _i in range(40):
+		await get_tree().process_frame
+	var planned := 0
+	while _game.bots.get("_planning") and planned < 60000:
+		_tick += 1
+		_game.tick_once(_tick)
+		planned += 1
+		if planned % 32 == 0:
+			await get_tree().physics_frame
+	for i in range(warm):
+		_tick += 1
+		_game.tick_once(_tick)
+		if i % 32 == 0:
+			await get_tree().physics_frame
+	return true
 
 
 func _phased(step: float, acc: Dictionary) -> void:
