@@ -1,7 +1,27 @@
 #!/bin/bash
-# Publishes this game's pack (id game-airdrift; formerly game-g2gfast). worlds/, maps/imported and the model/pbr libraries link to airdrift-maps (../airdrift-maps).
+# Publishes this game's pack (id game-airdrift). worlds/, maps/imported and the model/pbr libraries link to airdrift-maps (../airdrift-maps).
 #   tools/publish.sh [--version V | --bump patch] [--site URL --token-file F --dry-run ...]   (lock: ./content.lock.json, override with --lock)
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 X=(); for d in screenshots worlds model-library pbr-library imported tools examples docs images .github; do X+=(--exclude-dir "$d"); done
-exec "$HERE/../dot-cloud/tools/publish_pack.sh" publish --source "$HERE" --id game-airdrift --host-addons "$HERE/../dot-server-deploy/addons.lock" "${X[@]}" --lock "$HERE/content.lock.json" "$@"
+PUB="$HERE/../dot-cloud/tools/publish_pack.sh"; HOSTLOCK="$HERE/../dot-server-deploy/addons.lock"; GV=0.0.0
+BASE=(publish --source "$HERE" --id game-airdrift --host-addons "$HOSTLOCK" "${X[@]}")
+# Gates before an upload (a --dry-run gets the first only): every load of the game's own files goes through the
+# game's path rebase (tools/check_pack_paths.sh), and the pack a dry run builds boots mounted, under
+# res://dot_cloud/<id>/<version>/, on a host built at addons.lock's tags (tools/pack_boot_test.sh). Airdrift and
+# Playlot 0.1.33 and Zombie Zone 0.1.40 failed the second (stale trees, a renamed addon) and booted nothing on servers.
+"$HERE/tools/check_pack_paths.sh" "$HERE"
+case " $* " in *" --dry-run "*) ;; *)
+    G=(); skip=""
+    for a in "$@"; do
+        if [ -n "$skip" ]; then [ "$skip" = --version ] && GV="$a"; skip=""; continue; fi
+        case "$a" in --version|--bump|--out|--site|--token-file|--lock) skip="$a" ;; *) G+=("$a") ;; esac
+    done
+    T="$(mktemp -d)"
+    if ! "$PUB" "${BASE[@]}" --version "$GV" "${G[@]}" --dry-run --out "$T/out" >&2 \
+        || ! "$HERE/tools/pack_boot_test.sh" "$T/out" "$HOSTLOCK"; then
+        rm -rf "$T"; echo "publish: refusing to upload (gates above); nothing was sent" >&2; exit 1
+    fi
+    rm -rf "$T"; set -- "$@" --no-import ;;
+esac
+exec "$PUB" "${BASE[@]}" --lock "$HERE/content.lock.json" "$@"
