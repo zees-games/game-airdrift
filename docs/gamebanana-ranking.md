@@ -177,7 +177,7 @@ Downloaded and sent to `inspirations/airdrift/pending/` (reasons in its README):
 
 ## Extended and imported 2026-10-23
 
-The likes list above had no Bunny Hop course left that we did not hold, so chk-maps re-read category 5568 (Bunny Hop) sorted by most liked, pages 1-2 at 50 a page, against the zones files, `inspirations/airdrift/` and `pending/`. Every page is game 2, every file downloaded VBSP 20; CS:GO/CS2 skipped: 0. Every page states CC BY-NC-ND 4.0; each was read for anything against porting before downloading.
+The likes list above had no Bunny Hop course left that we did not hold, so chk-maps re-read category 5568 (Bunny Hop) sorted by most liked, pages 1-2 at 50 a page, against the zones files, `inspirations/airdrift/` and `pending/`. Every page is game 2, every file downloaded VBSP 20; Newer-format files skipped: 0. Every page states CC BY-NC-ND 4.0; each was read for anything against porting before downloading.
 
 Not held, in like order, and what became of each:
 
@@ -205,7 +205,7 @@ Not held, in like order, and what became of each:
 
 ## Imported 2026-10-26
 
-From the "Next by likes" list above, in like order (the ranking was not extended: it still had candidates). Every page is game 2 and states CC BY-NC-ND 4.0; each was read for anything against porting before downloading. Every file downloaded is VBSP 20; CS:GO/CS2 skipped: 0.
+From the "Next by likes" list above, in like order (the ranking was not extended: it still had candidates). Every page is game 2 and states CC BY-NC-ND 4.0; each was read for anything against porting before downloading. Every file downloaded is VBSP 20; Newer-format files skipped: 0.
 
 | Page | Map | Likes | Views | Status |
 | --- | --- | ---: | ---: | --- |
@@ -237,7 +237,7 @@ The rest of the 2026-10-26 "Next by likes" bunny-hop list, then surf maps from t
 | [124417](https://gamebanana.com/mods/124417) | bhop_alvo2 | downloaded, pending/: name-filter gates like bhop_pharos_fix, two triggers to `end`, finish not read |
 | [126310](https://gamebanana.com/mods/126310) | bhop_verisimilitude | not downloaded: 123 MB archive |
 | [125063](https://gamebanana.com/mods/125063) | bhop_forgotten | imported: start round `c1`, finish at the pad teleport to `end`; 159 anti-standing traps become sinking blocks |
-| [125076](https://gamebanana.com/mods/125076) | bhop_FreAkin | imported as `bhop_freakin`: start round the spawn room, finish at the 168-unit door to `ende` (the two hub doors to it stay teleports); all stock CS:S textures, so it draws as the prototype grid |
+| [125076](https://gamebanana.com/mods/125076) | bhop_FreAkin | imported as `bhop_freakin`: start round the spawn room, finish at the 168-unit door to `ende` (the two hub doors to it stay teleports); all stock textures from the genre's classic game, so it draws as the prototype grid |
 | [125791](https://gamebanana.com/mods/125791) | bhop_pym | downloaded, pending/: five stages behind name gates, no finish marked after stage 5 |
 | [122563](https://gamebanana.com/mods/122563) | surf_milkyway | zones written (start at the map's `START` trigger, finish at the door to `end`; its `END` label, a box over the spawn room, is ignored), pending/: the spawn room renders dim purple-brown (spawn view 0.007 against the 0.012 floor) while the page screenshots show the course lit bright blue, so it is not listed as dark until the lighting is checked |
 | [123059](https://gamebanana.com/mods/123059) | surf_stonework4 | zones written, pending/: the import was OOM-killed at its memory ceiling on a short-of-memory VM; re-import from pending/ |
