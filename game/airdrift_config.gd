@@ -251,7 +251,7 @@ func map_content_id(id: StringName) -> String:
 @export_group("Records")
 
 ## Where records go. Empty keeps them in memory only.
-@export var records_directory: String = "user://g2gfast/records"
+@export var records_directory: String = "user://g2gfast/records"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
 ## A database for records instead of files: [code]sqlite[/code], or [code]postgres[/code]
 ## / [code]mysql[/code] through dot-sql's HTTP gateway. Empty keeps files.
@@ -263,7 +263,7 @@ func map_content_id(id: StringName) -> String:
 @export var records_database: String = ""
 
 ## SQLite only: the database file.
-@export var records_database_path: String = "user://g2gfast/records.db"
+@export var records_database_path: String = "user://g2gfast/records.db"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
 ## Postgres or MySQL: the gateway's URL, e.g. http://10.0.0.5:8780.
 @export var records_database_url: String = ""
@@ -384,7 +384,7 @@ func sensitive_keys() -> PackedStringArray:
 	return PackedStringArray(["records_database_token"])
 
 
-## `@export_group` -> the cfg file it lives in: `cfg/game/game-g2gfast/config_<file>/game.yml`.
+## `@export_group` -> the cfg file it lives in: `cfg/game/game-airdrift/config_<file>/game.yml`.
 const CFG_FILES := {
 	"Bunny-hopping": "movement", "Movement (genre units)": "movement", "View": "movement",
 	"Content": "content", "Records": "content",
@@ -394,9 +394,9 @@ const CFG_FILES := {
 
 
 ## The game's own id since the rename (Zee's Airdrift), and the ids it had before (oldest first).
-## The cfg tree is still `cfg/game/game-g2gfast/`: the binder reads it under the former id.
+## The cfg tree is `cfg/game/game-airdrift/`; a deployment tree under the former id still applies (registered below).
 const GAME_ID := "game-airdrift"
-const FORMER_IDS: PackedStringArray = ["game-g2gfast"]
+const FORMER_IDS: PackedStringArray = ["game-g2gfast"]  # legacy id: operator cfg/rotation keys written before the rename
 
 
 ## Declares the rename to dot-core (API 31), so whatever names the game by its new id (rotation
@@ -408,7 +408,7 @@ static func register_ids() -> void:
 ## The binder every entry point uses: [param config] layered, one cfg file per [constant CFG_FILES] entry.
 static func make_binder(config: DotConfig, json_path := "") -> DotGameConfigBinder:
 	register_ids()
-	var b := DotGameConfigBinder.create(config, "game-g2gfast", "airdrift", json_path)
+	var b := DotGameConfigBinder.create(config, "game-airdrift", "airdrift", json_path)
 	b.grouped = true
 	b.group_files = CFG_FILES
 	return b

@@ -46,7 +46,7 @@ signal listing_changed()
 
 @export_group("Favourites")
 
-@export var favourites_path: String = "user://g2gfast/servers.json"
+@export var favourites_path: String = "user://g2gfast/servers.json"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
 var browser: DotBrowser = null
 var filter: DotBrowserFilter = null

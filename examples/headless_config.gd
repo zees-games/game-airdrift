@@ -12,7 +12,7 @@ const AirdriftZoneEditor := preload("../game/airdrift_zone_editor.gd")
 ## every copy of this project on a box, and two suites at once wrote and deleted each other's cfg files.
 const ROOT_ARG := "--cfgroot="
 var ROOT := _root()
-const GAME := "game-g2gfast"
+const GAME := "game-airdrift"
 const CHECKS := 40
 const SECTIONS := 4
 
@@ -41,7 +41,7 @@ func _run() -> void:
 	var config := AirdriftConfig.new()
 	var binder := AirdriftConfig.make_binder(config)
 	binder.strict = true
-	_check(DotAddonConfig.game_names("game-airdrift") == PackedStringArray(["game-g2gfast", "game-airdrift"]), "the binder registers game-g2gfast as game-airdrift's former id", str(DotAddonConfig.game_names("game-airdrift")))
+	_check(DotAddonConfig.game_names("game-airdrift") == PackedStringArray(["game-g2gfast", "game-airdrift"]), "the binder registers game-g2gfast as game-airdrift's former id", str(DotAddonConfig.game_names("game-airdrift")))  # legacy id
 	_check(binder.load_layers().ok, "defaults load")
 	_check(binder.diff().is_empty(), "no diff at the code defaults")
 	_check(binder.schema().size() >= 55, "every exported field is in the schema")

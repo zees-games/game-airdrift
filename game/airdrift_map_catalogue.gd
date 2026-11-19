@@ -54,7 +54,7 @@ const STRIPPED := [".remap", ".import"]
 ## map is this game's own, and an import with no credit in its zones file says so. Both
 ## are placeholders rather than names, and [method credit] is how anything that shows a
 ## player who made a map tells the two apart (`[credit-1]`).
-const BUILT_IN_AUTHOR := "g2gfast"
+const BUILT_IN_AUTHOR := "g2gfast"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 const IMPORTED_AUTHOR := "imported"
 
 ## Lists the maps copied in by hand ([code]DotMapLocalMaps[/code]: a raw convert folder under `res://addons/maps/` or

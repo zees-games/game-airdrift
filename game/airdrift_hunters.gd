@@ -211,7 +211,7 @@ func patrol_point(fraction: float) -> Vector3:
 
 static func catalogue() -> DotNpcCatalogue:
 	var out := DotNpcCatalogue.new()
-	out.meta = {"game": "g2gfast"}
+	out.meta = {"game": "g2gfast"}  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
 	for def in [_stalker(), _sprinter()]:
 		var added := out.add(def)

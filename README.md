@@ -71,7 +71,7 @@ You need [Godot 4.7](https://godotengine.org/download). The game is built from m
 git clone https://github.com/gamespice-platform/bootstrap.git
 cd dot-bootstrap
 ./bootstrap.sh
-cd projects/game-g2gfast
+cd projects/game-airdrift
 ./game.sh
 ```
 
@@ -126,13 +126,13 @@ A player killed in deathmatch or by a hunter falls as a ragdoll ([dot-player-cha
 Each field of the server configuration (`game/airdrift_config.gd`, with its description and range) is also an `airdrift_<field>` cvar, unless it already has an `sv_` one. Layers, weakest first:
 
 1. the code default
-2. `cfg/game/game-g2gfast/config/game.yml`
-3. `cfg/server/game/game-g2gfast/config/game.yml`
+2. `cfg/game/game-airdrift/config/game.yml`
+3. `cfg/server/game/game-airdrift/config/game.yml`
 4. `AIRDRIFT_*` environment (the old `G2G_*` is still read; the new one wins)
 5. `--airdrift-*` arguments (the old `--g2g-*` likewise)
 6. live cvars and the workbench
 
-A dedicated server refuses to start on an unknown key or a bad value. Per-map movement lives in `cfg/game/game-g2gfast/dot_map/map/<map>.yml`. `airdrift_config_dump` lists every field with the layer it came from; `airdrift_config_diff save` writes what you changed as a file to copy into the defaults. The dot-workbench tuning panel (F9 in debug builds; `workbench http` for a loopback page when `workbench.enabled` is set in `cfg/server.yml`) edits the same fields. An exported build needs `*.html` in the preset's `include_filter`.
+A dedicated server refuses to start on an unknown key or a bad value. Per-map movement lives in `cfg/game/game-airdrift/dot_map/map/<map>.yml`. `airdrift_config_dump` lists every field with the layer it came from; `airdrift_config_diff save` writes what you changed as a file to copy into the defaults. The dot-workbench tuning panel (F9 in debug builds; `workbench http` for a loopback page when `workbench.enabled` is set in `cfg/server.yml`) edits the same fields. An exported build needs `*.html` in the preset's `include_filter`.
 
 ### Which maps rotate
 

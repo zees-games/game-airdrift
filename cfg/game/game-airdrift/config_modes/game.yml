@@ -1,5 +1,5 @@
-# game-g2gfast: every key of this file at its code default, commented out. Uncomment a line to change it;
-# an operator overrides in cfg/server/game/game-g2gfast/config_modes/game.yml. Layers: defaults < this < env < argv.
+# game-airdrift: every key of this file at its code default, commented out. Uncomment a line to change it;
+# an operator overrides in cfg/server/game/game-airdrift/config_modes/game.yml. Layers: defaults < this < env < argv.
 
 # --- Modes
 # Whether players can shoot each other. `sv_deathmatch`.

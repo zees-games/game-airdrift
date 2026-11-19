@@ -339,7 +339,7 @@ func _test_rotation_file() -> void:
 	_section("rotation file")
 	# Applied to a game: listed in, unlisted out, nothing removed.
 	var all_before := game.maps.catalogue.size()
-	var parsed := DotMapRotationFile.from_trees([{"defaults": {"maps": ["bhop_g2g_intro"]}}], "game-g2gfast")
+	var parsed := DotMapRotationFile.from_trees([{"defaults": {"maps": ["bhop_g2g_intro"]}}], "game-airdrift")
 	game.rotation_file = parsed.value
 	game.apply_rotation()
 	var pool := game.maps.rotation.pool()
@@ -358,7 +358,7 @@ func _test_rotation_file() -> void:
 	arena.id = &"surf_combat_test"
 	arena.kind = DotMapDef.KIND_ARENA
 	game.maps.catalogue.add(arena)
-	var empty := DotMapRotationFile.from_trees([{"defaults": {"maps": ["no_such_map_*"]}}], "game-g2gfast")
+	var empty := DotMapRotationFile.from_trees([{"defaults": {"maps": ["no_such_map_*"]}}], "game-airdrift")
 	game.rotation_file = empty.value
 	game.apply_rotation()
 	_check(not game.in_rotation(&"surf_combat_test") and game.in_rotation(&"bhop_g2g_intro"),

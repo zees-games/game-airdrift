@@ -30,4 +30,4 @@ def adapter_repo(converter: str) -> str:
     dot-map-convert checkout from before its rename (a0ef1d9; newer ones also accept the old name through adapter_launch.FORMER)."""
     if os.path.isdir(os.path.join(converter, "adapters", "game-airdrift")):
         return "game-airdrift"
-    return "game-g2gfast"
+    return "game-airdrift"

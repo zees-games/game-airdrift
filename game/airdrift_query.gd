@@ -15,7 +15,7 @@ var bridge: AirdriftNetBridge = null
 
 
 func _provider_name() -> String:
-	return "g2gfast"
+	return "g2gfast"  # legacy id: the provider name
 
 
 func _contribute(snapshot: DotQuerySnapshot) -> void:

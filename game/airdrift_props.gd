@@ -103,7 +103,7 @@ func setup() -> DotResult:
 ## mapper cannot line up with anything.
 static func catalogue() -> DotPropCatalogue:
 	var out := DotPropCatalogue.new()
-	out.meta = {"game": "g2gfast"}
+	out.meta = {"game": "g2gfast"}  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
 	for def in [_block(), _block_wide(), _platform()]:
 		var added := out.add(def)

@@ -113,7 +113,7 @@ func _build_settings() -> DotResult:
 	settings.name = "Settings"
 	settings.schema = schema()
 	settings.local_store = DotSettingsStoreFile.new("user://g2g_settings")
-	settings.app_namespace = &"game_g2gfast"
+	settings.app_namespace = &"game_g2gfast"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 	settings.migrations = migrations()
 	settings.shared_namespace = &"tmc_account"
 	add_child(settings)

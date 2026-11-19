@@ -23,7 +23,7 @@ const AirdriftWeaponLayer := preload("airdrift_weapon_layer.gd")
 
 
 ## The registry name a dot-server module finds this under.
-const CONFIG_GAME_ID := "game-g2gfast"
+const CONFIG_GAME_ID := "game-airdrift"
 const SERVICE := &"airdrift_game"
 
 ## The ghost's player id. Session ids are dot-server userids, which never get

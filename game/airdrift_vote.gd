@@ -62,7 +62,7 @@ func _init() -> void:
 	metadata_key = METADATA_KEY
 	command_names = COMMAND_NAMES
 	noun = "map"
-	config_path = "user://cfg/g2gfast_vote.json"
+	config_path = "user://cfg/g2gfast_vote.json"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 	# The ids are `u<n>`, a session's own spelling: dot-vote's default for a voter.
 	bare_voter_ids = false
 

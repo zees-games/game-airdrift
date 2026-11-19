@@ -40,7 +40,7 @@ func _run() -> void:
 	var res: DotResult = wb.api.handle(DotGameWorkbench.LOCAL_ACTOR, {"op": "set", "kind": kind, "id": binder.profile_id, "key": "score_limit", "value": 25})
 	_check(res.ok and config.score_limit == 25, "an edit in the window reaches the live config")
 	var files: Dictionary = wb.exporter.call("collect")
-	var text: String = files.get("cfg/game/game-g2gfast/config_modes/game.yml", "")
+	var text: String = files.get("cfg/game/game-airdrift/config_modes/game.yml", "")
 	_check(text == "score_limit: 25\n", "the export holds just the changed field in the cfg layout")
 	var other: Variant = wb.api.handle("somebody", {"op": "set", "kind": kind, "id": binder.profile_id, "key": "score_limit", "value": 26})
 	_check(not other.ok, "another actor is refused without a permit")

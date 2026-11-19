@@ -20,7 +20,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("game-airdrift: per-map settings from cfg/game/game-g2gfast/dot_map/map")
+	print("game-airdrift: per-map settings from cfg/game/game-airdrift/dot_map/map")
 	_section("map files change the cvars")
 	var console := DotConsole.new()
 	add_child(console)

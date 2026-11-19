@@ -4,7 +4,7 @@ var _shared_names: DotFpsCvars = null
 
 
 func _module_name() -> String:
-	return "g2gfast"
+	return "g2gfast"  # legacy id: the module name published packs and saved state use
 
 func _module_version() -> String:
 	return "0.1.0"
@@ -583,10 +583,10 @@ func chat_commands() -> Array:
 func _register_games() -> void:
 	if server.games == null:
 		return
-	if server.games.find_game("g2gfast") != null:
+	if server.games.find_game("g2gfast") != null:  # legacy id
 		return
 	var descriptor := DotGameDescriptor.new()
-	descriptor.game_id = "g2gfast"
+	descriptor.game_id = "g2gfast"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 	descriptor.display_name = "Zee's Airdrift"
 	descriptor.scene = AirdriftPaths.rebase("res://game/airdrift.tscn")
 	descriptor.client_scene = ""

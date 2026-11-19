@@ -90,7 +90,7 @@ func load_rotation() -> DotResult:
 	for candidate in ["res://maps.yml", found]:
 		if candidate != "" and not paths.has(candidate):
 			paths.append(candidate)
-	var read := DotMapRotationFile.load_files(paths, "game-g2gfast")
+	var read := DotMapRotationFile.load_files(paths, "game-airdrift")
 	if not read.ok:
 		DotLog.error(CHANNEL, "the map rotation file could not be read; every map rotates",
 			{"why": read.error.message})

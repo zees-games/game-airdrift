@@ -105,7 +105,7 @@ func _check_stock_course_list() -> void:
 	if stock == "":
 		_check(true, "(dot-server-deploy is not beside this checkout: drift not checked)")
 	else:
-		var block := stock.split("  game-g2gfast:")[1].split("\n  mg-")[0].split("\n  game-")[0]
+		var block := stock.split("  game-airdrift:")[1].split("\n  mg-")[0].split("\n  game-")[0]
 		var re := RegEx.new()
 		re.compile("-\\s+gamemann/([a-z0-9_]+)\\s*$")
 		var named := PackedStringArray()
