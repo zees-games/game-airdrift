@@ -1,3 +1,5 @@
+![Airdrift banner](https://raw.githubusercontent.com/zees-games/game-airdrift/main/docs/banner.png)
+
 A 3D surf and bunny-hop timer game for [Godot 4](https://godotengine.org/), built on the [**GameSpice**](https://gamespice.net) platform and addon collection. This is highly inspired by classic competitive shooter movement and includes some classic Surf Timer and Bunny Hop maps (WIP) from the genre!
 
 ![Preview](https://github.com/zees-games/game-airdrift/blob/main/images/preview.gif?raw=true)
