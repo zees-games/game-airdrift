@@ -1,10 +1,10 @@
-A 3D surf and bunny-hop timer game for [Godot 4](https://godotengine.org/), built on the [Gamespice](https://gamespice.net) platform and addon collection. This is highly inspired by classic competitive shooter movement and includes some classic Surf Timer and Bunny Hop maps (WIP) from the genre!
+A 3D surf and bunny-hop timer game for [Godot 4](https://godotengine.org/), built on the [**GameSpice**](https://gamespice.net) platform and addon collection. This is highly inspired by classic competitive shooter movement and includes some classic Surf Timer and Bunny Hop maps (WIP) from the genre!
 
 ![Preview](https://github.com/zees-games/game-airdrift/blob/main/images/preview.gif?raw=true)
 
 *Play on the test server [here](https://moddingcommunity.com/g2gfast/s/g2gfast01/play).*
 
-The project and its assets are open source under the MIT license. Only the back-end web infrastructure is not; if you use your own authentication back end instead of Gamespice, you build that part yourself.
+The project and its assets are open source under the MIT license. Only the back-end web infrastructure is not; if you use your own authentication back end instead of GameSpice, you build that part yourself.
 
 **Please treat this as partially tested.** It was built with Claude Code and has a headless test suite that passes, but little of it has been in front of real players. Please report anything you run into.
 
@@ -63,7 +63,7 @@ While you watch somebody, the list of others watching them is on the right. A se
 
 ## Getting started
 
-You need [Godot 4.7](https://godotengine.org/download). The game is built from many Gamespice addons, each in its own repository. The easiest way to get everything is [dot-bootstrap](https://github.com/gamespice-platform/bootstrap), which clones every project and links the addons in:
+You need [Godot 4.7](https://godotengine.org/download). The game is built from many GameSpice addons, each in its own repository. The easiest way to get everything is [dot-bootstrap](https://github.com/gamespice-platform/bootstrap), which clones every project and links the addons in:
 
 ```bash
 git clone https://github.com/gamespice-platform/bootstrap.git
@@ -184,7 +184,7 @@ Records are kept in files under `user://g2gfast/records` unless you give the ser
 }
 ```
 
-`points_formula` is `curve`, `tiered` or `placement`. If the database will not open, the server logs an error and uses files for that session. With `report_to_backbone` on, times and ranking points are published to the server's page on Gamespice.
+`points_formula` is `curve`, `tiered` or `placement`. If the database will not open, the server logs an error and uses files for that session. With `report_to_backbone` on, times and ranking points are published to the server's page on GameSpice.
 
 ### Admin commands
 
