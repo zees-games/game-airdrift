@@ -286,10 +286,10 @@ func _on_map_ready(_map: GSMapDef) -> void:
 
 # --- Map changes -------------------------------------------------------------
 #
-# dot-map's protocol, carried over dot-net: announce -> (fetch) -> ready -> load, with
-# the straggler timeout and the trust refusals as dot-map wrote them. The host sends a
-# MAP event per peer; a peer answers with an Ask.MAP request. dot-map is transport-
-# agnostic on purpose and names no dot-net class, so this is where the two meet.
+# gs-map's protocol, carried over gs-net: announce -> (fetch) -> ready -> load, with
+# the straggler timeout and the trust refusals as gs-map wrote them. The host sends a
+# MAP event per peer; a peer answers with an Ask.MAP request. gs-map is transport-
+# agnostic on purpose and names no gs-net class, so this is where the two meet.
 #
 # [b]What it replaced[/b] was a map id broadcast from `map_ready`: sent AFTER the server
 # had already swapped, to clients that had never been asked whether they had the map,
@@ -297,20 +297,20 @@ func _on_map_ready(_map: GSMapDef) -> void:
 # load it stayed on the old world while the server simulated it on the new one, and
 # nothing on either end knew.
 #
-# [b]Nothing here works around dot-map any more.[/b] Running this for the first time
+# [b]Nothing here works around gs-map any more.[/b] Running this for the first time
 # found five things wrong in the addon, and this section carried a workaround for four of
 # them: it answered a joiner's ready with a `load` itself, held a joiner mid-change back
 # until the change settled, thinned progress to four a second, and fetched a delivered
-# map by its own convention before dot-map saw the announce — then queued every map
+# map by its own convention before gs-map saw the announce — then queued every map
 # message behind that fetch, because a straggler's `load` overtook it. All of that is
-# dot-map's now (see its docs/history.md, "What the first transport found"), and what is left
+# gs-map's now (see its docs/history.md, "What the first transport found"), and what is left
 # is the one decision that IS this game's:
 #
 # - [b]The imported-map scene is a trusted template.[/b] Every imported map is ONE scene
 #   in the build pointed at a manifest (see AirdriftMapCatalogue) — the mount constraint
 #   forbids putting it in the pack — so the client lists that scene in
-#   `trusted_template_scenes`, and dot-map then requires the manifest, not the scene, to
-#   be inside `res://dot_cloud/<content>/<version>/`. A server marks a map it fetched
+#   `trusted_template_scenes`, and gs-map then requires the manifest, not the scene, to
+#   be inside `res://gs_cloud/<content>/<version>/`. A server marks a map it fetched
 #   into a mount as that content (`AirdriftGame._mark_delivered`); the client fetches it from
 #   ITS OWN content client and origin, verified against ITS keys. The host still says
 #   only WHICH map; this client decides what it is made of.
@@ -354,7 +354,7 @@ func _build_map_sync() -> void:
 		add_child(map_client)
 
 
-## Server: one protocol message to one peer. dot-map's `send_fn`.
+## Server: one protocol message to one peer. gs-map's `send_fn`.
 func _send_map(peer_id: int, payload: Dictionary) -> void:
 	var body := AirdriftEvents.write_map_message(payload)
 	if body.is_empty():
@@ -371,7 +371,7 @@ func _send_map(peer_id: int, payload: Dictionary) -> void:
 ## Server: a peer can receive, so it follows map changes from now on — and is told the
 ## map it is joining onto, through the same announce a change would send.
 ##
-## dot-map's `admit_peer` does the rest: it sends the `load` when the peer says it has the
+## gs-map's `admit_peer` does the rest: it sends the `load` when the peer says it has the
 ## map, and a peer admitted during a change is announced the map that change settles on
 ## rather than waited on for one it was never told about.
 func _map_admit(peer_id: int) -> void:
@@ -395,13 +395,13 @@ func _on_map_reply(peer_id: int, payload: Dictionary) -> void:
 
 ## Server: a peer did not have the map in time, and the change went ahead without it.
 ##
-## [b]Told, and not dropped.[/b] dot-map deliberately leaves this to the game, and this
+## [b]Told, and not dropped.[/b] gs-map deliberately leaves this to the game, and this
 ## game's answer is that the server is authoritative: a straggler's inputs are simulated
 ## on the new map whatever its screen shows, so nothing it does there can reach a board.
-## A straggler still downloading follows on its own — dot-map holds the `load` it was
+## A straggler still downloading follows on its own — gs-map holds the `load` it was
 ## sent until the fetch lands. A client that REFUSED the map is the one that cannot follow,
 ## and it is the one that knows it, so it leaves (see [signal map_refused]); the server
-## cannot tell the two apart, because a refusal is silent by dot-map's design.
+## cannot tell the two apart, because a refusal is silent by gs-map's design.
 func _on_map_straggler(peer_id: int) -> void:
 	var session_id := player_for_peer(peer_id)
 	var pending := String(map_host.describe().get("pending", "-")) if map_host != null else "-"
@@ -413,10 +413,10 @@ func _on_map_straggler(peer_id: int) -> void:
 	))
 
 
-## Client: one protocol message to the host. dot-map's `send_fn`.
+## Client: one protocol message to the host. gs-map's `send_fn`.
 ##
 ## Progress arrives here already throttled (`GSMapSyncClient.progress_interval_sec`),
-## because dot-net's server allows a client so many messages a second and drops the
+## because gs-net's server allows a client so many messages a second and drops the
 ## excess without asking which — so a burst of progress could cost the `ready` behind it.
 func _send_map_reply(payload: Dictionary) -> void:
 	var body := AirdriftEvents.write_map_message(payload, AirdriftEvents.MAP_REPLY_BYTES)
@@ -430,9 +430,9 @@ func _send_map_reply(payload: Dictionary) -> void:
 
 ## Client: a protocol message from the host.
 ##
-## Handed straight to dot-map, which does not suspend the caller: an announce starts a
+## Handed straight to gs-map, which does not suspend the caller: an announce starts a
 ## fetch on its own, and a `load` that overtakes that fetch — a straggler's — is held by
-## dot-map until the fetch lands.
+## gs-map until the fetch lands.
 func _on_map_message(payload: Dictionary) -> void:
 	if not GSMapMessage.is_map_message(payload):
 		GSLog.warn(CHANNEL, "the server sent a map message this client cannot read")
@@ -456,9 +456,9 @@ func _on_map_message(payload: Dictionary) -> void:
 	_map_handling = &""
 
 
-## Client: dot-map refused the announce, could not fetch it, or could not load it.
+## Client: gs-map refused the announce, could not fetch it, or could not load it.
 ##
-## [b]WARN, not ERROR.[/b] A refusal is dot-map's trust rule doing its job, and the client
+## [b]WARN, not ERROR.[/b] A refusal is gs-map's trust rule doing its job, and the client
 ## leaving over it is the designed outcome rather than a failure of this code; an ERROR
 ## here would staple a backtrace to every refusal and read like a crash in the one log
 ## where somebody is looking for why a player left.

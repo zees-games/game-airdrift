@@ -22,7 +22,7 @@ func _test_cvars_reach_the_movement() -> void:
 	zoned.weapon_id = &"probe"
 	game.progress.report_damage(zoned)
 	_check(game.progress.session_values(&"u1").get_cell(GSStatsHitzones.HITS, "zone:neck") >= 1.0,
-		"a hit with a hit_group is filed by body zone through the dot-stats hitzone hook")
+		"a hit with a hit_group is filed by body zone through the gs-stats hitzone hook")
 	_check(game.progress.stats.schema.validate().ok, "the stats schema, hitzones included, validates")
 	_check(_stats_errors.is_empty(), "the stats layer logged no error", str(_stats_errors))
 
@@ -54,7 +54,7 @@ func _test_stats_report() -> void:
 	script.source_code = "extends Node\nfunc post_integration(_a = null, _b = null, _c = null): return null\n"
 	var _reloaded := script.reload()
 	client.set_script(script)
-	GSRegistry.register(&"dot_backbone_client", client)
+	GSRegistry.register(&"gs_backbone_client", client)
 	var _r0 := cv.set_value("0")
 	var _r1 := cv.set_value("1")
 	_check(progress.stats.report_to_backbone, "on with a backbone client makes the tracker report")
@@ -72,7 +72,7 @@ func _test_stats_report() -> void:
 	_check(game.boards.reporter.client == client, "the boards' reporter takes the registered backbone client")
 	game.boards.reporter.client = null
 	game.config.report_to_backbone = was_reporting
-	GSRegistry.unregister_instance(&"dot_backbone_client", client)
+	GSRegistry.unregister_instance(&"gs_backbone_client", client)
 	client.free()
 	_done()
 
@@ -187,7 +187,7 @@ func _test_thirdperson_cvar() -> void:
 ## because the manager keeps the config it was built with.
 func _test_stagger_cvar() -> void:
 	_section("sv_stagger_snapshots")
-	var module := server.modules.get_module("g2gfast")
+	var module := server.modules.get_module("airdrift")
 	var net: GSNetManager = module.get("net") if module != null else null
 	_check(net != null and net.config.stagger_snapshots, "snapshots are staggered by default (since 2026-10-09)")
 	_run_command("sv_stagger_snapshots 0")
@@ -200,7 +200,7 @@ func _test_stagger_cvar() -> void:
 
 func _test_config_and_noblock() -> void:
 	_section("the config surface and the block rules")
-	var module := server.modules.get_module("g2gfast")
+	var module := server.modules.get_module("airdrift")
 	var binder: GSGameConfigBinder = game.config_binder
 	_check(binder != null and binder.diff().is_empty(), "the config binder is built and the defaults hold no diff")
 	_check(server.console.find_cvar("airdrift_score_limit") != null and server.console.get_int("airdrift_max_players") == 64,
@@ -240,7 +240,7 @@ func _test_config_and_noblock() -> void:
 ## still works, so a server cfg, an admin's habit and an older client's chat command do not break.
 func _test_old_names() -> void:
 	_section("the old console names")
-	var module := server.modules.get_module("g2gfast")
+	var module := server.modules.get_module("airdrift")
 	var old: String = module.OLD_NAME_PREFIX
 	var status: GSConCommand = server.console.find_command("airdrift_status")
 	var old_status: GSConCommand = server.console.find_command(old + "status")
@@ -268,7 +268,7 @@ func _test_commands() -> void:
 	# The map menu's server half (M): every map this server has, a player offered a vote, staff
 	# (the default sv_map_menu_flag) the change; and the older client's own map list answers
 	# to the same flag. The change itself is game.change_map, which `airdrift_map` drives above.
-	var airdrift := server.modules.get_module("g2gfast")
+	var airdrift := server.modules.get_module("airdrift")
 	var vote_node: Object = airdrift.get("vote") if airdrift != null else null
 	var menu_half: Object = vote_node.get("commands").get("map_menu") if vote_node != null and vote_node.get("commands") != null else null
 	var player := GSCmdContext.new()
@@ -354,11 +354,11 @@ func _test_replay_bot_cvar() -> void:
 
 func _test_query_and_chat() -> void:
 	_section("what a server browser and a chat see")
-	# The host's own reference, not server.query_source: dot-server holds that one
+	# The host's own reference, not server.query_source: gs-server holds that one
 	# as a plain Object because it must not name this addon, so nothing typed can
-	# be inferred from it. This project links dot-server-query, so it can.
+	# be inferred from it. This project links gs-server-query, so it can.
 	var source := query_host.source
-	_check(source != null and source.provider_names().has("g2gfast"), "the module contributes to queries",
+	_check(source != null and source.provider_names().has("airdrift"), "the module contributes to queries",
 		str(source.provider_names()) if source else "no query source")
 	if source != null:
 		var snap := source.snapshot(true)
@@ -401,11 +401,11 @@ func _test_query_and_chat() -> void:
 		"because sv_chat_commands ships on"
 	)
 
-	# dot-map owns the plain name now. dot-server's `map` changed the GAME, which on a
+	# gs-map owns the plain name now. gs-server's `map` changed the GAME, which on a
 	# timer server running one game and a hundred maps was the wrong operation every time
 	# it was typed.
 	var plain_map: GSConCommand = server.console.find_command("map")
-	_check(plain_map != null, "`map` is registered, and it is dot-map's")
+	_check(plain_map != null, "`map` is registered, and it is gs-map's")
 	_check(
 		plain_map.chat_policy == GSConCommand.ChatPolicy.DEFAULT
 			and plain_map.allows_chat(server.console.chat_commands_are_open()),
@@ -423,13 +423,13 @@ func _test_query_and_chat() -> void:
 	_check(plain_maps != null and plain_maps.chat_allowed, "while listing them from chat is fine")
 	_check(
 		server.console.find_command("game") != null,
-		"and `game` is what changes the game, which is what dot-server's `map` used to do"
+		"and `game` is what changes the game, which is what gs-server's `map` used to do"
 	)
-	# dot-vote registers both of these over the same maps. Two commands of one name is the
-	# last one registered winning silently, which is why dot-map registers neither.
+	# gs-vote registers both of these over the same maps. Two commands of one name is the
+	# last one registered winning silently, which is why gs-map registers neither.
 	_check(
 		server.console.find_command("mapinfo") != null,
-		"`mapinfo` answers what nextmap and timeleft would, without taking dot-vote's names"
+		"`mapinfo` answers what nextmap and timeleft would, without taking gs-vote's names"
 	)
 	_done()
 
@@ -440,13 +440,13 @@ func _test_query_and_chat() -> void:
 ##
 ## [b]Each of these five passes its own suite with a stub host.[/b] What is untested
 ## anywhere else is that they can all be brought up in one process against one
-## [GSServer] — and specifically that dot-moderation is up before the two routers that
+## [GSServer] — and specifically that gs-moderation is up before the two routers that
 ## look up the registry name it publishes, because a router that started first would
 ## find nothing, warn once, and enforce no gag for the life of the server.
 func _test_services() -> void:
 	_section("chat, voice and moderation")
 
-	var module := server.modules.get_module("g2gfast")
+	var module := server.modules.get_module("airdrift")
 	_check(module != null, "the module is there")
 
 	if module == null:
@@ -486,7 +486,7 @@ func _test_services() -> void:
 
 	# Four channels, and the one that is about this genre is `running`: everybody who
 	# is mid-run. It is a MEMBERS channel, and the membership rule is a thing only
-	# this game knows — which is exactly why dot-chat asks rather than deciding.
+	# this game knows — which is exactly why gs-chat asks rather than deciding.
 	_check(
 		services.chat.has_channel(AirdriftServices.CH_RUNNING),
 		"there is a channel for the people who are mid-run"
@@ -509,7 +509,7 @@ func _test_services() -> void:
 		str(dirty.value)
 	)
 
-	# A gag against the PERSON. dot-server's is two booleans on a session object, and
+	# A gag against the PERSON. gs-server's is two booleans on a session object, and
 	# a session dies with its connection — so a muted player reconnects and talks.
 	var subject := GSPunishmentSubject.for_uid("7788")
 	var issued: GSResult = await services.moderation.issue(
@@ -540,11 +540,11 @@ func _test_services() -> void:
 	_check(identity.platform != null, "with a platform hub")
 	_check(
 		GSRegistry.get_node_service(GSPlatformHub.SERVICE) != null,
-		"registered, which is how dot-platform's module finds it"
+		"registered, which is how gs-platform's module finds it"
 	)
 	_check(
 		server.modules.has_module("platform"),
-		"and dot-platform's own module is loaded beside this one"
+		"and gs-platform's own module is loaded beside this one"
 	)
 
 	# The avatar manager validates against the GAME's schema, not a second one.

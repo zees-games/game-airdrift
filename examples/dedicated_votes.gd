@@ -3,16 +3,16 @@ extends "dedicated_checks.gd"
 ## The vote, map-menu and mode sections of dedicated.gd, split out for size.
 
 
-## dot-vote over this server's map catalogue.
+## gs-vote over this server's map catalogue.
 ##
 ## [b]This game already had a rock-the-vote and it was not one.[/b]
 ## `GSMapTimeLimit` counts votes against a fraction and expires the map: a countdown
 ## and a tally. What a records community runs is a ballot — nominations, seconding, an
-## instant runoff, a cooldown, an extend option — and that is dot-vote.
+## instant runoff, a cooldown, an extend option — and that is gs-vote.
 func _test_vote() -> void:
 	_section("the vote")
 
-	var module := server.modules.get_module("g2gfast")
+	var module := server.modules.get_module("airdrift")
 	var vote: AirdriftVote = module.get("vote") if module != null else null
 
 	_check(vote != null, "the vote is up")
@@ -92,7 +92,7 @@ func _test_vote_ballot(vote: AirdriftVote) -> void:
 
 ## The console commands and the bridge's RTV request.
 func _test_vote_commands(module: Object) -> void:
-	# dot-vote's commands, which this game never installed: its own `rtv`, `nominate`,
+	# gs-vote's commands, which this game never installed: its own `rtv`, `nominate`,
 	# `nextmap` and `timeleft` stood in for four of them and the operator's four did not
 	# exist.
 	var absent := PackedStringArray()
@@ -102,7 +102,7 @@ func _test_vote_commands(module: Object) -> void:
 	]:
 		if server.console.find_command(name) == null:
 			absent.append(name)
-	_check(absent.is_empty(), "dot-vote's commands are on the console", ", ".join(absent))
+	_check(absent.is_empty(), "gs-vote's commands are on the console", ", ".join(absent))
 
 	# One rock-the-vote. The console `rtv` went to the map session's time limit and `!rtv`
 	# in chat to this director — two votes under one name. The director's refusal names
@@ -153,7 +153,7 @@ func _test_vote_commands(module: Object) -> void:
 ## makes for a browser: guests, no permissions, not the host's own player (`local` off).
 func _test_map_menu_permissions() -> void:
 	_section("M: a guest votes, staff and a lone player change")
-	var module := server.modules.get_module("g2gfast")
+	var module := server.modules.get_module("airdrift")
 	var vote: AirdriftVote = module.get("vote") if module != null else null
 	var menu: Object = vote.commands.get("map_menu") if vote != null and vote.commands != null else null
 	if menu == null:
@@ -343,7 +343,7 @@ func _test_modes() -> void:
 
 		# The match must not carry a time limit of its own. The MAP's clock ends the
 		# map; a second clock underneath it that ends the match is two authorities
-		# over one question, and dot-vote's director already owns the first.
+		# over one question, and gs-vote's director already owns the first.
 		_check(
 			game.combat.match_node.rules.time_limit_sec == 0.0,
 			"the match has no clock of its own"
@@ -474,7 +474,7 @@ func _modes_hit_and_fall(runner: AirdriftPlayer, entity: int) -> void:
 func _modes_killview(entity: int) -> void:
 	var bullet := game.combat.manager.damage_type(AirdriftArsenal.DAMAGE_BULLET)
 	# The server's own kill view clip names its killer by key, for a client that numbers no entity.
-	var kv_bridge: Object = server.modules.get_module("g2gfast").get("bridge")
+	var kv_bridge: Object = server.modules.get_module("airdrift").get("bridge")
 	var kv: Object = kv_bridge.get("killview") if kv_bridge != null else null
 	var prey := game.add_player(&"u4444", "Prey")
 	game.killview_rules.enabled = true
@@ -525,7 +525,7 @@ func _modes_fire() -> void:
 	# Once a tick: a command is consumed by the tick that reads it.
 	var idle := GSWeaponCommand.new()
 
-	# `tick_once`, not `combat.tick`: dot-weapon durations are measured in ticks.
+	# `tick_once`, not `combat.tick`: gs-weapon durations are measured in ticks.
 	for _deploy in range(game.tick_rate):
 		game.combat.set_fire_command(&"u4242", idle)
 		game.tick_once(game.current_tick() + 1)
@@ -563,7 +563,7 @@ func _modes_fire() -> void:
 
 ## A tick whose input never arrived is not the last trigger again.
 func _modes_fire_starved(fire: GSWeaponCommand) -> void:
-	# dot-net skips `_net_apply_input` for a starved tick, so a command left on
+	# gs-net skips `_net_apply_input` for a starved tick, so a command left on
 	# the player would be replayed for as long as packets are lost — the held
 	# trigger `AirdriftPlayerNet.last_attack` says does not survive a hiccup.
 	game.combat.set_fire_command(&"u4242", fire)
@@ -591,10 +591,10 @@ func _modes_hunter_kill(runner: AirdriftPlayer) -> void:
 			str(runner.death.describe()) if runner.death != null else "no death")
 
 
-## dot-browser asking a real [GSServer] — which nothing in this family had done.
+## gs-browser asking a real [GSServer] — which nothing in this family had done.
 ##
-## [b]This is the seam the family's own notes name.[/b] dot-server has answered A2S and
-## its own richer protocol since it was written; dot-browser's suite queries a DQP
+## [b]This is the seam the family's own notes name.[/b] gs-server has answered A2S and
+## its own richer protocol since it was written; gs-browser's suite queries a DQP
 ## server over a real loopback socket. Neither had ever met the other.
 ##
 ## What this game contributes that a bare `GSGameDescriptor` cannot is `AirdriftQuery`'s

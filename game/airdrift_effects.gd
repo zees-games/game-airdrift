@@ -8,8 +8,8 @@ const AirdriftPlayer := preload("airdrift_player.gd")
 ## [b]A movement effect is a style, and a style you did not choose is a record you did
 ## not set.[/b] Everything else in this game exists to make a run comparable with a run
 ## somebody else set on another server at another tick rate — sub-tick zone crossings,
-## a tick rate taken from `sv_tickrate`, styles paired between dot-player-controller and
-## dot-timer by id. An effect that quietly multiplies `max_speed` by 1.35 undoes all of
+## a tick rate taken from `sv_tickrate`, styles paired between gs-player-controller and
+## gs-timer by id. An effect that quietly multiplies `max_speed` by 1.35 undoes all of
 ## it, and the player would have no way of knowing it had happened.
 ##
 ## So there are two classes of effect here and the split is enforced rather than
@@ -19,7 +19,7 @@ const AirdriftPlayer := preload("airdrift_player.gd")
 ##   They cannot change a time.
 ## - **Movement effects** — a slow, a haste — are refused outright while a ranked run is
 ##   live, and **taint** the run when a server has chosen to allow them anyway.
-##   `GSTimerRun.tainted` is the field dot-timer already has for exactly this, and it
+##   `GSTimerRun.tainted` is the field gs-timer already has for exactly this, and it
 ##   is what stops a hunted run reaching a leaderboard beside a clean one.
 ##
 ## The second half is why the hunters are interesting rather than annoying: being
@@ -119,7 +119,7 @@ func apply(id: StringName, player_id: StringName, source: StringName = &"") -> G
 					+ "you did not choose is a record you did not set."
 				) % [id, player_id]
 			)
-		# Allowed, and the run stops being comparable with a clean one. dot-timer has
+		# Allowed, and the run stops being comparable with a clean one. gs-timer has
 		# had this field since it was written; this is the first caller.
 		player.timer.run.tainted = true
 		GSLog.info(
@@ -151,7 +151,7 @@ func _in_ranked_run(player: AirdriftPlayer) -> bool:
 
 ## The combat entity id for a player, or a stable hash when there is no combat layer.
 ##
-## dot-effects keys by int because dot-combat does, and this game keys players by
+## gs-effects keys by int because gs-combat does, and this game keys players by
 ## StringName. Going through the combat layer when it is there keeps the two id spaces
 ## agreeing; the hash is for a server with no deathmatch, where nothing else uses the
 ## number at all.

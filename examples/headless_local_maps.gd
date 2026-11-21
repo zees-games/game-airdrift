@@ -5,7 +5,7 @@ const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
 
-## Maps copied in by hand: a raw dot-map convert folder under `res://addons/maps/` or `user://maps/` is listed as `<name>_local` only while `AirdriftMapCatalogue.list_local` is on (the offline client), and a game loads it with a spawn that stands on its floor. The fixture runs everywhere; `-- --source=<a map's convert folder>` repeats it on a real map.
+## Maps copied in by hand: a raw gs-map convert folder under `res://addons/maps/` or `user://maps/` is listed as `<name>_local` only while `AirdriftMapCatalogue.list_local` is on (the offline client), and a game loads it with a spawn that stands on its floor. The fixture runs everywhere; `-- --source=<a map's convert folder>` repeats it on a real map.
 ## [codeblock] ./game.sh test headless_local_maps ./game.sh test headless_local_maps -- --source=/path/to/gm_fork/convert
 ## [/codeblock]
 
@@ -54,13 +54,13 @@ func _run() -> void:
 			_clean()
 			_copy_tree(_source, USER_FOLDER)
 			await _test_load(id, "user://maps")
-	# Drops and zips need dot-map API 24; an older host plays copied folders only (AirdriftMapCatalogue.can_drop).
+	# Drops and zips need gs-map API 24; an older host plays copied folders only (AirdriftMapCatalogue.can_drop).
 	if AirdriftMapCatalogue.can_drop():
 		expected += 1
 		_clean()
 		await _test_drops()
 	else:
-		print("-- drops skipped: dot-map API %d < %d" % [GSAddonApi.build_level("dot_map"), AirdriftMapCatalogue.DROP_LEVEL])
+		print("-- drops skipped: gs-map API %d < %d" % [GSAddonApi.build_level("gs_map"), AirdriftMapCatalogue.DROP_LEVEL])
 	_clean()
 	AirdriftMapCatalogue.list_local = false
 	_report_sections(_entered, _finished, expected)

@@ -102,7 +102,7 @@ static func _sky(map: Node3D, sky: Variant, bloom: bool) -> void:
 
 
 ## Fog the map's own `env_fog_controller` got wrong or never carried (bhop_pandora2_fix's
-## fog is navy where the footage's haze is cyan). Keys override what dot-lighting set:
+## fog is navy where the footage's haze is cyan). Keys override what gs-lighting set:
 ## `colour`, `density` (the fog's maximum, 0..1), `start` and `end` in metres, and
 ## `sky_affect` (0..1: how much the fog tints the sky itself). Setting the colour also
 ## sets the fog's light colour, which is what the 3D skybox and distant geometry fade to.
@@ -192,7 +192,7 @@ static func _exempt_from_fog(mat: ShaderMaterial) -> void:
 	var shader := mat.shader
 	if shader == null or shader.code.contains("fog_disabled"):
 		return
-	var key := StringName("dot_fog_free")
+	var key := StringName("gs_fog_free")
 	var copy: Shader = shader.get_meta(key) if shader.has_meta(key) else null
 	if copy == null:
 		copy = Shader.new()
@@ -232,7 +232,7 @@ static func _props(map: Node3D, props: Variant) -> int:
 	var holder := Node3D.new()
 	holder.name = "Dressing"
 	# Not collision, and not the world: the probes that sample `World` skip it.
-	holder.set_meta(&"dot_no_collision", true)
+	holder.set_meta(&"gs_no_collision", true)
 	map.add_child(holder)
 	var placed := 0
 	for p: Dictionary in props:

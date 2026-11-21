@@ -4,18 +4,18 @@ const AirdriftStats := preload("airdrift_stats.gd")
 
 ## What a player earns on a timer server, as a document rather than as code.
 ##
-## Every rule reads an id from [AirdriftStats] and nothing else. dot-achievements never
+## Every rule reads an id from [AirdriftStats] and nothing else. gs-achievements never
 ## hears about a run, a ramp or a strafe — it hears that a number moved.
 ##
 ## [b]One stat may be read with only one merge rule across the catalogue[/b], and
-## dot-achievements refuses one that breaks it at validate rather than at the first
+## gs-achievements refuses one that breaks it at validate rather than at the first
 ## reading: one number cannot be both a running total and a personal best. So
 ## [constant AirdriftStats.BEST_TIME] is always LOWEST, [constant AirdriftStats.TOP_SPEED] is
 ## always HIGHEST, and everything else is SUM. The helpers are the only reason that
 ## cannot be got wrong one entry at a time.
 ##
 ## [b]The one worth reading twice is `sub_thirty`.[/b] "Finish a map in under thirty
-## seconds" is a LOWEST stat with an AT_MOST rule — and dot-achievements' own note says
+## seconds" is a LOWEST stat with an AT_MOST rule — and gs-achievements' own note says
 ## what that means for a player who has never been recorded: a missing stat reads as
 ## zero, and "at most 30" is satisfied by zero. It is guarded by a second rule
 ## requiring a finished run, because the alternative is every new player unlocking it

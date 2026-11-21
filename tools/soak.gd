@@ -3,8 +3,8 @@ extends Node
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 
-## Bot soak on the real timer game: N bots ride one map for M simulated minutes through dot-bot's
-## GSBotSoak, fed by dot-spawn's GSSpawnWatch. Bots here are the course riders of airdrift_bots.gd.
+## Bot soak on the real timer game: N bots ride one map for M simulated minutes through gs-bot's
+## GSBotSoak, fed by gs-spawn's GSSpawnWatch. Bots here are the course riders of airdrift_bots.gd.
 ## Run: ./game.sh soak [map] [minutes] (--trace, plus GSBotSoakConfig flags); writes .godot/test-logs/soak-<map>.json, prints SOAK, exits 1 on failure. No combat: the kill check is off.
 
 const DEFAULT_MAP := &"bhop_g2g_intro"

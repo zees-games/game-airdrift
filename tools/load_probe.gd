@@ -250,7 +250,7 @@ func _build_net(game: AirdriftGame, side: Node) -> GSNetManager:
 	# so a row can be compared both ways.
 	nc.stagger_snapshots = OS.get_environment("LOAD_STAGGER") == "1"
 	# For GS_NET_SNAPSHOT_WORKERS=n: the config is built here, so the layered environment is not read.
-	nc.snapshot_workers = int((OS.get_environment("GS_NET_SNAPSHOT_WORKERS") if OS.has_environment("GS_NET_SNAPSHOT_WORKERS") else OS.get_environment("DOT_NET_SNAPSHOT_WORKERS"))) if (OS.get_environment("GS_NET_SNAPSHOT_WORKERS") if OS.has_environment("GS_NET_SNAPSHOT_WORKERS") else OS.get_environment("DOT_NET_SNAPSHOT_WORKERS")) != "" else 0
+	nc.snapshot_workers = int((OS.get_environment("GS_NET_SNAPSHOT_WORKERS") if OS.has_environment("GS_NET_SNAPSHOT_WORKERS") else OS.get_environment("GS_NET_SNAPSHOT_WORKERS"))) if (OS.get_environment("GS_NET_SNAPSHOT_WORKERS") if OS.has_environment("GS_NET_SNAPSHOT_WORKERS") else OS.get_environment("GS_NET_SNAPSHOT_WORKERS")) != "" else 0
 	net.config = nc
 	side.add_child(net)
 	net.setup()
@@ -328,7 +328,7 @@ func _send_snapshots_timed(net: GSNetManager, tick: int, identities: Array[GSNet
 
 
 ## Calls the manager's own `_send_to_peer` and times it as one lap. This used to be a hand
-## copy of it, which went stale twice (snapshot parts, the unchanged list); dot-net has no
+## copy of it, which went stale twice (snapshot parts, the unchanged list); gs-net has no
 ## timing hook, so the per-phase split inside a peer's send is gone rather than wrong.
 func _send_to_peer_timed(net: GSNetManager, peer_id: int, tick: int,
 		relevant: Array[GSNetIdentity], t: int) -> int:

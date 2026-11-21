@@ -33,7 +33,7 @@ func _ready() -> void:
 		return
 	var map: Node3D = packed.instantiate()
 	if map is AirdriftBspMap:
-		# With PREVIEW_WORLDS=1 it is drawn from the dot-map world document (airdrift_global_worlds).
+		# With PREVIEW_WORLDS=1 it is drawn from the gs-map world document (airdrift_global_worlds).
 		(map as AirdriftBspMap).global_worlds = OS.get_environment("PREVIEW_WORLDS") == "1"
 		(map as AirdriftBspMap).build_from(def)
 	add_child(map)

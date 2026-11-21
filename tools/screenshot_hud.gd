@@ -313,7 +313,7 @@ func _arrange_beacon() -> void:
 
 
 ## `--action <kind> <id>` (`--action emote dance`): another runner four metres ahead playing an
-## avatar action, early and later in the clip. The id goes through dot-user-avatar's own list.
+## avatar action, early and later in the clip. The id goes through gs-user-avatar's own list.
 func _arrange_action(kind: StringName, action: String) -> void:
 	_player.controller.state.velocity = Vector3.ZERO
 	_player.controller.current_command = GSFpsCommand.new()

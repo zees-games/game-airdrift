@@ -146,7 +146,7 @@ func _test_roster_and_sides() -> void:
 	var teams := _stack().teams
 	_check(teams.has_player("ada"), "and on a side")
 
-	# The number dot-spectate is given, which was a hardcoded 1 in four games.
+	# The number gs-spectate is given, which was a hardcoded 1 in four games.
 	var index := _stack().team_index_of("ada")
 	_check(
 		index > 0,
@@ -154,7 +154,7 @@ func _test_roster_and_sides() -> void:
 	)
 	_check(
 		_stack().team_index_of("nobody") == 0,
-		"and answers 0 for somebody who is not in the roster, because dot-spectate "
+		"and answers 0 for somebody who is not in the roster, because gs-spectate "
 		+ "reads 0 as 'no team' and two of those are never team-mates"
 	)
 
@@ -275,7 +275,7 @@ func _test_protection_is_shut_without_deathmatch() -> void:
 
 # --- Harness ---------------------------------------------------------------
 
-## Stands in for a `GSHealth` without this project installing dot-combat.
+## Stands in for a `GSHealth` without this project installing gs-combat.
 class StubHealth extends Object:
 	var max_health: float = 1.0
 	var max_armour: float = 0.0

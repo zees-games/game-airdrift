@@ -1,6 +1,6 @@
 extends RefCounted
 
-## The shared movement cvar names (dot-player-controller's `GSFpsTunables`, bound by dot-game's `bind_movement_cvars`) over [AirdriftConfig], which stays the one source of truth.
+## The shared movement cvar names (gs-player-controller's `GSFpsTunables`, bound by gs-game's `bind_movement_cvars`) over [AirdriftConfig], which stays the one source of truth.
 ##
 ## Only the names that differ are here: `sv_gravity`, `sv_accelerate` and the other eight are spelled alike in both sets, so Airdrift's own cvar already answers to them. The table is documented in docs/movement.md.
 

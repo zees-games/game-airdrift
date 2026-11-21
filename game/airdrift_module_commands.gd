@@ -22,7 +22,7 @@ const AirdriftVote := preload("airdrift_vote.gd")
 
 ## Binds a [AirdriftGame] to a [GSServer]: the movement cvars, and the commands.
 ## The cvars keep the names and units operators know ([code]sv_airaccelerate[/code], [code]sv_gravity[/code]...).
-## Each writes the [AirdriftConfig] and rebuilds every player's movement, abandoning their runs; [code]sv_tickrate[/code] is dot-server's own.
+## Each writes the [AirdriftConfig] and rebuilds every player's movement, abandoning their runs; [code]sv_tickrate[/code] is gs-server's own.
 
 const CHANNEL := "g2g.module"
 
@@ -39,8 +39,8 @@ var bridge: AirdriftNetBridge = null
 ## Chat, voice and moderation. See [AirdriftServices].
 var services: AirdriftServices = null
 
-## Where the services keep punishments; empty is dot-moderation's default `user://moderation.json`.
-## Static, because dot-server constructs the module inside `load_module`, so no host can set a field first.
+## Where the services keep punishments; empty is gs-moderation's default `user://moderation.json`.
+## Static, because gs-server constructs the module inside `load_module`, so no host can set a field first.
 ## `examples/dedicated.tscn` points it at a directory of its own.
 static var punishments_file: String = ""
 
@@ -55,7 +55,7 @@ var vote: AirdriftVote = null
 var _painters: Dictionary = {}
 var _tick: int = 0
 
-## How many bots: dot-server's `bot_quota`, `bot_quota_mode`, `bot_quota_empty`. See
+## How many bots: gs-server's `bot_quota`, `bot_quota_mode`, `bot_quota_empty`. See
 ## [method _keep_bots].
 var _quota: GSBotQuota = null
 var _joined: Dictionary = {}
@@ -76,9 +76,9 @@ const HAND_CVARS := {
 	"killcam_seconds": "mp_killcam_time", "hunters": "sv_hunters", "placeable_props": "sv_props",
 }
 
-## dot-team's block rules (`mp_teamblock`, `!block`, `!noblock`); null without dot-team.
+## gs-team's block rules (`mp_teamblock`, `!block`, `!noblock`); null without gs-team.
 var noblock: GSGameNoblock = null
-## dot-workbench: the F9 panel in debug builds, the loopback page when `workbench.enabled`.
+## gs-workbench: the F9 panel in debug builds, the loopback page when `workbench.enabled`.
 var workbench: GSGameWorkbench = null
 ## Carries the workbench's profile runtime (rows down) over this manager; null without a workbench.
 var profile_link: GSNetProfileLink = null

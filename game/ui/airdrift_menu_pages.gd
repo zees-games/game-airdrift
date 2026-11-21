@@ -1,10 +1,10 @@
 extends RefCounted
 
-## What this game's Escape menu has on it: dot-menu's stock pages, rearranged, reworded for a
+## What this game's Escape menu has on it: gs-menu's stock pages, rearranged, reworded for a
 ## timer server, and this game's own rows added.
 ##
 ## [b]Data, and that is all this file is.[/b] The menu itself — the sidebar, the cards, the
-## switches, the key rebinder, the theme, Escape and the pointer — is dot-menu's since
+## switches, the key rebinder, the theme, Escape and the pointer — is gs-menu's since
 ## 2026-10-09; it was 1,600 lines across seven files here, and every other game wanted the
 ## same thing. What is left is what this game says: which settings go on which page, the
 ## genre's words for them, and the rows that are not settings at all.

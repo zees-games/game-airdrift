@@ -8,8 +8,8 @@ const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 const AirdriftPlayer := preload("../game/airdrift_player.gd")
 
-## dot-net's lossy UDP relay, by path (it has no class_name; see dot-net's CLAUDE.md).
-const Relay := preload("res://addons/dot_net/testing/dot_net_udp_relay.gd")
+## gs-net's lossy UDP relay, by path (it has no class_name; see gs-net's CLAUDE.md).
+const Relay := preload("res://addons/gs_net/testing/gs_net_udp_relay.gd")
 
 ## What a connected player SEES: a real server, the real client, a real socket, real loss.
 ##
@@ -23,7 +23,7 @@ const Relay := preload("res://addons/dot_net/testing/dot_net_udp_relay.gd")
 ## Every other suite here asserts a simulated value, and `jitter_probe` measures a render
 ## path with a hand-made clock that never drifts. This one stands up a dual-stack
 ## `GSServer` running `AirdriftModule`, connects the real `AirdriftClient` to it -- over ENet through
-## dot-net's UDP relay (delay, jitter, loss), or with `--ws` over WebSocket through
+## gs-net's UDP relay (delay, jitter, loss), or with `--ws` over WebSocket through
 ## [TcpDelay] (delay, and retransmit stalls that hold the whole stream) -- holds a key and
 ## moves the mouse the way a player does, and samples what each rendered frame shows: the
 ## eye, the view angle, and a runner the server moves (a seated bot, so its every tick is
@@ -157,7 +157,7 @@ func _until(condition: Callable, seconds: float) -> bool:
 
 
 func _module() -> Object:
-	return _server.modules.get_module("g2gfast") if _server != null else null
+	return _server.modules.get_module("airdrift") if _server != null else null
 
 
 # --- Boot -------------------------------------------------------------------
@@ -187,7 +187,7 @@ func _boot() -> bool:
 	config.enet_share_udp_port = false
 	config.stdin_console_enabled = false
 	config.log_level = "info" if _verbose else "error"
-	# What Airdrift's server.cfg sets. dot-server's own default is not the genre's rate, and
+	# What Airdrift's server.cfg sets. gs-server's own default is not the genre's rate, and
 	# a server left on it would measure a different game.
 	config.tickrate = 128
 
@@ -324,7 +324,7 @@ func _teardown() -> void:
 ## Before everybody's physics: the bot's command for the tick the module is about to run,
 ## and the client clock's tick, to count what the client's pass runs.
 func _early_physics() -> void:
-	# The server hears its clients once a TICK, as a dedicated server does (dot-server puts
+	# The server hears its clients once a TICK, as a dedicated server does (gs-server puts
 	# max_fps on the tick rate). Sharing this process it would otherwise hear them once a
 	# rendered frame, and at 60 frames a third of A's commands reached it after their tick
 	# -- a measurement of this harness, not of the game.
@@ -500,7 +500,7 @@ func _sample_remote() -> void:
 
 ## A TCP proxy that delays a stream and stalls it, for the browser's case: WebSocket is
 ## TCP, so nothing is lost or reordered -- a lost segment holds everything behind it
-## until the retransmit, and then it all arrives at once. Threaded, like dot-net's UDP
+## until the retransmit, and then it all arrives at once. Threaded, like gs-net's UDP
 ## relay, so a hitch in the game is not a burst in the network measuring it.
 class TcpDelay extends RefCounted:
 	var delay_ms := 40.0

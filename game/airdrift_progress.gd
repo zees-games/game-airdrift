@@ -8,15 +8,15 @@ const AirdriftUnits := preload("airdrift_units.gd")
 
 ## What a player keeps: statistics and achievements, over the runs they actually made.
 ##
-## [b]dot-leaderboard is already here and this does not replace it.[/b] `AirdriftGame` has
+## [b]gs-leaderboard is already here and this does not replace it.[/b] `AirdriftGame` has
 ## kept `fastest` and `points` boards since it was written, and a board is one number
 ## per player ordered. A stat is many numbers per player accumulated, and an achievement
 ## is a rule over those. The three answer different questions and this node is the two
 ## that were missing.
 ##
 ## [b]Nothing here counts anything twice.[/b] `GSFpsStats` has counted jumps, perfect
-## jumps, strafes and top speed on every controller since dot-player-controller was
-## written, and dot-timer counts runs and records. This node reads those out and files
+## jumps, strafes and top speed on every controller since gs-player-controller was
+## written, and gs-timer counts runs and records. This node reads those out and files
 ## the difference — which is the only way two counters of one thing cannot disagree.
 ## The one figure it measures itself is distance, because nothing else does.
 ##
@@ -46,7 +46,7 @@ var stats: GSStatsTracker = null
 var achievements: GSAchievementTracker = null
 var link: GSAchievementStatsLink = null
 
-## The skill rank (dot-stats' GSStatsRank): weighted lifetime figures, filed as rank_score.
+## The skill rank (gs-stats' GSStatsRank): weighted lifetime figures, filed as rank_score.
 var rank: GSStatsRank = null
 
 var _game: AirdriftGame = null
@@ -68,13 +68,13 @@ var _distance_owed: Dictionary = {}
 ## player id -> seconds of playtime not yet filed as a whole second.
 var _playtime: Dictionary = {}
 
-## Only the stats report is filed under dot-game's stable key; records, timers and awards keep the record key.
+## Only the stats report is filed under gs-game's stable key; records, timers and awards keep the record key.
 var stats_feed := GSGameStatsFeed.new()
 
 ## player id -> [stats key, userid], noted at join by [method note_session].
 var _stats_keys: Dictionary = {}
 
-## Kills and hits by body zone, through dot-stats' event feed; ids are combat entity ids.
+## Kills and hits by body zone, through gs-stats' event feed; ids are combat entity ids.
 var feed: GSStatsEventFeed = null
 
 var _attached: bool = false
@@ -279,13 +279,13 @@ func _publish_rank(player_id: StringName) -> void:
 	var _s := rank.publish_lifetime(player_id, session_values(player_id), stats.schema)
 
 
-## A landed hit, filed by body zone (and wall or body crossed) through the dot-stats hook.
+## A landed hit, filed by body zone (and wall or body crossed) through the gs-stats hook.
 func report_damage(damage: GSDamage) -> void:
 	if feed != null:
 		var _filed := GSStatsDamage.report(feed, damage)
 
 
-## Every wall a resolved shot crossed, for the site's Penetration cost panel, and the shot itself for Accuracy (the shapes are dot-stats').
+## Every wall a resolved shot crossed, for the site's Penetration cost panel, and the shot itself for Accuracy (the shapes are gs-stats').
 func report_shot(shot: GSShot) -> void:
 	if feed != null and stats != null:
 		var _walls := GSStatsDamage.report_shot(feed, shot)
@@ -356,7 +356,7 @@ func _sample_movement(player_id: StringName, player: AirdriftPlayer) -> void:
 	# BEST, not a delta: `record` merges through the stat's own kind, so filing the
 	# running maximum leaves the highest one. In units, because everything a player
 	# reads in this game is. [b]Only when it beats what was last filed[/b]: filing the same
-	# best every tick was a dot-stats record per player per tick -- with distance, a
+	# best every tick was a gs-stats record per player per tick -- with distance, a
 	# millisecond of a 32-player server's tick (`tools/load_probe`) -- for a figure that
 	# changes a few times a run.
 	if counters.max_speed > float(held.get("top", 0.0)):

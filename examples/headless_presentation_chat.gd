@@ -33,7 +33,7 @@ func _test_a_party_run_is_tainted() -> void:
 	_check(party.taint_if_unranked(run), "and a run started in it is tainted")
 	_check(
 		run.tainted,
-		"using the field dot-timer has had since it was written, whose first caller was "
+		"using the field gs-timer has had since it was written, whose first caller was "
 		+ "this game's effects layer for exactly the same reason"
 	)
 
@@ -106,7 +106,7 @@ func _test_chat_box() -> void:
 	window.close()
 	_check(not p.swallows_input(), "and gives it back when it closes")
 
-	# A join notice is a name and NO text (dot-chat's `_presence`). Drawn as name and text
+	# A join notice is a name and NO text (gs-chat's `_presence`). Drawn as name and text
 	# it was a bare "Guest 435:" in the box, which read as a chat command echoed with its
 	# text stripped. The client is never added to the tree; only `_on_said` is used, fed
 	# exactly what the extras' `message_received` handler hands it.
@@ -245,7 +245,7 @@ func _test_every_sound_has_a_voice() -> void:
 
 	var uncovered: Array[String] = []
 	for id in cat.ids():
-		# dot-audio's stock footsteps and beds are files the addon ships: no stand-in needed.
+		# gs-audio's stock footsteps and beds are files the addon ships: no stand-in needed.
 		if not recipes.has(id) and not GSAudioStock.ids().has(id):
 			uncovered.append(String(id))
 	_check(

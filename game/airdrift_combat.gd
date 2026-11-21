@@ -1,6 +1,6 @@
 extends "airdrift_combat_state.gd"
 
-## The deathmatch half: dot-combat, dot-loadout and dot-match on a movement server.
+## The deathmatch half: gs-combat, gs-loadout and gs-match on a movement server.
 ##
 ## [b]Off unless `sv_deathmatch` is on, and while it is on the timer keeps running.[/b]
 ## That is the whole design decision and it is not a compromise: a surf server with
@@ -131,7 +131,7 @@ func _build_combat() -> GSResult:
 	# combat build carries the same warning for the same reason.
 	#
 	# [b]The spawn window, asked at the one point every hit goes through.[/b] `health`
-	# already refuses inside its own window, and this is the gate that makes dot-spawn's
+	# already refuses inside its own window, and this is the gate that makes gs-spawn's
 	# ledger mean something: it is granted per respawn in `_on_respawn_due`, drained by
 	# `GSSpawnProtection.advance` every tick, and until this line nothing ever asked it a
 	# question. A veto applied at the damage sites instead would be one applied at the
@@ -154,7 +154,7 @@ func _on_shot_resolved(shot: GSShot) -> void:
 		game.progress.report_shot(shot)
 
 
-## Turns dot-combat's applied damage into [signal hit_landed] for the player who fired.
+## Turns gs-combat's applied damage into [signal hit_landed] for the player who fired.
 func _on_damage_applied(damage: GSDamage) -> void:
 	if not game.authoritative or damage.refused or damage.health_lost <= 0.0 \
 			or damage.attacker == 0 or damage.attacker == damage.victim:
@@ -232,8 +232,8 @@ func podium_rows() -> Array:
 
 ## Gives a player the weapons their saved loadout names.
 ##
-## [b]This is the entire dot-loadout seam, and without it the manager was a manager of
-## nothing.[/b] dot-loadout has never heard of a weapon and dot-weapon has never heard
+## [b]This is the entire gs-loadout seam, and without it the manager was a manager of
+## nothing.[/b] gs-loadout has never heard of a weapon and gs-weapon has never heard
 ## of a `GSItem`; the catalogue's ids and the item ids are the same strings here, and
 ## this loop is the whole of the join. The manager was built, configured with a
 ## schema and a store, and asked for nothing until the family's own detector found
@@ -333,7 +333,7 @@ func _build_loadouts() -> void:
 ## the deathmatch respawning players at the previous map's pads. Nothing ran a second map
 ## change on a server with combat until `dedicated`'s unload section did. For a while it
 ## then cleared the array `spawn_points()` hands back, by reference, which worked only
-## because that is the match's own list; dot-match has had `clear_spawn_points` and
+## because that is the match's own list; gs-match has had `clear_spawn_points` and
 ## `remove_spawn_point` since 2026-09-25, and the list is now the match's to empty.
 func _on_map_ready(_map: GSMapDef) -> void:
 	for point in match_node.spawn_points():
@@ -623,7 +623,7 @@ func _on_entity_killed(entity_id: int, damage: GSDamage) -> void:
 	(kit["hitboxes"] as GSHitboxSet).enabled = false
 	(kit["arsenal"] as GSWeaponArsenal).disabled = true
 
-	# An attacker of 0 is world damage, and dot-match reads an empty killer key as
+	# An attacker of 0 is world damage, and gs-match reads an empty killer key as
 	# exactly that. Passing "0" would create a scoreboard record for a player who does
 	# not exist.
 	var killer := "" if damage.attacker == 0 else str(damage.attacker)
@@ -696,7 +696,7 @@ func _on_respawn_due(key: String, spawn: GSSpawnPoint, tick: int) -> void:
 
 	# Through `spawn_player`, not a written position: it abandons the run, so no run has a gap.
 	if spawn != null:
-		# The director among the same starts, dot-match's point as the fallback: a better choice
+		# The director among the same starts, gs-match's point as the fallback: a better choice
 		# among one set. The only call that grants the protection window (`choose` runs
 		# `GSSpawnProtection.grant`).
 		var at := spawn.spawn_transform().origin
@@ -715,7 +715,7 @@ func _on_respawn_due(key: String, spawn: GSSpawnPoint, tick: int) -> void:
 	player_respawned.emit(player_id)
 
 
-## The fall a death gets: dot-player-char's reaction rule over the server's
+## The fall a death gets: gs-player-char's reaction rule over the server's
 ## `sv_ragdoll_reactions`, seeded from the victim and the tick, with the killing weapon's def.
 ## The push goes the way the shot went, or away from the killer when the damage carries no
 ## direction (a hunter's swipe sets one; see [method AirdriftHunters.hunter_attack]).

@@ -159,7 +159,7 @@ func _release_entity(session_id: int) -> void:
 		net.registry.unregister(behaviour.identity.net_id)
 
 
-## Redresses a player from the server side — dot-platform's wardrobe change — and
+## Redresses a player from the server side — gs-platform's wardrobe change — and
 ## tells everybody. The same path a client's own AVATAR request takes.
 func dress(session_id: int, avatar: GSAvatar) -> bool:
 	var player: AirdriftPlayer = game.players.get(_player_key(session_id)) if game != null else null

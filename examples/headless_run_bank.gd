@@ -161,7 +161,7 @@ func _test_single_bank() -> void:
 
 	var lip := SurfIntro.bonus_bank_lip_x()
 	# Three quarters of a hull up from the lip. Measured 2026-09-24 from a standstill
-	# spawn, once dot-player-controller 94f1c87 had removed the freeze: lines at +8, +16,
+	# spawn, once gs-player-controller 94f1c87 had removed the freeze: lines at +8, +16,
 	# +24, +64 and +96 finish (1,299 to 1,676 ticks, 1 to 7 stalled slides each); +32,
 	# where this sat, and +48 do not -- the rider sheds its forward speed mid-bank and
 	# hangs against it. +32 finished here only because the sections before this one
@@ -220,7 +220,7 @@ func _test_single_bank() -> void:
 
 		# A rider who has not moved in a second and a half is not riding. The freeze
 		# this was written for (velocity intact, no ground covered, one duplicate-plane
-		# stall every tick) is gone since dot-player-controller 94f1c87; kept, because
+		# stall every tick) is gone since gs-player-controller 94f1c87; kept, because
 		# a stall is exactly what a movement change would bring back.
 		still = still + 1 if bot.global_position.distance_to(last) < 0.001 else 0
 		last = bot.global_position
@@ -463,7 +463,7 @@ func _fall_line_route_checks(bot: AirdriftPlayer, fall: int) -> void:
 	# [b]Asked per track, rather than of `problems()`.[/b] A zone carries a track, so a
 	# set that is complete for track 0 and partial for track 3 passes `problems()` —
 	# which is a per-zone check — while being an unfinishable route. This was four
-	# checks walking this track's kinds by name; it is dot-timer's `route_problems()`
+	# checks walking this track's kinds by name; it is gs-timer's `route_problems()`
 	# now, which asks the same of every route. See `[track-zone-1]`.
 	_check(
 		zones != null and zones.route_tracks().has(fall)

@@ -4,7 +4,7 @@ var _shared_names: GSFpsCvars = null
 
 
 func _module_name() -> String:
-	return "g2gfast"  # legacy id: the module name published packs and saved state use
+	return "airdrift"  # legacy id: the module name published packs and saved state use
 
 func _module_version() -> String:
 	return "0.1.0"
@@ -16,14 +16,14 @@ func _module_author() -> String:
 	return "dot"
 
 
-## dot-platform's own module, loaded beside this one.
+## gs-platform's own module, loaded beside this one.
 ##
 ## A PATH, because `GSModuleHost.load_module` takes one and constructs the module
 ## itself — so a pre-built instance with its hub assigned would be thrown away and a
-## fresh one made with a null. dot-platform's module falls back to
+## fresh one made with a null. gs-platform's module falls back to
 ## `GSRegistry.get_service(GSPlatformHub.SERVICE)` for exactly this, which is why
 ## [AirdriftIdentity] registers the hub.
-const PLATFORM_MODULE_PATH := "res://addons/dot_platform/dot_platform_module.gd"
+const PLATFORM_MODULE_PATH := "res://addons/gs_platform/gs_platform_module.gd"
 
 ## Whether this module loaded the platform module, and so must unload it. See [method _module_unload].
 var _loaded_platform := false
@@ -114,7 +114,7 @@ func _build_vote() -> GSResult:
 		return session != null and session.permissions.has(GSAdminFlags.CHANGEMAP)
 
 	# The drawn ballot, to each playing session with its own voter id (`u<userid>`, what
-	# dot-vote's commands key a voter by), so the client shell marks the player's own
+	# gs-vote's commands key a voter by), so the client shell marks the player's own
 	# choice. Topic `map_ballot`, beside a server's `game_ballot` when both are open.
 	vote.ballot_fn = func(state: Dictionary) -> void:
 		for session in server.playing_sessions():
@@ -141,7 +141,7 @@ func _build_vote() -> GSResult:
 		vote = null
 		return ready
 
-	# An empty server hibernates (dot-server, 2026-10-07): the map clock waits instead of
+	# An empty server hibernates (gs-server, 2026-10-07): the map clock waits instead of
 	# running out with nobody on, and restarts from the top on the first join.
 	vote.director.follow_hibernation(server)
 
@@ -189,16 +189,16 @@ func _build_vote() -> GSResult:
 ## The commands that only exist once the optional halves loaded.
 func _add_server_commands() -> void:
 	if vote != null:
-		# dot-vote's own: `rtv`, `nominate`, `vote`, `nextmap`, `timeleft` and the
+		# gs-vote's own: `rtv`, `nominate`, `vote`, `nextmap`, `timeleft` and the
 		# operator's four, on the one director. See `AirdriftVote.install_commands`.
 		var commanded := vote.install_commands(self)
 		GSLog.result(CHANNEL, "the vote's commands", commanded)
-		# The map menu (M), dot-vote's: every map this server has, as the solo list shows them,
+		# The map menu (M), gs-vote's: every map this server has, as the solo list shows them,
 		# changed now through the game's own change (which fetches delivered content first) for
 		# a player holding the owner's `sv_map_menu_flag`, or the only human here while
 		# `sv_map_menu_alone` is on; anybody else nominates, and rocks the vote once
 		# `sv_map_menu_vote_min` humans are playing. Humans are the server's sessions, so the
-		# bots never count. Read by name, because a server on a dot-vote older than the menu
+		# bots never count. Read by name, because a server on a gs-vote older than the menu
 		# has no `map_menu`.
 		var menu_half: Variant = vote.commands.get(&"map_menu") if vote.commands != null else null
 		if menu_half is Object:
@@ -361,9 +361,9 @@ func _cmd_nudge(ctx: GSCmdContext) -> void:
 	ctx.reply("Grabbed it — it follows you now." if took else "Nothing there.")
 
 
-## A player typed `!something` that dot-server's own commands did not answer.
+## A player typed `!something` that gs-server's own commands did not answer.
 ##
-## [b]Claimed, or it is broadcast as chat.[/b] dot-chat holds a command until somebody
+## [b]Claimed, or it is broadcast as chat.[/b] gs-chat holds a command until somebody
 ## says they handled it; an unclaimed one with `broadcast_unknown_commands` off is
 ## dropped, so a player typing `!rtv` on a server whose vote failed to load would get
 ## silence rather than "there is no vote here".
@@ -375,7 +375,7 @@ func _on_chat_command(peer: int, command: String, args: PackedStringArray) -> vo
 
 	var voter := _player_id(session)
 
-	# [b]`!rtv` and `!vote` are not answered here.[/b] They are dot-vote's console
+	# [b]`!rtv` and `!vote` are not answered here.[/b] They are gs-vote's console
 	# commands, registered `.with_chat()`, and an unclaimed `!` line carries on to the
 	# console — one path. This handler answered both itself once, beside a console `rtv`
 	# that went to the map session's time limit instead: two votes under one name.
@@ -435,7 +435,7 @@ func _on_chat_command(peer: int, command: String, args: PackedStringArray) -> vo
 				services.notice(peer, "There is no vote on this server.")
 				services.claim_command()
 		_:
-			# Left for dot-server's own chat commands, which this game registers with
+			# Left for gs-server's own chat commands, which this game registers with
 			# `.with_chat()` — `!r`, `!wr`, `!top`, `!style`, `!track`.
 			pass
 
@@ -475,7 +475,7 @@ func _player_named(text: String) -> StringName:
 	return prefix if prefix != &"" else inside
 
 
-## Tells dot-server which map is running, so A2S and DQP print it in their map field (and
+## Tells gs-server which map is running, so A2S and DQP print it in their map field (and
 ## the backbone report does too) rather than this game's content id. On every change
 ## through the session's own signal, which every route to a new map ends at.
 func _report_map(map: GSMapDef, _world: Node = null) -> void:
@@ -490,7 +490,7 @@ func _report_map(map: GSMapDef, _world: Node = null) -> void:
 
 ## The converted world's PVS (res://worlds/<id>) as the snapshot visibility, cvar net_visibility; none clears it.
 func _attach_visibility(map: GSMapDef) -> void:
-	if net == null or GSAddonApi.build_level("dot_game") < 52:
+	if net == null or GSAddonApi.build_level("gs_game") < 52:
 		return
 	var mesh: Object = null
 	var prefix := AirdriftPaths.rebase("res://worlds").path_join(String(map.id)) if map != null else ""
@@ -512,8 +512,8 @@ func _physics_process(delta: float) -> void:
 	if _tick % 64 == 1:
 		_keep_bots()
 
-	# The vote clock, from the SIMULATED tick rather than from the frame. dot-vote
-	# says why and it is the same reason dot-map does: a server that stalls should not
+	# The vote clock, from the SIMULATED tick rather than from the frame. gs-vote
+	# says why and it is the same reason gs-map does: a server that stalls should not
 	# lose that time off its map, and a test must be able to run an hour of one in a
 	# millisecond.
 	if vote != null:
@@ -583,10 +583,10 @@ func chat_commands() -> Array:
 func _register_games() -> void:
 	if server.games == null:
 		return
-	if server.games.find_game("g2gfast") != null:  # legacy id
+	if server.games.find_game("airdrift") != null:  # legacy id
 		return
 	var descriptor := GSGameDescriptor.new()
-	descriptor.game_id = "g2gfast"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
+	descriptor.game_id = "airdrift"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 	descriptor.display_name = "Zee's Airdrift"
 	descriptor.scene = AirdriftPaths.rebase("res://game/airdrift.tscn")
 	descriptor.client_scene = ""
@@ -641,7 +641,7 @@ func _movement_cvar(cvar_name: String, field: String, description: String) -> vo
 	)
 
 
-## Registers the shared movement names that differ from Airdrift's (`sv_runspeed`, `sv_airwishspeed`, `sv_autohop`) over AirdriftConfig, through the same binder dot-game's `bind_movement_cvars` uses (this module is a GSModule, not a GSGameModule). The names spelled alike are Airdrift's own cvars already.
+## Registers the shared movement names that differ from Airdrift's (`sv_runspeed`, `sv_airwishspeed`, `sv_autohop`) over AirdriftConfig, through the same binder gs-game's `bind_movement_cvars` uses (this module is a GSModule, not a GSGameModule). The names spelled alike are Airdrift's own cvars already.
 func _bind_shared_movement_names() -> void:
 	var adapter := AirdriftMovementNames.new(game)
 	adapter.changed_fn = _mirror_to_game_cvar
@@ -728,7 +728,7 @@ func _on_client_disconnected(session: GSClientSession, _reason: String = "") -> 
 			loadouts.remove_peer(session.peer_id)
 
 
-## The NPC level of detail and sense workers follow the `npc_lod*` cvars (dot-game's GSGameNpcLod; all off by default). This module is a GSModule, so it holds the attachment itself.
+## The NPC level of detail and sense workers follow the `npc_lod*` cvars (gs-game's GSGameNpcLod; all off by default). This module is a GSModule, so it holds the attachment itself.
 var _npc_lod: GSGameNpcLod = null
 
 

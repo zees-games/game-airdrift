@@ -5,10 +5,10 @@ const AirdriftRig := preload("airdrift_rig.gd")
 const AirdriftArsenal := preload("airdrift_arsenal.gd")
 const AirdriftWeaponIcons := preload("airdrift_weapon_icons.gd")
 
-## AirdriftPlayer hooks for dot-replay's [GSKillcamHost]: how a drawn body is read and posed.
+## AirdriftPlayer hooks for gs-replay's [GSKillcamHost]: how a drawn body is read and posed.
 
 ## Skip keys: jump, the key a runner's hand is already on.
-const SKIP_ACTIONS: PackedStringArray = ["dot_fps_jump", "ui_cancel"]
+const SKIP_ACTIONS: PackedStringArray = ["gs_fps_jump", "ui_cancel"]
 
 var _alive: Dictionary = {}
 

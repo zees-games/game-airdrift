@@ -41,7 +41,7 @@ func run() -> void:
 
 	# No socket stands behind these peers: swallow what the bridge would send them rather
 	# than have the engine report an RPC to a peer that does not exist.
-	var bridge: Object = server.modules.get_module("g2gfast").get("bridge")
+	var bridge: Object = server.modules.get_module("airdrift").get("bridge")
 	link = bridge.get("link")
 	var kept_loopback: Callable = link.get("loopback")
 	link.set("loopback", func(_m: StringName, _p: int, _b: PackedByteArray) -> void: pass)

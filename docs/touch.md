@@ -1,6 +1,6 @@
 # Touch controls
 
-On a phone or tablet (`GSPlatform.has_touch()`), the client shows dot-mobile's overlay over the HUD: a stick planted where the left thumb lands, drag-to-look on the right half, and four drawn buttons (jump, duck, FIRE, R). On a desktop nothing shows and nothing changes.
+On a phone or tablet (`GSPlatform.has_touch()`), the client shows gs-mobile's overlay over the HUD: a stick planted where the left thumb lands, drag-to-look on the right half, and four drawn buttons (jump, duck, FIRE, R). On a desktop nothing shows and nothing changes.
 
 ## What a thumb does
 
@@ -15,7 +15,7 @@ On a phone or tablet (`GSPlatform.has_touch()`), the client shows dot-mobile's o
 
 ## Two samplers
 
-Offline the player's own sampler takes the keys; online the netcode's does. Both are `GSFpsTouchSampler` on a touch device. `AirdriftTouch.sync()` runs every frame and hands the overlay whichever sampler is active, and dot-mobile lifts the fingers and bits on the one it leaves.
+Offline the player's own sampler takes the keys; online the netcode's does. Both are `GSFpsTouchSampler` on a touch device. `AirdriftTouch.sync()` runs every frame and hands the overlay whichever sampler is active, and gs-mobile lifts the fingers and bits on the one it leaves.
 
 ## While something else has the screen
 
@@ -27,7 +27,7 @@ Godot turns each touch into a mouse event too. The client's input code skips tou
 
 ## The server's say
 
-The server registers dot-mobile's cvars (`sv_mobile_touch`, `sv_mobile_schemes`, `sv_mobile_sens_min`/`_max`, `sv_mobile_left_handed`, `sv_mobile_buttons`, `sv_aim_assist*`, `sv_autofire*`) and the client follows them; see dot-mobile's design doc. `sv_mobile_touch 0` hides the overlay. Aim assist and auto-fire stay inert: there is nothing to shoot in a run.
+The server registers gs-mobile's cvars (`sv_mobile_touch`, `sv_mobile_schemes`, `sv_mobile_sens_min`/`_max`, `sv_mobile_left_handed`, `sv_mobile_buttons`, `sv_aim_assist*`, `sv_autofire*`) and the client follows them; see gs-mobile's design doc. `sv_mobile_touch 0` hides the overlay. Aim assist and auto-fire stay inert: there is nothing to shoot in a run.
 
 ## Not verified on a phone
 

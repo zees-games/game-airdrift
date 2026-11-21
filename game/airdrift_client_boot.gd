@@ -44,7 +44,7 @@ func _build_gate() -> void:
 	platform.input_blocked_changed.connect(func(_blocked: bool) -> void: _refresh_suspended())
 
 
-## dot-workbench over the config: the F9 panel in the editor and debug builds (never in production);
+## gs-workbench over the config: the F9 panel in the editor and debug builds (never in production);
 ## a window of its own, so a client has no HTTP page.
 func _build_workbench() -> void:
 	workbench = GSGameWorkbench.new()
@@ -130,7 +130,7 @@ var _killcam_sec: float = 0.0
 
 
 func _build_killcam() -> void:
-	if GSAddonApi.build_level("dot_replay") >= 6:
+	if GSAddonApi.build_level("gs_replay") >= 6:
 		killcam = GSKillcamHost.new()
 		killcam_bodies.configure(killcam, game)
 		killcam.seconds_fn = func() -> float: return _killcam_sec
@@ -247,7 +247,7 @@ func _build_ragdolls() -> void:
 			var _fell := fall(id, who.death if who != null else null)
 		)
 		game.combat.player_respawned.connect(rise)
-		# The deagle and the knife are heard (dot-audio's weapon stock).
+		# The deagle and the knife are heard (gs-audio's weapon stock).
 		game.combat.weapon_used.connect(func(_id: StringName, weapon: StringName, at: Vector3) -> void:
 			var cam: Camera3D = player.camera.active() if player != null and player.camera != null else null
 			presentation.on_weapon_used(weapon, at, cam.global_position if cam != null else at))
@@ -493,7 +493,7 @@ func _wire_bridge_world() -> void:
 		# sv_mobile_*: the touch controls this end draws.
 		var _mobile := game.mobile_rules.follow_cvars(link)
 		# mp_solidplayers, then mp_teamblock, mp_enemyblock and the `!block` requests, followed so this end predicts
-		# against the same pairs. Needs dot-team; without it players are not blocked at all.
+		# against the same pairs. Needs gs-team; without it players are not blocked at all.
 		var _solid := game.body_rules.follow_cvars(link)
 		var blocked := platform.add_noblock(game, Callable(game, "block_side"))
 		if not blocked.ok:
@@ -581,7 +581,7 @@ func _on_said(speaker: String, text: String, kind: String) -> void:
 
 func _on_hello(player_id: int) -> void:
 	_watch(StringName("u%d" % player_id))
-	# The server dressed us from dot-platform's admission if it could; a launcher
+	# The server dressed us from gs-platform's admission if it could; a launcher
 	# that resolved one locally through GSAvatarManager sets [member avatar] and it
 	# goes up now, to be conformed against the server's schema like any other.
 	if avatar != null and bridge != null:
@@ -593,7 +593,7 @@ func _on_hello(player_id: int) -> void:
 ## [b]Leaves, rather than staying.[/b] The server keeps simulating this player on the map
 ## it announced, so staying is a player whose every tick is corrected into geometry their
 ## screen does not have — and the server cannot know to do anything about it, because
-## dot-map keeps a refusal silent on purpose. The client is the one end that knows, so it
+## gs-map keeps a refusal silent on purpose. The client is the one end that knows, so it
 ## is the one that acts, with the reason on the way out rather than a connection that
 ## simply goes strange.
 func _on_map_refused(map_id: StringName, reason: String) -> void:
@@ -618,7 +618,7 @@ func _physics_process(delta: float) -> void:
 	# the second twice and the first never, the server repeated a stale command for the
 	# one it never got, and the predictor's replay stopped at the hole and drew the player
 	# short of where they were -- after every hitch, and on every frame the display and
-	# the tick rate do not line up. Arithmetic here rather than a new dot-net call,
+	# the tick rate do not line up. Arithmetic here rather than a new gs-net call,
 	# because a pack has to run on whatever client shell the player already has.
 	for i in range(ticks):
 		if net.clock.is_synced():
@@ -644,7 +644,7 @@ func _cover_transit(text: String) -> void:
 ## so a frame on which no tick ran still turns. See [member AirdriftPlayer.view_now].
 ##
 ## By name, with the state's angles as the fallback: a pack runs on whatever
-## dot-player-controller the client shell carries, and a shell older than `look_now`
+## gs-player-controller the client shell carries, and a shell older than `look_now`
 ## draws exactly what it drew before.
 func _fold_look() -> void:
 	if player == null:
@@ -670,7 +670,7 @@ func _fold_correction() -> void:
 
 
 ## Hands the local player's controller the clock its ticks are counted on, so its
-## `render_state` draws at `GSNetClock.render_alpha` (dot-net) rather than the engine's
+## `render_state` draws at `GSNetClock.render_alpha` (gs-net) rather than the engine's
 ## physics fraction: the clock stretches and shrinks its ticks while it settles on the
 ## server, a physics frame now and then runs no tick or two, and drawn at the engine's
 ## fraction the eye stood still on one frame and moved double on the next.
@@ -720,7 +720,7 @@ func mouse_drives_view() -> bool:
 	return Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 
 
-## Whether a click may take the pointer back: not while a modal holds it through [method GSGameClient.hold_pointer] (or a `dot_pointer_modal` node). Spectating is exempt because it is also "busy" to the platform and still needs the click.
+## Whether a click may take the pointer back: not while a modal holds it through [method GSGameClient.hold_pointer] (or a `gs_pointer_modal` node). Spectating is exempt because it is also "busy" to the platform and still needs the click.
 func click_may_capture() -> bool:
 	return platform == null or is_spectating() or not platform.is_input_blocked()
 
@@ -753,10 +753,10 @@ func _restart_key(now_msec: int = -1) -> int:
 # Themes and the HUD's layout
 
 ## The theme the menu just changed to, onto the HUD and the zone editor. The menus restyle
-## themselves (dot-menu rebuilds them rather than recolouring, for the reason its CLAUDE.md
+## themselves (gs-menu rebuilds them rather than recolouring, for the reason its CLAUDE.md
 ## gives); this is the half that is this game's.
-## dot-ui's pieces on the HUD (the hit marker, the damage numbers) in the menu's theme too,
-## live: the menu sets the theme on the HUD's root (dot-menu's `follow_hud`, by name for a
+## gs-ui's pieces on the HUD (the hit marker, the damage numbers) in the menu's theme too,
+## live: the menu sets the theme on the HUD's root (gs-menu's `follow_hud`, by name for a
 ## shell older than it). Not scaled by the HUD size setting: this HUD is laid out by the
 ## player's own zone editor (`hud_positions`), in the frame's pixels. Whichever of the HUD and
 ## the menu comes second calls it.

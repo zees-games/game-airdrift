@@ -1,8 +1,8 @@
-extends "res://addons/dot_npc_ai/runtime/dot_npc_ai_brain.gd"
+extends "res://addons/gs_npc_ai/runtime/gs_npc_ai_brain.gd"
 
 ## How a hunter decides: chase the runner, or patrol the course.
 ##
-## Extended by PATH, not by name. A script inside a mounted dot-cloud pack cannot
+## Extended by PATH, not by name. A script inside a mounted gs-cloud pack cannot
 ## resolve a `class_name`, and a rule you only follow where it is needed is a rule
 ## nobody notices you have broken.
 ##
@@ -77,13 +77,13 @@ func _build() -> void:
 	]
 
 	var root_children: Array[GSNpcAiNode] = [
-		# Reactive, which is dot-npc-ai's own warning made into an idiom: a plain
+		# Reactive, which is gs-npc-ai's own warning made into an idiom: a plain
 		# sequence resumes at the child that returned RUNNING and never re-asks its
 		# guard, so a hunter chases a target it no longer has — for ever, because the
 		# thing that would clear the chase is the condition it stopped asking.
 		GSNpcAiSequence.reactive_with(&"hunt", fight_children),
 		# Between the hunt and the patrol. Without it a hunter that lost a runner round a
-		# corner went straight back to its patrol point the moment dot-npc's grace ran out,
+		# corner went straight back to its patrol point the moment gs-npc's grace ran out,
 		# and the sprinter's fourteen seconds of `memory_time` were read by nothing.
 		GSNpcAiLeaf.Action.new(&"search", _search),
 		GSNpcAiLeaf.Action.new(&"patrol", _patrol),

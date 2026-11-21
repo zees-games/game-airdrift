@@ -22,7 +22,7 @@ enum Kind {
 	LEAVE,
 	## The movement changed under everybody. Carries the config fields.
 	MOVEMENT,
-	## One message of dot-map's map-change protocol, host to peer: announce, load or abort.
+	## One message of gs-map's map-change protocol, host to peer: announce, load or abort.
 	## A [GSMapMessage] as JSON. See [method write_map_message] and AirdriftNetBridge's
 	## "Map changes" section. It used to be a bare map id sent AFTER the server had
 	## changed, which a client resolved against its own build.
@@ -72,7 +72,7 @@ enum Kind {
 	## health it took, where it landed, whether it killed and whether it was the head. The
 	## hit marker and the damage numbers are drawn from this, never predicted. Appended.
 	HIT,
-	## A player died, to everybody: who, and how their body falls (dot-player-char's
+	## A player died, to everybody: who, and how their body falls (gs-player-char's
 	## [GSPlayerDeath], the server's pick, last and optional). Every client copies a ragdoll
 	## from the figure it draws and hides the figure. Appended.
 	DEATH,
@@ -118,7 +118,7 @@ enum Ask {
 	RTV,
 	## Save a checkpoint (0), teleport to it (1), clear them (2).
 	CHECKPOINT,
-	## One message of dot-map's map-change protocol, peer to host: progress or ready.
+	## One message of gs-map's map-change protocol, peer to host: progress or ready.
 	## Last, because a kind is its index on the wire.
 	MAP,
 	## The M screen: an empty id asks for the map list, an id asks to change to it. Both
@@ -205,7 +205,7 @@ static func read_movement(reader: GSNetReader, config: AirdriftConfig) -> String
 # --- HELLO -----------------------------------------------------------------
 
 ## [b]No map id, and there was one.[/b] HELLO carried the server's map and the client
-## changed to it by id out of its own catalogue — the ad-hoc version of what dot-map's
+## changed to it by id out of its own catalogue — the ad-hoc version of what gs-map's
 ## protocol now does, and wrong in the same two ways the MAP event was: the client never
 ## said whether it had the map, and a map it did not have was fetched by nothing. The
 ## map a joiner is on now arrives as the protocol's own announce, right behind this, and
@@ -287,8 +287,8 @@ static func read_player(reader: GSNetReader) -> int:
 
 ## One [GSMapMessage], as JSON inside a byte cap. Empty when it would not fit.
 ##
-## [b]JSON rather than a field-by-field encoding[/b], because dot-map owns these shapes
-## and a game that re-encoded each one would have to change whenever dot-map added a
+## [b]JSON rather than a field-by-field encoding[/b], because gs-map owns these shapes
+## and a game that re-encoded each one would have to change whenever gs-map added a
 ## field to [method GSMapDef.to_dictionary] — silently dropping it until then. Every
 ## value in them is a string, a bool or a number, and JSON's one lossy conversion, an
 ## int returned as a float, is one `from_dictionary` already undoes with `int()`.
@@ -307,7 +307,7 @@ static func write_map_message(payload: Dictionary, max_bytes: int = MAP_MESSAGE_
 
 ## The dictionary back, or an empty one for anything that is not a JSON object.
 ##
-## Empty is safe to hand straight to dot-map: [method GSMapMessage.is_map_message] says
+## Empty is safe to hand straight to gs-map: [method GSMapMessage.is_map_message] says
 ## no to it, and both halves of the protocol return false without acting.
 static func read_map_message(reader: GSNetReader, max_bytes: int = MAP_MESSAGE_BYTES) -> Dictionary:
 	var text := reader.read_string(max_bytes)
@@ -371,7 +371,7 @@ static func read_text(reader: GSNetReader) -> Dictionary:
 const CUE_BYTES := 32
 
 ## A cue id (empty for none) and a countdown second (0 for none). What the id sounds like
-## is the client's catalogue; an id it lacks is silence, which is dot-audio's rule.
+## is the client's catalogue; an id it lacks is silence, which is gs-audio's rule.
 static func write_vote(cue: String, seconds_left: int, runoff: bool) -> PackedByteArray:
 	var writer := _w()
 	writer.write_string(cue, CUE_BYTES)

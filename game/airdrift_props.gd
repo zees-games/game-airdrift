@@ -22,7 +22,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ##
 ## [b]Placed props are not part of a run.[/b] `only_practice` is on by default, and
 ## while it is on a player with a block under them is a player whose run is not
-## rankable — the same rule dot-timer already applies to a practice checkpoint, for the
+## rankable — the same rule gs-timer already applies to a practice checkpoint, for the
 ## same reason. A leaderboard where one time was set over a block somebody placed is a
 ## leaderboard nobody trusts.
 ##
@@ -103,7 +103,7 @@ func setup() -> GSResult:
 ## mapper cannot line up with anything.
 static func catalogue() -> GSPropCatalogue:
 	var out := GSPropCatalogue.new()
-	out.meta = {"game": "g2gfast"}  # legacy id: saved-data/wire name kept so existing data and published packs keep working
+	out.meta = {"game": "airdrift"}  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
 	for def in [_block(), _block_wide(), _platform()]:
 		var added := out.add(def)
@@ -205,7 +205,7 @@ func count() -> int:
 
 ## Whether a run made right now can be ranked.
 ##
-## [b]Read by the timer through the game, not enforced here.[/b] dot-timer already has
+## [b]Read by the timer through the game, not enforced here.[/b] gs-timer already has
 ## the concept — a practised run is one that used a checkpoint and is not a record —
 ## and this is the same statement about a different aid. What a caller does with the
 ## answer is refuse the record, not refuse the run: a player practising should still
@@ -272,7 +272,7 @@ func drop(player_id: StringName) -> bool:
 ## tested headlessly.
 ##
 ## [b]Taken off the world node rather than off this one.[/b] `AirdriftProps` is a plain
-## [Node] and `get_world_3d()` does not exist on one; dot-npc's own notes record the
+## [Node] and `get_world_3d()` does not exist on one; gs-npc's own notes record the
 ## same mistake, where a duck-typed branch around it would not even compile because
 ## GDScript cannot infer what such a branch returns.
 func _space() -> Variant:

@@ -13,7 +13,7 @@ const AirdriftVoteMapSource := preload("airdrift_vote_map_source.gd")
 ## server, a cooldown so `bhop_g2g_intro` does not come round twice in three maps, and
 ## an extend option so a map nobody has finished yet is not cut off.
 ##
-## dot-vote is fifty-five settings' worth of exactly that, and none of it is restated
+## gs-vote is fifty-five settings' worth of exactly that, and none of it is restated
 ## here. What this file is, is the four callables that say who the players are, plus
 ## one rule about who calls [method GSVoteDirector.begin].
 ##
@@ -22,7 +22,7 @@ const AirdriftVoteMapSource := preload("airdrift_vote_map_source.gd")
 ## session's own `changed` — which is the one that has to be connected, because it also
 ## fires for an admin typing `airdrift_map`. Both firing means two entries in the play
 ## history for one play, and a "not in the last five maps" cooldown that is quietly two
-## or three. dot-vote found that by running inside a real host, which is the only place
+## or three. gs-vote found that by running inside a real host, which is the only place
 ## it is visible.
 ##
 ## [codeblock]
@@ -46,7 +46,7 @@ const CUE_END := &"vote_end"
 const CUE_WARNING := &"vote_warning"
 const CUE_COUNT := &"vote_count"
 
-## What dot-vote's commands are called here. `vote` rather than dot-vote's `votefor`,
+## What gs-vote's commands are called here. `vote` rather than gs-vote's `votefor`,
 ## because `!vote 2` is what this game's chat has always answered.
 const COMMAND_NAMES := {"vote": "vote"}
 
@@ -62,8 +62,8 @@ func _init() -> void:
 	metadata_key = METADATA_KEY
 	command_names = COMMAND_NAMES
 	noun = "map"
-	config_path = "user://cfg/g2gfast_vote.json"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
-	# The ids are `u<n>`, a session's own spelling: dot-vote's default for a voter.
+	config_path = "user://cfg/airdrift_vote.json"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
+	# The ids are `u<n>`, a session's own spelling: gs-vote's default for a voter.
 	bare_voter_ids = false
 
 
@@ -91,7 +91,7 @@ func setup() -> GSResult:
 
 
 ## The session is the GAME's, not game.maps: change_map goes through the map-sync host, which tells the clients;
-## GSMapSession.change_to swaps this process's world alone. Our subclass of dot-vote's source adds the pack's title to a Workshop map's choice.
+## GSMapSession.change_to swaps this process's world alone. Our subclass of gs-vote's source adds the pack's title to a Workshop map's choice.
 func _make_source() -> GSVoteSource:
 	var maps_source := AirdriftVoteMapSource.new()
 	maps_source.catalogue = game.maps.catalogue
@@ -110,7 +110,7 @@ func _configure_director(d: GSVoteDirector) -> void:
 
 ## The rules a records server votes by.
 ##
-## [b]Instant runoff, and a per-map time limit.[/b] The second is the one dot-vote
+## [b]Instant runoff, and a per-map time limit.[/b] The second is the one gs-vote
 ## built [member GSVoteChoice.time_limit_sec] for and it is this genre's own problem:
 ## forty minutes of `surf_kitsune` and ten minutes of a three-stage bhop intro are not
 ## the same number, and a server that gives them the same one either rushes the first
@@ -155,11 +155,11 @@ func _rules() -> GSVoteRules:
 	rules.cooldown = 5
 	rules.cooldown_mode = GSVoteRules.Cooldown.PLAYS
 	# Capped against the pool, so a five-map cooldown on a three-map catalogue does
-	# not leave nothing to offer. dot-vote applies it; naming it here is what makes it
+	# not leave nothing to offer. gs-vote applies it; naming it here is what makes it
 	# a decision rather than a default nobody read.
 	rules.cooldown_max_fraction = 0.5
 
-	# The ids AirdriftPresentation's catalogue plays. dot-vote ships every cue empty and names
+	# The ids AirdriftPresentation's catalogue plays. gs-vote ships every cue empty and names
 	# no audio class; this game has a catalogue, so it has something to name. No
 	# countdown before the ballot: a runner is not in a fight, and a ballot that waits ten
 	# seconds is ten seconds off a two-minute lead for nothing.

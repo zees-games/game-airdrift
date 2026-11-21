@@ -1,6 +1,6 @@
 extends RefCounted
 
-## The kill view's server half over this game: every living eye, respawns held in dot-match's queue.
+## The kill view's server half over this game: every living eye, respawns held in gs-match's queue.
 
 const CHANNEL := "g2g.killview"
 const KillPov := preload("../airdrift_kill_pov.gd")

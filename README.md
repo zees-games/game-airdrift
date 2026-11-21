@@ -4,7 +4,7 @@ A 3D surf and bunny-hop timer game for [Godot 4](https://godotengine.org/), buil
 
 ![Preview](https://github.com/zees-games/game-airdrift/blob/main/images/preview.gif?raw=true)
 
-*Play on the test server [here](https://moddingcommunity.com/g2gfast/s/g2gfast01/play).*
+*Play on the test server [here](https://moddingcommunity.com/airdrift/s/g2gfast01/play).*
 
 The project and its assets are open source under the MIT license. Only the back-end web infrastructure is not; if you use your own authentication back end instead of GameSpice, you build that part yourself.
 
@@ -88,11 +88,11 @@ While you watch somebody, the list of others watching them is on the right. A se
 
 ## Getting started
 
-You need [Godot 4.7](https://godotengine.org/download). The game is built from many GameSpice addons, each in its own repository. The easiest way to get everything is [dot-bootstrap](https://github.com/gamespice-platform/bootstrap), which clones every project and links the addons in:
+You need [Godot 4.7](https://godotengine.org/download). The game is built from many GameSpice addons, each in its own repository. The easiest way to get everything is [gs-bootstrap](https://github.com/gamespice-platform/bootstrap), which clones every project and links the addons in:
 
 ```bash
 git clone https://github.com/gamespice-platform/bootstrap.git
-cd dot-bootstrap
+cd gs-bootstrap
 ./bootstrap.sh
 cd projects/game-airdrift
 ./game.sh
@@ -109,7 +109,7 @@ On Windows, run `bootstrap.ps1` and open the project in Godot.
 | `./game.sh test` | Check every script and run every test suite |
 | `./game.sh help` | All options |
 
-`online` and `server` use [dot-server-deploy](https://github.com/gamespice-platform/server-deploy), which bootstrap clones next to this project. Run its `./setup.sh` once first.
+`online` and `server` use [gs-server-deploy](https://github.com/gamespice-platform/server-deploy), which bootstrap clones next to this project. Run its `./setup.sh` once first.
 
 ## Running a server
 
@@ -140,9 +140,9 @@ Settings are cvars. Set them in the server config, on the command line, or live 
 | `airdrift_zone_editor_max_number` | 99 | Highest stage or checkpoint number the editor's **]** reaches; default 99, 0 = unlimited. Past it the key refuses with a notice |
 | `airdrift_zone_editor_max_height` | 2048 | Tallest zone the editor builds, in units; default 2048, 0 = unlimited. Past it the editor refuses with a notice |
 | `airdrift_zone_mark_max_height` | 4096 | Tallest zone `airdrift_zone_mark x y z height` accepts; default 4096, 0 = unlimited. A taller request is refused, never shortened |
-| `mp_teamblock` / `mp_enemyblock` | 0 / 1 | dot-team block rules, with `!block` and `!noblock`. Runners are not solid to each other, so these matter only once players are made solid |
+| `mp_teamblock` / `mp_enemyblock` | 0 / 1 | gs-team block rules, with `!block` and `!noblock`. Runners are not solid to each other, so these matter only once players are made solid |
 
-A player killed in deathmatch or by a hunter falls as a ragdoll ([dot-player-char](https://github.com/gamespice-platform/player-char)) until they are back at the start. `sv_ragdoll_style` picks ragdoll, stiff, topple or hide; `sv_ragdoll_time` and `sv_ragdoll_max` say how long and how many; `sv_ragdoll_reactions` weights the falls.
+A player killed in deathmatch or by a hunter falls as a ragdoll ([gs-player-char](https://github.com/gamespice-platform/player-char)) until they are back at the start. `sv_ragdoll_style` picks ragdoll, stiff, topple or hide; `sv_ragdoll_time` and `sv_ragdoll_max` say how long and how many; `sv_ragdoll_reactions` weights the falls.
 
 ### Every setting as a file, a cvar and a panel
 
@@ -155,11 +155,11 @@ Each field of the server configuration (`game/airdrift_config.gd`, with its desc
 5. `--airdrift-*` arguments (the old `--g2g-*` likewise)
 6. live cvars and the workbench
 
-A dedicated server refuses to start on an unknown key or a bad value. Per-map movement lives in `cfg/game/game-airdrift/dot_map/map/<map>.yml`. `airdrift_config_dump` lists every field with the layer it came from; `airdrift_config_diff save` writes what you changed as a file to copy into the defaults. The dot-workbench tuning panel (F9 in debug builds; `workbench http` for a loopback page when `workbench.enabled` is set in `cfg/server.yml`) edits the same fields. An exported build needs `*.html` in the preset's `include_filter`.
+A dedicated server refuses to start on an unknown key or a bad value. Per-map movement lives in `cfg/game/game-airdrift/gs_map/map/<map>.yml`. `airdrift_config_dump` lists every field with the layer it came from; `airdrift_config_diff save` writes what you changed as a file to copy into the defaults. The gs-workbench tuning panel (F9 in debug builds; `workbench http` for a loopback page when `workbench.enabled` is set in `cfg/server.yml`) edits the same fields. An exported build needs `*.html` in the preset's `include_filter`.
 
 ### Which maps rotate
 
-List the maps you want in `cfg/maps.yml` (named rotations, wildcards and `sv_map_rotation <name>`; see dot-map `docs/rotation.md`). A map you leave out stays installed: `airdrift_map <id>` still loads it and **M** lists it as "not in rotation", but it never comes round on its own and is not offered in votes.
+List the maps you want in `cfg/maps.yml` (named rotations, wildcards and `sv_map_rotation <name>`; see gs-map `docs/rotation.md`). A map you leave out stays installed: `airdrift_map <id>` still loads it and **M** lists it as "not in rotation", but it never comes round on its own and is not offered in votes.
 
 ```yaml
 mode: random          # or sequential
@@ -192,14 +192,14 @@ Every command and cvar had an older `g2g_` name, and that name still works: an o
 
 ### Records
 
-Records are kept in files under `user://g2gfast/records` unless you give the server a database. SQLite needs the [godot-sqlite](https://github.com/2shady4u/godot-sqlite) extension. PostgreSQL and MySQL go through [dot-sql](https://github.com/gamespice-platform/sql)'s HTTP gateway, which lets several servers share one leaderboard. In the server config:
+Records are kept in files under `user://airdrift/records` unless you give the server a database. SQLite needs the [godot-sqlite](https://github.com/2shady4u/godot-sqlite) extension. PostgreSQL and MySQL go through [gs-sql](https://github.com/gamespice-platform/sql)'s HTTP gateway, which lets several servers share one leaderboard. In the server config:
 
 ```json
 {
   "records_database": "mysql",
   "records_database_url": "http://10.0.0.5:8780",
   "records_database_token": "keep this in the file, not on the command line",
-  "records_table_prefix": "dot_timer_",
+  "records_table_prefix": "gs_timer_",
   "records_cache_seconds": 10,
   "points_formula": "curve",
   "points_weighting": 0.975,
@@ -213,17 +213,17 @@ Records are kept in files under `user://g2gfast/records` unless you give the ser
 
 ### Admin commands
 
-These come from [dot-moderation](https://github.com/gamespice-platform/moderation): `!noclip`, `!freeze`, `!slay`, `!blind`, `!beacon` and the rest. Any run that noclip, speed or gravity touches is not saved. `burn` is turned off because there is nothing to burn on a course.
+These come from [gs-moderation](https://github.com/gamespice-platform/moderation): `!noclip`, `!freeze`, `!slay`, `!blind`, `!beacon` and the rest. Any run that noclip, speed or gravity touches is not saved. `burn` is turned off because there is nothing to burn on a course.
 
 ### The map vote
 
-The next-map vote is [dot-vote](https://github.com/gamespice-platform/vote). The defaults (shown below) are in `game/airdrift_vote.gd`. To change them, create `user://cfg/g2gfast_vote.json`, or use `DOT_VOTE_*` environment variables or `--vote-*` arguments:
+The next-map vote is [gs-vote](https://github.com/gamespice-platform/vote). The defaults (shown below) are in `game/airdrift_vote.gd`. To change them, create `user://cfg/airdrift_vote.json`, or use `GS_VOTE_*` environment variables or `--vote-*` arguments:
 
 ```json
 { "end_vote": true, "vote_lead_sec": 120, "include_extend": true, "extend_seconds": 600, "max_extends": 3 }
 ```
 
-`end_vote: false` turns the end-of-map vote off and `include_extend: false` removes "extend" from the ballot. dot-vote's README lists every setting.
+`end_vote: false` turns the end-of-map vote off and `include_extend: false` removes "extend" from the ballot. gs-vote's README lists every setting.
 
 ## Maps
 
@@ -242,7 +242,7 @@ Collision comes from the map's brushes, so invisible player clips and surf ramp 
 
 The map's own volumes work too: teleports keep your run going, boosters push, water is swum in (hold jump to come up), ladders are climbed, conveyors carry you, and a bunny-hop block sends you back if you stand on it. Blocks are timed per player. [`docs/brush-entities.md`](docs/brush-entities.md) covers every brush entity.
 
-**Combat maps.** Some surf maps are for fighting, not timing. Their zones file says `"kind": "arena"` and they live in [arena-surf-dm-maps](https://github.com/zees-games/arena-surf-dm-maps) for Fatal Contact's deathmatch, not in airdrift-maps. `tools/bsp_import.py` writes such a map there. If one is installed here anyway it stays loadable, **M** marks it "combat", and it is left out of the rotation and the vote unless `cfg/maps.yml` lists it.
+**Combat maps.** Some surf maps are for fighting, not timing. Their zones file says `"kind": "arena"` and they live in [fc-surf-dm-maps](https://github.com/zees-games/fc-surf-dm-maps) for Fatal Contact's deathmatch, not in airdrift-maps. `tools/bsp_import.py` writes such a map there. If one is installed here anyway it stays loadable, **M** marks it "combat", and it is left out of the rotation and the vote unless `cfg/maps.yml` lists it.
 
 ### Zones
 
@@ -292,7 +292,7 @@ airdrift_zone_save           // write them to disk
 | `headless_imported` | Every imported map loads and has its zones |
 | `headless_mechanics` | Teleports, sinking blocks, pushes and water on every imported map |
 | `headless_config` | Every config field as a cvar and a profile |
-| `headless_workbench` | dot-workbench over the config: an edit, and the export as defaults |
+| `headless_workbench` | gs-workbench over the config: an edit, and the export as defaults |
 | `dedicated` | A real server: boots, loads the game, runs its commands |
 
 [`CLAUDE.md`](CLAUDE.md) has the design decisions and the reasoning behind them.
@@ -302,13 +302,13 @@ airdrift_zone_save           // write them to disk
 | Asset | Author / source | License | Where |
 | --- | --- | --- | --- |
 | Prototype textures | Kenney, Prototype Textures | CC0 | `textures/prototype/` (its README says which file came from where) |
-| Players | Quaternius, [Zombie Apocalypse Kit](https://quaternius.com/packs/zombieapocalypsekit.html), coloured from Kenney's character kit skins | CC0 1.0 | dot-player-char |
-| Avatar parts and hats | Kenney | CC0 | dot-player-char |
+| Players | Quaternius, [Zombie Apocalypse Kit](https://quaternius.com/packs/zombieapocalypsekit.html), coloured from Kenney's character kit skins | CC0 1.0 | gs-player-char |
+| Avatar parts and hats | Kenney | CC0 | gs-player-char |
 | Stand-in scenery | Kenney Food Kit, Holiday Kit, Nature Kit | CC0 | `props/kenney/` |
 | Stand-in textures | Kenney, Retro Textures Fantasy | CC0 | `textures/stock/` |
 | Concrete, metal and snow textures | [Concrete034](https://ambientcg.com/view?id=Concrete034), [Metal032](https://ambientcg.com/view?id=Metal032), [MetalPlates006](https://ambientcg.com/view?id=MetalPlates006), [Snow010A](https://ambientcg.com/view?id=Snow010A) from ambientCG, Lennart Demes | CC0 | `textures/stock/` (`LICENSE.txt` lists every file) |
-| Footsteps | Kenney, Impact Sounds | CC0 | dot-audio, `addons/dot_audio/stock/CREDITS.md` |
-| Ambience beds | Generated by dot-audio | none (synthesized) | dot-audio |
+| Footsteps | Kenney, Impact Sounds | CC0 | gs-audio, `addons/gs_audio/stock/CREDITS.md` |
+| Ambience beds | Generated by gs-audio | none (synthesized) | gs-audio |
 | Imported maps | Their authors, credited in [airdrift-maps](https://github.com/zees-games/airdrift-maps) | as stated there | airdrift-maps |
 
 ## License

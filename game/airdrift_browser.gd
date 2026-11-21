@@ -6,9 +6,9 @@ extends Node
 # exited with this file and the fifteen objects it keeps alive in the ObjectDB leak
 # (411 -> 396, 2026-09-24). A static is reachable from its own script unqualified.
 
-## The server browser: dot-browser's client half, for a records community.
+## The server browser: gs-browser's client half, for a records community.
 ##
-## [b]dot-server has answered queries since it was written and nothing had ever asked
+## [b]gs-server has answered queries since it was written and nothing had ever asked
 ## one.[/b] `AirdriftQuery` has contributed the map, the tick rate, the styles and the
 ## world record since the module was written, and until this file existed the only
 ## thing that could read any of it was a test. That is the family's own "produced
@@ -46,7 +46,7 @@ signal listing_changed()
 
 @export_group("Favourites")
 
-@export var favourites_path: String = "user://g2gfast/servers.json"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
+@export var favourites_path: String = "user://airdrift/servers.json"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
 var browser: GSBrowser = null
 var filter: GSBrowserFilter = null
@@ -63,7 +63,7 @@ func setup() -> GSResult:
 	browser.concurrency = concurrency
 	browser.timeout_ms = timeout_ms
 	browser.retries = 1
-	# The game section is why `AirdriftQuery` exists. `info.map` is dot-server's and means
+	# The game section is why `AirdriftQuery` exists. `info.map` is gs-server's and means
 	# "the content id of the loaded game", which on a server that never switches games
 	# is empty; the map a player wants — `bhop_g2g_stages` — is the game's own fact and
 	# arrives nested under `rules["game"]` so it cannot overwrite the other.

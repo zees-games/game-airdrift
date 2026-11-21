@@ -90,7 +90,7 @@ static func positions_to_text(value: Dictionary) -> String:
 
 
 ## The theme's HUD colours onto everything this HUD draws. [param palette] is the menu's
-## (dot-menu's `theme_changed`); null is the default theme, which is what a HUD built before
+## (gs-menu's `theme_changed`); null is the default theme, which is what a HUD built before
 ## any menu — a suite, a server's preview — draws in.
 func apply_theme(palette: GSMenuPalette = null) -> void:
 	var p := palette if palette != null else GSMenuPalette.new()

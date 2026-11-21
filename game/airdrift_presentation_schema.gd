@@ -16,7 +16,7 @@ static func schema() -> GSSettingsSchema:
 	var s := GSSettingsSchema.new()
 	s.version = SCHEMA_VERSION
 
-	# The audio, window, frame rate, sensitivity and theme are dot-menu's stock settings, declared
+	# The audio, window, frame rate, sensitivity and theme are gs-menu's stock settings, declared
 	# at the end; what is declared first wins, which keeps this game's defaults (no shake, no flash).
 	# `raw_input` is gone (nothing applied it); a stored value stays in the document's unknown half.
 
@@ -328,7 +328,7 @@ static func sound_catalogue() -> GSAudioCatalogue:
 	light.priority = 20
 	c.add(light)
 
-	# A body landing: dot-player-char's stock death sounds (Kenney, CC0), shipped in the addon.
+	# A body landing: gs-player-char's stock death sounds (Kenney, CC0), shipped in the addon.
 	# Under the landing and the timer: a body somewhere on the map must never take a voice
 	# from the rhythm a runner keeps time by.
 	for row: Dictionary in GSPlayerDeathSounds.rows():

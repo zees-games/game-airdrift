@@ -1,6 +1,6 @@
 extends RefCounted
 
-## A route for the rule-based bots across a map nobody wrote a route for, from dot-npc-ai's
+## A route for the rule-based bots across a map nobody wrote a route for, from gs-npc-ai's
 ## navigation annotations (`GSNpcAiNavAnnotator`): the links it finds (a drop off a ledge, a jump
 ## up onto one, a jump across a gap) joined to the walkable mesh into one graph, and the way
 ## through it from the spawn to the goal as the points [code]airdrift_route_bot.gd[/code] drives.
@@ -16,7 +16,7 @@ extends RefCounted
 ## [method step] takes a budget in microseconds and returns when it is spent, so a server calls
 ## it once a tick with a millisecond and carries on. The annotations are cached by their own key
 ## ([method GSNpcAiNavAnnotator.cache_key]), and the baked mesh by the map id and a digest of its
-## geometry (dot-bot's [GSBotNav] cache), so a round change on a map the server has seen skips both.
+## geometry (gs-bot's [GSBotNav] cache), so a round change on a map the server has seen skips both.
 ##
 ## [b]A walk through polygons, a link through a node of its own.[/b] Each polygon of the mesh is
 ## a node of an [AStar3D] at its centre, joined to its neighbours. A link is a node midway

@@ -16,7 +16,7 @@ Each map builds its geometry and its zones from the same list, so a start line c
 
 ## Every route has a start, a finish, a spawn and a pit of its own
 
-A `GSTimerZone` carries a track, and a RESPAWN zone on track 0 catches nobody running track 1. A bonus without its own pit lets a player who misses a platform fall out of the world for ever, with nothing in the log. dot-timer's `GSTimerZoneSet.route_problems()` asks every route for all four; `_test_zone_files_match` asks it of every hand-written map and `headless_imported` of every imported one. The same gap was found three times by guards pointed at one map and not the others; the rule is that the question is asked of every map the catalogue finds.
+A `GSTimerZone` carries a track, and a RESPAWN zone on track 0 catches nobody running track 1. A bonus without its own pit lets a player who misses a platform fall out of the world for ever, with nothing in the log. gs-timer's `GSTimerZoneSet.route_problems()` asks every route for all four; `_test_zone_files_match` asks it of every hand-written map and `headless_imported` of every imported one. The same gap was found three times by guards pointed at one map and not the others; the rule is that the question is asked of every map the catalogue finds.
 
 **A zone must hang over something.** `headless_run` drops a ray down the middle of every START, END and STAGE volume and requires it to land inside that volume. A zone over nothing is a zone the run never reaches, indistinguishable in-game from a map with no end zone.
 

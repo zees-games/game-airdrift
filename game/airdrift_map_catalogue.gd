@@ -54,41 +54,41 @@ const STRIPPED := [".remap", ".import"]
 ## map is this game's own, and an import with no credit in its zones file says so. Both
 ## are placeholders rather than names, and [method credit] is how anything that shows a
 ## player who made a map tells the two apart (`[credit-1]`).
-const BUILT_IN_AUTHOR := "g2gfast"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
+const BUILT_IN_AUTHOR := "airdrift"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 const IMPORTED_AUTHOR := "imported"
 
 ## Lists the maps copied in by hand ([code]GSMapLocalMaps[/code]: a raw convert folder under `res://addons/maps/` or
 ## `user://maps/`, as `<name>_local`). An offline client turns it on; a server never does, so no rotation, vote or pack names one.
 static var list_local := false
 
-## What a dot-map mesh manifest says it is. `user://maps` is a root for both this game's imported maps and local ones, and
+## What a gs-map mesh manifest says it is. `user://maps` is a root for both this game's imported maps and local ones, and
 ## each scan would otherwise take the other's folders for its own.
-const MESH_FORMAT := "dot-bsp-mesh"
+const MESH_FORMAT := "gs-bsp-mesh"
 
-## The dot-map API level with drag-and-drop, zips and original-texture packs (`accept_dropped`, `surfaces_for`). The floor
+## The gs-map API level with drag-and-drop, zips and original-texture packs (`accept_dropped`, `surfaces_for`). The floor
 ## stays 23 while the live shell pins it, so those members are reached by name after [method can_drop] and the scripts
 ## parse on 23; drop the guard once the oldest shell ships 24 (as game-fatal-contact does, fc-local-maps-floor24).
 const DROP_LEVEL := 24
 
 
-## Whether this host's dot-map takes dropped maps and zips and draws `<map>_orig` packs with their own textures.
+## Whether this host's gs-map takes dropped maps and zips and draws `<map>_orig` packs with their own textures.
 static func can_drop() -> bool:
-	return GSAddonApi.build_level("dot_map") >= DROP_LEVEL
+	return GSAddonApi.build_level("gs_map") >= DROP_LEVEL
 
 
 ## Copies the dropped [param paths] (a converted map folder, its convert folder, or a `.zip` of either) into
-## `user://maps` with dot-map's [code]GSMapLocalMaps.accept_dropped[/code]: `{added, errors}`, or one error when the
-## host's dot-map is older than [constant DROP_LEVEL].
+## `user://maps` with gs-map's [code]GSMapLocalMaps.accept_dropped[/code]: `{added, errors}`, or one error when the
+## host's gs-map is older than [constant DROP_LEVEL].
 static func accept_dropped(paths: PackedStringArray) -> Dictionary:
 	if not can_drop():
-		return {"added": [], "errors": PackedStringArray(["this build cannot import maps (dot-map %d, needs %d)" % [
-			GSAddonApi.build_level("dot_map"), DROP_LEVEL]])}
+		return {"added": [], "errors": PackedStringArray(["this build cannot import maps (gs-map %d, needs %d)" % [
+			GSAddonApi.build_level("gs_map"), DROP_LEVEL]])}
 	var local_maps: Object = GSMapLocalMaps  # API 24 by name: a call on the class itself does not parse on 23
 	return local_maps.call(&"accept_dropped", paths)
 
 
 ## The surfaces builder for local map [param id]: the map's own textures for a `<map>_orig` pack, the free ones otherwise;
-## null on a dot-map older than [constant DROP_LEVEL] or for an id that is not local (the world then draws with its default).
+## null on a gs-map older than [constant DROP_LEVEL] or for an id that is not local (the world then draws with its default).
 static func local_surfaces(id: StringName) -> GSMapSurfaces:
 	if not can_drop():
 		return null
@@ -103,7 +103,7 @@ static func local_surfaces(id: StringName) -> GSMapSurfaces:
 ## The version a map pack is published as: `0.0.0-` and the first twelve hex digits of
 ## a SHA-256 over every file in the map's directory, path and bytes, in path order.
 ##
-## [b]Derived, not kept.[/b] Every pack was `@0.0.0`, and dot-cloud keys a mount on
+## [b]Derived, not kept.[/b] Every pack was `@0.0.0`, and gs-cloud keys a mount on
 ## `id@version` and can never undo one, so a client that had mounted the old bhop_aztec
 ## was told "bhop_aztec, 0.0.0" by a server that had the new one, believed it, and
 ## played other geometry. A hash changes exactly when the files do: no per-map number to
@@ -169,7 +169,7 @@ static func discover(
 	return catalogue
 
 
-## The file a game pack states what it takes from subscriptions in (dot-cloud's
+## The file a game pack states what it takes from subscriptions in (gs-cloud's
 ## docs/workshop.md, "What a game accepts"). Read from there, not repeated, because the
 ## site offers a pack by this same file and a second list would drift from it.
 const PROVIDES_PATH := "res://provides.json"
@@ -285,7 +285,7 @@ static func _local() -> Array[GSMapDef]:
 	return out
 
 
-## Whether the manifest at [param path] is dot-map's mesh format rather than this game's imported-map manifest.
+## Whether the manifest at [param path] is gs-map's mesh format rather than this game's imported-map manifest.
 static func is_mesh_manifest(path: String) -> bool:
 	return FileAccess.get_file_as_string(path).contains(MESH_FORMAT)
 
@@ -374,16 +374,16 @@ static func _scene_ids(root: String) -> Array[StringName]:
 
 ## One map whose directory IS the map, rather than a root holding several.
 ##
-## [b]A dot-cloud mount is not shaped like a maps root and a scan pointed at one finds
+## [b]A gs-cloud mount is not shaped like a maps root and a scan pointed at one finds
 ## nothing while reporting no error.[/b] [method _imported] walks `<root>/<id>/<id>.json`
-## -- a directory per map, named for the map. dot-cloud mounts a pack at
+## -- a directory per map, named for the map. gs-cloud mounts a pack at
 ## `<mount>/<content_id>/<version>/`, so the directory is named for the VERSION while the
 ## files inside are named for the content id, and every level of that is off by one from
 ## what the scan expects. Pointing [member IMPORTED_ROOTS] at a mount was the obvious
 ## thing to try and it silently offers no maps.
 ##
 ## So a mounted pack is registered directly: the caller already knows the id, because it
-## is the content id it asked dot-cloud for.
+## is the content id it asked gs-cloud for.
 ##
 ## Returns null when the directory does not hold the two files a map is made of, which is
 ## the same judgement [method _imported] makes and for the same reason -- a map with no

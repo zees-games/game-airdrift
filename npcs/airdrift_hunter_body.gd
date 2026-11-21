@@ -12,7 +12,7 @@ extends CharacterBody3D
 ##
 ## Extended by nothing and referenced by PATH. A `class_name` would reserve a global
 ## identifier in every consuming project for a capsule, and a script inside a mounted
-## dot-cloud pack cannot resolve one anyway.
+## gs-cloud pack cannot resolve one anyway.
 
 @export var body_radius: float = 0.4
 

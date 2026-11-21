@@ -35,7 +35,7 @@ var bindings: GSMenuBindings = AirdriftBindings.make()
 var applier: GSMenuApplier = null
 var audio: GSAudioManager = null
 
-## Footsteps by surface and a bed per map: dot-audio's stock (Kenney's footsteps and generated
+## Footsteps by surface and a bed per map: gs-audio's stock (Kenney's footsteps and generated
 ## beds, CC0; the addon's stock/CREDITS.md). Under the landing and the timer, never over them.
 var steps: GSAudioFootsteps = null
 var ambience: GSAudioAmbience = null
@@ -113,7 +113,7 @@ func _build_settings() -> GSResult:
 	settings.name = "Settings"
 	settings.schema = schema()
 	settings.local_store = GSSettingsStoreFile.new("user://g2g_settings")
-	settings.app_namespace = &"game_g2gfast"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
+	settings.app_namespace = &"game_airdrift"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 	settings.migrations = migrations()
 	settings.shared_namespace = &"tmc_account"
 	add_child(settings)
@@ -122,7 +122,7 @@ func _build_settings() -> GSResult:
 	if not res.ok:
 		return res.wrap("Airdrift's settings")
 
-	# dot-menu's applier pushes the stock settings and the keys; what is this game's —
+	# gs-menu's applier pushes the stock settings and the keys; what is this game's —
 	# the body, the chat box and its two keys — is the handler below, on the same signal.
 	applier = GSMenuApplier.new()
 	applier.name = "Applier"
@@ -157,7 +157,7 @@ func _build_audio() -> GSResult:
 	audio.mixer.master = settings.get_float(&"master_volume", 0.8)
 	# Small. There is one player making noises and the rest is a timer.
 	audio.voices = 12
-	# Measured toward the family's -17 LUFS (dot-audio docs/loudness.md): a 40 s stand-in run on
+	# Measured toward the family's -17 LUFS (gs-audio docs/loudness.md): a 40 s stand-in run on
 	# the intro read -26.9 LUFS with the bed and the steps in, -21.6 at +8. The bed is held back a little
 	# (the speed-driven wind level below) so a timer game's quiet is a breeze.
 	audio.loudness_trim_db = 12.0
@@ -238,7 +238,7 @@ func _build_fx() -> GSResult:
 
 # --- Console ----------------------------------------------------------------
 
-## dot-console's kit, with this game's two differences, and registered with [param menu].
+## gs-console's kit, with this game's two differences, and registered with [param menu].
 ##
 ## Called by [AirdriftClient] after its [GSMenu] exists, not from [method setup]: the menu is
 ## built from this layer's settings, and the kit makes the console one of the menu's
@@ -330,7 +330,7 @@ func _build_chat() -> void:
 	chat_window.open_action = &"airdrift_chat"
 	chat_window.team_action = &"airdrift_chat_team"
 	# [b]An outline, because the floors are pale.[/b] Light-blue names and white text over
-	# light grey tiles were a log the players asked, in that log, to be able to read. dot-ui
+	# light grey tiles were a log the players asked, in that log, to be able to read. gs-ui
 	# outlines rather than panels on purpose (see `GSFeedView`): a backing box is a grey
 	# rectangle in the corner of the view even when nobody is talking.
 	chat_window.outline_size = 5
@@ -483,7 +483,7 @@ func watch_movement(grounded: bool, speed: float, at: Vector3) -> void:
 			settings.get_float(&"snd_wind_full_speed", 1500.0)) / GSAudioAmbience.DEFAULT_LEVEL
 
 
-## The stock weapon sound each of this game's two weapons plays (dot-audio's weapon stock,
+## The stock weapon sound each of this game's two weapons plays (gs-audio's weapon stock,
 ## in the catalogue through GSAudioStock.add_to).
 const WEAPON_SOUNDS := {&"deagle": &"weapon_magnum_fire", &"knife": &"weapon_swing"}
 
@@ -639,7 +639,7 @@ func on_teleported() -> void:
 
 
 ## A map-vote cue from the server. Empty is silence, and an id this catalogue does not
-## have is dot-audio's silent refusal: a server with a sound set this client was not built
+## have is gs-audio's silent refusal: a server with a sound set this client was not built
 ## with should cost a noise, not a log line per second.
 func on_vote_cue(id: StringName) -> int:
 	if id == &"" or audio == null:
@@ -657,7 +657,7 @@ func on_beacon(at: Vector3) -> int:
 	return audio.play_at(BEACON_SOUND, at)
 
 
-## A dead body's sound (dot-player-char's ragdolls), where it landed.
+## A dead body's sound (gs-player-char's ragdolls), where it landed.
 func on_body(id: StringName, at: Vector3, volume: float) -> int:
 	if audio == null:
 		return 0

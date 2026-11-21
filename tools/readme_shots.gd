@@ -113,9 +113,9 @@ func _drive(delta: float) -> bool:
 		_dir = -_dir
 	if sampler != null:
 		sampler.yaw += _dir * TURN_DEG_PER_SEC * delta
-	_press("dot_fps_left", _dir > 0.0)
-	_press("dot_fps_right", _dir < 0.0)
-	_press("dot_fps_jump", true)
+	_press("gs_fps_left", _dir > 0.0)
+	_press("gs_fps_right", _dir < 0.0)
+	_press("gs_fps_jump", true)
 	if _t >= _next_shot:
 		_next_shot += 0.5
 		_capture("readme_%s_%s_%02d" % [_kind, _client.game.maps.current.id, _shots])
@@ -128,7 +128,7 @@ func _drive(delta: float) -> bool:
 
 
 func _release() -> void:
-	for a in ["dot_fps_left", "dot_fps_right", "dot_fps_jump"]:
+	for a in ["gs_fps_left", "gs_fps_right", "gs_fps_jump"]:
 		Input.action_release(a)
 
 
@@ -199,7 +199,7 @@ func _still_board() -> bool:
 	if _stage == 0:
 		_stage = 1
 		_client.menu.scoreboard.source = func() -> Dictionary:
-			return {"server": {"name": "Airdrift", "game": "g2gfast", "map": _client.game.maps.current.id, "players": 6, "max": 24},
+			return {"server": {"name": "Airdrift", "game": "airdrift", "map": _client.game.maps.current.id, "players": 6, "max": 24},
 				"header": {"": "Time left 23:41"}, "you": 3,
 				"players": [
 					{"id": 1, "name": "Ada", "style": "Normal", "best": 72.418, "rank": 1, "of": 41, "seconds": 3912, "ping": 24},

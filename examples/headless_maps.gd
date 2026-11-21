@@ -334,7 +334,7 @@ func _test_boot_race() -> void:
 
 ## `cfg/maps.yml`: the maps a server rotates and what it does to the catalogue -- the unlisted
 ## ones stay installed, out of rotation, and on the map list. The format's own checks are
-## dot-map's selftest; this is what the GAME does with it.
+## gs-map's selftest; this is what the GAME does with it.
 func _test_rotation_file() -> void:
 	_section("rotation file")
 	# Applied to a game: listed in, unlisted out, nothing removed.
@@ -450,7 +450,7 @@ func _test_zones_have_floor() -> void:
 		_check(floating.is_empty(),
 			"%s stands every zone on something" % id, ", ".join(floating))
 
-		# dot-core's audit: drawn geometry with no shape near it, which a player walks through.
+		# gs-core's audit: drawn geometry with no shape near it, which a player walks through.
 		# Lenient (`anywhere`), as the drawing and the solids may sit in different subtrees.
 		var audit := GSCollisionAudit.audit(map, true)
 		var report: GSCollisionAudit = audit.value if audit.ok else null

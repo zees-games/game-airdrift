@@ -10,11 +10,11 @@ extends RefCounted
 ## doc comment, and the sentence had already drifted once — the README said Shift for duck
 ## for as long as the dead `[input]` block did.
 ##
-## [b]dot-menu's `GSMenuBindings` does the work[/b] (2026-10-09): applying a row, the
+## [b]gs-menu's `GSMenuBindings` does the work[/b] (2026-10-09): applying a row, the
 ## fallback to the default, the swap when a key is taken, the reset. This file is the rows.
 ##
-## [b]The movement actions are dot-player-controller's own names.[/b] `GSFpsSampler` polls
-## `dot_fps_*` and `register_default_actions` only creates what is missing, so a binding
+## [b]The movement actions are gs-player-controller's own names.[/b] `GSFpsSampler` polls
+## `gs_fps_*` and `register_default_actions` only creates what is missing, so a binding
 ## applied here first is the one it reads — there is no second copy of the movement keys.
 ##
 ## [b]Stored per DEVICE, except chat.[/b] A key is a fact about a keyboard. The two chat keys
@@ -30,20 +30,20 @@ const ACCOUNT := GSSettingsDef.Scope.ACCOUNT
 
 ## Rows, in the order the menu and the help screen draw them.
 const ROWS: Array[Dictionary] = [
-	{"action": &"dot_fps_forward", "setting": &"bind_forward", "label": "Forward", "default": "W", "group": "Movement"},
-	{"action": &"dot_fps_back", "setting": &"bind_back", "label": "Back", "default": "S", "group": "Movement"},
-	{"action": &"dot_fps_left", "setting": &"bind_left", "label": "Strafe left", "default": "A", "group": "Movement"},
-	{"action": &"dot_fps_right", "setting": &"bind_right", "label": "Strafe right", "default": "D", "group": "Movement"},
-	{"action": &"dot_fps_jump", "setting": &"bind_jump", "label": "Jump", "default": "Space", "group": "Movement"},
-	{"action": &"dot_fps_crouch", "setting": &"bind_duck", "label": "Duck", "default": "Ctrl", "group": "Movement"},
+	{"action": &"gs_fps_forward", "setting": &"bind_forward", "label": "Forward", "default": "W", "group": "Movement"},
+	{"action": &"gs_fps_back", "setting": &"bind_back", "label": "Back", "default": "S", "group": "Movement"},
+	{"action": &"gs_fps_left", "setting": &"bind_left", "label": "Strafe left", "default": "A", "group": "Movement"},
+	{"action": &"gs_fps_right", "setting": &"bind_right", "label": "Strafe right", "default": "D", "group": "Movement"},
+	{"action": &"gs_fps_jump", "setting": &"bind_jump", "label": "Jump", "default": "Space", "group": "Movement"},
+	{"action": &"gs_fps_crouch", "setting": &"bind_duck", "label": "Duck", "default": "Ctrl", "group": "Movement"},
 
 	{"action": &"airdrift_restart", "setting": &"bind_restart", "label": "Restart run", "default": "R", "group": "Running"},
 	{"action": &"airdrift_checkpoint_save", "setting": &"bind_checkpoint_save", "label": "Save checkpoint", "default": "C", "group": "Running"},
 	{"action": &"airdrift_checkpoint_load", "setting": &"bind_checkpoint_load", "label": "Go to checkpoint", "default": "V", "group": "Running"},
 	{"action": &"airdrift_style_next", "setting": &"bind_style_next", "label": "Next style", "default": "N", "group": "Running"},
-	# M is dot-menu's map menu (`dot_menu_maps`), still stored as `bind_map_next` so a key a
+	# M is gs-menu's map menu (`gs_menu_maps`), still stored as `bind_map_next` so a key a
 	# player moved stays moved.
-	{"action": &"dot_menu_maps", "setting": &"bind_map_next", "label": "Change map", "default": "M", "group": "Running"},
+	{"action": &"gs_menu_maps", "setting": &"bind_map_next", "label": "Change map", "default": "M", "group": "Running"},
 	{"action": &"airdrift_zones", "setting": &"bind_zones", "label": "Zone editor (offline, or an admin)", "default": "Z", "group": "Running"},
 
 	{"action": &"airdrift_drop_weapon", "setting": &"bind_drop_weapon", "label": "Drop weapon (deathmatch)", "default": "Q", "group": "Running"},
@@ -59,11 +59,11 @@ const ROWS: Array[Dictionary] = [
 
 	{"action": &"airdrift_chat", "setting": &"chat_open_key", "label": "Chat", "default": "Y", "group": "Communication", "scope": ACCOUNT},
 	{"action": &"airdrift_chat_team", "setting": &"chat_team_key", "label": "Team chat", "default": "U", "group": "Communication", "scope": ACCOUNT},
-	# dot-voice's action (GSVoiceManager.TALK_ACTION), so dot-menu's table sees the game has a talk
+	# gs-voice's action (GSVoiceManager.TALK_ACTION), so gs-menu's table sees the game has a talk
 	# key and adds none; the setting stays bind_voice, so nobody's stored key is reset. K, because
 	# V is Go to checkpoint here.
-	{"action": &"dot_voice_talk", "setting": &"bind_voice", "label": "Push to talk", "default": "K", "group": "Communication"},
-	# Look at a player and press (dot-game's GSGameClient): G is the free camera, H help, K talk.
+	{"action": &"gs_voice_talk", "setting": &"bind_voice", "label": "Push to talk", "default": "K", "group": "Communication"},
+	# Look at a player and press (gs-game's GSGameClient): G is the free camera, H help, K talk.
 	{"action": &"voice_gag", "setting": &"bind_voice_gag", "label": "Look at a player: stop (or resume) hearing them", "default": "J", "group": "Communication"},
 	{"action": &"voice_mute", "setting": &"bind_voice_mute", "label": "Look at a player: mute (or unmute) their voice and chat", "default": "L", "group": "Communication"},
 
@@ -74,13 +74,13 @@ const ROWS: Array[Dictionary] = [
 ]
 
 
-## The table as dot-menu's, ready to declare, apply and draw.
+## The table as gs-menu's, ready to declare, apply and draw.
 static func make() -> GSMenuBindings:
 	var keys := GSMenuBindings.new()
 	for row in ROWS:
 		keys.add(row["action"], row["setting"], str(row["label"]), str(row["default"]), str(row["group"]),
 			int(row.get("scope", GSSettingsDef.Scope.DEVICE)))
 	# No weapons or items to switch between here, so the wheel jumps (a bhop game wants a tick
-	# per press); two rebindable extra rows on dot_fps_jump, Space stays.
+	# per press); two rebindable extra rows on gs_fps_jump, Space stays.
 	var _wheel := keys.add_wheel_jump("Movement")
 	return keys

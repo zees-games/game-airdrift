@@ -1,6 +1,6 @@
 extends GSGameCheckSuite
 
-## The pilot of drawing imported maps through dot-map's world document (`airdrift_global_worlds`): the switch is off by default and changes nothing; on, a map is drawn from `worlds/<id>` while its zones, spawns and collision stay the manifest's.
+## The pilot of drawing imported maps through gs-map's world document (`airdrift_global_worlds`): the switch is off by default and changes nothing; on, a map is drawn from `worlds/<id>` while its zones, spawns and collision stay the manifest's.
 ## Run: godot --headless --path . res://examples/headless_global_worlds.tscn
 
 const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
@@ -23,7 +23,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("game-airdrift: maps drawn from the dot-map world document")
+	print("game-airdrift: maps drawn from the gs-map world document")
 	if not FileAccess.file_exists("res://worlds/%s.json" % PILOT[0]):
 		print("SKIP: no worlds/ (airdrift-maps/worlds is not linked)")
 		get_tree().quit(0)

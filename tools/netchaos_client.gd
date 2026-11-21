@@ -1,6 +1,6 @@
 extends GSGameNetchaosClient
 
-## Airdrift's side of `tools/netchaos.sh` (dot-game's GSGameNetchaosClient). No weapons: the pilot only runs, strafes and jumps.
+## Airdrift's side of `tools/netchaos.sh` (gs-game's GSGameNetchaosClient). No weapons: the pilot only runs, strafes and jumps.
 
 
 func _configure() -> void:

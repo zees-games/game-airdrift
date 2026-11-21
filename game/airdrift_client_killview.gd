@@ -5,7 +5,7 @@ const AirdriftRig := preload("airdrift_rig.gd")
 const AirdriftKillView := preload("net/airdrift_killview.gd")
 const KillPovView := preload("airdrift_kill_pov_view.gd")
 
-## The client half of the shared kill view (dot-replay): the killer's view replayed to the victim.
+## The client half of the shared kill view (gs-replay): the killer's view replayed to the victim.
 ## Kept out of AirdriftClient, which is at its size baseline.
 
 var view: GSKillViewClient = null
@@ -42,7 +42,7 @@ func attach(client: Node, bridge: Node, game: Node) -> void:
 		return
 	view.respawn_requested.connect(func() -> void: bridge.ask_respawn())
 	bridge.killview_received.connect(_on_clip)
-	var link: Object = GSRegistry.get_service(&"dot_client_link")
+	var link: Object = GSRegistry.get_service(&"gs_client_link")
 	if link != null:
 		var _following: bool = game.killview_rules.follow_cvars(link)
 

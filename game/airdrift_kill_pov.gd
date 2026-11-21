@@ -1,7 +1,7 @@
 extends RefCounted
 
 ## What a kill view records of the killer's screen beyond the camera: the weapon in hand.
-## Airdrift has no view model, magazine or aim-down-sights, so the rest of dot-replay's aux stays zero.
+## Airdrift has no view model, magazine or aim-down-sights, so the rest of gs-replay's aux stays zero.
 
 ## Aux slot of the held weapon's id hash.
 const WEAPON := 0

@@ -15,7 +15,7 @@ var bridge: AirdriftNetBridge = null
 
 
 func _provider_name() -> String:
-	return "g2gfast"  # legacy id: the provider name
+	return "airdrift"  # legacy id: the provider name
 
 
 func _contribute(snapshot: GSQuerySnapshot) -> void:

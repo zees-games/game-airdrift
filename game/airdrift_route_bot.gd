@@ -86,9 +86,9 @@ var _held := 0.0
 var _unstick_left := 0.0
 var _unstick_turn := 0.0
 
-## The native twin (dot-sim's `GSSimRouteBots`, `rustport-airdrift-tick-1`): with it, AirdriftBots.drive
+## The native twin (gs-sim's `GSSimRouteBots`, `rustport-airdrift-tick-1`): with it, AirdriftBots.drive
 ## runs every route bot of a tick in one native call, the same commands to the bit, and this
-## script's fields above are stale until [method pull]. Off (or no dot-sim `route`), this script drives.
+## script's fields above are stale until [method pull]. Off (or no gs-sim `route`), this script drives.
 static var native_route := true
 ## Every native tick re-run in this script beside it and compared; a difference is an error
 ## and the script's answer wins (the native state is set from it). Keeps the fields current.

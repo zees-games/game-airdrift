@@ -126,7 +126,7 @@ func _links() -> int:
 func _test_reload() -> void:
 	_section("a module reload leaves one live link")
 	for _i in range(2):
-		_check(_server.modules.unload_module("g2gfast").ok, "the module unloads")
+		_check(_server.modules.unload_module("airdrift").ok, "the module unloads")
 		_check((await _load_module()).ok, "and loads again")
 		await _settle(3)
 	await _settle(5)

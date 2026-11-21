@@ -1,12 +1,12 @@
 extends Node
 
-const _Perf := preload("res://addons/dot_game/runtime/dot_game_profiler.gd")
+const _Perf := preload("res://addons/gs_game/runtime/gs_game_profiler.gd")
 const AirdriftNetBridge := preload("airdrift_net_bridge.gd")
 const AirdriftNetLink := preload("airdrift_net_link.gd")
 
 ## The four remote calls this game needs, on one node that exists on both ends.
 ##
-## A copy of dot-2d-hungry's link — deliberately, per the family rule that games copy
+## A copy of gs-2d-hungry's link — deliberately, per the family rule that games copy
 ## what they need — because it encodes the one thing that cost that project a day:
 ## Godot refuses an RPC unless both ends declare the same set of @rpc methods, and
 ## routes it by the receiver's node path. Using the same script on both ends makes the
@@ -26,7 +26,7 @@ const CHANNEL := "g2g.link"
 ## The node name both ends must use. It is the routing, so it is a constant.
 const NODE_NAME := &"G2G"
 
-## Everything here rides [constant GSTransport.Channel.STATE], which dot-server reserves
+## Everything here rides [constant GSTransport.Channel.STATE], which gs-server reserves
 ## for exactly this and uses for nothing itself. Sharing chat's channel would make a burst
 ## of snapshots delay a chat line, and vice versa.
 const CHANNEL_STATE := 1
@@ -43,7 +43,7 @@ const CHANNEL_STATE := 1
 ## below are declared `unreliable`, which is what voice wants: a lost frame is 20 ms of
 ## silence a jitter buffer conceals, and a resent one arrives after the frames either
 ## side of it have already played. What that becomes on the wire is the transport's
-## decision (dot-server's default is `GSTransportDual`: native clients on ENet,
+## decision (gs-server's default is `GSTransportDual`: native clients on ENet,
 ## browsers on WebSocket, behind one peer) and it has one sensible answer either way —
 ## ENet honours the unreliable channel as UDP; a browser has no UDP at all, so
 ## WebSocket delivers it reliably and in order over TCP whatever anybody asks for.

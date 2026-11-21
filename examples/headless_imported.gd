@@ -285,7 +285,7 @@ const LIFT_FROM_FRAME := 2000
 const LIFT_UNITS := 200.0
 
 
-## A bot drives the REAL movement along the run recorded for the map (`maps/routes/<id>.replay`) and the game's own timer finishes it (`g2gfast-route-bot-1`); see replay_follow.gd.
+## A bot drives the REAL movement along the run recorded for the map (`maps/routes/<id>.replay`) and the game's own timer finishes it (`airdrift-route-bot-1`); see replay_follow.gd.
 ## A recording is the way one run went tick by tick, so following it checks the collision is still the one it was made on; a failure names a place ("left the recorded line at frame N").
 ## The second check proves that report on a copy lifted off the map from [constant LIFT_FROM_FRAME]. A map with no recording passes both and says so.
 func _test_follows_its_recording() -> void:

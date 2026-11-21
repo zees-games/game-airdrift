@@ -79,7 +79,7 @@ func _build_labels() -> void:
 
 
 func _build_crosshair() -> void:
-	# A first-person view with an empty centre reads as broken; dot-ui draws one without art.
+	# A first-person view with an empty centre reads as broken; gs-ui draws one without art.
 	_crosshair = GSCrosshair.new()
 	_crosshair.name = "Crosshair"
 	_crosshair.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -88,12 +88,12 @@ func _build_crosshair() -> void:
 	_crosshair.offset_right = 0.0
 	_crosshair.offset_bottom = 0.0
 	_crosshair.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if GSAddonApi.build_level("dot_ui") >= 14:
-		# Hidden while dead (dot-ui API 14); a client with no combat layer cannot tell, so shown.
+	if GSAddonApi.build_level("gs_ui") >= 14:
+		# Hidden while dead (gs-ui API 14); a client with no combat layer cannot tell, so shown.
 		_crosshair.set(&"alive_source", _viewer_alive)
 	add_child(_crosshair)
 
-	# Hit feedback, from dot-ui: drawn only from a hit the authority applied (`confirm_hit`).
+	# Hit feedback, from gs-ui: drawn only from a hit the authority applied (`confirm_hit`).
 	damage_numbers = GSDamageNumbers.new()
 	damage_numbers.name = "DamageNumbers"
 	damage_numbers.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

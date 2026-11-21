@@ -212,7 +212,7 @@ func _test_the_sounds_follow_the_timer() -> void:
 # --- 1c ---------------------------------------------------------------------
 
 ## [b]Both gate effects were refused on every run until 2026-09-27[/b], because
-## `scenes/fx/` did not exist and dot-fx logs a missing scene at DEBUG. Every check here
+## `scenes/fx/` did not exist and gs-fx logs a missing scene at DEBUG. Every check here
 ## passed throughout: a catalogue validates without its scenes, by design. So this asks
 ## the two questions that could not pass then -- are the files there, and does a run,
 ## crossed the way the client crosses one, put nodes in the world at the runner's feet.
@@ -292,7 +292,7 @@ func _test_a_run_is_drawn() -> void:
 		"and it is particles too"
 	)
 
-	# [b]Drawn where the scene is, not at the world's origin.[/b] dot-fx adds a scene to the
+	# [b]Drawn where the scene is, not at the world's origin.[/b] gs-fx adds a scene to the
 	# tree and THEN sets its transform, and a world-space emitter's first burst goes out
 	# from wherever the node was when it entered: the origin. Rendered, the start gate was
 	# a ring of green on some other part of the map and the finish half of one. Local
@@ -405,7 +405,7 @@ func _test_the_landing_is_a_speedometer() -> void:
 # --- 4 ----------------------------------------------------------------------
 
 func _test_the_weapons_are_heard() -> void:
-	_section("The deagle and the knife play dot-audio's stock recordings")
+	_section("The deagle and the knife play gs-audio's stock recordings")
 
 	var p := _make()
 	var sink := p.audio.sink as GSAudioSinkNull
@@ -494,7 +494,7 @@ func _test_console_is_prefixed() -> void:
 
 	# A server in this process: its console is reached as `server <line>` and nothing else.
 	var fake := FakeServer.new()
-	GSRegistry.register(&"dot_server", fake)
+	GSRegistry.register(&"gs_server", fake)
 	var q := _make()
 	var _unknown := q.console.submit("s3")
 	_check(fake.console.ran.is_empty(),
@@ -502,7 +502,7 @@ func _test_console_is_prefixed() -> void:
 	var _ran := q.console.submit("server s3")
 	_check(fake.console.ran == PackedStringArray(["s3"]),
 		"and `server s3` does, without the prefix", str(fake.console.ran))
-	GSRegistry.unregister(&"dot_server")
+	GSRegistry.unregister(&"gs_server")
 	q.queue_free()
 	_done()
 
@@ -515,7 +515,7 @@ func _test_every_key_is_the_players() -> void:
 	var bound := 0
 	for row in AirdriftBindings.ROWS:
 		# Jump also has the wheel's two extra rows (Space stays the first).
-		var events := 3 if row["action"] == &"dot_fps_jump" else 1
+		var events := 3 if row["action"] == &"gs_fps_jump" else 1
 		if InputMap.action_get_events(row["action"]).size() == events \
 				and GSInputBinding.describe_action(row["action"]).begins_with(str(row["default"])):
 			bound += 1
@@ -536,7 +536,7 @@ func _test_every_key_is_the_players() -> void:
 			clash = "%s and %s" % [row["label"], other["label"]]
 	_check(clash == "", "no two defaults share a key", clash)
 
-	_check(GSInputBinding.describe_action(&"dot_fps_crouch") == "Ctrl",
+	_check(GSInputBinding.describe_action(&"gs_fps_crouch") == "Ctrl",
 		"Duck is Ctrl, the genre's, and the text form of it round-trips")
 
 	p.settings.set_value(&"bind_flashlight", "G")

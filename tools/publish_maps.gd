@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Publish imported maps as signed packs, each under an owner: `<owner>/<map id>`.
 ##
-##     tools/publish_maps.sh --owner gamemann --key ../dot-server-deploy/keys/content.key
+##     tools/publish_maps.sh --owner gamemann --key ../gs-server-deploy/keys/content.key
 ##     tools/publish_maps.sh --owner gamemann --key <pem> surf_mesa bhop_eazy
 ##
 ## Writes `<out>/<owner>/<id>/manifest.json` and `objects/` beside it -- the version-less
@@ -11,7 +11,7 @@ extends SceneTree
 ## `content/` as it stands. A server fetches them with `sv_map_content_owner <owner>`
 ## (see [member AirdriftConfig.map_content_owner]); the map id a player types is unchanged.
 ##
-## [b]Signed with dot-server-deploy's key, not the site's.[/b] A map is not an asset on
+## [b]Signed with gs-server-deploy's key, not the site's.[/b] A map is not an asset on
 ## the site, so the site cannot publish it, and the key every client already trusts under
 ## `default` is the one that signed the unowned map packs. `--key-id` defaults to that.
 ##

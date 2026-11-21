@@ -2,7 +2,7 @@ extends RefCounted
 
 ## The best replay per map, track and style — what the world-record ghost plays.
 ##
-## dot-timer records a replay of every run and hands the finished one over with the
+## gs-timer records a replay of every run and hands the finished one over with the
 ## record; it deliberately does not keep them (its CLAUDE.md: what to draw at a replay
 ## is a game's decision). This keeps one per key: the fastest, in memory always and on
 ## disk when there is a records directory, as the bytes [GSTimerReplay] itself writes,
@@ -99,7 +99,7 @@ func _path_for(map_id: StringName, track: int, style_id: StringName) -> String:
 	)
 
 
-## A file name from an id. Same rule as dot-timer's records store: keep what is
+## A file name from an id. Same rule as gs-timer's records store: keep what is
 ## safe, replace the rest, and append a hash when anything was replaced so two ids
 ## that differ only in the replaced characters do not share a file.
 static func _safe(text: String) -> String:

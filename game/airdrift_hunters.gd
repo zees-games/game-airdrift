@@ -10,7 +10,7 @@ const AirdriftPlayer := preload("airdrift_player.gd")
 const AirdriftStats := preload("airdrift_stats.gd")
 const AirdriftUnits := preload("airdrift_units.gd")
 
-## Hunters on the course: dot-npc, dot-npc-ai and dot-npc-ai-director.
+## Hunters on the course: gs-npc, gs-npc-ai and gs-npc-ai-director.
 ##
 ## [b]The idea is one this genre already has under other names[/b] — bhop zombies, the
 ## chase in a hunted map — and it works here for a reason worth stating: a hunter
@@ -24,7 +24,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## sample. So the flow is built from the map's zones, the director spawns ahead along
 ## it, and hunters patrol it; the pathfinding a graph would give is spent on a map
 ## whose route is already known. [method GSNpcBrain.steer_toward] falls back to
-## steering straight at a goal when there is no path, and dot-npc documents that as a
+## steering straight at a goal when there is no path, and gs-npc documents that as a
 ## decision rather than an oversight.
 ##
 ## [codeblock]
@@ -35,7 +35,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## hunters.enabled = true
 ## [/codeblock]
 ##
-## Server-authoritative and unpredicted, for dot-props' reason twice over: a brain runs
+## Server-authoritative and unpredicted, for gs-props' reason twice over: a brain runs
 ## a behaviour tree against a blackboard with lifetimes on it, which is not something
 ## two machines reproduce from the same inputs.
 
@@ -65,7 +65,7 @@ var game: AirdriftGame = null
 
 var spawner: GSNpcSpawner = null
 
-## The hunters' squad and what they can hear. On the spawner as metadata, so dot-npc-ai's
+## The hunters' squad and what they can hear. On the spawner as metadata, so gs-npc-ai's
 ## brain finds both; see [method note_fire] for what makes the noise.
 var squads: GSNpcAiSquads = GSNpcAiSquads.new()
 var sounds: GSNpcAiSounds = GSNpcAiSounds.new()
@@ -211,7 +211,7 @@ func patrol_point(fraction: float) -> Vector3:
 
 static func catalogue() -> GSNpcCatalogue:
 	var out := GSNpcCatalogue.new()
-	out.meta = {"game": "g2gfast"}  # legacy id: saved-data/wire name kept so existing data and published packs keep working
+	out.meta = {"game": "airdrift"}  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
 	for def in [_stalker(), _sprinter()]:
 		var added := out.add(def)
@@ -348,7 +348,7 @@ func tick(delta: float) -> void:
 		if player == null or player.controller == null:
 			continue
 
-		# Health as a fraction, which is what dot-npc-ai-director's stress model
+		# Health as a fraction, which is what gs-npc-ai-director's stress model
 		# wants — a game that had to report damage would have to remember to from
 		# every damage path it has, and the one it forgets is the one that matters.
 		director.report_player(id, player.controller.state.position, _health_of(id))
@@ -414,7 +414,7 @@ func _rebuild_candidates() -> void:
 
 ## A hunter hitting a runner. Called by the brain through [GSRegistry].
 ##
-## [b]Through dot-combat when there is one, and nowhere otherwise.[/b] A timer server
+## [b]Through gs-combat when there is one, and nowhere otherwise.[/b] A timer server
 ## with deathmatch off has no health on anybody, and a hunter that could hurt a player
 ## the server is not tracking would be doing damage nothing could heal, display or
 ## respawn away.
@@ -432,13 +432,13 @@ func hunter_attack(npc: GSNpcInstance, victim: StringName, amount: float) -> voi
 	if type == null:
 		return
 
-	# Attacker 0, which dot-combat reads as the world. A hunter is not on the
+	# Attacker 0, which gs-combat reads as the world. A hunter is not on the
 	# scoreboard and crediting one would put a row there keyed on an id no player has
 	# — the bug game-fatal-contact shipped from the other end.
 	# Asked of the table rather than computed from the name. The two were the same
 	# number until entity ids stopped being derived from player ids; a swipe that
 	# computed one would now be damaging an entity that does not exist, silently,
-	# because dot-combat has nothing registered under it and simply does nothing.
+	# because gs-combat has nothing registered under it and simply does nothing.
 	var damage := GSDamage.make(0, game.combat.entity_for(victim), amount, type)
 	damage.weapon_id = npc.def.id if npc.def != null else &"hunter"
 	# [b]The tick, or the swipe is refused for ever after a respawn.[/b] GSHealth compares it
@@ -502,10 +502,10 @@ func spawn_one(npc_id: StringName, at: Vector3) -> GSNpcInstance:
 	return spawner.spawn(npc_id, at) if spawner != null else null
 
 
-## Hunters stop seeing through a cloud of [param radius] for [param seconds] (hearing passes); dot-npc API 6.
+## Hunters stop seeing through a cloud of [param radius] for [param seconds] (hearing passes); gs-npc API 6.
 ## No Airdrift item makes smoke yet: this is the hook a smoke source calls.
 func block_sight(at: Vector3, radius: float, seconds: float) -> int:
-	if senses == null or GSAddonApi.build_level("dot_npc") < 6:
+	if senses == null or GSAddonApi.build_level("gs_npc") < 6:
 		return 0
 
 	return senses.add_sight_blocker(at + Vector3.UP, radius, seconds)
@@ -513,7 +513,7 @@ func block_sight(at: Vector3, radius: float, seconds: float) -> int:
 
 ## Blinds every hunter within [param radius] of a flash at [param at] that has line of sight to it; returns how many.
 func flash(at: Vector3, radius: float, seconds: float) -> int:
-	if spawner == null or senses == null or GSAddonApi.build_level("dot_npc") < 6:
+	if spawner == null or senses == null or GSAddonApi.build_level("gs_npc") < 6:
 		return 0
 
 	var space := _world.get_world_3d().direct_space_state if _world != null and _world.is_inside_tree() else null

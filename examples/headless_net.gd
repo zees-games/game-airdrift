@@ -3,7 +3,7 @@ extends "headless_net_views.gd"
 ## game-airdrift's netcode, end to end, in one process.
 ##
 ## A server game and a client game, each with its own [GSNetManager] and [AirdriftNetBridge], with a
-## lossy loopback where the socket would be. This proves the bridge, not dot-net.
+## lossy loopback where the socket would be. This proves the bridge, not gs-net.
 ##
 ## [b]The client's tick lead is hand-stamped[/b] (INPUT_LEAD): a command for tick N
 ## has to be in the server's hands before it simulates N, and with no clock to
@@ -144,7 +144,7 @@ func _test_hello_wire() -> void:
 	_check(bool(hello["ok"]), "parses")
 	_check(int(hello["tick_rate"]) == 128 and int(hello["player_id"]) == 7 and int(hello["peer_id"]) == 2, "with ids")
 	# No map. It carried one, and the client changed to it by id out of its own build —
-	# the ad-hoc half of what dot-map's protocol now does. The map arrives as an announce.
+	# the ad-hoc half of what gs-map's protocol now does. The map arrives as an announce.
 	_check(int(hello["server_tick"]) == 4096 and not hello.has("map_id"), "the tick, and no map: the protocol's announce carries that")
 
 	# The protocol's own messages, through the game's codec both ways.
@@ -165,10 +165,10 @@ func _test_hello_wire() -> void:
 	var garbage := GSNetWriter.new()
 	garbage.write_string("{not json", AirdriftEvents.MAP_REPLY_BYTES)
 	_check(AirdriftEvents.read_map_message(GSNetReader.new(garbage.to_bytes()), AirdriftEvents.MAP_REPLY_BYTES).is_empty(),
-		"and a reply that is not a JSON object reads as nothing, which dot-map ignores")
+		"and a reply that is not a JSON object reads as nothing, which gs-map ignores")
 	# A kind goes out in a fixed field the writer masks without a word, so one past it aliases a
 	# smaller kind: game-zombie-zone sent HURT and AMMO as HELLO and MAP that way. The track has
-	# no field limit: dot-timer's escape carries any number, checked just below.
+	# no field limit: gs-timer's escape carries any number, checked just below.
 	_check(AirdriftEvent.fits(), "every event kind fits the event's kind field",
 		"%d kinds in %d bits" % [AirdriftEvents.Kind.size(), AirdriftEvent.KIND_BITS])
 	_check(AirdriftRequest.fits(), "every request kind fits the request's kind field",
@@ -208,7 +208,7 @@ func _build() -> bool:
 	# halves read `Engine.physics_ticks_per_second`, so they agreed no matter what the
 	# wire carried — while a real client is a separate process whose rate is its own
 	# project's export and has nothing to do with the server's `sv_tickrate`. The
-	# client shell in dot-server-deploy never sets one at all and runs at 60.
+	# client shell in gs-server-deploy never sets one at all and runs at 60.
 	#
 	# So put the client on a rate the server is not on, the way a host project would,
 	# and let HELLO be what corrects it. Every check after this one is then running
@@ -241,9 +241,9 @@ func _build() -> bool:
 	_server_net = _make_manager(true, &"server", 1, server_side, _server_game.tick_rate)
 	_client_net = _make_manager(false, &"client", CLIENT_PEER, client_side, _client_game.tick_rate)
 	# This harness stamps every command itself (`_tick + INPUT_LEAD`), not from the client's
-	# clock, so the client must not ask for dot-net's input-lead report: steered by reports
-	# about commands it never stamped, the clock runs away from them (only dot-net's cap
-	# holds it). By the constant map, so this parses against a dot-net from before the report.
+	# clock, so the client must not ask for gs-net's input-lead report: steered by reports
+	# about commands it never stamped, the clock runs away from them (only gs-net's cap
+	# holds it). By the constant map, so this parses against a gs-net from before the report.
 	var lead_bit := int((GSNetMessageRegistry as Script).get_script_constant_map().get("FEATURE_INPUT_LEAD", 0))
 	_client_net.messages.features &= ~lead_bit
 
@@ -332,7 +332,7 @@ func _test_handshake() -> void:
 
 	_check(_server_net.peers().has(CLIENT_PEER), "asking admits them")
 	# The client's announce reached the server, so snapshots to it carry the unchanged list.
-	# By the constant map, so this parses against a dot-net from before the feature.
+	# By the constant map, so this parses against a gs-net from before the feature.
 	var runs_bit := int((GSNetMessageRegistry as Script).get_script_constant_map().get("FEATURE_UNCHANGED_RUNS", 0))
 	_check(runs_bit == 0 or _server_net.messages.peer_supports(CLIENT_PEER, runs_bit),
 		"the server knows its client reads the unchanged list")

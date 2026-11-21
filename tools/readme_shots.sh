@@ -8,7 +8,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 if ! ls /dev/dri/renderD* /dev/nvidiactl >/dev/null 2>&1 && [ -z "${SHOT_ALLOW_CPU:-}" ]; then
-    gpu_sh="${GPU_SH:-$(command -v gpu.sh || echo "$HOME/godot/dot-bootstrap/tools/gpu.sh")}"
+    gpu_sh="${GPU_SH:-$(command -v gpu.sh || echo "$HOME/godot/gs-bootstrap/tools/gpu.sh")}"
     if [ -z "${SHOT_VIA_GPU:-}" ] && [ -x "$gpu_sh" ]; then
         export SHOT_VIA_GPU=1
         exec "$gpu_sh" shot "$(basename "$PWD")" tools/readme_shots.sh "$@"

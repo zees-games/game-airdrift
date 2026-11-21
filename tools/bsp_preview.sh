@@ -26,7 +26,7 @@ cd "$(dirname "$0")/.."
 # `gpu.sh shot` (which waits GPU_SHOT_WAIT, default 1 h here, for a box and carries frames back), and a
 # second arrival without a GPU stops loudly instead of crawling. PREVIEW_ALLOW_CPU=1 renders here anyway.
 if ! ls /dev/dri/renderD* /dev/nvidiactl >/dev/null 2>&1 && [ -z "${PREVIEW_ALLOW_CPU:-}" ]; then
-    gpu_sh="${GPU_SH:-$(command -v gpu.sh || echo "$HOME/godot/dot-bootstrap/tools/gpu.sh")}"
+    gpu_sh="${GPU_SH:-$(command -v gpu.sh || echo "$HOME/godot/gs-bootstrap/tools/gpu.sh")}"
     if [ -z "${PREVIEW_VIA_GPU:-}" ] && [ -n "$gpu_sh" ] && [ -x "$gpu_sh" ]; then
         export PREVIEW_VIA_GPU=1 SHOT_DIR="$PWD" GPU_SHOT_WAIT="${GPU_SHOT_WAIT:-3600}" GPU_SHOT_TIMEOUT="${GPU_SHOT_TIMEOUT:-3600}"
         exec "$gpu_sh" shot "$(basename "$PWD")" tools/bsp_preview.sh "$@"

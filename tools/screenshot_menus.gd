@@ -194,7 +194,7 @@ func _menu_steps() -> Array[Callable]:
 ## world, so the rows are a sample in the server's shape.
 func _sample_scoreboard() -> void:
 	_client.menu.scoreboard.source = func() -> Dictionary:
-		return {"server": {"name": "TMC Surf & Bhop #1", "game": "g2gfast", "map": "surf_mesa", "players": 6, "max": 24},
+		return {"server": {"name": "TMC Surf & Bhop #1", "game": "airdrift", "map": "surf_mesa", "players": 6, "max": 24},
 			"header": {"": "Time left 23:41"}, "you": 3,
 			"players": [
 				{"id": 1, "name": "Ada", "style": "Normal", "best": 72.418, "rank": 1, "of": 41, "seconds": 3912, "ping": 24},

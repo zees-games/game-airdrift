@@ -11,12 +11,12 @@ extends Node
 ## host who wanted to could file a world record by editing a number, and nothing on the
 ## receiving end could tell.
 ##
-## Three games in this family take dot-peer-to-peer and answer differently:
+## Three games in this family take gs-peer-to-peer and answer differently:
 ##
 ## - **game-playlot** hosts authoritatively, because nothing it builds is ranked.
 ## - **game-fatal-contact** and **game-hungario** sandbox it: play, file nothing.
 ## - **This one does both halves of that and adds a third**: a run made in a
-##   peer-to-peer session is [b]tainted[/b] the moment it starts, using the field dot-timer
+##   peer-to-peer session is [b]tainted[/b] the moment it starts, using the field gs-timer
 ##   has had since it was written and which `AirdriftEffects` was the first caller of.
 ##
 ## The taint rather than a refusal is deliberate and is the same choice this game already
@@ -81,7 +81,7 @@ func host(display_name: String) -> GSResult:
 			"this build cannot host a practice session",
 			GSP2PSession.unavailable_reason()
 		)
-	# Awaited: dot-peer-to-peer's session awaits its signaller since 37d47c1, because an
+	# Awaited: gs-peer-to-peer's session awaits its signaller since 37d47c1, because an
 	# HTTP rendezvous answers a frame later at best. A caller of this awaits it too.
 	var res: GSResult = await session.host(display_name)
 	if res.ok:

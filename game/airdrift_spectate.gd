@@ -84,7 +84,7 @@ func _participants() -> PackedStringArray:
 	return out
 
 
-## The side they are actually on. dot-spectate treats 0 as "no team"; a hardcoded 1 made
+## The side they are actually on. gs-spectate treats 0 as "no team"; a hardcoded 1 made
 ## everybody a team-mate of everybody. The stack is built before anything can spectate.
 func _team_of(key: String) -> int:
 	return game.player_stack.team_index_of(key) if game.player_stack != null else 0

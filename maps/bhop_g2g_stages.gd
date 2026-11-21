@@ -200,7 +200,7 @@ static func build_zones() -> GSTimerZoneSet:
 	var zones := GSTimerZoneSet.new()
 	zones.map_id = &"bhop_g2g_stages"
 	zones.meta["tier"] = 4
-	zones.meta["author"] = "g2gfast"
+	zones.meta["author"] = "airdrift"
 
 	var main := GSTimerTrack.MAIN
 	var course := _course()

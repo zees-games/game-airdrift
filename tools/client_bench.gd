@@ -3,7 +3,7 @@ extends GSGameClientBench
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 
-## Client prediction bench (dot-game's GSGameClientBench): see that class for the flags.
+## Client prediction bench (gs-game's GSGameClientBench): see that class for the flags.
 ## The world is the timer server and module a dedicated server loads, on bhop_g2g_intro; there are no server bots, so `--bots` is ignored.
 
 

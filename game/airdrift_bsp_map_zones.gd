@@ -18,7 +18,7 @@ const FINISH_DOOR := "finish_door"
 
 ## Zone kinds by the name the manifest writes, which is [enum GSTimerZone.Kind]'s. [b]Names on the wire, not numbers.[/b] A manifest is read by a build that may be
 ## older or newer than the one that wrote it -- `user://maps` outlives an update -- and a number would silently become a different kind the day anything is inserted
-## into that enum. dot-timer keeps the numbering compatible with the community timers' for exactly this reason, and a name costs nothing to be safe as well.
+## into that enum. gs-timer keeps the numbering compatible with the community timers' for exactly this reason, and a name costs nothing to be safe as well.
 const KINDS := {
 	"START": GSTimerZone.Kind.START, "END": GSTimerZone.Kind.END,
 	"RESPAWN": GSTimerZone.Kind.RESPAWN, "STOP": GSTimerZone.Kind.STOP,

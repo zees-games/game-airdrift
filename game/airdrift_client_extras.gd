@@ -117,7 +117,7 @@ func _build_chat() -> void:
 
 	chat.message_received.connect(
 		func(message: GSChatMessage, _channel: StringName) -> void:
-			# A dot-chat line's kind is "say" on every channel; the channel is what makes
+			# A gs-chat line's kind is "say" on every channel; the channel is what makes
 			# it a team line, and "team" is what the chat box colours.
 			var kind := "team" if message.channel in [AirdriftServices.CH_TEAM, AirdriftServices.CH_RUNNING] else message.kind_name()
 			said.emit(speaker_of(message), text_of(message), kind)
@@ -134,10 +134,10 @@ func _build_chat() -> void:
 
 ## Puts a line the server sent into this client's own history.
 ##
-## [b]This is the entry point, and nothing called it.[/b] dot-chat's router decides who
-## hears a line and then hands it to dot-server's chat manager to put on the wire — so
+## [b]This is the entry point, and nothing called it.[/b] gs-chat's router decides who
+## hears a line and then hands it to gs-server's chat manager to put on the wire — so
 ## on the client it arrives on `GSClientLink.chat_received`, not through anything
-## dot-chat owns. A `GSChatClient` that nothing feeds is a history that stays empty
+## gs-chat owns. A `GSChatClient` that nothing feeds is a history that stays empty
 ## and an unread count that stays zero, while chat works perfectly on screen.
 ##
 ## Found by the family's own detector: a public method whose name occurs once in its
@@ -158,14 +158,14 @@ func receive_wire(payload: Dictionary) -> void:
 			# been emitted. Returning is what stops it being drawn twice.
 			return
 
-	# Not a shape `GSChatClient` knows. dot-server's own chat manager sends a simpler
-	# payload than dot-chat's wire, and a server running WITHOUT dot-chat sends only
+	# Not a shape `GSChatClient` knows. gs-server's own chat manager sends a simpler
+	# payload than gs-chat's wire, and a server running WITHOUT gs-chat sends only
 	# that — so this is the other deployment rather than a failure path.
 	#
 	# [b]It used to be unreachable, and that is what made every line in this game blank.[/b]
-	# `GSChatMessage.from_dictionary` gave every key a default, so dot-server's payload
+	# `GSChatMessage.from_dictionary` gave every key a default, so gs-server's payload
 	# parsed as a valid message with no text, no sender and no channel — `receive` returned
-	# ok and this never ran. dot-chat refuses a dictionary with no `m` now.
+	# ok and this never ran. gs-chat refuses a dictionary with no `m` now.
 	var speaker := str(payload.get("name", ""))
 	var text := str(payload.get("text", payload.get("message", "")))
 
@@ -173,10 +173,10 @@ func receive_wire(payload: Dictionary) -> void:
 	line_received.emit(text if speaker == "" else "%s: %s" % [speaker, text])
 
 
-## Who a dot-chat line is drawn as said by: nobody, for a join or leave notice.
+## Who a gs-chat line is drawn as said by: nobody, for a join or leave notice.
 ##
 ## [b]A join or leave notice is the server's line about a player, not the player's line.[/b]
-## It carries the player's name as its sender and no text at all (dot-chat's `_presence`),
+## It carries the player's name as its sender and no text at all (gs-chat's `_presence`),
 ## so drawing it as `sender: text` put a bare "Guest 435:" in the chat box on every join,
 ## which read as a chat command echoed with its text stripped. It is drawn as a plain line,
 ## worded by [method GSChatMessage.describe]. Only those two kinds: an ADMIN line's sender
@@ -185,7 +185,7 @@ static func speaker_of(message: GSChatMessage) -> String:
 	return "" if is_presence(message) else message.sender_name
 
 
-## The text a dot-chat line is drawn with. See [method speaker_of].
+## The text a gs-chat line is drawn with. See [method speaker_of].
 static func text_of(message: GSChatMessage) -> String:
 	return message.describe() if is_presence(message) else message.text
 
@@ -228,7 +228,7 @@ func _build_voice() -> void:
 
 	# The menu's voice rows bind to this, and the server's sv_voice_enable reaches it.
 	voice.publish_as_client()
-	var _following := voice.follow_cvars(GSRegistry.get_service(&"dot_client_link"))
+	var _following := voice.follow_cvars(GSRegistry.get_service(&"gs_client_link"))
 
 
 ## Holds or releases the talk key.
@@ -236,7 +236,7 @@ func set_talking(pressed: bool) -> void:
 	if voice == null:
 		return
 
-	# The first press opens the microphone (dot-voice's update_talk), and only then: a
+	# The first press opens the microphone (gs-voice's update_talk), and only then: a
 	# browser asks for it at that moment, attached to the key the player pressed.
 	var started := voice.update_talk(pressed)
 

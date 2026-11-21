@@ -20,7 +20,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("game-airdrift: per-map settings from cfg/game/game-airdrift/dot_map/map")
+	print("game-airdrift: per-map settings from cfg/game/game-airdrift/gs_map/map")
 	_section("map files change the cvars")
 	var console := GSConsole.new()
 	add_child(console)
@@ -51,7 +51,7 @@ func _run() -> void:
 	cfg.apply("surf_thriller")
 	_check(air.get_float() == 100.0, "armed: a map's own file does lower it")
 	air.set_value("1000")
-	var dir := "res://cfg/server/game/%s/dot_map/map" % AirdriftMapConfig.GAME_ID
+	var dir := "res://cfg/server/game/%s/gs_map/map" % AirdriftMapConfig.GAME_ID
 	DirAccess.make_dir_recursive_absolute(dir)
 	var op := "%s/zz_operator_test.yml" % dir
 	var f := FileAccess.open(op, FileAccess.WRITE)
@@ -60,7 +60,7 @@ func _run() -> void:
 	cfg.apply("zz_operator_test")
 	var op_won := air.get_float() == 321.0
 	DirAccess.remove_absolute(op)
-	DirAccess.remove_absolute("res://cfg/server/game/%s/dot_map/map" % AirdriftMapConfig.GAME_ID)
+	DirAccess.remove_absolute("res://cfg/server/game/%s/gs_map/map" % AirdriftMapConfig.GAME_ID)
 	_check(op_won, "a cfg/server file beats the shipped default (%s)" % air.get_string())
 	cfg.apply("something_else")
 	_check(air.get_float() == 1000.0, "and the next map restores 1000")

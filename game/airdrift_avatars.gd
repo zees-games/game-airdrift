@@ -5,12 +5,12 @@ const AirdriftPaths := preload("airdrift_paths.gd")
 ## The stock characters, the schema they fit, and how a player's own avatar replaces
 ## them.
 ##
-## [b]One schema, two sources of parts.[/b] dot-user-avatar describes an avatar as a
+## [b]One schema, two sources of parts.[/b] gs-user-avatar describes an avatar as a
 ## document — slots and part ids — that a server validates without loading a mesh,
 ## and a rig is a set of named attachment nodes the parts are instantiated under. So
 ## the stock characters here and a player's own avatar from the platform are the same
 ## thing at different addresses: the stock parts ship in this build under
-## [code]res://avatars/[/code], a platform part names dot-cloud content, and
+## [code]res://avatars/[/code], a platform part names gs-cloud content, and
 ## [GSAvatarBuilder] does not care which it got.
 ##
 ## A player with no avatar of their own gets [method stock_avatar], which is a real
@@ -98,12 +98,12 @@ static func _part(id: StringName, slot: StringName, channels: int) -> GSAvatarPa
 	p.display_name = String(id).capitalize()
 	p.colour_channels = channels
 	# Free and shipped in the build: no content id, so the catalogue resolves it
-	# straight to res://avatars/<id>.tscn without asking dot-cloud.
+	# straight to res://avatars/<id>.tscn without asking gs-cloud.
 	p.free = true
 	return p
 
 
-## The catalogue that finds the stock parts, and any delivered ones through dot-cloud.
+## The catalogue that finds the stock parts, and any delivered ones through gs-cloud.
 static func catalogue() -> GSAvatarCatalogue:
 	var c := GSAvatarCatalogue.new()
 	c.builtin_prefix = AirdriftPaths.rebase("res://avatars/")
@@ -166,7 +166,7 @@ static func apply(
 	return GSAvatarBuilder.apply(steps, rig, null)
 
 
-## The person an avatar document is drawn as: one of dot-player-char's people (the family's
+## The person an avatar document is drawn as: one of gs-player-char's people (the family's
 ## one animated style for players, bots and NPCs), coloured from the document. A Kenney body
 ## part gives that skin's clothes, a Kenney head that skin's face, hair and which of the four
 ## bodies; a primitive part gives its tint to the top over a stock person seeded by

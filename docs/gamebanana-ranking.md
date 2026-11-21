@@ -161,7 +161,7 @@ Both lists above were used up, so chk-maps fetched pages 1-4 (200 maps) of each 
 ## Imported 2026-10-20
 
 - [124957](https://gamebanana.com/mods/124957) `bhop_epiphany` (wet; the map's own text reads "By Nate"; 40 MB archive, a single VBSP 20 file): a nine-level course, 94.2% of its triangles drawn with stand-ins. The 60 spawns stand in a holding room whose floor teleports to `cpb`, so the start is a box round `cpb`; the finish is the trigger in the `cp_end` room that shows the map's closing text. Its checkpoints are class-renaming triggers behind class-filtered teleports, which the importer drops on its own (151 of them), leaving the per-level pits. The page states Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 and asks to be contacted before a redistribution; it does not forbid sharing. Credited here and on screen, with a removal-on-request offer in airdrift-maps's README. Not played end to end: no gate-by-gate walk exists for it (`GATED_COURSES`), and the level order past `cpb` was read from the destination names, not driven.
-- [137698](https://gamebanana.com/mods/137698) `surf_snipers_island` (Loller Dan; CC BY-NC-ND 4.0; page checked 2026-10-20, nothing against porting): combat map, `kind: arena`, so it lives in `arena-surf-dm-maps` (641555d); only its zones file with the attribution is here.
+- [137698](https://gamebanana.com/mods/137698) `surf_snipers_island` (Loller Dan; CC BY-NC-ND 4.0; page checked 2026-10-20, nothing against porting): combat map, `kind: arena`, so it lives in `fc-surf-dm-maps` (641555d); only its zones file with the attribution is here.
 
 ## Imported 2026-10-22
 

@@ -15,12 +15,12 @@ const AirdriftPlayer := preload("airdrift_player.gd")
 ## Airdrift actually has:
 ##
 ## [codeblock]
-## dot-physics  128 Hz and the shooter layout, because that is what the movement is
-## dot-player   the roster, with a long reconnect window: a run takes minutes
-## dot-team     one playing side and a spectator side — free-for-all is ONE team
-## dot-player-class  one class; the movement styles are dot-timer's, not this layer's
-## dot-spawn    the map's start, as a site the richer selector can reason about
-## dot-team's spectate half, over the AirdriftSpectate manager this game already has
+## gs-physics  128 Hz and the shooter layout, because that is what the movement is
+## gs-player   the roster, with a long reconnect window: a run takes minutes
+## gs-team     one playing side and a spectator side — free-for-all is ONE team
+## gs-player-class  one class; the movement styles are gs-timer's, not this layer's
+## gs-spawn    the map's start, as a site the richer selector can reason about
+## gs-team's spectate half, over the AirdriftSpectate manager this game already has
 ## [/codeblock]
 ##
 ## [b]Why one team and not none.[/b] Free-for-all modelled as "no teams" makes every
@@ -109,7 +109,7 @@ func _build_physics() -> GSResult:
 	physics.profile = GSPhysicsProfile.arcade_shooter()
 
 	# [b]The game's rate, not the preset's.[/b] Airdrift counts in 128ths of a second
-	# and a run set at one rate is not comparable with one set at another — dot-timer's
+	# and a run set at one rate is not comparable with one set at another — gs-timer's
 	# whole sub-tick design exists for that. A physics profile quietly running at a
 	# different rate would move every prop at a different speed from every player.
 	physics.profile.tick_rate = game.tick_rate
@@ -173,7 +173,7 @@ func _build_classes() -> void:
 	classes.register_service = false
 
 	# [b]One class, and the movement styles are deliberately not classes.[/b] A style
-	# here is a dot-timer concept — it changes what a run is worth and what the leader
+	# here is a gs-timer concept — it changes what a run is worth and what the leader
 	# board compares it against — and modelling it as a player class would put the
 	# ranking rules in a layer that knows nothing about ranking.
 	classes.catalogue = GSPlayerClassCatalogue.single(100.0)
@@ -322,7 +322,7 @@ func _on_player_removed(id: StringName) -> void:
 func _on_map_ready(_map: GSMapDef) -> void:
 	# [b]The level onto the layout's `world` layer.[/b] Built geometry arrives as
 	# `StaticBody3D`s on Godot's default layer 1 masking layer 1 — so a projectile or a
-	# prop could not hit the map, and the layer names dot-physics writes into the
+	# prop could not hit the map, and the layer names gs-physics writes into the
 	# inspector described a layout nothing in the world actually followed.
 	var classified := classify_tree(game.current_map_node(), &"world")
 
@@ -428,13 +428,13 @@ func refresh_spawn_rules() -> void:
 
 
 
-## The dot-spectate team number for [param key], derived from the side they are on.
+## The gs-spectate team number for [param key], derived from the side they are on.
 ##
-## [b]An index, not a hash, and zero means "no side".[/b] dot-spectate keys teams by
+## [b]An index, not a hash, and zero means "no side".[/b] gs-spectate keys teams by
 ## [code]int[/code] and treats 0 as no team at all — two entities with no team are never
 ## team-mates, so a free-for-all cannot accidentally become a truce. The playing sides
 ## are numbered from 1 in the order the set declares them, which is the same rule
-## `GSTeamRoster._match_team_id` uses to push an assignment down into dot-match.
+## `GSTeamRoster._match_team_id` uses to push an assignment down into gs-match.
 ##
 ## Somebody unassigned, spectating, or not in the roster at all gets 0. That is the part
 ## a hardcoded `return 1` got wrong: a spectator read as a team-mate of everybody.
@@ -453,7 +453,7 @@ func team_index_of(key: String) -> int:
 
 ## Puts [param node] on the layout's [param layer_id] layer, with that layer's mask.
 ##
-## [b]The half of dot-physics that was never used.[/b] The layout was assigned and its
+## [b]The half of gs-physics that was never used.[/b] The layout was assigned and its
 ## layer names were written into ProjectSettings for the inspector to show — and every
 ## body in this game stayed on Godot's default layer 1 with mask 1, so the inspector
 ## labelled layers nothing followed. Naming a layer is only half of a layout.

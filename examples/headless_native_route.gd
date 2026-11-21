@@ -4,14 +4,14 @@ const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 const RouteBot := preload("../game/airdrift_route_bot.gd")
 
-## dot-sim's route bots (`GSSimRouteBots`, every route bot of a tick in one native call) held to
+## gs-sim's route bots (`GSSimRouteBots`, every route bot of a tick in one native call) held to
 ## `AirdriftRouteBot.command` in script, to the bit. [codeblock] godot --headless --path . res://examples/headless_native_route.tscn [/codeblock]
 ## Per map, the same seeded lobby of route bots is ridden three times from a fresh game: all script
 ## (`native_route` off), native, and native under `route_verify` (each bot's tick re-run in script
 ## on the same state, its command and its whole state compared). The script and native rides
 ## must leave every bot at the same position and velocity on every tick, and verify must find no
 ## difference. Only the bots' commands are produced here: the motor, hit registration and lag
-## compensation are the game's as before. With no dot-sim `route` it says the native half was
+## compensation are the game's as before. With no gs-sim `route` it says the native half was
 ## skipped and passes; `GS_SIM_REQUIRE_NATIVE=1` fails instead.
 
 const MAPS: Array[StringName] = [&"bhop_g2g_intro", &"surf_g2g_intro"]
@@ -34,8 +34,8 @@ func _run() -> void:
 	var was := RouteBot.native_route
 	var was_verify := RouteBot.route_verify
 	if not GSSim.has(&"route"):
-		print("SKIP: dot-sim's route module is not loaded: the native half is skipped")
-		if (OS.get_environment("GS_SIM_REQUIRE_NATIVE") if OS.has_environment("GS_SIM_REQUIRE_NATIVE") else OS.get_environment("DOT_SIM_REQUIRE_NATIVE")) == "1":
+		print("SKIP: gs-sim's route module is not loaded: the native half is skipped")
+		if (OS.get_environment("GS_SIM_REQUIRE_NATIVE") if OS.has_environment("GS_SIM_REQUIRE_NATIVE") else OS.get_environment("GS_SIM_REQUIRE_NATIVE")) == "1":
 			_check(false, "the library is loaded (GS_SIM_REQUIRE_NATIVE=1)")
 		_report_sections(0, 0, 0)
 		return

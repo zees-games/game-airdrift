@@ -13,13 +13,13 @@ One subject per file. [CLAUDE.md](../CLAUDE.md) has the rules in one line each; 
 | [map-rendering.md](map-rendering.md) | Lighting, the lightmap atlas, translucency, glass and water, stand-in textures and the prototype grid, skies, static prop lighting, the surface limit, the preview tool |
 | [map-delivery.md](map-delivery.md) | The catalogue with no list, airdrift-maps and owners, pack versions, the map-change protocol and the trusted template, rotation and the map list |
 | [netcode.md](netcode.md) | The bridge, the movement config on the wire, the tick rate, drawing between ticks, what a connected player sees, wire rules, hunters, what a full server costs |
-| [client.md](client.md) | Field of view, the camera and the player's own body, avatars, keys, the pointer, menus (dot-menu), the HUD, the flashlight, presentation and sound, the chat box, the zone editor |
+| [client.md](client.md) | Field of view, the camera and the player's own body, avatars, keys, the pointer, menus (gs-menu), the HUD, the flashlight, presentation and sound, the chat box, the zone editor |
 | [services.md](services.md) | Admin tools (blind, beacon), chat and voice, the vote and its clock, the server browser, identity, statistics |
 | [modes.md](modes.md) | Layers over the timer: deathmatch, the fire bit, hunters, practice blocks, effects, spectating |
 | [testing.md](testing.md) | The suites and what each proves, lists asserted both ways, checks that could not fail, the tools |
 | [history.md](history.md) | Bugs this game found and how they looked |
 | [gamebanana-ranking.md](gamebanana-ranking.md) | Candidate maps for import, ranked, and why each was or was not taken |
-| [touch.md](touch.md) | Phones and tablets: dot-mobile's stick, drag-look and buttons, the two samplers, the emulated mouse, the server's cvars |
+| [touch.md](touch.md) | Phones and tablets: gs-mobile's stick, drag-look and buttons, the two samplers, the emulated mouse, the server's cvars |
 | [not-yet.md](not-yet.md) | What is declared but not built: Workshop maps load as timer courses only |
 
 ## Layout
@@ -32,9 +32,9 @@ One subject per file. [CLAUDE.md](../CLAUDE.md) has the rules in one line each; 
 | `game/airdrift_replays.gd`, `airdrift_stats.gd`, `airdrift_awards.gd`, `airdrift_progress.gd` | replays, statistics, achievements |
 | `game/airdrift_module.gd`, `airdrift_services.gd`, `airdrift_mod_tools.gd`, `airdrift_vote.gd`, `airdrift_identity.gd`, `airdrift_query.gd`, `airdrift_party.gd` | the server side |
 | `game/airdrift_combat.gd`, `airdrift_arsenal.gd`, `airdrift_hunter*.gd`, `airdrift_props.gd`, `airdrift_spectate.gd` | the layers over the timer |
-| `game/airdrift_bots.gd`, `airdrift_bot_nav.gd`, `airdrift_surf_course.gd`, `airdrift_route_bot.gd` | the server's bots (`bot_quota`), the stage they ride read from the zones, the rule-based fallback and the route planned for it from dot-npc-ai's links (`tools/nav_probe.tscn` prints a map's links and timings); the simulator, planner and pilot are dot-player-controller's and dot-bot's |
+| `game/airdrift_bots.gd`, `airdrift_bot_nav.gd`, `airdrift_surf_course.gd`, `airdrift_route_bot.gd` | the server's bots (`bot_quota`), the stage they ride read from the zones, the rule-based fallback and the route planned for it from gs-npc-ai's links (`tools/nav_probe.tscn` prints a map's links and timings); the simulator, planner and pilot are gs-player-controller's and gs-bot's |
 | `game/airdrift_map.gd`, `airdrift_geometry.gd`, `airdrift_textures.gd`, `airdrift_reach.gd`, `airdrift_map_survey.gd` | hand-built maps |
-| `game/airdrift_bsp_map.gd`, `airdrift_map_mechanics.gd`, `airdrift_lighting.gd`, `airdrift_stock_substitutes.gd`, `*.gdshader`, `airdrift_map_catalogue.gd` | imported maps, the catalogue (rotation is dot-map's `GSMapRotationFile`) |
+| `game/airdrift_bsp_map.gd`, `airdrift_map_mechanics.gd`, `airdrift_lighting.gd`, `airdrift_stock_substitutes.gd`, `*.gdshader`, `airdrift_map_catalogue.gd` | imported maps, the catalogue (rotation is gs-map's `GSMapRotationFile`) |
 | `game/airdrift_client.gd`, `airdrift_hud.gd`, `airdrift_presentation.gd`, `airdrift_bindings.gd`, `ui/`, and the other client files | the client; never loaded by a server |
 | `game/net/` | the bridge (its ordering is the file), net classes, the `@rpc` link (identical on both ends), events and requests |
 | `maps/` | the three hand-built maps (+ generated `.zones.json`), `imported_map.tscn`, `imported/` (link to airdrift-maps, `../airdrift-maps`), `zones/<id>.json` (hand-written; see its README), `routes/` (route files, recordings, surf caches) |
@@ -46,7 +46,7 @@ One subject per file. [CLAUDE.md](../CLAUDE.md) has the rules in one line each; 
 - **A server browser screen**: deliberately a chat listing (`!servers`, F3); a master server is the family's gap. [services](services.md#the-server-browser-from-the-other-end)
 - **Kicking a client that missed a map change**: deliberate. [map-delivery](map-delivery.md#a-map-change-is-announced-and-then-made)
 - **`max_players: 32` at 128 ticks is not holdable**; snapshot encoding per peer is the cost. [netcode](netcode.md#what-a-full-server-costs)
-- **Ramp stalls** (the duplicate-plane early-out, the crease hang) and **displacement collision** catching a sliding hull: dot-player-controller's and the importer's, open. [movement](movement.md#ramps-and-the-motor)
+- **Ramp stalls** (the duplicate-plane early-out, the crease hang) and **displacement collision** catching a sliding hull: gs-player-controller's and the importer's, open. [movement](movement.md#ramps-and-the-motor)
 - **`!s2`/`!s3` on `bhop_g2g_intro` cannot be continued from**; `surf_g2g_intro` bonus 1's finish only catches a slow rider. Scored tracks: Christian's call. [routes](routes.md#what-a-jump-reaches)
 - **A surf cache beyond surf_beginner stage 1**: the server's bots ride the pilot only where there is one, and the rule-based route bot everywhere else. [routes](routes.md#bots-on-a-server)
 - **A route file for imported maps beyond bhop_grove**, and a person's recorded run to follow. [routes](routes.md#imported-maps-a-route-written-as-data)

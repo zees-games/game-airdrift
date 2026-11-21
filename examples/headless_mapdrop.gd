@@ -1,6 +1,6 @@
 extends GSGameCheckSuite
 
-## Maps handed to Airdrift through dot-map's GSMapDropIntake (AirdriftMapDrop, API 30): dragged onto the window, dropped on
+## Maps handed to Airdrift through gs-map's GSMapDropIntake (AirdriftMapDrop, API 30): dragged onto the window, dropped on
 ## the executable or named by `--map-path=`, all through the one intake and the one HUD line. A path that holds no
 ## converted map is refused out loud with what the game takes. Folder/zip copying itself: headless_local_maps.
 ## [codeblock] ./game.sh test headless_mapdrop [/codeblock]
@@ -31,8 +31,8 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	if GSAddonApi.build_level("dot_map") < AirdriftMapDrop.NEEDS_LEVEL:
-		print("-- skipped: dot-map API %d < %d (no GSMapDropIntake)" % [GSAddonApi.build_level("dot_map"), AirdriftMapDrop.NEEDS_LEVEL])
+	if GSAddonApi.build_level("gs_map") < AirdriftMapDrop.NEEDS_LEVEL:
+		print("-- skipped: gs-map API %d < %d (no GSMapDropIntake)" % [GSAddonApi.build_level("gs_map"), AirdriftMapDrop.NEEDS_LEVEL])
 		_report_sections(0, 0, 0)
 		return
 	var entered := 0
@@ -61,10 +61,10 @@ func _test_args() -> void:
 	var folder := ProjectSettings.globalize_path(SOURCE.path_join("args"))
 	DirAccess.make_dir_recursive_absolute(folder)
 	var intake := AirdriftMapDrop.make()
-	if not _check(intake != null, "dot-map 30 makes the shared intake"):
+	if not _check(intake != null, "gs-map 30 makes the shared intake"):
 		return
 	_check(not bool(intake.get(&"watch_window")), "it leaves the window to the client (one HUD line for every drop)")
-	var kept: PackedStringArray = intake.call(&"strip_config_args", PackedStringArray(["--airdrift-records_directory", folder, "--dot_net.port", folder,
+	var kept: PackedStringArray = intake.call(&"strip_config_args", PackedStringArray(["--airdrift-records_directory", folder, "--gs_net.port", folder,
 		"--airdrift-auto_bhop", folder, "--g2g-no_such_key", folder, "--g2g-map_seconds=5", "--headless"]), intake.get(&"config_prefixes"), intake.get(&"option_takes_value"))
 	_check(kept == PackedStringArray([folder, folder, "--headless"]),
 		"a --airdrift-<key> (or old-prefix) and --<addon>.<key> value is no drop; a --airdrift-<bool> switch and an unknown key take none", str(kept))

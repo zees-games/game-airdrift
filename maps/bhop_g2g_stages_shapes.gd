@@ -15,7 +15,7 @@ const AirdriftReach := preload("../game/airdrift_reach.gd")
 ## [b]Why this map exists.[/b] `bhop_g2g_intro` is sixteen blocks in a straight line
 ## over a flat plane. It proves the movement and it is not a map: there is one thing to
 ## do, once, and a player who can do it has seen everything. It is also the wrong shape
-## to exercise this platform, because every interesting thing dot-timer can do —
+## to exercise this platform, because every interesting thing gs-timer can do —
 ## stages, splits, a stage restart, a per-stage comparison, a bonus on its own track —
 ## needs a map with more than one section in it.
 ##

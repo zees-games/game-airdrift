@@ -13,7 +13,7 @@ func _test_zones() -> void:
 	_check(zones.problems().is_empty(), "which is well formed", ", ".join(zones.problems()))
 	var respawns := zones.of_kind(GSTimerZone.Kind.RESPAWN).size()
 	# A surf map's trigger_teleport volumes are its pit. Losing them means a player
-	# who falls off falls for ever, which is the bug dot-timer's effect_requested was.
+	# who falls off falls for ever, which is the bug gs-timer's effect_requested was.
 	if NO_PIT.has(_map_id):
 		_check(respawns == 0, "has no pit, and still has none",
 			"listed in NO_PIT; %d respawn zones" % respawns)
@@ -21,7 +21,7 @@ func _test_zones() -> void:
 		_check(respawns > 0, "with the pit volumes carried across as RESPAWN zones",
 			"%d respawn zones" % respawns)
 
-	# Source sweeps its trigger tests; dot-timer samples a point per tick. A 16-unit plane pit, enough in Source,
+	# Source sweeps its trigger tests; gs-timer samples a point per tick. A 16-unit plane pit, enough in Source,
 	# is stepped clean over by a player falling at genre speed, who then falls for ever.
 	var thin := zones.thin_zones(AirdriftUnits.to_metres(3500.0), game.tick_rate)
 	_check(thin.is_empty(), "and no zone a 3500 u/s player passes through between ticks",
@@ -67,7 +67,7 @@ func _test_zones() -> void:
 			else "its bonuses without a pit are the ones listed, and only those",
 		"reported %s, listed %s" % [reported, expected])
 
-	# The importer resolves every trigger_teleport to where this map sends it (dot-map-convert's
+	# The importer resolves every trigger_teleport to where this map sends it (gs-map-convert's
 	# `teleport_audit`); a shadowed, looping, in-solid or unresolved one is a player sent wrong.
 	var audit: Variant = _manifest().get("teleport_audit")
 	if NO_TELEPORT_AUDIT.has(String(_map_id)):
@@ -184,7 +184,7 @@ func _test_stands_on_it() -> void:
 				shape_count += 1
 	_check(shape_count > 0, "with a collision shape on it", "%d shapes" % shape_count)
 
-	# dot-core's collision audit, REPORT ONLY: an imported map's drawing is the .bsp's faces and
+	# gs-core's collision audit, REPORT ONLY: an imported map's drawing is the .bsp's faces and
 	# its solids the brushes, so triggers, clips-as-drawn and sky show up. Count and worst
 	# offenders (by kind) are printed; nothing fails on them.
 	var audit := GSCollisionAudit.audit(node, true)

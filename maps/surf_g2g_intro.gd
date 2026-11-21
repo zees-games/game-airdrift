@@ -8,7 +8,7 @@ const AirdriftGeometry := preload("../game/airdrift_geometry.gd")
 ## limit is a normal of 0.7, about 45.6° — and this one is 60°. The player drops off
 ## the start platform onto a face too steep to stand on, slides under gravity, and
 ## strafes to keep and gain speed. The seam between the two ramps is the geometry
-## dot-player-controller's crease resolution exists for.
+## gs-player-controller's crease resolution exists for.
 ##
 ## Everything in genre units. The valley falls 3072 units over 8192.
 ##
@@ -309,7 +309,7 @@ static func build_zones() -> GSTimerZoneSet:
 	var zones := GSTimerZoneSet.new()
 	zones.map_id = &"surf_g2g_intro"
 	zones.meta["tier"] = 3
-	zones.meta["author"] = "g2gfast"
+	zones.meta["author"] = "airdrift"
 
 	var main := GSTimerTrack.MAIN
 

@@ -645,10 +645,10 @@ func _test_ridge_bonus() -> void:
 ##
 ## [b]Still timing-dependent, and the cause is not here[/b] (2026-10-12): the rider hangs in
 ## the crease between the slabs at x 6144 with 11.5 m/s along it and its position frozen
-## (dot-player-controller's surf-crease hang), and when it lets go depends on the tick the ride
+## (gs-player-controller's surf-crease hang), and when it lets go depends on the tick the ride
 ## starts on. Started 0 to 100 physics frames later it finishes in 1243 to 1288 ticks; 300
 ## later, it never lets go. In the full run that start tick moves with the machine's load, which
-## is the flake. Queue item `g2gfast-surf-crease-hang-1`.
+## is the flake. Queue item `airdrift-surf-crease-hang-1`.
 ## How far west of the crease between the stages bonus's slabs the descent's bot lets go of
 ## the face, in units.
 const CREASE_RELEASE := 48.0

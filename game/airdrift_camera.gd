@@ -6,7 +6,7 @@ const AirdriftRig := preload("airdrift_rig.gd")
 ##
 ## [b]Two cameras, one active, and the switch is a cull mask.[/b] The first-person
 ## camera sits at the eye and culls the local rig's layer so the player does not see
-## the inside of their own head; the third-person camera sits on a dot-core
+## the inside of their own head; the third-person camera sits on a gs-core
 ## [GSCameraBoom] (it was a SpringArm3D, which cast a ray and snapped to its hit; the boom
 ## sweeps a sphere and eases in ahead of a wall) behind and above and draws everything. Both are always present, so switching is a
 ## `current` flip and not a rebuild — which matters because a player toggles it

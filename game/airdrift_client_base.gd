@@ -45,11 +45,11 @@ var link: Node = null
 ## the local player and its camera are all in. See [method _build_gate].
 var gate: GSLoadGate = null
 
-## dot-game's client platform: the loading cover (and the server told when it lifts), the link
+## gs-game's client platform: the loading cover (and the server told when it lifts), the link
 ## and whether this client is offline. See [GSGameClient].
 var platform: GSGameClient = null
 
-## dot-workbench's tuning window. See [method _build_workbench].
+## gs-workbench's tuning window. See [method _build_workbench].
 var workbench: GSGameWorkbench = null
 ## Asks a server whether this player may edit it (sv_workbench_remote); null offline.
 var _workbench_remote: GSGameWorkbenchRemoteClient = null
@@ -57,7 +57,7 @@ var _workbench_remote: GSGameWorkbenchRemoteClient = null
 var _profile_link: GSNetProfileLink = null
 var _profile_runtime: GSProfileRuntime = null
 
-## The server browser: dot-browser's client half.
+## The server browser: gs-browser's client half.
 ##
 ## Built whether or not this client is connected, because you look for a server when you are not on one.
 var servers: AirdriftBrowser = null
@@ -73,7 +73,7 @@ var presentation: AirdriftPresentation = null
 ## The player's own light. Drawn here and nowhere else; see [AirdriftFlashlight].
 var flashlight: AirdriftFlashlight = null
 
-## Every menu this client draws (Escape, H, the map list, "Move HUD elements", the scoreboard), all dot-menu's,
+## Every menu this client draws (Escape, H, the map list, "Move HUD elements", the scoreboard), all gs-menu's,
 ## above the HUD and chat and below the console, which an operator must always reach. Pages: [AirdriftMenuPages].
 var menu: GSMenu = null
 
@@ -83,7 +83,7 @@ var zone_outlines: AirdriftZoneOutlines = null
 ## Z: drawing zones in the world. See [AirdriftZoneEditor].
 var zone_editor: AirdriftZoneEditor = null
 
-## Where the dead lie: dot-player-char's ragdolls, built from each death (the server's pick)
+## Where the dead lie: gs-player-char's ragdolls, built from each death (the server's pick)
 ## under [member AirdriftGame.ragdoll_rules]. See [method fall].
 var ragdolls: GSPlayerRagdolls = null
 
@@ -100,7 +100,7 @@ var rules: Dictionary = {"flashlight": true, "thirdperson": true, "commands": []
 var _offline := true
 var _style_index := 0
 var _sampler: GSFpsSampler = null
-## The phone's stick and buttons (dot-mobile); hidden on a desktop. Built with the HUD.
+## The phone's stick and buttons (gs-mobile); hidden on a desktop. Built with the HUD.
 var touch: AirdriftTouch = null
 var _transit_text := ""
 
@@ -234,7 +234,7 @@ func cycle_spectate(forward: bool) -> void:
 	bridge.ask_spectate(AirdriftEvents.SPECTATE_NEXT if forward else AirdriftEvents.SPECTATE_PREVIOUS)
 
 
-## Inside the browser shell's solo session (`dot_solo`), a pack's courses are named by the stock list and fetched from the shell's origin on demand, under its owner. A no-op
+## Inside the browser shell's solo session (`gs_solo`), a pack's courses are named by the stock list and fetched from the shell's origin on demand, under its owner. A no-op
 ## anywhere else, so a desktop offline game lists what it holds. A session's start map (the site's "Play map", `?map=`) replaces the first course; the game fetches it like a pick.
 func _offer_solo_maps() -> void:
 	var solo := AirdriftSoloMaps.session()
@@ -254,11 +254,11 @@ func _offer_solo_maps() -> void:
 ## Solo only: a converted map folder or `.zip` dragged onto the window, dropped on the executable or named by
 ## `--map-path=` is copied into `user://maps` and offered in M as "<title> (local)" ([method AirdriftGame.add_dropped_maps]);
 ## the HUD says what was added, or why a path is not a map. Never online: a local map exists on this machine alone.
-## Needs dot-map 24 ([method AirdriftMapCatalogue.can_drop]); dot-map 26 adds the shared intake and the executable drop.
+## Needs gs-map 24 ([method AirdriftMapCatalogue.can_drop]); gs-map 26 adds the shared intake and the executable drop.
 func _watch_map_drops() -> void:
 	if not _offline or not is_inside_tree() or not AirdriftMapCatalogue.can_drop():
 		return
-	if game != null and game.map_drop == null and GSAddonApi.build_level("dot_map") >= AirdriftMapDrop.NEEDS_LEVEL:
+	if game != null and game.map_drop == null and GSAddonApi.build_level("gs_map") >= AirdriftMapDrop.NEEDS_LEVEL:
 		game.map_drop = AirdriftMapDrop.make()
 		if game.map_drop != null:
 			add_child(game.map_drop)
@@ -549,7 +549,7 @@ func menu_set_third_person(on: bool) -> void:
 		AirdriftCamera.Mode.THIRD_PERSON if on else AirdriftCamera.Mode.FIRST_PERSON)
 
 
-## Where a roster row's player stands, for dot-game's look-to-gag key (J, L).
+## Where a roster row's player stands, for gs-game's look-to-gag key (J, L).
 func _look_position(row: Dictionary) -> Variant:
 	if game == null:
 		return null

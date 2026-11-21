@@ -1,6 +1,6 @@
 extends Node
 
-## Touch controls on a phone or tablet: dot-mobile's stick, drag-look and buttons over the HUD, driving the client's
+## Touch controls on a phone or tablet: gs-mobile's stick, drag-look and buttons over the HUD, driving the client's
 ## own [GSFpsTouchSampler]. Nothing shows on a desktop; the server's `sv_mobile_*` cvars bound the rest.
 ## See docs/touch.md.
 

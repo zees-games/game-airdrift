@@ -5,7 +5,7 @@ const AirdriftNetCommand := preload("airdrift_net_command.gd")
 ## One tick of a player's intent, on the wire: a [GSFpsCommand], and the trigger.
 ##
 ## [b]The only thing a client may send about itself.[/b] Clients send inputs, never
-## state — a client that could send a position could send any position, and dot-net's
+## state — a client that could send a position could send any position, and gs-net's
 ## whole security model rests on the distinction. The style, the track and the practice
 ## keys are requests, not inputs: they change what the simulation IS rather than what
 ## it does this tick, so they go reliably and rarely through [AirdriftRequest].
@@ -17,7 +17,7 @@ const AirdriftNetCommand := preload("airdrift_net_command.gd")
 ## position every time. It is one bit; the aim it is fired along is already here, in
 ## the movement command's own yaw and pitch.
 ##
-## [b]It is a bit and not a [GSWeaponCommand].[/b] dot-combat's command carries a slot
+## [b]It is a bit and not a [GSWeaponCommand].[/b] gs-combat's command carries a slot
 ## request, a reload, an alternate fire and a zoom, and this game has two weapons with
 ## no magazine between them — so all but one of those fields would be a field nothing
 ## reads, quantised and sent sixty-four times a second per player. `AirdriftCombat` builds

@@ -10,8 +10,8 @@ extends "airdrift_game_build.gd"
 ## godot --headless --path . res://examples/dedicated.tscn
 ## [/codeblock]
 ##
-## Movement lives in dot-player-controller, timing in dot-timer, maps in dot-map, records in
-## dot-leaderboard; this file adds the joins (tick order, the unit boundary, when a cvar change
+## Movement lives in gs-player-controller, timing in gs-timer, maps in gs-map, records in
+## gs-leaderboard; this file adds the joins (tick order, the unit boundary, when a cvar change
 ## reaches thirty players), which is where the bugs have been.
 
 func _ready() -> void:

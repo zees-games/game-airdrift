@@ -9,7 +9,7 @@ extends "headless_net_maps.gd"
 func _test_the_remote_workbench() -> void:
 	_section("[a flagged admin edits the server's profiles, and nobody else can]")
 	if not GSGameWorkbench.available():
-		print("  dot-workbench is not linked: skipped")
+		print("  gs-workbench is not linked: skipped")
 		_passed += 16
 		_done()
 		return
@@ -494,7 +494,7 @@ func _test_hunters_reach_the_client() -> void:
 		"facing the way the server's faces")
 
 	# Drawn as a person on the zombie gait: it moved 6 m, so it is mid-shuffle or sprint, and
-	# stood still it idles. The real clips come from dot-player-char's people_ual.res.
+	# stood still it idles. The real clips come from gs-player-char's people_ual.res.
 	var person: GSHumanoidFigure = mirror.get("person") if mirror != null else null
 	_check(person != null and person.zombie_gait, "the client draws it as a person on the zombie gait")
 	if person != null:
@@ -547,7 +547,7 @@ func _test_leave() -> void:
 	_done()
 
 
-## A voice frame, client to server to another client, over this game's own link. [b]Deliberately not through [GSNetManager].[/b] dot-net decodes a bit-packed message against a sealed schema; a voice frame is an opaque blob from a codec, and putting it through would mean a message type per codec — or a schema that changes
+## A voice frame, client to server to another client, over this game's own link. [b]Deliberately not through [GSNetManager].[/b] gs-net decodes a bit-packed message against a sealed schema; a voice frame is an opaque blob from a codec, and putting it through would mean a message type per codec — or a schema that changes
 ## when the codec does, and the schema hash is what both ends check to agree they are speaking the same game. So it rides its own channel and its own two calls. The map vote's cue and countdown, server to client, and a client's RTV request back. Before this there was no message for either direction's vote traffic worth the name:
 ## the ballot went out as chat, a cue went nowhere, and an RTV request off the wire went to the map session's tally rather than to the ballot.
 func _test_vote_wire() -> void:

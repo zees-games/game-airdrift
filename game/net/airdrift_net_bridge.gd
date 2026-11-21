@@ -203,7 +203,7 @@ func _adopt_tick_rate(rate: int) -> void:
 	# with both on 128 the drawn step is uniform to within 0.3 mm. See
 	# `examples/jitter_probe.tscn`, which runs all four combinations.
 	#
-	# A server is already excluded above: its rate is `sv_tickrate` and dot-server
+	# A server is already excluded above: its rate is `sv_tickrate` and gs-server
 	# writes this itself.
 	Engine.physics_ticks_per_second = game.tick_rate
 
@@ -220,8 +220,8 @@ func _adopt_tick_rate(rate: int) -> void:
 ## packs mounting, every material's shader compiling) runs fewer ticks than the server.
 ##
 ## [b]Not what kept players on the spawn pad, though it was first taken for it.[/b] That was
-## dot-net's clock, which was handed only the steps and never saw the dropped time, so every
-## command was stamped for a tick the server had already simulated (dot-net API 5 credits it
+## gs-net's clock, which was handed only the steps and never saw the dropped time, so every
+## command was stamped for a tick the server had already simulated (gs-net API 5 credits it
 ## from the wall clock; docs/history.md has both). What the cap still buys is a command of the
 ## client's own for every tick: at 128 with 150 ms frames and a cap of 8, 57% of the server's
 ## ticks had none and repeated the one before, which drops a jump or a strafe shorter than a

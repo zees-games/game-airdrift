@@ -265,7 +265,7 @@ func _test_effects_and_the_run() -> void:
 	)
 
 	# And the server that wants hunted runs to count anyway pays for it in the field
-	# dot-timer has had since it was written and nothing had ever set.
+	# gs-timer has had since it was written and nothing had ever set.
 	hunted.effects.allow_movement_during_runs = true
 	var tainting := hunted.effects.apply(AirdriftEffects.MAULED, &"run")
 	_check(tainting.ok, "a server may allow it", str(tainting.error))
@@ -346,7 +346,7 @@ func _test_movement_from_config() -> void:
 
 # --- Boot ------------------------------------------------------------------
 
-## Stands in for dot-cloud: records the content id asked for and has nothing.
+## Stands in for gs-cloud: records the content id asked for and has nothing.
 class _RecordingCloud extends RefCounted:
 	var asked: Array[String] = []
 
@@ -355,7 +355,7 @@ class _RecordingCloud extends RefCounted:
 		return GSResult.fail(GSError.CODE_HTTP, "Not on this origin.")
 
 
-## Stands in for dot-server's game manager while it is loading a game's scene.
+## Stands in for gs-server's game manager while it is loading a game's scene.
 class _LoadingGames extends RefCounted:
 	var loading: GSGameDescriptor = null
 	var running: GSGameDescriptor = null
@@ -369,7 +369,7 @@ class _LoadingGames extends RefCounted:
 
 ## The first map a server fetches is fetched from the owner its game descriptor names.
 ##
-## dot-server builds the game's scene before it applies the descriptor's `cvars:`, and
+## gs-server builds the game's scene before it applies the descriptor's `cvars:`, and
 ## `sv_map_content_owner` is the module's, registered later still, so the boot fetch used to
 ## run with no owner and ask for the unowned pack. Fails with
 ## [method AirdriftGame._adopt_descriptor_owner] taken out.
@@ -386,7 +386,7 @@ func _test_boot_map_owner() -> void:
 	GSRegistry.register(CLOUD, cloud)
 	GSRegistry.register(GAMES, games)
 
-	# Third: dot-server putting the previous game back after the pending one's scene was
+	# Third: gs-server putting the previous game back after the pending one's scene was
 	# missing. pending() is the game that failed; current() is the one being restored.
 	var failed := GSGameDescriptor.new()
 	failed.scene = "res://not_this_game/missing.tscn"
@@ -495,7 +495,7 @@ func _test_boot() -> void:
 	# the world for ever while the same mistake on the main route puts them back on the
 	# pad. The hand-written check this was had only ever been asked on the surf map —
 	# and this map's two bonuses had no respawn zone at all until a bot was driven off
-	# one of them and kept falling. It is dot-timer's `route_problems()` now, and
+	# one of them and kept falling. It is gs-timer's `route_problems()` now, and
 	# `_test_zone_files_match` asks it of every map.
 	_check(zones != null and zones.route_problems().is_empty(),
 		"and every bonus here puts a fallen player back",

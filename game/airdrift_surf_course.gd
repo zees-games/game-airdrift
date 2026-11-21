@@ -1,7 +1,7 @@
 extends GSBotSurfCourse
 
 ## One stage of a map as a surf bot sees it, read from the timer's zones: the adapter between
-## this game and dot-bot's surf planner and pilot ([GSBotSurfPlanner], [GSBotSurfPilot]).
+## this game and gs-bot's surf planner and pilot ([GSBotSurfPlanner], [GSBotSurfPilot]).
 ##
 ## [b]Read from the timer's zones, never written per map.[/b] The start is the stage zone's own
 ## destination and yaw (what `!s<n>` does to a player); the goal is the next stage's zone, the
@@ -10,8 +10,8 @@ extends GSBotSurfCourse
 ## every RESPAWN and SLAY zone and every other door. A door that does not lead on is a pit for the
 ## bot even when it is a shortcut, because nothing here can tell a shortcut from a way back.
 ##
-## Progress and energy are dot-bot's ([method GSBotSurfCourse.score]). The simulator is
-## dot-player-controller's ([GSFpsSimulator]); what this game runs beside the motor (the map's
+## Progress and energy are gs-bot's ([method GSBotSurfCourse.score]). The simulator is
+## gs-player-controller's ([GSFpsSimulator]); what this game runs beside the motor (the map's
 ## pushes, gravity volumes and lethal hurt, [AirdriftMapMechanics]) is its [code]mechanics[/code]
 ## hook, on a rider of the simulation's own ([method simulator_for]). The volume modes (water,
 ## ladders) come with the motor's registered modes. The rider memory of pushes and sinking

@@ -2,7 +2,7 @@ extends RefCounted
 
 const AirdriftProgress := preload("res://game/airdrift_progress.gd")
 
-## Stats are filed under dot-game's stable key; achievements and records stay on the record key.
+## Stats are filed under gs-game's stable key; achievements and records stay on the record key.
 
 class _Platform extends RefCounted:
 	func key() -> String:

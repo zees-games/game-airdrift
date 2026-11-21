@@ -52,7 +52,7 @@ func run() -> void:
 		s._check(game.props.count() == 1, "and it is in the world")
 
 		if placed != null:
-			# The catalogue's mass, on the body. dot-props puts it there at spawn
+			# The catalogue's mass, on the body. gs-props puts it there at spawn
 			# rather than leaving it to whatever the scene was saved with.
 			var body := placed.body()
 			s._check(
@@ -83,7 +83,7 @@ func run() -> void:
 
 ## The sight hooks a smoke or flash source calls: a blinded hunter, or one behind a cloud, does not see a player in view.
 func _senses_hooks() -> void:
-	if GSAddonApi.build_level("dot_npc") < 6:
+	if GSAddonApi.build_level("gs_npc") < 6:
 		return
 
 	var hunters = game.hunters

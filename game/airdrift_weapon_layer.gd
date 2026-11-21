@@ -1,6 +1,6 @@
 extends Node
 
-## Deagles lying in the world: dot-weapon's drop layer under the `sv_weapon_drop*` rules, built on the
+## Deagles lying in the world: gs-weapon's drop layer under the `sv_weapon_drop*` rules, built on the
 ## server (simulates, hands weapons to an empty slot) and on a client (draws what it is told).
 
 const AirdriftArsenal := preload("airdrift_arsenal.gd")

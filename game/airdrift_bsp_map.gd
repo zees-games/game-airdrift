@@ -18,7 +18,7 @@ const AirdriftMapCatalogue := preload("airdrift_map_catalogue.gd")
 ## build -- pointed at a different manifest through [member GSMapDef.meta]. The
 ## alternative, a generated `<id>.gd` and `<id>.tscn` beside the data, cannot work for a
 ## map that arrives after the export: `res://` is a read-only PCK in a shipped build, so
-## a scene that is not in it does not exist, and a script in a mounted dot-cloud pack
+## a scene that is not in it does not exist, and a script in a mounted gs-cloud pack
 ## cannot resolve `class_name` anyway -- this family measured that and wrote it down.
 ##
 ## So a map is data. It can sit in `res://maps/imported/` in a run from source, in
@@ -66,7 +66,7 @@ const VERTEX_FLOATS := 10          # position 3, normal 3, uv 2, uv2 2
 ## [member ambient] does and the same reason.
 @export_range(0.0, 1.0) var prototype_ambient: float = 0.32
 
-## Draw from the dot-map world document when one is found (see [member AirdriftConfig.global_worlds]). Set before [method build_from].
+## Draw from the gs-map world document when one is found (see [member AirdriftConfig.global_worlds]). Set before [method build_from].
 var global_worlds := false
 ## The [GSMapWorld] drawn in place of the manifest's surfaces, or null.
 var global_world: GSMapWorld = null
@@ -172,7 +172,7 @@ func _construct() -> void:
 	})
 
 
-## A local map: dot-map's [GSMapWorld] draws it and makes it solid, and [member manifest] is written to hold only the
+## A local map: gs-map's [GSMapWorld] draws it and makes it solid, and [member manifest] is written to hold only the
 ## spawn, so the zones ([method _legacy_zones]) and the brush mechanics read it as an old import with nothing else.
 ## Its doors stand still: nothing here steps the world's movers.
 func _build_local(id: String, prefix: String) -> bool:
@@ -181,14 +181,14 @@ func _build_local(id: String, prefix: String) -> bool:
 	_built = true
 	local_prefix = prefix
 	var options := {"authoritative": false, "environment": false, "sounds": false, "map_id": id}
-	# A `<map>_orig` local pack draws with its own textures (dot-map 24); every other map keeps the free ones.
+	# A `<map>_orig` local pack draws with its own textures (gs-map 24); every other map keeps the free ones.
 	var surfaces := AirdriftMapCatalogue.local_surfaces(StringName(id))
 	if surfaces != null:
 		options["surfaces"] = surfaces
 	var built := GSMapWorld.build(prefix, {}, options)
 	# A copy without its `.doc.json` (the entity logic) is still a world to stand in, with no doors or triggers.
 	if not built.ok and not FileAccess.file_exists(prefix + ".doc.json"):
-		options["doc"] = {"format": "dot-bsp-source", "version": 1, "entities": [], "commands": []}
+		options["doc"] = {"format": "gs-bsp-source", "version": 1, "entities": [], "commands": []}
 		built = GSMapWorld.build(prefix, {}, options)
 	if not built.ok:
 		GSLog.error(CHANNEL, "a local map would not build", {"map": id, "why": str(built.error)})
@@ -237,7 +237,7 @@ func _world_prefix(id: String) -> String:
 	return prefix if FileAccess.file_exists(prefix + ".json") and FileAccess.file_exists(prefix + ".bin") else ""
 
 
-## Draws the map through dot-map's [GSMapWorld] and hides [param legacy], the manifest's own meshes: those stay built so
+## Draws the map through gs-map's [GSMapWorld] and hides [param legacy], the manifest's own meshes: those stay built so
 ## probes find `World`, and collision, zones and spawns are still the manifest's.
 func _draw_global_world(legacy: Array) -> void:
 	var id := str(manifest.get("id", ""))
@@ -305,9 +305,9 @@ func _mesh_instance(
 ) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	mi.name = base_name if index == 0 else "%s%d" % [base_name, index + 1]
-	# The sky is a backdrop nobody can reach: opted out of dot-core's collision audit.
+	# The sky is a backdrop nobody can reach: opted out of gs-core's collision audit.
 	if base_name == "Sky":
-		mi.set_meta(&"dot_no_collision", true)
+		mi.set_meta(&"gs_no_collision", true)
 	mi.mesh = mesh
 	add_child(mi)
 	for at in range(sources.size()):

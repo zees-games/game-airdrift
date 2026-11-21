@@ -116,16 +116,16 @@ func _client_player() -> AirdriftPlayer:
 # --- Tests -----------------------------------------------------------------
 
 
-# --- Map changes, through dot-map's protocol --------------------------------
+# --- Map changes, through gs-map's protocol --------------------------------
 
 ## A content client that takes its time over the first fetch, in front of a real one.
 ##
 ## [b]What is mounted is a real signed pack[/b], published by this suite into `user://` and
-## mounted by a real [GSCloudClient] at `res://dot_cloud/<id>/<version>/` — so what the
+## mounted by a real [GSCloudClient] at `res://gs_cloud/<id>/<version>/` — so what the
 ## client loads when its download lands is a world built from a manifest out of a pack, as
 ## a delivered map is. The delay is the suite's, so the server's timeout can pass while the
-## client is still downloading: a straggler, on demand. Registered as `dot_cloud_client`,
-## which is where dot-map's loader looks on both ends — one process has one registry and
+## client is still downloading: a straggler, on demand. Registered as `gs_cloud_client`,
+## which is where gs-map's loader looks on both ends — one process has one registry and
 ## one set of mounts, which is also why the server's own map definition below is built by
 ## hand rather than fetched: a server that had mounted the pack would have mounted it for
 ## the client too, and there would be nothing left to download.
@@ -175,7 +175,7 @@ var _real_cloud: GSCloudClient = null
 
 ## Runs a change on the server while pumping the link, and says how it ended.
 ##
-## [b]A bare statement, and not an await[/b] — the fan-out trap in the form dot-map's
+## [b]A bare statement, and not an await[/b] — the fan-out trap in the form gs-map's
 ## own suite records: the change waits on a client that only answers when this pump
 ## runs, so awaiting it here deadlocks. The outcome comes back through the host's signals.
 ## [param during] runs right after the change starts, while the host is waiting on peers.
@@ -283,7 +283,7 @@ func _start_content(keys: Dictionary) -> void:
 	_cloud.name = "SlowCloud"
 	_cloud.real = _real_cloud
 	add_child(_cloud)
-	GSRegistry.register(&"dot_cloud_client", _cloud)
+	GSRegistry.register(&"gs_cloud_client", _cloud)
 
 
 func _test_map_change() -> void:
@@ -302,9 +302,9 @@ func _test_map_change() -> void:
 	_server_game.maps.changed.connect(on_swap)
 	_client_bridge.map_client.fetching.connect(on_fetch)
 
-	# A second client admitted WHILE the change is in flight. dot-map's `add_peer` said
+	# A second client admitted WHILE the change is in flight. gs-map's `add_peer` said
 	# such a peer "is not waited for" and its wait loop counted it anyway, so it held the
-	# change to the timeout for a map it was never announced; dot-map snapshots the peers
+	# change to the timeout for a map it was never announced; gs-map snapshots the peers
 	# a change was announced to now. Its traffic goes nowhere in this loopback, which is
 	# exactly a peer that would never answer. Armed by admitting it straight into the
 	# host before the fix: the change took the full five seconds.
@@ -407,10 +407,10 @@ func _test_map_by_vote() -> void:
 ##
 ## Every imported map is ONE scene in the build, `maps/imported_map.tscn`, pointed at a
 ## manifest — the mount constraint forbids putting a scene that extends a build class in
-## the pack. dot-map's rule for a map a client does not have used to be that its scene is
+## the pack. gs-map's rule for a map a client does not have used to be that its scene is
 ## in the pack, so it refused every one; the bridge fetched by its own convention before
-## dot-map saw the announce. Now the client lists that scene as a trusted template and
-## dot-map requires the MANIFEST to be in the pack instead. Armed by removing the template
+## gs-map saw the announce. Now the client lists that scene as a trusted template and
+## gs-map requires the MANIFEST to be in the pack instead. Armed by removing the template
 ## from the bridge: the client refused the map and stayed where it was.
 func _test_map_delivered() -> void:
 	_section("changing the map: an imported map that is delivered")
@@ -433,7 +433,7 @@ func _test_map_delivered() -> void:
 	# The server fetches it the way it fetches `content_maps`, and says what it is.
 	var fetched: GSResult = await _server_game.ensure_map_content(DELIVERED_FIXTURE)
 	var on_server := _server_game.maps.catalogue.get_map(DELIVERED_FIXTURE)
-	var mount := "res://dot_cloud/%s/1.2.0/" % DELIVERED_FIXTURE
+	var mount := "res://gs_cloud/%s/1.2.0/" % DELIVERED_FIXTURE
 	_check(fetched.ok and on_server != null, "the server fetches the map into its catalogue",
 		str(fetched.error) if not fetched.ok else "")
 	_check(on_server != null and on_server.content_id == DELIVERED_FIXTURE
@@ -469,7 +469,7 @@ func _test_map_delivered() -> void:
 ## A map republished with different files, in one process: the server's next fetch and a
 ## client that had mounted the OLD pack both end on the new one.
 ##
-## [b]Every map pack was `@0.0.0` (`[g2g-maps-version-1]`).[/b] dot-cloud keys a mount on
+## [b]Every map pack was `@0.0.0` (`[g2g-maps-version-1]`).[/b] gs-cloud keys a mount on
 ## `id@version` and cannot undo one, so a client that had mounted the old pack was told
 ## "that map, 0.0.0" by a server that had the new one, found it mounted, and played the
 ## old geometry. `AirdriftMapCatalogue.pack_version` names a pack by its files; this is the
@@ -528,7 +528,7 @@ func _test_map_republished() -> void:
 func _client_world_from(id: StringName, version: String) -> bool:
 	var world := _client_game.maps.world
 	return world != null and str(world.get("manifest_path")).begins_with(
-		"res://dot_cloud/%s/%s/" % [id, version])
+		"res://gs_cloud/%s/%s/" % [id, version])
 
 
 ## A map on an origin that keeps packs under an owner: the map id stays what a player
@@ -553,7 +553,7 @@ func _test_map_owned() -> void:
 		str(fetched.error) if not fetched.ok else "")
 	_check(on_server != null and String(on_server.content_id) == "someone/%s" % OWNED_FIXTURE
 		and str(on_server.meta.get("manifest", "")).begins_with(
-			"res://dot_cloud/someone/%s/1.0.0/" % OWNED_FIXTURE),
+			"res://gs_cloud/someone/%s/1.0.0/" % OWNED_FIXTURE),
 		"and files it under the map id, marked as the owned content it came from",
 		str(on_server.describe()) if on_server != null else "none")
 
@@ -580,7 +580,7 @@ func _test_map_straggler() -> void:
 	on_server.scene_path = AirdriftMapCatalogue.IMPORTED_SCENE
 	on_server.content_id = SYNC_FIXTURE
 	on_server.content_version = "1.0.0"
-	on_server.meta["manifest"] = "res://dot_cloud/%s/1.0.0/%s.json" % [SYNC_FIXTURE, SYNC_FIXTURE]
+	on_server.meta["manifest"] = "res://gs_cloud/%s/1.0.0/%s.json" % [SYNC_FIXTURE, SYNC_FIXTURE]
 	on_server.meta["imported"] = true
 	_check(_server_game.maps.catalogue.add(on_server).ok,
 		"the server has a map the client does not")
@@ -613,10 +613,10 @@ func _test_map_straggler() -> void:
 		"and the client was told the map changed without it", str(notices))
 
 	# The one that matters. The `load` arrived while the fetch was still running. The bridge
-	# used to queue map messages behind its own fetch for this; dot-map holds such a load
+	# used to queue map messages behind its own fetch for this; gs-map holds such a load
 	# until the fetch lands now. Armed both times by taking the load at once: before, it
-	# was dropped and the client stayed on the old world; in dot-map, it asked for the
-	# pack a second time mid-download (dot-map's suite asserts that one).
+	# was dropped and the client stayed on the old world; in gs-map, it asked for the
+	# pack a second time mid-download (gs-map's suite asserts that one).
 	# [b]And while it waits, it does not play a world it does not have.[/b] The server is
 	# simulating this player on the new map; the client still has the old one, or on a
 	# joiner's first connect no world at all. Predicting there was a player falling through
@@ -656,7 +656,7 @@ func _test_map_straggler() -> void:
 
 func _test_map_refused() -> void:
 	_section("changing the map: a client that refuses")
-	print("  (the refusals below log on purpose: a WRN from dot-map and one from the bridge each)")
+	print("  (the refusals below log on purpose: a WRN from gs-map and one from the bridge each)")
 
 	var host := _server_bridge.map_host
 	host.sync_timeout_sec = SYNC_TIMEOUT
@@ -669,7 +669,7 @@ func _test_map_refused() -> void:
 
 	# A map the server has in ITS build and the client has nowhere, named by a host.
 	# Loading it would mean loading a path of the host's choosing out of THIS build — the
-	# rule dot-map exists to enforce, now enforced over a real wire.
+	# rule gs-map exists to enforce, now enforced over a real wire.
 	var stages := _server_game.maps.catalogue.get_map(&"bhop_g2g_stages")
 	var server_only := GSMapDef.from_dictionary(stages.to_dictionary())
 	server_only.id = &"airdrift_server_only"
@@ -714,7 +714,7 @@ func _test_map_refused() -> void:
 
 	host.peer_timed_out.disconnect(on_timeout)
 	_client_bridge.map_refused.disconnect(on_refused)
-	GSRegistry.unregister_instance(&"dot_cloud_client", _cloud)
+	GSRegistry.unregister_instance(&"gs_cloud_client", _cloud)
 	_cloud.queue_free()
 	_real_cloud.queue_free()
 	_server_game.maps.catalogue.remove(SYNC_FIXTURE)

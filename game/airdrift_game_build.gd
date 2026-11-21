@@ -1,10 +1,10 @@
 extends "airdrift_game_state.gd"
 
-## `sv_falldamage*` (dot-combat), explicitly off: a run is made of long drops and a landing must
+## `sv_falldamage*` (gs-combat), explicitly off: a run is made of long drops and a landing must
 ## never cost the run or a life. No GSFallDamage is built, so only an edit here turns it on.
 var fall_rules: GSFallDamageRules = make_fall_rules()
-## Solo: dot-map's GSMapDropIntake (AirdriftMapDrop, API 26) every drop goes through, set by the client. Null on a server
-## and on older dot-map, where [method add_dropped_maps] copies through [method AirdriftMapCatalogue.accept_dropped].
+## Solo: gs-map's GSMapDropIntake (AirdriftMapDrop, API 26) every drop goes through, set by the client. Null on a server
+## and on older gs-map, where [method add_dropped_maps] copies through [method AirdriftMapCatalogue.accept_dropped].
 var map_drop: Node = null
 
 ## Moves aside every record filed under a [method is_legacy_key] player.
@@ -73,7 +73,7 @@ func retire_legacy_records() -> int:
 ##
 ## Two layers, weakest first: the game's own shipped `res://maps.yml` and the server's
 ## [member AirdriftConfig.map_rotation_file]. The merge, the wildcards and the rules for what a
-## rotation does are dot-map's [GSMapRotationFile]; this game only supplies the paths.
+## rotation does are gs-map's [GSMapRotationFile]; this game only supplies the paths.
 ##
 ## A file that is present and unreadable is an ERROR and changes nothing: rotating every
 ## map is a better failure than rotating none.
@@ -117,7 +117,7 @@ static func user_zones_path(id: StringName) -> String:
 	return "user://zones/%s.json" % String(id)
 
 
-## [method map_rows] as dot-menu's map menu draws them: the kind as the mode, the tier under
+## [method map_rows] as gs-menu's map menu draws them: the kind as the mode, the tier under
 ## it, "combat" for a map for the deathmatch layer, and "not in rotation" in the warning colour
 ## (every map, not the rotation: an operator keeps maps installed the rotation does not play).
 static func menu_rows(rows: Array) -> Array:
@@ -210,7 +210,7 @@ func rescan_maps() -> Dictionary:
 
 
 ## Offline: copies the dropped [param paths] into `user://maps` and rescans, so each map joins M as "<title> (local)" at
-## once. With [member map_drop] (dot-map's GSMapDropIntake, API 26) set, every path goes through it, [param source] says
+## once. With [member map_drop] (gs-map's GSMapDropIntake, API 26) set, every path goes through it, [param source] says
 ## where it came from ("window", "command line") and a path holding no map is refused with what the game takes;
 ## otherwise [method AirdriftMapCatalogue.accept_dropped]. Returns the line to show: the maps added, and each path that is not
 ## a map with its reason. A server never lists local maps, so a drop there adds nothing to its rotation.
@@ -223,7 +223,7 @@ func add_dropped_maps(paths: PackedStringArray, source := "window") -> String:
 		var id := StringName(str(entry["id"]))
 		if maps != null and maps.catalogue != null and maps.catalogue.has(id):
 			titles.append(maps.catalogue.get_map(id).label())
-	# dot-map has already logged each one.
+	# gs-map has already logged each one.
 	var errors: PackedStringArray = result.get("errors", PackedStringArray())
 	var lines := PackedStringArray()
 	if not titles.is_empty():
@@ -283,7 +283,7 @@ var _match_ids: Dictionary = {}
 
 ## The key the timers, the records, the boards and the statistics know a player by.
 ##
-## [b]Not the match id.[/b] The match id (`u<userid>`) is dot-server's sequential,
+## [b]Not the match id.[/b] The match id (`u<userid>`) is gs-server's sequential,
 ## server-local counter: it names a seat for the length of one connection, and the same
 ## account reconnecting is a new number (and a restarted server hands the old numbers to
 ## strangers). A record keyed by it was a different runner at every connection, and could

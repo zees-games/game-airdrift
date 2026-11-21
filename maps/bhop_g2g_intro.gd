@@ -445,7 +445,7 @@ static func build_zones() -> GSTimerZoneSet:
 	var zones := GSTimerZoneSet.new()
 	zones.map_id = &"bhop_g2g_intro"
 	zones.meta["tier"] = 2
-	zones.meta["author"] = "g2gfast"
+	zones.meta["author"] = "airdrift"
 
 	var main := GSTimerTrack.MAIN
 	var finish_z := end_z()
@@ -516,7 +516,7 @@ static func _zones_bonus(zones: GSTimerZoneSet, finish_z: float) -> void:
 	# added, and a hand-written check for them was added to `headless_run` then — but it
 	# was asked on the surf map only, so this map was never the one being checked. The
 	# same one-map fix this tree has now missed in six places. That check is gone:
-	# dot-timer's `GSTimerZoneSet.route_problems()` asks every route on every map for a
+	# gs-timer's `GSTimerZoneSet.route_problems()` asks every route on every map for a
 	# start, a finish, a spawn and a pit (`[track-zone-1]`), and `tools/export_zones.gd`
 	# refuses to write a map that fails it.
 	var fall_low := Vector3(-4096.0, FLOOR_Y - 1024.0, finish_z - 4096.0)

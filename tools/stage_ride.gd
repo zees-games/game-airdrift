@@ -33,7 +33,7 @@ const AirdriftSurfCourse := preload("../game/airdrift_surf_course.gd")
 ## zones file and re-imported.
 ##
 ## [b]A planned stage is ridden by the pilot.[/b] When `maps/routes/<id>.surf.json` holds the
-## stage (`tools/surf_plan.tscn`), the bot follows that line with dot-bot's [GSBotSurfPilot]
+## stage (`tools/surf_plan.tscn`), the bot follows that line with gs-bot's [GSBotSurfPilot]
 ## instead of the rule below: a rule cannot find the line off a standstill deck over a gable
 ## (surf_beginner2 stage 2 presses into the face and perches on the ridge). `RIDE_RULE=1`
 ## forces the rule.
@@ -333,7 +333,7 @@ func _reached_at(at: Vector3, finished: Array[float], put_back: bool, goals: Arr
 	return ""
 
 
-## `RIDE_SAVE_REPLAY=maps/routes/<id>.replay` keeps the finished run's dot-timer replay, for
+## `RIDE_SAVE_REPLAY=maps/routes/<id>.replay` keeps the finished run's gs-timer replay, for
 ## `tools/follow_replay.tscn` and `headless_imported`'s *follows a recorded run*.
 func _save_replay(id: StringName, save_to: String, replay: GSTimerReplay) -> void:
 	if replay == null:

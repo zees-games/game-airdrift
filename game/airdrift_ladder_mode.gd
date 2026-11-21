@@ -15,7 +15,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## prediction the same answer the server had. [method update] is the game's once-a-tick
 ## call that puts a player on; [method _simulate] takes them off.
 ##
-## Not in dot-player-controller, deliberately: this game is delivered as a pack, so it
+## Not in gs-player-controller, deliberately: this game is delivered as a pack, so it
 ## names no new class there, and a ladder the way this genre climbs one is this genre's.
 
 ## The ladder boxes, world space, metres.

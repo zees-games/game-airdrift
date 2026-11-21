@@ -1,6 +1,6 @@
 extends RefCounted
 
-## The deathmatch weapons' pictures: weapon id to sprite tag; the rest is dot-ui's [GSWeaponIconStyle].
+## The deathmatch weapons' pictures: weapon id to sprite tag; the rest is gs-ui's [GSWeaponIconStyle].
 
 const TAGS := {
 	&"deagle": &"pistol", &"knife": &"knife",

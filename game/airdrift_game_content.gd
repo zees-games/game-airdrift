@@ -1,6 +1,6 @@
 extends Node3D
 
-## The first layer of AirdriftGame: the map-content delivery (fetch a missing map through dot-cloud) and the
+## The first layer of AirdriftGame: the map-content delivery (fetch a missing map through gs-cloud) and the
 ## state it reads. No class_name; scripts keep using AirdriftGame.
 
 const AirdriftConfig := preload("airdrift_config.gd")
@@ -14,13 +14,13 @@ signal maps_rescanned(change: Dictionary)
 
 @export var config: AirdriftConfig = null
 
-## The dot-cloud client to fetch a missing map through, by registry name; optional.
+## The gs-cloud client to fetch a missing map through, by registry name; optional.
 ## A build that ships its maps (a server from source, every suite) never reaches it.
 ## Empty or unregistered is not an error: the build plays only the maps it has.
-@export var map_content_service: StringName = &"dot_cloud_client"
+@export var map_content_service: StringName = &"gs_cloud_client"
 
 ## Content ids already fetched and registered, so a rotation that comes back round does
-## not ask dot-cloud again. dot-cloud is itself idempotent; this saves the await.
+## not ask gs-cloud again. gs-cloud is itself idempotent; this saves the await.
 var _map_content_seen: Dictionary = {}
 
 ## Maps the game's descriptor names in `maps:`, pinned by the server's installer:
@@ -44,7 +44,7 @@ var json_fetch_fn: Callable = Callable()
 var maps: GSMapSession = null
 
 
-## Make sure the map [param id] is loadable, fetching it through dot-cloud if not.
+## Make sure the map [param id] is loadable, fetching it through gs-cloud if not.
 ## The map id IS the content id (the publisher's `dist/<id>/` layout), so no registry maps one to the other.
 ## Succeeds and does nothing if the catalogue has it, there is no cloud client, or it is built in.
 func ensure_map_content(id: StringName) -> GSResult:
@@ -198,12 +198,12 @@ func _get_json(url: String) -> GSResult:
 	return res
 
 
-## Names the content id and version of a map that came out of a dot-cloud mount, so a client can be sent it.
-## Both come off the mount path `res://dot_cloud/<content_id>/<version>`, not a second record that could disagree.
+## Names the content id and version of a map that came out of a gs-cloud mount, so a client can be sent it.
+## Both come off the mount path `res://gs_cloud/<content_id>/<version>`, not a second record that could disagree.
 func _mark_delivered(map: GSMapDef, dir: String) -> void:
 	# Read off the path, not rebuilt from the owner cvar, so changing it mid-session
 	# does not re-announce the map under another owner.
-	var root := "res://dot_cloud/"
+	var root := "res://gs_cloud/"
 	var base := dir.rstrip("/")
 	if not base.begins_with(root):
 		return                            # a directory on disk, not a mount

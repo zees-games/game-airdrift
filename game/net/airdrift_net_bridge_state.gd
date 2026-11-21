@@ -16,7 +16,7 @@ const AirdriftRequest := preload("airdrift_request.gd")
 const AirdriftWeaponNet := preload("airdrift_weapon_net.gd")
 
 ## Joins a [AirdriftGame] to a [GSNetManager]: the only file in this project that names both.
-## dot-net simulates per entity but this game ticks as a whole, so [method ensure_game_ticked]
+## gs-net simulates per entity but this game ticks as a whole, so [method ensure_game_ticked]
 ## lets the first behaviour through run the game and the rest find it done.
 
 const CHANNEL := "g2g.net"
@@ -49,7 +49,7 @@ signal stage_reference_received(player_id: int, reference: Dictionary)
 ## What the server allows on this client's own screen, and the chat commands it answers:
 ## [code]{flashlight, thirdperson, commands}[/code]. Client side. See [method rules_body].
 signal rules_received(rules: Dictionary)
-## This client cannot follow the server to the map it announced: refused by dot-map's trust
+## This client cannot follow the server to the map it announced: refused by gs-map's trust
 ## rules, not fetchable, or not loadable. Client side. [AirdriftClient] leaves the server on it,
 ## because a client on a world the server is not simulating is corrected into the air every tick.
 signal map_refused(map_id: StringName, reason: String)
@@ -69,7 +69,7 @@ var weapon_net := AirdriftWeaponNet.new(func(peer_id: int, kind: int, body: Pack
 var link: AirdriftNetLink = null
 
 ## [code]func(bytes: PackedByteArray) -> void[/code]. Where a received voice frame goes on a client.
-## A callable, not a typed reference: this file must not name dot-voice, or a build without
+## A callable, not a typed reference: this file must not name gs-voice, or a build without
 ## the addon fails to parse.
 var voice_in_fn: Callable = Callable()
 
@@ -139,14 +139,14 @@ var clock_view: GSVoteClockView = GSVoteClockView.new()
 ## Which session this process is. Zero on a server.
 var local_player_id: int = 0
 
-## The host half of dot-map's map-change protocol. Server side; built by [method attach]
+## The host half of gs-map's map-change protocol. Server side; built by [method attach]
 ## and handed to the game as [member AirdriftGame.map_sync]. See "Map changes" below.
 var map_host: GSMapSyncHost = null
 
 ## The peer half. Client side; built by [method attach].
 var map_client: GSMapSyncClient = null
 
-## Where the clock learns the link's length in milliseconds (`GSClientLink.ping_ms()`); dot-net
+## Where the clock learns the link's length in milliseconds (`GSClientLink.ping_ms()`); gs-net
 ## cannot measure it. Unfed, the clock assumes an instant link and stamps commands for ticks
 ## already simulated. Read on every snapshot.
 var rtt_source: Callable = Callable()
@@ -173,7 +173,7 @@ var _client_ticked_for: int = -1
 var _fresh_tick: int = -1
 var _timers_fed_for: int = -1
 
-## Client: the map id of the announce being handled, for [signal map_refused]. dot-map
+## Client: the map id of the announce being handled, for [signal map_refused]. gs-map
 ## reports a refused announce with no map, because it refused to make one.
 var _map_handling: StringName = &""
 

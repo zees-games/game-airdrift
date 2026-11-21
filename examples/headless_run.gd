@@ -72,11 +72,11 @@ func _run() -> void:
 	_report_sections(_entered, _completed, SECTIONS, CHECKS)
 
 
-## dot-stats and dot-achievements, over the runs this suite actually made.
+## gs-stats and gs-achievements, over the runs this suite actually made.
 ##
 ## [b]Every check here is against a number the runs above PRODUCED.[/b] A progression
-## suite that files its own readings and reads them back is testing dot-stats, which
-## dot-stats already does; what is untested anywhere else is whether a finish in this
+## suite that files its own readings and reads them back is testing gs-stats, which
+## gs-stats already does; what is untested anywhere else is whether a finish in this
 ## game reaches those two addons at all.
 func _test_progression() -> void:
 	_section("progression")
@@ -96,8 +96,8 @@ func _test_progression() -> void:
 	_check(catalogue_ok.ok, "the achievement catalogue validates", str(catalogue_ok.error))
 
 	# Every stat an achievement reads must be one the schema declares. Nothing in
-	# either addon can check this: dot-achievements does not know the schema exists
-	# and dot-stats does not know the catalogue does.
+	# either addon can check this: gs-achievements does not know the schema exists
+	# and gs-stats does not know the catalogue does.
 	var undeclared := PackedStringArray()
 
 	for stat in progress.achievements.catalogue.watched_stats():
@@ -226,7 +226,7 @@ func _progression_achievements(progress: AirdriftProgress) -> void:
 
 		# A LOWEST stat is an absolute in both systems and must be passed through
 		# rather than differenced — differencing a personal best would be meaningless,
-		# and dot-achievements' link says so.
+		# and gs-achievements' link says so.
 		_check(
 			absf(
 				held.value_of(AirdriftStats.BEST_TIME)

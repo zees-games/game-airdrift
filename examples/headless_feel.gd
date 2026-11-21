@@ -61,7 +61,7 @@ func _test_key_to_motion() -> void:
 	_section("a key moves the eye on the next frame, whatever the round trip")
 	_set_link(WINDOWS[1])
 	Engine.max_fps = 144
-	Input.action_release(&"dot_fps_forward")
+	Input.action_release(&"gs_fps_forward")
 	_turning = false
 	await _until(func() -> bool: return false, 1.0)
 
@@ -77,11 +77,11 @@ func _test_key_to_motion() -> void:
 	var pressed_at := eyes.size()
 	var pressed_usec := Time.get_ticks_usec()
 	var pressed_tick := _client.net.clock.tick
-	Input.action_press(&"dot_fps_forward")
+	Input.action_press(&"gs_fps_forward")
 	for _i in range(40):
 		await get_tree().process_frame
 	_frame_hook = Callable()
-	Input.action_release(&"dot_fps_forward")
+	Input.action_release(&"gs_fps_forward")
 
 	var moved_at := -1
 	for i in range(pressed_at, eyes.size()):
@@ -128,7 +128,7 @@ func _test_a_correction_is_eased() -> void:
 	_section("a correction moves the simulation at once and the eye over a moment")
 	_set_link(WINDOWS[1])
 	Engine.max_fps = 144
-	Input.action_press(&"dot_fps_forward")
+	Input.action_press(&"gs_fps_forward")
 	await _until(func() -> bool: return false, 1.0)
 
 	var net: GSNetManager = _client.net
@@ -160,7 +160,7 @@ func _test_a_correction_is_eased() -> void:
 	for _i in range(90):
 		await get_tree().process_frame
 	_frame_hook = Callable()
-	Input.action_release(&"dot_fps_forward")
+	Input.action_release(&"gs_fps_forward")
 
 	var worst := 0.0
 	var worst_delta := 0.0
@@ -197,7 +197,7 @@ func _test_a_correction_is_eased() -> void:
 
 
 ## The clock is made to run a physics frame with no tick, and later one with two, as its
-## drift does now and then while it settles on the server (dot-net's `MAX_DRIFT_RATE`, and
+## drift does now and then while it settles on the server (gs-net's `MAX_DRIFT_RATE`, and
 ## the input lead's steering at up to 12%), and the eye is watched frame by frame while the
 ## player runs. First the control, with the clock's slip forgotten as soon as it is counted
 ## (the engine's fraction alone, how the eye was drawn before `AirdriftClient._fold_clock`), then
@@ -207,13 +207,13 @@ func _test_a_clock_slip() -> void:
 	_section("a physics frame with no tick, or two, is drawn through, not stalled or doubled")
 	_set_link(WINDOWS[1])
 	Engine.max_fps = 144
-	Input.action_press(&"dot_fps_forward")
+	Input.action_press(&"gs_fps_forward")
 	_turning = false
 	await _until(func() -> bool: return false, 1.0)
 
 	var control := await _slip_frames(true)
 	var drawn := await _slip_frames(false)
-	Input.action_release(&"dot_fps_forward")
+	Input.action_release(&"gs_fps_forward")
 	print("    %d and %d slips judged on a steady run: control %d stalled, %d doubled, worst %.1f cm (%d%% of a frame's step) off; drawn %d stalled, %d doubled, worst %.1f cm (%d%%) off" % [
 		control[3], drawn[3], control[0], control[1], control[2] * 100.0, roundi(control[4] * 100.0),
 		drawn[0], drawn[1], drawn[2] * 100.0, roundi(drawn[4] * 100.0)])
@@ -314,7 +314,7 @@ func _play_window(window: Array) -> void:
 	Engine.max_fps = int(window[1])
 
 	# Settle at the new rate and link before measuring.
-	Input.action_press(&"dot_fps_forward")
+	Input.action_press(&"gs_fps_forward")
 	_turning = true
 	await _until(func() -> bool: return false, 1.5)
 
@@ -352,7 +352,7 @@ func _play_window(window: Array) -> void:
 	await _until(func() -> bool: return false, float(window[5]))
 	var w := _w
 	_w = {}
-	Input.action_release(&"dot_fps_forward")
+	Input.action_release(&"gs_fps_forward")
 	_turning = false
 
 	var frames: int = (w["physics_per_frame"] as Array).size()

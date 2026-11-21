@@ -1,11 +1,11 @@
 extends GSGameVisualQaCapture
 
-## Airdrift's visual QA capture (the loop is dot-game's docs/visual-qa.md). One item per stock person, recorded frame by frame
+## Airdrift's visual QA capture (the loop is gs-game's docs/visual-qa.md). One item per stock person, recorded frame by frame
 ## at --fps in three views (f a rival's eye 2.5 m in front, t behind-right, o an opponent in front):
 ##   person_<letter>  one of the Kenney stock characters (the body and head parts AirdriftAvatars.stock draws) as the game's
 ##                    GSHumanoidFigure, idling, walking, running, crouching and jumping.
 ## Airdrift is third person and its weapons are hitscan with no held model, so there are no weapon items.
-## The outside views and frame saving are dot-game's GSGameVisualQaViews, through GSGameVisualQaCapture.
+## The outside views and frame saving are gs-game's GSGameVisualQaViews, through GSGameVisualQaCapture.
 
 const AirdriftAvatars := preload("../game/airdrift_avatars.gd")
 

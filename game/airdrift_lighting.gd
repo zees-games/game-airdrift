@@ -5,7 +5,7 @@ extends RefCounted
 ## [b]It used to be the implementation and is now the caller.[/b] Reading a map's own sun,
 ## ambient, fog and sky out of a manifest and turning them into an [Environment] is not a
 ## thing about a bhop timer — it is a thing about any game that loads a world somebody else
-## authored — so it is dot-lighting now, with its own suite, and what stays here is the
+## authored — so it is gs-lighting now, with its own suite, and what stays here is the
 ## part that is genuinely this game's: which profile a machine gets.
 ##
 ## See docs/map-rendering.md, "Lighting: the map says how it is lit", for what the lighting block is and where it
@@ -118,7 +118,7 @@ const SKY_TOPS := {
 ## The sky-top colour a map should have instead of its ambient, or transparent when its
 ## ambient is usable.
 ##
-## [b]Four maps had a white sky.[/b] dot-lighting takes the top of the procedural sky from
+## [b]Four maps had a white sky.[/b] gs-lighting takes the top of the procedural sky from
 ## the map's `_ambient`, which in Source is the colour the sky lit the map with. A mapper who
 ## never set it compiles with the editor's default `255 255 255`, and surf_beginner2, bhop_aztec,
 ## bhop_platformer_fxd and bhop_evolve are drawn under a blank white dome. That white is not a
@@ -167,7 +167,7 @@ static func _recolour_white_sky(parent: Node3D, lighting: Dictionary) -> void:
 ## Whether a map's sky is black by name: the whole of it, horizon and below included.
 ##
 ## [b]A sky called black is a statement about the sky, and nothing else in the file is.[/b]
-## surf_kitsune names `blacksky` and sets no sun, no ambient and no fog, so dot-lighting
+## surf_kitsune names `blacksky` and sets no sun, no ambient and no fog, so gs-lighting
 ## drew it under its default daylight dome: a pale grey-blue all round a map built as neon
 ## lines on black, which is the brightest thing on screen wherever a wall is open
 ## (Christian's 2026-10-08 footage: "way too bright / distracting"). The name is read the
@@ -202,7 +202,7 @@ static func _darken_black_sky(parent: Node3D, lighting: Dictionary) -> void:
 
 ## What this machine draws.
 ##
-## [b]Shadows off in a browser and glow kept, which is dot-lighting's `web()` and is doubly
+## [b]Shadows off in a browser and glow kept, which is gs-lighting's `web()` and is doubly
 ## right here.[/b] A surf map is a large open volume — a shadow pass costs what is in frame
 ## and on a canyon that is the canyon — while the glow is what makes a neon strip read as a
 ## light, and a neon strip is how one of these maps signposts the route. Dropping the thing

@@ -4,7 +4,7 @@ extends RefCounted
 ##
 ## The list is the maps collection as the origin publishes it (`<owner>/airdrift-maps/collection.json`,
 ## read by [method AirdriftGame.offer_collection] once the game is up) plus [constant IDS], each fetched when picked.
-## [constant IDS] is what M offers until then and when no origin answers: dot-server-deploy's
+## [constant IDS] is what M offers until then and when no origin answers: gs-server-deploy's
 ## `cfg.example/content.yml` stock list, which `examples/headless_client.gd` holds in step.
 
 ## Where a pack lives: the stock list's owner.
@@ -12,7 +12,7 @@ const OWNER := "gamemann"
 
 ## The service the client shell publishes for a solo session (`TmcSolo.MAPS_SERVICE`). Looked
 ## up by name and duck-typed: nothing in a pack may name a shell class.
-const SERVICE := &"dot_solo"
+const SERVICE := &"gs_solo"
 
 ## The maps collection a solo game offers, under [constant OWNER].
 const COLLECTION := "airdrift-maps"

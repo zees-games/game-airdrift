@@ -18,7 +18,7 @@ var _completed := 0
 var _client: AirdriftClient = null
 
 
-## Stands in for the browser shell's solo session: a node under `dot_solo` with `leave()`.
+## Stands in for the browser shell's solo session: a node under `gs_solo` with `leave()`.
 class FakeSolo extends Node:
 	var left := 0
 	var start_map: StringName = &""
@@ -98,12 +98,12 @@ func _test_solo_in_the_shell() -> void:
 	_done()
 
 
-## The solo course list matches dot-server-deploy's stock content.yml, when that checkout is beside this one.
+## The solo course list matches gs-server-deploy's stock content.yml, when that checkout is beside this one.
 func _check_stock_course_list() -> void:
-	# The list in dot-server-deploy's stock configuration, when that checkout is beside this one.
-	var stock := FileAccess.get_file_as_string(ProjectSettings.globalize_path("res://").path_join("../dot-server-deploy/cfg.example/content.yml"))
+	# The list in gs-server-deploy's stock configuration, when that checkout is beside this one.
+	var stock := FileAccess.get_file_as_string(ProjectSettings.globalize_path("res://").path_join("../gs-server-deploy/cfg.example/content.yml"))
 	if stock == "":
-		_check(true, "(dot-server-deploy is not beside this checkout: drift not checked)")
+		_check(true, "(gs-server-deploy is not beside this checkout: drift not checked)")
 	else:
 		var block := stock.split("  game-airdrift:")[1].split("\n  mg-")[0].split("\n  game-")[0]
 		var re := RegEx.new()
@@ -120,7 +120,7 @@ func _check_stock_course_list() -> void:
 		_check(a == b, "the list is the stock content.yml's Airdrift list", "%d vs %d" % [a.size(), b.size()])
 
 
-## Stands in for dot-cloud's client: one origin, nothing fetched.
+## Stands in for gs-cloud's client: one origin, nothing fetched.
 class FakeCloud extends Node:
 	func resolved_http_base_urls() -> PackedStringArray:
 		return PackedStringArray(["https://origin.test/content/"])

@@ -1,6 +1,6 @@
 extends GSVoteMapSource
 
-## dot-vote's map source, carrying the pack a Workshop map came from.
+## gs-vote's map source, carrying the pack a Workshop map came from.
 ##
 ## [GSVoteMapSource] builds a choice from the map's name alone, so a subscribed map would
 ## be listed on the ballot, in a nomination and in `/mapmenu` as a bare "Name" with nothing

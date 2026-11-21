@@ -22,7 +22,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## genre's units on every surface in the game.
 ##
 ## Deliberately duplicated from `FcMap.dev_texture` rather than shared: the family
-## rule is that only dot-core is ever a hard dependency, and these two games' texturing
+## rule is that only gs-core is ever a hard dependency, and these two games' texturing
 ## has already diverged — this one is keyed by role and looks for an external set.
 
 ## Where a real texture set is looked for. Kenney's prototype kit is vendored there.
@@ -49,7 +49,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## So the rule is one line: [method material_for], which is what a hand-built map calls,
 ## always draws the generated grid; [method installed_texture], which is what
 ## [AirdriftBspMap] calls, prefers what is in here. A missing directory is not an error state
-## — everything falls back to the grid. `dot-server-deploy/setup.sh` copies `textures/`
+## — everything falls back to the grid. `gs-server-deploy/setup.sh` copies `textures/`
 ## into its own build, so what is here ships in the browser export as well.
 static var TEXTURE_DIR := AirdriftPaths.rebase("res://textures/prototype")
 

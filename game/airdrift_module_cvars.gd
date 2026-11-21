@@ -70,7 +70,7 @@ func _bind_rule_cvars() -> void:
 			bridge.broadcast_rules())
 	var _killview := game.killview_rules.bind_cvars(
 		add_cvar, GSConVar.FLAG_ARCHIVE | GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED)
-	# sv_mobile_*: what a phone player may use (dot-mobile). REPLICATED, because each client draws its own controls.
+	# sv_mobile_*: what a phone player may use (gs-mobile). REPLICATED, because each client draws its own controls.
 	var _mobile := game.mobile_rules.bind_cvars(
 		add_cvar, GSConVar.FLAG_ARCHIVE | GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED)
 
@@ -83,7 +83,7 @@ func _bind_rule_cvars() -> void:
 				bridge.broadcast_rules()
 	)
 
-	# Read by dot-net on every tick, so flipping it takes effect on the next snapshot.
+	# Read by gs-net on every tick, so flipping it takes effect on the next snapshot.
 	add_cvar("sv_stagger_snapshots", "1" if game.config.stagger_snapshots else "0",
 		"Spread snapshot work over the ticks between snapshots. Lowers the worst tick on a full server.").changed.connect(
 		func(_old: String, new_value: String) -> void:
@@ -101,14 +101,14 @@ func _bind_rule_cvars() -> void:
 				bridge.broadcast_spectators()
 	)
 
-	# dot-spectate's mp_* cvars, REPLICATED: each client flies its own camera at the server's speed.
+	# gs-spectate's mp_* cvars, REPLICATED: each client flies its own camera at the server's speed.
 	if game.spectate != null and game.spectate.manager != null:
 		var _spectate_cvars := game.spectate.manager.rules.bind_cvars(
 			add_cvar, GSConVar.FLAG_ARCHIVE | GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED
 		)
 
 
-## Course commands and dot-map's map commands.
+## Course commands and gs-map's map commands.
 func _add_course_commands() -> void:
 	add_command("airdrift_status", _cmd_status, "What this server is doing", "").with_chat()
 	add_command("airdrift_restart", _cmd_restart, "Back to the start", "").with_chat()
@@ -119,7 +119,7 @@ func _add_course_commands() -> void:
 	# Not `.with_chat()` yet reachable from chat: CHANGEMAP decides, so a player without the flag is refused.
 	add_command("airdrift_map", _cmd_map, "Change map, or list them", GSAdminFlags.CHANGEMAP)
 
-	# `map`, `maps` and `mapinfo` come from dot-map; dot-server's `map` changed the GAME and is
+	# `map`, `maps` and `mapinfo` come from gs-map; gs-server's `map` changed the GAME and is
 	# `changelevel` now. `allow_chat_change` stays ON, matching `airdrift_map`: CHANGEMAP decides.
 	# `change_fn` rather than the session, because `AirdriftGame.change_map` resets the timer, zones and styles.
 	var map_commands := GSMapCommands.new()
@@ -181,7 +181,7 @@ func _bind_map_cvars() -> void:
 	)
 
 	# How long a map change waits for clients to have the map. See
-	# [member AirdriftConfig.map_sync_seconds] for why it is thirty and not dot-map's three
+	# [member AirdriftConfig.map_sync_seconds] for why it is thirty and not gs-map's three
 	# hundred. Read by the next change; one in flight keeps the deadline it started with.
 	add_cvar("sv_map_sync_timeout", str(int(game.config.map_sync_seconds)),
 		"Seconds a map change waits for clients to have the map before going ahead without them (at least 1, no ceiling)."
@@ -215,7 +215,7 @@ func _add_chat_commands() -> void:
 	add_command("airdrift_ghost", _cmd_ghost, "What the record ghost is running", "").with_chat()
 
 	#
-	# The questions a timer server is asked all evening. The answers are dot-timer's
+	# The questions a timer server is asked all evening. The answers are gs-timer's
 	# (`GSTimerManager.profile`, `recent_records`, ...); these only phrase them.
 	add_command("pb", _cmd_pb, "Your best here, or another player's: !pb [name]", "").with_chat()
 	add_command("rank", _cmd_rank, "Your ranking and title on this server", "").with_chat()
@@ -249,7 +249,7 @@ func _bind_mode_cvars() -> void:
 	# Each one flips a layer that is already built. A layer constructed on the cvar
 	# instead would be constructed under live players, which is where the interesting
 	# failures are — and it would have to be torn down again on the way back.
-	# Dead bodies: dot-player-char's sv_ragdoll* set. The server only picks each death's
+	# Dead bodies: gs-player-char's sv_ragdoll* set. The server only picks each death's
 	# reaction from them; REPLICATED, because the clients draw the bodies (the client's
 	# _build_netcode follows them). Bound whether or not anybody can die yet, so a config's
 	# `sv_ragdoll_style stiff` holds when deathmatch or the hunters are turned on later.

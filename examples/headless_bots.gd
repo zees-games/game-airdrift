@@ -14,9 +14,9 @@ const AirdriftSurfCourse := preload("../game/airdrift_surf_course.gd")
 ## [/codeblock]
 ##
 ## On a hand-built map with no surf cache a bot is the rule-based route bot on the whole run;
-## on surf_beginner, whose cache has stage 1, it rides that stage with dot-bot's surf pilot and
+## on surf_beginner, whose cache has stage 1, it rides that stage with gs-bot's surf pilot and
 ## is put back at the stage's start each time it arrives in stage 2. The surf half needs
-## `maps/imported/surf_beginner` (airdrift-maps, linked by dot-bootstrap) and says so when it is
+## `maps/imported/surf_beginner` (airdrift-maps, linked by gs-bootstrap) and says so when it is
 ## missing, as `headless_imported` does. The cost a bot's driving adds per tick is printed: it is
 ## the number docs/routes.md quotes.
 ##
@@ -45,7 +45,7 @@ const NAV_MAPS: Array[StringName] = [&"bhop_fur", &"bhop_platformer_fxd", &"bhop
 const NAV_SECONDS := 20.0
 ## The most a single planning step may take, milliseconds, a bound that catches a step that grew
 ## with the map. The tick is 7.8 ms at 128 Hz and the planner is given 2 ms of it; the one step
-## that overruns is a single item of dot-npc-ai's annotator, measured 30 to 100 ms on these maps
+## that overruns is a single item of gs-npc-ai's annotator, measured 30 to 100 ms on these maps
 ## (docs/routes.md), which is why this is not 8.
 ## The most ticks a plan is waited for (it is made in the background, 2 ms of each tick).
 const NAV_PLAN_TICKS := 20000
@@ -154,7 +154,7 @@ func _test_a_bot_without_a_cache() -> void:
 		"a player with no timer, so nothing it does is filed", str(bot.describe()) if bot != null else "")
 	_check(described["mode"] == "route" and int(described["stage"]) == 0,
 		"riding the whole run with the rule-based route bot", str(described))
-	var bridge: Object = server.modules.get_module("g2gfast").get("bridge")
+	var bridge: Object = server.modules.get_module("airdrift").get("bridge")
 	var behaviour: Object = bridge.call("behaviour_for", String(ids[0]).trim_prefix("u").to_int())
 	_check(behaviour != null and int(behaviour.get("identity").get("owner_peer_id")) == 0,
 		"replicated as an entity with no peer")

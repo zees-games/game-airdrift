@@ -40,7 +40,7 @@ func _make() -> AirdriftPresentation:
 	return p
 
 
-## Stands in for a dot-server in this process: all the kit asks of one is a `console`.
+## Stands in for a gs-server in this process: all the kit asks of one is a `console`.
 class FakeServer extends RefCounted:
 	var console := FakeConsole.new()
 
@@ -71,7 +71,7 @@ func _drawn_by(node: Node, mask: int) -> int:
 	return count
 
 
-## The real menu as the client builds it: dot-menu's, with this game's keys and pages.
+## The real menu as the client builds it: gs-menu's, with this game's keys and pages.
 func _menu_for(p: AirdriftPresentation, host: Node) -> GSMenu:
 	var menu := GSMenu.new()
 	menu.settings = p.settings

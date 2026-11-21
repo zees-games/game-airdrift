@@ -3,7 +3,7 @@ extends GSGameNetchaosServer
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 
-## Airdrift's side of `tools/netchaos.sh` (dot-game's GSGameNetchaosServer): a timer server, no bots.
+## Airdrift's side of `tools/netchaos.sh` (gs-game's GSGameNetchaosServer): a timer server, no bots.
 
 var _game: AirdriftGame = null
 
@@ -36,7 +36,7 @@ func _boot_world() -> void:
 	if not loaded.ok:
 		printerr("netchaos server: ", loaded.error)
 		return
-	module = server.modules.get_module("g2gfast")
+	module = server.modules.get_module("airdrift")
 	if solid != "":
 		var cv: GSConVar = server.console.find_cvar("mp_solidplayers")
 		if cv != null:

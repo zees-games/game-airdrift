@@ -182,7 +182,7 @@ func _boot() -> void:
 	# [b]The store, and that it is empty.[/b] The second is what says the first worked on
 	# THIS run: a path that is right and a directory that was not wiped is a suite carrying
 	# the last run's gag into this one.
-	var module: Object = server.modules.get_module("g2gfast")
+	var module: Object = server.modules.get_module("airdrift")
 	var services: Object = module.get("services") if module != null else null
 	var moderation: Object = services.get("moderation") if services != null else null
 	var store: Object = moderation.get("store") if moderation != null else null
@@ -218,7 +218,7 @@ func _test_browser() -> void:
 		remove_child(servers)
 		return
 
-	# The QUERY port, not the game port. dot-server listens for queries separately, and
+	# The QUERY port, not the game port. gs-server listens for queries separately, and
 	# a browser that asked the game port would get no answer and report the server as
 	# offline — which reads as the browser being broken.
 	var added := servers.add(
@@ -246,9 +246,9 @@ func _test_browser() -> void:
 	)
 
 	if entry.is_online():
-		# [b]The map is the GAME's, not `entry.map`.[/b] That is dot-server's
+		# [b]The map is the GAME's, not `entry.map`.[/b] That is gs-server's
 		# `info.map`, which means "the content id of the loaded game" and is empty on
-		# a server that has never switched games. dot-browser nests the game's own
+		# a server that has never switched games. gs-browser nests the game's own
 		# section under `rules["game"]` precisely so a game putting a field called
 		# `map` in it cannot overwrite the other one.
 		_check(
@@ -325,7 +325,7 @@ func _test_live_tools() -> void:
 	var on_stop := func(_r: GSTimerRun, why: StringName) -> void: stopped.append(why)
 	player.timer.run_stopped.connect(on_stop)
 
-	# Out of the start zone first. Standing in it ends a run (dot-timer v0.1.4, as in every
+	# Out of the start zone first. Standing in it ends a run (gs-timer v0.1.4, as in every
 	# timer of the genre), so a run begun by hand at the spawn was replaced on the next tick
 	# and every check below read a fresh, untainted one.
 	_check(await _stand_past_start(player), "One stands on the course, past the start zone")
@@ -376,7 +376,7 @@ func _test_live_tools() -> void:
 	# goes through the map-sync host, which waits on every peer and an adopted session has
 	# none (FC's first draft of this check hung there). Armed 2026-09-27: without the
 	# clear, `return One` put them back at the spot on the previous map.
-	var module: Object = server.modules.get_module("g2gfast")
+	var module: Object = server.modules.get_module("airdrift")
 	var tools: GSModTools = (module.get("services") as AirdriftServices).mod_tools if module != null else null
 	var _moved: GSResult = await tools.teleport(&"", &"1", player.global_position + Vector3(6.0, 0.0, 0.0))
 	_check(tools.can_return(&"1"), "a moderator moves One, so `return` has somewhere to put them")
@@ -427,7 +427,7 @@ func _test_blind_and_beacon() -> void:
 	session.display_name = "One"
 	var _adopted := server.adopt_session(session)
 
-	var module: Object = server.modules.get_module("g2gfast")
+	var module: Object = server.modules.get_module("airdrift")
 	var bridge: Object = module.get("bridge") if module != null else null
 	var tools: GSModTools = (module.get("services") as AirdriftServices).mod_tools if module != null else null
 	var player: AirdriftPlayer = game.players[&"u1"]
@@ -499,7 +499,7 @@ func _test_blind_and_beacon() -> void:
 
 func _test_unload() -> void:
 	_section("unload")
-	var unloaded := server.modules.unload_module("g2gfast")
+	var unloaded := server.modules.unload_module("airdrift")
 	_check(unloaded.ok, "the module unloads")
 	_check(server.console.find_cvar("sv_autobunnyhopping") == null, "and takes its cvars with it")
 	_check(not (server.get(&"scoreboard_fields") as Callable).is_valid() and not (server.get(&"scoreboard_extra") as Callable).is_valid(),
@@ -519,7 +519,7 @@ func _test_unload() -> void:
 	_check(after.ok and game.maps.current.id == next_map,
 		"so a map change after it is this process's own", str(after.error) if not after.ok else "")
 	# The SECOND map change with the combat layer built — the first one that has old
-	# spawn points to clear. `AirdriftCombat._on_map_ready` called a method dot-match has never
+	# spawn points to clear. `AirdriftCombat._on_map_ready` called a method gs-match has never
 	# had, and the script error left the previous map's points as the deathmatch's.
 	var points: Array = game.combat.match_node.spawn_points() if game.combat != null else []
 	var main_pad: Vector3 = game.current_map_node().spawn_for(GSTimerTrack.MAIN)
@@ -658,7 +658,7 @@ func _test_no_message_preloads_itself() -> void:
 func _extends_message(source: String) -> bool:
 	for line in source.split("\n"):
 		if line.begins_with("extends "):
-			return line.contains("GSNetMessage") or line.contains("dot_net_message.gd")
+			return line.contains("GSNetMessage") or line.contains("gs_net_message.gd")
 	return false
 
 

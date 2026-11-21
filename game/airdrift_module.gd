@@ -33,10 +33,10 @@ func _module_load() -> GSResult:
 
 	server.client_disconnected.connect(_on_client_disconnected)
 
-	# The Tab board: dot-server sends every client holding it the names, pings and time
+	# The Tab board: gs-server sends every client holding it the names, pings and time
 	# connected; these are this game's columns for each, the style, the best time on this
 	# map and its rank, from what the game already worked out for the HUD. Asked rather
-	# than assumed: a pack runs on whatever dot-server the host has, and one from before
+	# than assumed: a pack runs on whatever gs-server the host has, and one from before
 	# the roster has neither property.
 	if "scoreboard_fields" in server:
 		server.set(&"scoreboard_fields", func(session: GSClientSession) -> Dictionary:
@@ -113,10 +113,10 @@ func _module_unload() -> void:
 			game.maps.changed.disconnect(_report_map)
 	if net != null and is_instance_valid(net):
 		net.stop()
-	# [b]The platform module goes with the identity that loaded it[/b], as dot-game's does: it
+	# [b]The platform module goes with the identity that loaded it[/b], as gs-game's does: it
 	# holds the hub AirdriftIdentity registered, which a game change frees. Left loaded, every game
 	# after this one found "platform" already there, loaded none of its own, and kept asking
-	# Airdrift's freed hub (dot-game's history: signal 11 on the next spawn).
+	# Airdrift's freed hub (gs-game's history: signal 11 on the next spawn).
 	if _loaded_platform and server != null and server.modules != null \
 			and server.modules.has_module("platform"):
 		server.modules.unload_module("platform")
@@ -168,7 +168,7 @@ func _remove_old_names() -> void:
 
 
 ## The manager and the bridge. The module drives the tick, because the game's tick
-## has to happen INSIDE dot-net's — between applying inputs and building the snapshot.
+## has to happen INSIDE gs-net's — between applying inputs and building the snapshot.
 func _build_netcode() -> GSResult:
 	net = GSNetManager.new()
 	net.name = "Net"
@@ -192,9 +192,9 @@ func _build_netcode() -> GSResult:
 	var ready_result := net.setup()
 	if not ready_result.ok:
 		return ready_result.wrap("The netcode could not start")
-	# net_skip_idle and net_visibility, the switches dot-game's own games get from GSGameNetcode (dot-game 52; by name, so an older host still parses this).
-	if GSAddonApi.build_level("dot_game") >= 52:
-		load("res://addons/dot_game/net/dot_game_relevance.gd").call(&"bind_toggles", console, net)
+	# net_skip_idle and net_visibility, the switches gs-game's own games get from GSGameNetcode (gs-game 52; by name, so an older host still parses this).
+	if GSAddonApi.build_level("gs_game") >= 52:
+		load("res://addons/gs_game/net/gs_game_relevance.gd").call(&"bind_toggles", console, net)
 
 	bridge = AirdriftNetBridge.new()
 	bridge.name = "Bridge"
@@ -205,10 +205,10 @@ func _build_netcode() -> GSResult:
 		return attached
 
 	bridge.commands_fn = chat_commands
-	# The older client's map list (its own wire, before dot-menu's map menu) asks the map
+	# The older client's map list (its own wire, before gs-menu's map menu) asks the map
 	# menu's own question, so the two can never disagree: staff by the owner's
 	# `sv_map_menu_flag`, the host's own player, or the only human here under
-	# `sv_map_menu_alone`. Fails closed: with no map menu (a dot-vote older than it) only
+	# `sv_map_menu_alone`. Fails closed: with no map menu (a gs-vote older than it) only
 	# `changemap` changes the map. Until 2026-10-14 this read an empty flag as "anybody".
 	bridge.may_change_map_fn = func(session_id: int) -> bool:
 		var session := server.session_by_userid(session_id)
@@ -217,7 +217,7 @@ func _build_netcode() -> GSResult:
 		# Level 7 is the map menu that fails closed and counts humans; an older one read an
 		# empty flag as "anybody", so on a host still on it this answers `changemap` alone.
 		var menu_half: Variant = vote.commands.get(&"map_menu") if vote != null and vote.commands != null else null
-		if menu_half is Object and GSAddonApi.build_level("dot_vote") >= 7:
+		if menu_half is Object and GSAddonApi.build_level("gs_vote") >= 7:
 			var ctx := session.make_context("mapmenu", PackedStringArray(), GSCmdContext.Source.CHAT)
 			return bool((menu_half as Object).call(&"may_change", ctx))
 		return GSAdminFlags.granted(session.permissions, GSAdminFlags.CHANGEMAP)
@@ -241,14 +241,14 @@ func _build_netcode() -> GSResult:
 
 	net.messages.seal()
 	# [b]A client whose game messages cannot work with this server's is dropped, in words.[/b]
-	# dot-net compares the two schema tables and refuses a pair where either lacks a type
+	# gs-net compares the two schema tables and refuses a pair where either lacks a type
 	# the other REQUIRES, but it owns no socket and can only say so; this is the socket.
-	# The same line GSGameNetcode.refuse_peer is for games built on dot-game.
+	# The same line GSGameNetcode.refuse_peer is for games built on gs-game.
 	net.peer_schema_refused.connect(_refuse_peer)
 	return net.start()
 
 
-## The event carries `userid`, not `peer_id` — dot-2d-hungry's note on this, in full:
+## The event carries `userid`, not `peer_id` — gs-2d-hungry's note on this, in full:
 ## looking a session up by a peer id that is not in the payload returns null every
 ## time, and nobody is ever added, with no error.
 func _on_client_spawn(event: GSEvent) -> void:
@@ -256,12 +256,12 @@ func _on_client_spawn(event: GSEvent) -> void:
 	if session == null or _joined.has(session.userid):
 		return
 
-	# dot-moderation's records, which are not dot-server's ban list.
+	# gs-moderation's records, which are not gs-server's ban list.
 	#
-	# [b]dot-server's mute is two booleans on a session object and a session dies with
+	# [b]gs-server's mute is two booleans on a session object and a session dies with
 	# its connection[/b], so a muted player reconnects and talks. A punishment is a
 	# durable record with an expiry and a scope, and this is the second gate — the
-	# first is dot-server's own admission, which has already run.
+	# first is gs-server's own admission, which has already run.
 	if services != null:
 		var admitted := services.check_admission(session)
 
@@ -287,7 +287,7 @@ func _on_client_spawn(event: GSEvent) -> void:
 		services.add_peer(session.peer_id)
 
 
-## The avatar dot-platform resolved for this session, if there is a dot-platform.
+## The avatar gs-platform resolved for this session, if there is a gs-platform.
 ##
 ## Duck-typed: a module that answers `player_for` is enough, and naming
 ## GSPlatformModule would make a LAN server impossible without the identity stack.
@@ -308,15 +308,15 @@ func _avatar_for(session: GSClientSession) -> GSAvatar:
 ## The hub's own answer, when the module has not resolved one yet.
 ##
 ## [b]Admission usually finishes before the spawn now; this covers when it does not.[/b]
-## dot-server's signon has a PROFILE stage between authentication and content, and
-## dot-platform's module holds every authenticated player there while the hub admits
+## gs-server's signon has a PROFILE stage between authentication and content, and
+## gs-platform's module holds every authenticated player there while the hub admits
 ## them, so a player is normally seated already resolved and `player_for` answers. It
 ## still lets an optional player in after `admission_timeout_sec` with admission
 ## finishing behind them, and a session it first hears of past the stage (an older
-## dot-server, an adopted session, a guest who signed in after spawning) is admitted
+## gs-server, an adopted session, a guest who signed in after spawning) is admitted
 ## after the spawn as before. For those, asking the hub directly closes the gap: it
 ## answers with what it has, and `AirdriftIdentity.avatar_for` falls back to the stock
-## document, which is a real avatar over the same schema. dot-platform docs/design.md.
+## document, which is a real avatar over the same schema. gs-platform docs/design.md.
 func _identity_avatar(session: GSClientSession) -> GSAvatar:
 	if identity == null or session == null:
 		return null
@@ -324,7 +324,7 @@ func _identity_avatar(session: GSClientSession) -> GSAvatar:
 	return identity.avatar_for("u%d" % session.userid)
 
 
-## dot-platform's broadcast_avatar_changes, received: the player is redressed and
+## gs-platform's broadcast_avatar_changes, received: the player is redressed and
 ## everybody is told, through the same JOIN a style change sends.
 func _on_avatar_changed(event: GSEvent) -> void:
 	var session := server.session_by_userid(event.get_int("userid"))
@@ -335,7 +335,7 @@ func _on_avatar_changed(event: GSEvent) -> void:
 		bridge.dress(session.userid, avatar)
 
 
-## Disconnects a peer whose message schema this server cannot play with, with dot-net's
+## Disconnects a peer whose message schema this server cannot play with, with gs-net's
 ## sentence as the reason. See `peer_schema_refused` above.
 func _refuse_peer(peer_id: int, error: GSError) -> void:
 	var session: GSClientSession = server.session_of(peer_id) if server != null else null
@@ -367,7 +367,7 @@ func _bind_config() -> GSResult:
 	var made := _noblock_made
 	var wanted := made.ok
 	if not wanted:
-		GSLog.warn(CHANNEL, "noblock unavailable: dot-team is not in this build")
+		GSLog.warn(CHANNEL, "noblock unavailable: gs-team is not in this build")
 	var runtime := _wb_runtime
 
 	var covered := PackedStringArray()
@@ -382,7 +382,7 @@ func _bind_config() -> GSResult:
 
 	if wanted:
 		noblock = made.value
-		# The genre: runners pass through each other. dot-team's own default blocks enemies, and
+		# The genre: runners pass through each other. gs-team's own default blocks enemies, and
 		# everyone is one: so unless a cfg layer says otherwise, nobody stops until `mp_enemyblock 1`
 		# or a pair of `!block` requests. (A client follows the server's value.)
 		var cfg: Object = noblock.rules.get(&"config")

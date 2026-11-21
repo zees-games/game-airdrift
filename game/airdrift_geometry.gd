@@ -102,7 +102,7 @@ static func material_for(surface: Variant) -> StandardMaterial3D:
 	return AirdriftTextures.material_for(surface as AirdriftTextures.Role)
 
 
-## The hand-built maps' sun, sky and air: [constant AirdriftLighting.DAYLIGHT], a dot-lighting
+## The hand-built maps' sun, sky and air: [constant AirdriftLighting.DAYLIGHT], a gs-lighting
 ## document like an imported map's, through the same rig. See [method AirdriftLighting.builtin].
 static func sun(parent: Node3D) -> DirectionalLight3D:
 	return AirdriftLighting.builtin(parent)

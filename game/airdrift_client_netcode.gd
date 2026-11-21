@@ -60,9 +60,9 @@ func _build_netcode() -> GSResult:
 			presentation.set_chat_relayed(relayed)
 	)
 
-	# [b]Where chat actually arrives.[/b] `AirdriftServices` routes a line through dot-chat
-	# and then hands it to dot-server's manager to put on the wire, so on this end it
-	# lands on `GSClientLink.chat_received` — not on anything dot-chat owns. Without
+	# [b]Where chat actually arrives.[/b] `AirdriftServices` routes a line through gs-chat
+	# and then hands it to gs-server's manager to put on the wire, so on this end it
+	# lands on `GSClientLink.chat_received` — not on anything gs-chat owns. Without
 	# this connection the client's `GSChatClient` is a history nothing feeds.
 	if link != null and link.has_signal("chat_received"):
 		link.connect("chat_received", extras.receive_wire)
@@ -79,9 +79,9 @@ func _build_netcode() -> GSResult:
 	elif link.has_signal("spawned"):
 		link.connect("spawned", _say_ready, CONNECT_ONE_SHOT)
 
-	# ENet's own round trip on UDP and the early heartbeats' on WebSocket (dot-server's
+	# ENet's own round trip on UDP and the early heartbeats' on WebSocket (gs-server's
 	# `rtt_ms`); the plain heartbeat on a link older than that. Duck-typed, because a pack
-	# runs on whatever dot-server the shell carries.
+	# runs on whatever gs-server the shell carries.
 	if link.has_method("rtt_ms"):
 		bridge.rtt_source = func() -> float:
 			return float(link.call("rtt_ms"))
@@ -257,7 +257,7 @@ func _drive_spectator_camera() -> void:
 
 	_roam_seeded = false
 
-	# The chase camera pulled out of the walls by dot-spectate, given the level.
+	# The chase camera pulled out of the walls by gs-spectate, given the level.
 	var manager: GSSpectatorManager = game.spectate.manager
 	if manager != null and manager.camera_world == null:
 		manager.camera_world = camera.get_world_3d()
@@ -291,9 +291,9 @@ func _drive_free_camera(camera: Camera3D) -> void:
 	var move := Vector3.ZERO
 	if not (overlay_open() or (presentation != null and presentation.swallows_input())):
 		move = Vector3(
-			Input.get_axis(&"dot_fps_left", &"dot_fps_right"),
-			Input.get_axis(&"dot_fps_crouch", &"dot_fps_jump"),
-			Input.get_axis(&"dot_fps_back", &"dot_fps_forward"))
+			Input.get_axis(&"gs_fps_left", &"gs_fps_right"),
+			Input.get_axis(&"gs_fps_crouch", &"gs_fps_jump"),
+			Input.get_axis(&"gs_fps_back", &"gs_fps_forward"))
 	var shift := Input.is_physical_key_pressed(KEY_SHIFT)
 	var alt := Input.is_physical_key_pressed(KEY_ALT)
 	camera.global_transform = _free_cam.step(move, shift, alt and not shift,
@@ -566,7 +566,7 @@ const HUD_PIECES := {
 }
 
 
-## The menus: dot-menu's, with this game's pages, keys and scoreboard. See [AirdriftMenuPages].
+## The menus: gs-menu's, with this game's pages, keys and scoreboard. See [AirdriftMenuPages].
 func _build_overlays() -> void:
 	menu = GSMenu.new()
 	menu.name = "Menu"
@@ -601,9 +601,9 @@ func _build_overlays() -> void:
 	menu.action_requested.connect(func(id: StringName) -> void:
 		if id == &"leave":
 			_leave())
-	# M: the map list (dot-menu's map menu). Solo a choice changes the map here; connected the
+	# M: the map list (gs-menu's map menu). Solo a choice changes the map here; connected the
 	# server decides, by the owner's `sv_map_menu_flag`, and anybody without it gets a vote
-	# (dot-vote's map menu, wired in [AirdriftModule]). By name, so a client shell older than the
+	# (gs-vote's map menu, wired in [AirdriftModule]). By name, so a client shell older than the
 	# map menu still runs the game without it.
 	if menu.has_method(&"use_maps"):
 		var maps: Variant = menu.call(&"use_maps", func() -> Array: return AirdriftGame.menu_rows(game.map_rows()) if game != null else [],
@@ -640,7 +640,7 @@ func _build_overlays() -> void:
 
 ## The Tab board. A timer server's board is not kills and deaths: it is each runner's style,
 ## their best time here and where it places them, beside how long they have been on and their
-## ping. Online those come from the server (dot-server's roster, with this game's columns
+## ping. Online those come from the server (gs-server's roster, with this game's columns
 ## added by [AirdriftModule]); offline, from the local game, which works them out the same way.
 ##
 ## [b]A server from before the roster sends nothing[/b], and a board waiting on a feed that
@@ -702,7 +702,7 @@ func overlay_open() -> bool:
 	return menu != null and menu.any_open()
 
 
-## M, as the key does: dot-menu's map menu. Solo it is this game's catalogue (every map, not
+## M, as the key does: gs-menu's map menu. Solo it is this game's catalogue (every map, not
 ## the rotation); connected the server's list, which a player without the owner's flag sees as
 ## a vote. For the menu screenshots.
 func open_map_list() -> void:

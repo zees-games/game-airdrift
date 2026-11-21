@@ -164,7 +164,7 @@ func _ready() -> void:
 	controller.drive = GSFpsController.Drive.EXTERNAL
 	controller.tunables = base_tunables
 	# Every player, both ends: an admin's noclip is a modifier whose index travels on the
-	# wire. See dot-player-controller's GSFpsAdminModifiers.
+	# wire. See gs-player-controller's GSFpsAdminModifiers.
 	controller.admin_abilities = true
 	base_tunables.collision_mask = collision_mask
 	# The genre's water, not a sandbox's: 200 u/s at most (its 0.8 of the run speed), and
@@ -436,7 +436,7 @@ func _on_simulated(_tick: int, state: GSFpsState) -> void:
 	# [b]An admin's help makes a run assisted, every tick it is on.[/b] Noclip abandons the
 	# run it interrupts (`AirdriftModTools`), but a noclipped player can fly into a start zone
 	# and out again and begin a new one — and a speed or gravity step is help on the
-	# ground. `taint` is dot-timer's own "assisted" mark, which `can_record` refuses, so
+	# ground. `taint` is gs-timer's own "assisted" mark, which `can_record` refuses, so
 	# the run still finishes and still shows and is simply never filed. Every tick rather
 	# than at the moment it is granted, because a run started afterwards has to carry it
 	# too. Freeze is not here: it can only cost a runner time.
@@ -571,7 +571,7 @@ func _present_beacon(delta: float, at: Vector3) -> void:
 ## wide as the stock one would read as a mark beside them rather than under them. The column
 ## starts above a standing runner's head (72 units, 1.37 m) so it never crosses the body.
 ##
-## [b]The ping is off on purpose.[/b] It plays through the game's own dot-audio catalogue
+## [b]The ping is off on purpose.[/b] It plays through the game's own gs-audio catalogue
 ## (`AirdriftPresentation.BEACON_SOUND`, from [signal beacon_pulsed]), which the volume sliders
 ## and the hide-others setting already govern; the stock voice would be heard twice and obey
 ## neither. Red-orange because no prototype texture is, so it reads as a mark on any map.
@@ -661,11 +661,11 @@ var view_now: Variant = null
 ## the state jumps. Drawn straight, the camera jumps with it: 1 to 30 cm in one frame on
 ## a lossy link (`examples/headless_feel.tscn`), and a few millimetres on every snapshot
 ## even on a clean one, because the replay starts from the server's quantised state.
-## dot-net has always computed the offset that hides it, and nothing here read it.
+## gs-net has always computed the offset that hides it, and nothing here read it.
 var drawn_offset: Vector3 = Vector3.ZERO
 
 
-## This tick's dot-timer replay flags: ducked, jumped and teleported. A replay declared all
+## This tick's gs-timer replay flags: ducked, jumped and teleported. A replay declared all
 ## three from the start and nothing wrote them, so a ghost never crouched or jumped and was
 ## smeared across every teleport. Read once a tick, by whatever feeds the timer.
 func replay_flags() -> int:

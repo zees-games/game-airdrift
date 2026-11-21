@@ -1,23 +1,23 @@
 # Services: moderation, chat, voice, the vote, the browser, identity
 
-`AirdriftServices` builds dot-chat, dot-voice and dot-moderation on a dedicated server; `AirdriftIdentity` joins dot-cloud, dot-auth, dot-user and dot-platform; `AirdriftVote` is dot-vote over the map catalogue; `AirdriftBrowser` is dot-browser's client half; `AirdriftQuery` is what a browser is told. The rule each was added under: **a player who came to run must not be stopped by anything added for a player who came to do something else.**
+`AirdriftServices` builds gs-chat, gs-voice and gs-moderation on a dedicated server; `AirdriftIdentity` joins gs-cloud, gs-auth, gs-user and gs-platform; `AirdriftVote` is gs-vote over the map catalogue; `AirdriftBrowser` is gs-browser's client half; `AirdriftQuery` is what a browser is told. The rule each was added under: **a player who came to run must not be stopped by anything added for a player who came to do something else.**
 
 ## An admin's live tools
 
-dot-moderation's live tools are here (`AirdriftModTools`, built in `AirdriftServices`, commands on the module). **No admin tool can help a run**: the taint rules are in [timer.md](timer.md#what-taints-a-run).
+gs-moderation's live tools are here (`AirdriftModTools`, built in `AirdriftServices`, commands on the module). **No admin tool can help a run**: the taint rules are in [timer.md](timer.md#what-taints-a-run).
 
 - **Health, weapons and god mode exist only while `sv_deathmatch` is on**, so god, buddha, hp, slay, give and strip answer "not running its deathmatch" rather than being absent: whether they mean anything is a cvar, not a build.
-- **Blind and beacon are two replicated flags** (`AirdriftPlayer.blinded`, `AirdriftPlayer.beacon`, in `AirdriftPlayerNet` after the movement specs). **`net_blind` is owner-only**: nobody else's screen changes, and an opponent on the deathmatch layer who could read it would know when to go and find somebody. `net_beacon` goes to everybody. State rather than an event, so a joiner, a lost snapshot and a map change are corrected by the next snapshot. `GSFxBeacon` (dot-fx, ping off: the game plays its own through dot-audio) is a ring and a once-a-second ripple sized to this game's 32-unit hull, and a column through walls the beaconed player's own camera does not draw.
+- **Blind and beacon are two replicated flags** (`AirdriftPlayer.blinded`, `AirdriftPlayer.beacon`, in `AirdriftPlayerNet` after the movement specs). **`net_blind` is owner-only**: nobody else's screen changes, and an opponent on the deathmatch layer who could read it would know when to go and find somebody. `net_beacon` goes to everybody. State rather than an event, so a joiner, a lost snapshot and a map change are corrected by the next snapshot. `GSFxBeacon` (gs-fx, ping off: the game plays its own through gs-audio) is a ring and a once-a-second ripple sized to this game's 32-unit hull, and a column through walls the beaconed player's own camera does not draw.
 - Three differences from game-fatal-contact's version, on purpose: **neither taints a run**; **nothing re-applies them on a respawn**, because a respawn here is `AirdriftGame.spawn_player`, a teleport of the same node, so the flags stay (this game never calls `GSModTools.respawned`, so adding them to `persist_on_respawn` would be a setting nothing reads); and **a beacon changes no relevance**. Every player entity is already `always_relevant` (`AirdriftNetBridge._build_entity`); FC's `always_relevant = beacon` here would CUT every runner the moment their beacon went off.
 
-## Chat is the policy; dot-server stays the transport
+## Chat is the policy; gs-server stays the transport
 
-`AirdriftServices` hooks `player_chat` and **cancels** it, routes the text through `GSChatRouter`, and hands each recipient's line back to dot-server's manager for the wire. Exactly one of the two delivers a line. On the client a line arrives on `GSClientLink.chat_received` and `AirdriftClientExtras.receive_line` feeds `GSChatClient`.
+`AirdriftServices` hooks `player_chat` and **cancels** it, routes the text through `GSChatRouter`, and hands each recipient's line back to gs-server's manager for the wire. Exactly one of the two delivers a line. On the client a line arrives on `GSClientLink.chat_received` and `AirdriftClientExtras.receive_line` feeds `GSChatClient`.
 
-- **It hooks `player_command` as well.** dot-server's chat manager checks for a command prefix before it fires `player_chat`, and its prefixes are `["!", "/"]`, the same as `GSChatRules`', so without the hook no `!` line reaches the router: `!spec` once did nothing at all. A new `!` command must be handled by the router path or be a console command registered `.with_chat()`.
-- **The `running` channel** is everybody mid-run: a `MEMBERS` channel whose rule ("their timer is going") only this game knows, which is why dot-chat asks rather than deciding. The team key falls back to it, because a timer server has no teams.
-- **dot-moderation is built first, and the order is load-bearing.** It publishes `dot_mute_source` on `_ready` and both routers look that name up when they start; a router that started first enforces no gag for the life of the server.
-- **`airdrift_map` carries `CHANGEMAP` and is reachable from chat.** The permission flag is what answers, not chat being disabled for the command: a chat block runs before the permission check and never asks who is typing, so it only ever stopped the operator who holds the flag. `sv_chat_commands 0` turns chat commands off server-wide, and `allow_chat_change = false` on the dot-map block turns off the map change alone.
+- **It hooks `player_command` as well.** gs-server's chat manager checks for a command prefix before it fires `player_chat`, and its prefixes are `["!", "/"]`, the same as `GSChatRules`', so without the hook no `!` line reaches the router: `!spec` once did nothing at all. A new `!` command must be handled by the router path or be a console command registered `.with_chat()`.
+- **The `running` channel** is everybody mid-run: a `MEMBERS` channel whose rule ("their timer is going") only this game knows, which is why gs-chat asks rather than deciding. The team key falls back to it, because a timer server has no teams.
+- **gs-moderation is built first, and the order is load-bearing.** It publishes `gs_mute_source` on `_ready` and both routers look that name up when they start; a router that started first enforces no gag for the life of the server.
+- **`airdrift_map` carries `CHANGEMAP` and is reachable from chat.** The permission flag is what answers, not chat being disabled for the command: a chat block runs before the permission check and never asks who is typing, so it only ever stopped the operator who holds the flag. `sv_chat_commands 0` turns chat commands off server-wide, and `allow_chat_change = false` on the gs-map block turns off the map change alone.
 
 ## Voice
 
@@ -39,15 +39,15 @@ The default voice channel is **ALL**, the opposite of game-fatal-contact's, and 
 
 ## The server browser, from the other end
 
-`AirdriftQuery` contributes the map, tick rate, styles and world record; `AirdriftBrowser` is dot-browser's client half (list model, three protocols, filters, favourites, history), and `dedicated` has a real browser ask a real `GSServer` over a real UDP socket.
+`AirdriftQuery` contributes the map, tick rate, styles and world record; `AirdriftBrowser` is gs-browser's client half (list model, three protocols, filters, favourites, history), and `dedicated` has a real browser ask a real `GSServer` over a real UDP socket.
 
-- **The map is not `entry.map`**: that is dot-server's `info.map`, the content id of the loaded game. A game's own section is under `rules["game"]` precisely so a field called `map` there cannot overwrite it.
+- **The map is not `entry.map`**: that is gs-server's `info.map`, the content id of the loaded game. A game's own section is under `rules["game"]` precisely so a field called `map` there cannot overwrite it.
 - **JSON has one number type**: `tick_rate` comes back as a float; `game_number` is the accessor, and `wr` (a dictionary) has a third.
 - **The list is a chat command** (`!servers`, or F3), because that is what this genre's fingers do and this client has a HUD rather than a screen stack. game-fatal-contact has the screen.
 
 ## Identity and platform
 
-dot-platform's module holds each authenticated player in dot-server's PROFILE signon stage while the hub admits them, so a player is normally seated already resolved. Admission can still finish after the spawn (an optional player let in after `admission_timeout_sec`, or a session the module first hears of past the stage), so `AirdriftModule._avatar_for` falls through to `AirdriftIdentity.avatar_for`, which falls through to the stock document. dot-platform `docs/design.md` has the stage.
+gs-platform's module holds each authenticated player in gs-server's PROFILE signon stage while the hub admits them, so a player is normally seated already resolved. Admission can still finish after the spawn (an optional player let in after `admission_timeout_sec`, or a session the module first hears of past the stage), so `AirdriftModule._avatar_for` falls through to `AirdriftIdentity.avatar_for`, which falls through to the stock document. gs-platform `docs/design.md` has the stage.
 
 ## Statistics and achievements
 

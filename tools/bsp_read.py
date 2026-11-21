@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Read a VBSP map (v19-v21) far enough to get geometry and zones out of it.
 
-[b]The reader itself is dot-map-convert's shared one[/b] (`dot-map-convert/dotbsp/reader.py`), which
+[b]The reader itself is gs-map-convert's shared one[/b] (`gs-map-convert/gsbsp/reader.py`), which
 every game's converter uses, so a fix to how the format is read reaches all of them. This file
 keeps the names this repository's tools import (`from bsp_read import Bsp, ...`) and the
-Airdrift-specific dump below. dot-map-convert is found as a sibling checkout (`../dot-map-convert`, where
-dot-bootstrap clones it) or at `$DOTBSP_PATH`.
+Airdrift-specific dump below. gs-map-convert is found as a sibling checkout (`../gs-map-convert`, where
+gs-bootstrap clones it) or at `$GSBSP_PATH`.
 
 Point it at a surf or bhop map and it writes an .obj of the world geometry and a .json of
 the entities that become timer zones and spawns:
@@ -36,18 +36,18 @@ import sys
 
 def _shared():
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    import dotbsp_path
-    p = dotbsp_path.find()
-    if os.path.isfile(os.path.join(p, "dotbsp", "reader.py")):
+    import gsbsp_path
+    p = gsbsp_path.find()
+    if os.path.isfile(os.path.join(p, "gsbsp", "reader.py")):
         return p
-    sys.exit("bsp_read: dot-map-convert's shared reader was not found. Clone dot-map-convert beside this "
-             "repository (dot-bootstrap does) or set DOTBSP_PATH to dot-map-convert.")
+    sys.exit("bsp_read: gs-map-convert's shared reader was not found. Clone gs-map-convert beside this "
+             "repository (gs-bootstrap does) or set GSBSP_PATH to gs-map-convert.")
 
 
 if _shared() not in sys.path:
     sys.path.insert(0, _shared())
-from dotbsp.reader import *  # noqa: E402,F401,F403
-from dotbsp.reader import Bsp, SKIP_MASK, clean_material, to_godot  # noqa: E402,F401
+from gsbsp.reader import *  # noqa: E402,F401,F403
+from gsbsp.reader import Bsp, SKIP_MASK, clean_material, to_godot  # noqa: E402,F401
 
 
 def write_obj(bsp, out_path):

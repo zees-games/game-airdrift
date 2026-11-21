@@ -13,19 +13,19 @@ const AirdriftModTools := preload("airdrift_mod_tools.gd")
 ## not much — a radius channel is worth less on a course than in an arena, and a
 ## spectator channel is worth more.
 ##
-## [b]dot-chat is the policy; dot-server stays the transport.[/b] Both would be two
+## [b]gs-chat is the policy; gs-server stays the transport.[/b] Both would be two
 ## chat systems if both delivered a line, so exactly one does: the `player_chat` event
 ## is hooked and cancelled, the text goes to [GSChatRouter], and the router's
-## `send_fn` hands each recipient's line back to dot-server's manager to put on the
+## `send_fn` hands each recipient's line back to gs-server's manager to put on the
 ## wire.
 ##
 ## [b]That is also what makes `!wr` and `!rtv` work the way this genre expects.[/b]
-## dot-server's own chat has a command prefix and this game already registers its
-## commands `.with_chat()`; what dot-chat adds is a prefix a game can claim, so a
+## gs-server's own chat has a command prefix and this game already registers its
+## commands `.with_chat()`; what gs-chat adds is a prefix a game can claim, so a
 ## trigger that is not a console command — a poll, a nomination — is handled without
 ## being registered as one.
 ##
-## [b]dot-moderation is here because dot-server's mute is two booleans on a session
+## [b]gs-moderation is here because gs-server's mute is two booleans on a session
 ## object, and a session dies with its connection.[/b] On a records server that matters
 ## more than usual: a gag is how an admin stops somebody spamming `!wr` at everybody,
 ## and one that lasts until they press reconnect is not a gag.
@@ -76,7 +76,7 @@ var chat: GSChatRouter = null
 var voice: GSVoiceRouter = null
 var moderation: GSModerationManager = null
 
-## dot-moderation's live tools with this game's verbs. See `AirdriftModTools`.
+## gs-moderation's live tools with this game's verbs. See `AirdriftModTools`.
 var mod_tools: GSModTools = null
 ## The website chat relay, when one is configured. See [method _build_relay].
 var relay: GSChatRelay = null
@@ -91,7 +91,7 @@ var relay: GSChatRelay = null
 ## The backbone client the relay posts through, assigned by the host BEFORE setup.
 ##
 ## [b]An [Object], not a [GSBackboneClient].[/b] The relay holds it duck-typed so that
-## dot-chat need not depend on dot-auth, and keeping one spelling across the seam means
+## gs-chat need not depend on gs-auth, and keeping one spelling across the seam means
 ## the duck-typed contract is the only contract.
 var backbone: Object = null
 
@@ -113,7 +113,7 @@ func setup(p_server: GSServer, p_game: AirdriftGame, p_link: Node) -> GSResult:
 	game = p_game
 	link = p_link
 
-	# Moderation FIRST. It publishes `dot_mute_source` on `_ready` and both routers
+	# Moderation FIRST. It publishes `gs_mute_source` on `_ready` and both routers
 	# below look that name up when they start; a router that started first would find
 	# nothing, warn once, and enforce no gag for the life of the server.
 	var moderated: GSResult = await _build_moderation()
@@ -244,7 +244,7 @@ func _build_chat() -> GSResult:
 
 	# [constant CH_RUNNING] is a MEMBERS channel, and this is what decides membership.
 	# "Everybody who is mid-run" is a thing only this game knows, which is exactly why
-	# dot-chat asks rather than deciding.
+	# gs-chat asks rather than deciding.
 	chat.membership_fn = func(peer: int, channel_id: StringName) -> bool:
 		if channel_id != CH_RUNNING:
 			return true
@@ -282,9 +282,9 @@ func _build_chat() -> GSResult:
 			command_entered.emit(peer, command, args)
 	)
 
-	# dot-chat makes the join and leave notices (`join_notice` in add_peer), so dot-server's
+	# gs-chat makes the join and leave notices (`join_notice` in add_peer), so gs-server's
 	# would be a second one on a second path. hungario and playground do the same; while
-	# the client drew dot-chat's notice as a bare name the duplicate went unnoticed.
+	# the client drew gs-chat's notice as a bare name the duplicate went unnoticed.
 	if server.chat != null:
 		server.chat.announce_joins = false
 
@@ -292,7 +292,7 @@ func _build_chat() -> GSResult:
 		server.events.hook_pre("player_chat", _on_player_chat)
 
 		# **And `player_command`, without which this game's own chat commands do not
-		# exist.** dot-server's chat manager checks for a command prefix BEFORE it fires
+		# exist.** gs-server's chat manager checks for a command prefix BEFORE it fires
 		# `player_chat`, and `_handle_command` returns on every path — including the
 		# unknown-command one, which is silently ignored. Its prefixes are `["!", "/"]`,
 		# identical to `GSChatRules`'.
@@ -361,7 +361,7 @@ func _rules() -> GSChatRules:
 	return rules
 
 
-## dot-server's `player_chat`, intercepted and cancelled.
+## gs-server's `player_chat`, intercepted and cancelled.
 ##
 ## The cancel reason is empty on purpose: the event's contract is that a cancelled
 ## message is refused and the player told why, and here the message is not refused at
@@ -396,8 +396,8 @@ func _on_player_chat(event: GSEvent) -> void:
 ## `send_system_to`, which made every line a player typed a SYSTEM line whose text happened
 ## to start with their name — drawn as "[Server]: WhoZ: hello", and pushed onto the HUD's
 ## centre notice with the server's announcements. The client's `GSChatClient.receive` reads
-## this form and keeps the speaker apart from the text; dot-server's own payload is only its
-## fallback, for a server running without dot-chat.
+## this form and keeps the speaker apart from the text; gs-server's own payload is only its
+## fallback, for a server running without gs-chat.
 func _send(wire: Dictionary, recipients: PackedInt32Array) -> void:
 	if not GSChatMessage.from_dictionary(wire).ok:
 		return
@@ -406,7 +406,7 @@ func _send(wire: Dictionary, recipients: PackedInt32Array) -> void:
 		_send_wire(server.session_of(peer), wire)
 
 
-## One dot-chat line to one session, if it can still be reached.
+## One gs-chat line to one session, if it can still be reached.
 ##
 ## The same reachability test as `GSChatManager._can_reach`: a session the server has not
 ## yet noticed leaving is still active, and an RPC at a peer that is gone prints an engine
@@ -437,7 +437,7 @@ func claim_command() -> void:
 		chat.claim_command()
 
 
-## A `!command` from dot-server's chat manager, before it reaches the console.
+## A `!command` from gs-server's chat manager, before it reaches the console.
 func _on_player_command(event: GSEvent) -> void:
 	var session := event.get_session()
 
@@ -455,7 +455,7 @@ func _on_player_command(event: GSEvent) -> void:
 	command_entered.emit(session.peer_id, event.get_string("command"), args)
 
 	# Only what the game actually took. Everything else goes on to the console, which
-	# is what keeps `!r`, `!wr`, `!top` and every dot-server command working.
+	# is what keeps `!r`, `!wr`, `!top` and every gs-server command working.
 	if _command_claimed:
 		event.cancel("handled by the game", CHANNEL)
 
@@ -476,7 +476,7 @@ func notice(peer: int, text: String) -> void:
 ## Joins this server's chat to its room on the website.
 ##
 ## [b]Every seam points at something that already existed.[/b] The backbone client is
-## dot-auth's. The permission answer is dot-server's admin manager, through
+## gs-auth's. The permission answer is gs-server's admin manager, through
 ## `uid_has_permission` — the method written for exactly this, deciding what somebody may
 ## do when they are not connected. The command runner is `GSServer.run_command_as_uid`,
 ## which builds a context with that uid's OWN flags rather than RCON's root.
@@ -510,12 +510,12 @@ func _build_relay() -> GSResult:
 
 	if backbone == null:
 		# **Found, not handed over.** A backbone client is built by whatever owns the
-		# server's credential — dot-server-deploy's `TmcReport`, or this game's own
+		# server's credential — gs-server-deploy's `TmcReport`, or this game's own
 		# identity layer — and a relay built during module load exists before any host
 		# could assign one. `GSBackboneClient` publishes itself under this name for
-		# exactly that reason; the ordering trap is the one that left dot-server's audit
+		# exactly that reason; the ordering trap is the one that left gs-server's audit
 		# log unopened in every default configuration.
-		backbone = GSRegistry.get_service(&"dot_backbone_client")
+		backbone = GSRegistry.get_service(&"gs_backbone_client")
 
 	if backbone == null:
 		# Info and success, not a failure, and the difference matters now that the relay

@@ -22,11 +22,11 @@ const AirdriftUnits := preload("airdrift_units.gd")
 const AirdriftWeaponLayer := preload("airdrift_weapon_layer.gd")
 
 
-## The registry name a dot-server module finds this under.
+## The registry name a gs-server module finds this under.
 const CONFIG_GAME_ID := "game-airdrift"
 const SERVICE := &"airdrift_game"
 
-## The ghost's player id. Session ids are dot-server userids, which never get
+## The ghost's player id. Session ids are gs-server userids, which never get
 ## this large; the bridge treats it as a session like any other.
 const GHOST_ID := &"u900000001"
 const GHOST_SESSION := 900000001
@@ -70,12 +70,12 @@ signal player_removed(player_id: StringName)
 ## [method _ready] over [member config].
 var config_binder: GSGameConfigBinder = null
 
-## Whether players are solid to each other (`mp_solidplayers`, 1). Every player has a hull (`airdrift_player_bodies.gd`) and dot-team's block rules, on `pair_fn`, say which pairs stop:
-## runners pass through each other (the genre) until `mp_teamblock`, `mp_enemyblock` or `!block` say otherwise. With no block rules (no dot-team in the build) nobody blocks.
+## Whether players are solid to each other (`mp_solidplayers`, 1). Every player has a hull (`airdrift_player_bodies.gd`) and gs-team's block rules, on `pair_fn`, say which pairs stop:
+## runners pass through each other (the genre) until `mp_teamblock`, `mp_enemyblock` or `!block` say otherwise. With no block rules (no gs-team in the build) nobody blocks.
 var body_rules: GSPlayerBodyRules = _make_body_rules()
 
-## dot-team's `GSTeamBlockRules` (`mp_teamblock`, `!block`, `!noblock`), set by the module or
-## the client's `add_noblock`; null while dot-team is not in the build.
+## gs-team's `GSTeamBlockRules` (`mp_teamblock`, `!block`, `!noblock`), set by the module or
+## the client's `add_noblock`; null while gs-team is not in the build.
 var block_rules: Object = null:
 	set(value):
 		block_rules = value
@@ -94,7 +94,7 @@ func world_is_static() -> bool:
 
 
 ## Snapshots a second sent at [param rate] ticks: the nearest to 32 that is whole ticks apart
-## (60 gives 30). dot-net divides with integers, so 32 at 60 Hz sent every tick.
+## (60 gives 30). gs-net divides with integers, so 32 at 60 Hz sent every tick.
 static func snapshot_rate_for(rate: int) -> int:
 	return rate / maxi(1, roundi(float(rate) / 32.0))
 
@@ -112,7 +112,7 @@ func block_side(id: Variant) -> Variant:
 	var team := String(player_stack.teams.team_of(str(id)))
 	return team
 
-## Fallback tick rate when nothing has told the engine. A dot-server always has.
+## Fallback tick rate when nothing has told the engine. A gs-server always has.
 @export_range(1, 240, 1) var tick_rate: int = 128
 
 ## Registry scope, so a server game and a client game can share one process — the
@@ -120,7 +120,7 @@ func block_side(id: Variant) -> Variant:
 @export var service_scope: StringName = &""
 
 
-## The dot-server game manager to read a loading game's descriptor from, by registry name.
+## The gs-server game manager to read a loading game's descriptor from, by registry name.
 ## See [method _adopt_descriptor_owner]. Nothing under it is normal: a suite, a client.
 @export var game_manager_service: StringName = GSGameManager.SERVICE
 
@@ -210,7 +210,7 @@ var combat: AirdriftCombat = null
 ## Weapons lying in the world (both sides build it; the server simulates).
 var weapon_layer: AirdriftWeaponLayer = null
 
-## What a dead body does, and which death reactions the server allows: dot-player-char's `sv_ragdoll*` cvars, bound by the module (REPLICATED) and followed by a client through its
+## What a dead body does, and which death reactions the server allows: gs-player-char's `sv_ragdoll*` cvars, bound by the module (REPLICATED) and followed by a client through its
 ## link, because the client draws the bodies. On the game, not on [member combat]: a client has no combat layer and still draws every fall.
 var ragdoll_rules: GSPlayerRagdollRules = GSPlayerRagdollRules.new()
 
@@ -228,7 +228,7 @@ var props: AirdriftProps = null
 
 ## The server's bots (`airdrift_bots.gd`): built on every authoritative game, idle until something
 ## adds one (`AirdriftModule` from `bot_quota`). Untyped and loaded by path, never preloaded: it
-## brings dot-bot's surf classes with it, and a client never needs them.
+## brings gs-bot's surf classes with it, and a client never needs them.
 var bots: Node = null
 
 ## Watching somebody run, which on a timer server is the point rather than a
@@ -260,22 +260,22 @@ var _tick: int = 0
 var _accumulator: float = 0.0
 
 ## Whether something else drives the tick — a net bridge, whose tick has to happen
-## between dot-net applying inputs and building the snapshot. See [AirdriftNetBridge].
+## between gs-net applying inputs and building the snapshot. See [AirdriftNetBridge].
 var external_tick: bool = false
 
 ## Asked once a tick: true while the client's load gate holds the world still. See [method is_covered].
 var covered: Callable = Callable()
 
 
-## dot-player-controller's `mp_forceview`: third person allowed (0), held first (1) or third (2).
+## gs-player-controller's `mp_forceview`: third person allowed (0), held first (1) or third (2).
 ## `sv_allow_thirdperson` writes it; bound REPLICATED by the module, followed by a client.
 var view_rules: GSPlayerViewRules = GSPlayerViewRules.new()
 
-## dot-mobile's `sv_mobile_*`, `sv_aim_assist*` and `sv_autofire*`: what a phone player may use. Bound REPLICATED by
+## gs-mobile's `sv_mobile_*`, `sv_aim_assist*` and `sv_autofire*`: what a phone player may use. Bound REPLICATED by
 ## the module, followed by a client. Aim assist and auto-fire need targets this game does not hand in, so stay inert.
 var mobile_rules: GSMobileRules = GSMobileRules.new()
 
-## dot-replay's `mp_killview*`: the killer's replayed eye, off until the server turns it on.
+## gs-replay's `mp_killview*`: the killer's replayed eye, off until the server turns it on.
 var killview_rules: GSKillViewRules = GSKillViewRules.new()
 
 ## Hulls, masks and exclusions to match `body_rules` ([AirdriftPlayerBodies.apply]): when the rules
@@ -293,10 +293,10 @@ func _on_view_rules_changed() -> void:
 			p.camera.follow_view_rules(view_rules)
 
 
-## Takes [member AirdriftConfig.map_content_owner] from the descriptor of the game dot-server is
+## Takes [member AirdriftConfig.map_content_owner] from the descriptor of the game gs-server is
 ## loading this scene for, before the first map is fetched.
 ##
-## [b]The first fetch happens before the cvar that names the owner exists.[/b] dot-server
+## [b]The first fetch happens before the cvar that names the owner exists.[/b] gs-server
 ## instantiates this scene, and this `_ready` starts on the first map, before it applies the
 ## descriptor's `cvars:`; `sv_map_content_owner` belongs to this game's module, which a host
 ## loads after the scene is up, so it is only applied on the host's second pass. Without
@@ -335,10 +335,10 @@ func _adopt_descriptor_owner() -> void:
 ## Takes the map set from the descriptor's `maps:` list, when the server has one.
 ##
 ## [b]Not this game's own cvars[/b] (`sv_content_maps` and an owner), which would fetch
-## whatever version each pack's origin calls latest, on whichever day a box boots. dot-server now carries a game's delivered maps as pinned
+## whatever version each pack's origin calls latest, on whichever day a box boots. gs-server now carries a game's delivered maps as pinned
 ## `<owner>/<map id>@<version>` keys (GSGameDescriptor.maps), written by the installer
 ## that checked each one exists, so every server running one release of this game offers
-## the same bytes. A server whose dot-server predates the field has no `maps` property;
+## the same bytes. A server whose gs-server predates the field has no `maps` property;
 ## `get` answers null and the cvars still work as they always did.
 func _adopt_descriptor_maps(descriptor: Object) -> void:
 	var keys: Variant = descriptor.get("maps")
@@ -363,7 +363,7 @@ func _adopt_descriptor_maps(descriptor: Object) -> void:
 
 
 ## The descriptor this scene is being built for: the manager's pending game, or, when
-## dot-server is putting the [i]previous[/i] game back because the pending one's scene was
+## gs-server is putting the [i]previous[/i] game back because the pending one's scene was
 ## missing, its current one. In that restore the pending descriptor is the game that
 ## failed, so reading it would boot the restored game with another game's owner (or none).
 ## A descriptor is this scene's when its scene path is ours; a path either side cannot
@@ -526,24 +526,24 @@ func _bind_board_reporter() -> void:
 	if boards == null or not config.report_to_backbone or boards.reporter.client != null:
 		return
 
-	var client: Object = GSRegistry.get_service(&"dot_backbone_client")
+	var client: Object = GSRegistry.get_service(&"gs_backbone_client")
 
 	if client != null:
 		boards.reporter.client = client
 
 
 ## The SQL records store [member AirdriftConfig.records_database] names, not yet open. Null
-## when dot-sql is not installed or the settings are wrong — said at ERROR, and the
+## when gs-sql is not installed or the settings are wrong — said at ERROR, and the
 ## manager then builds the file store as it always did.
 ##
-## [b]dot-sql is reached by path, never by name.[/b] This game is delivered as a pack, and
+## [b]gs-sql is reached by path, never by name.[/b] This game is delivered as a pack, and
 ## a pack's scripts parse against whatever addons the host build carries; naming
 ## `GSSql` would make every one of them fail to parse on a host without it. Loading the
 ## script by path is a missing feature on such a host, not a broken game.
 func _records_store_from_config() -> GSTimerStoreSql:
-	var path := "res://addons/dot_sql/core/dot_sql.gd"
+	var path := "res://addons/gs_sql/core/gs_sql.gd"
 	if not ResourceLoader.exists(path):
-		GSLog.error(CHANNEL, "records_database is set but dot-sql is not installed; records stay in files", {
+		GSLog.error(CHANNEL, "records_database is set but gs-sql is not installed; records stay in files", {
 			"records_database": config.records_database,
 		})
 		return null

@@ -37,7 +37,7 @@ static func sound_recipes() -> Dictionary:
 		AirdriftVote.CUE_END: GSAudioSynth.Voice.DIE,
 		AirdriftVote.CUE_WARNING: GSAudioSynth.Voice.BOOM,
 		AirdriftVote.CUE_COUNT: GSAudioSynth.Voice.SHOT,
-		# Stand-ins only for a build without dot-player-char's files.
+		# Stand-ins only for a build without gs-player-char's files.
 		GSPlayerDeathReactions.SOUND_THUD: GSAudioSynth.Voice.IMPACT,
 		GSPlayerDeathReactions.SOUND_FACE_PLANT: GSAudioSynth.Voice.IMPACT,
 		GSPlayerDeathReactions.SOUND_SLUMP: GSAudioSynth.Voice.STEP,

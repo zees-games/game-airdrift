@@ -2,7 +2,7 @@ extends GSPlatformIdentity
 
 const AirdriftAvatars := preload("airdrift_avatars.gd")
 
-## Content, profiles, avatars and admission: dot-platform's [GSPlatformIdentity], over
+## Content, profiles, avatars and admission: gs-platform's [GSPlatformIdentity], over
 ## this game's avatar schema.
 ##
 ## [b]This game already had the avatar half and not the rest.[/b] `AirdriftAvatars` has

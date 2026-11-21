@@ -1,6 +1,6 @@
 extends SceneTree
 
-## The third-person camera (AirdriftCamera's boom, dot-core's GSCameraBoom) flown round the walls
+## The third-person camera (AirdriftCamera's boom, gs-core's GSCameraBoom) flown round the walls
 ## of the start map, armed; `mp_forceview` and the older `sv_allow_thirdperson` through the
 ## camera's own path; with a display, both views of the real player.
 ##

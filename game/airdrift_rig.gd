@@ -75,7 +75,7 @@ func _mount(slot: StringName, at: Vector3) -> Node3D:
 	return node
 
 
-## Puts an avatar on the rig: as one of the family's people (dot-player-char's
+## Puts an avatar on the rig: as one of the family's people (gs-player-char's
 ## `GSHumanoidFigure`), coloured from the document by `AirdriftAvatars.look_of`, wearing the
 ## document's hat. The parts are still built onto the mounts (conformed first, so a part from a
 ## newer client is dropped rather than refused, and the result counts the slots drawn), then

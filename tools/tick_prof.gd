@@ -9,7 +9,7 @@ const RouteBot := preload("../game/airdrift_route_bot.gd")
 ## functions with the most self time. `--phases 0` runs the plain tick_once instead (the A/B timing: `--ticks N`).
 ## Run: godot --headless --path . res://tools/tick_prof.tscn -- --map bhop_g2g_intro --bots 16 --ticks 3000 [--script-top 30]
 ## Prints TICKPROF lines (phase, mean and p99 us per tick) and one TICKTOTAL line (mean us per tick).
-## `--ab N` alternates the route bots between native (dot-sim `route`) and script every N ticks (the rides are the same
+## `--ab N` alternates the route bots between native (gs-sim `route`) and script every N ticks (the rides are the same
 ## to the bit, so both halves time the same work) and prints a TICKAB line per round (native then script block: tick
 ## and bots-phase means) and a TICKABSUM line (the mean and spread of the per-round differences).
 

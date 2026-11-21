@@ -76,10 +76,10 @@ func _run() -> void:
 ## Holds W for [param frames] physics frames and returns how far the player went, in metres.
 func _hold_forward(frames: int) -> float:
 	var from := _client.player.global_position
-	Input.action_press(&"dot_fps_forward")
+	Input.action_press(&"gs_fps_forward")
 	for _i in range(frames):
 		await get_tree().physics_frame
-	Input.action_release(&"dot_fps_forward")
+	Input.action_release(&"gs_fps_forward")
 	return _client.player.global_position.distance_to(from)
 
 
@@ -102,7 +102,7 @@ func _test_chat_stops_the_runner() -> void:
 	_done()
 
 
-## The console is the chat box's bug again, and the fix is dot-console's kit registering the
+## The console is the chat box's bug again, and the fix is gs-console's kit registering the
 ## panel as one of the menu's overlays: the menu's "something is open" is what suspends the
 ## sampler. Before the kit, nothing here did, and `noclip` typed with W held walked.
 func _test_the_console_stops_the_runner() -> void:
@@ -333,7 +333,7 @@ func _test_the_end_of_a_deathmatch() -> void:
 		kc.frame()
 		if absf(clock[0] - 8.0) < step * 0.5:
 			kc.note_kill(_client.killcam_bodies.id_for(game, &"u92"), _client.killcam_bodies.id_for(game, _client.player.player_id), "deagle")
-	_check(kc is GSKillcamHost and GSAddonApi.build_level("dot_replay") >= 6, "the killcam is dot-replay's shared host")
+	_check(kc is GSKillcamHost and GSAddonApi.build_level("gs_replay") >= 6, "the killcam is gs-replay's shared host")
 	_check(kc.buffer.frame_count() > 400 and int(kc.buffer.last_event(&"kill")["data"]["killer"]) == _client.killcam_bodies.id_for(game, &"u92"),
 		"every frame drawn and the kill went into the buffer")
 
@@ -465,9 +465,9 @@ func _test_the_wheel_jumps() -> void:
 	_section("the mouse wheel jumps, one press per tick")
 	var keys: GSMenuBindings = _client.menu.bindings
 	var wheel_rows := keys.rows.filter(func(r: Dictionary) -> bool:
-		return r["action"] == &"dot_fps_jump" and bool(r.get("extra", false)))
-	_check(wheel_rows.size() == 2 and keys.row_for_action(&"dot_fps_jump")["default"] == "Space",
-		"Space stays and two extra rows (wheel up, wheel down) sit on dot_fps_jump", str(wheel_rows.size()))
+		return r["action"] == &"gs_fps_jump" and bool(r.get("extra", false)))
+	_check(wheel_rows.size() == 2 and keys.row_for_action(&"gs_fps_jump")["default"] == "Space",
+		"Space stays and two extra rows (wheel up, wheel down) sit on gs_fps_jump", str(wheel_rows.size()))
 	var sampler: GSFpsSampler = _client._active_sampler()
 	var _flush := sampler.sample(0.0)
 	for button in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
@@ -524,8 +524,8 @@ func _press_left(down: bool) -> void:
 
 
 ## The family's rule since the first play test: M opens the map list (every map, not the
-## rotation), and solo a choice changes the map now. The server's half is dot-vote's map menu
-## (`dedicated`, dot-vote's suite).
+## rotation), and solo a choice changes the map now. The server's half is gs-vote's map menu
+## (`dedicated`, gs-vote's suite).
 func _test_the_map_menu() -> void:
 	_section("M opens the map list, and solo a choice changes the map")
 	var menu: GSMenu = _client.menu

@@ -90,7 +90,7 @@ static func damage_types() -> Array[GSDamageType]:
 ## second at 64 Hz as at 128.
 const TICK_RATE := 128
 
-const HITSCAN := "res://addons/dot_weapon/behaviour/dot_weapon_hitscan.gd"
+const HITSCAN := "res://addons/gs_weapon/behaviour/gs_weapon_hitscan.gd"
 
 
 static func rpm_ticks(rpm: float) -> int:
@@ -141,7 +141,7 @@ static func deagle() -> GSWeaponDef:
 
 ## Instant, and only if you got there.
 ##
-## [b]Hitscan rather than [GSWeaponMelee], deliberately.[/b] dot-weapon ships a melee
+## [b]Hitscan rather than [GSWeaponMelee], deliberately.[/b] gs-weapon ships a melee
 ## behaviour that sweeps an arc, and a knife is the obvious thing to point at it. This
 ## one stays a single ray because that is what it has always been here and a knife that
 ## suddenly sweeps forty degrees is a balance change wearing a refactor's clothes. The
@@ -266,7 +266,7 @@ static func match_rules(limit: int = 40, respawn_delay: float = 1.0, protection:
 	rules.match_end_sec = 10.0
 	rules.suicide_points = -1
 	# No time limit: the MAP's clock ends the map, and a second clock underneath it
-	# that ends the match is two authorities over one question. dot-vote's director
+	# that ends the match is two authorities over one question. gs-vote's director
 	# already owns "how long does this map get".
 	rules.time_limit_sec = 0.0
 	return rules

@@ -12,7 +12,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## watch.
 ##
 ## [b]What a bot rides.[/b] On a map with a surf cache (`maps/routes/<id>.surf.json`, written
-## by `tools/surf_plan.tscn`) it rides the cache's first stage with dot-bot's [GSBotSurfPilot],
+## by `tools/surf_plan.tscn`) it rides the cache's first stage with gs-bot's [GSBotSurfPilot],
 ## planned and vetoed on a copy of its own motor ([method AirdriftSurfCourse.simulator_for]). On any
 ## other map it is the rule-based route bot ([code]airdrift_route_bot.gd[/code]) on the whole run,
 ## spawn to finish, along the map's route file when there is one: on a surf ramp that bot looks
@@ -31,7 +31,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## after them would be one tick late on every tick, which on a ramp the pilot planned to the
 ## tick is a different ride.
 ##
-## How many there are is dot-server's [GSBotQuota] (`bot_quota`, default 0 here, so a timer
+## How many there are is gs-server's [GSBotQuota] (`bot_quota`, default 0 here, so a timer
 ## server has no bots until its operator asks), kept in step by `AirdriftModule`.
 
 const CHANNEL := "g2g.bots"
@@ -68,9 +68,9 @@ const SETTLE_RADIUS := 1.5
 ## 128 Hz and one step of the annotator can overrun this (docs/routes.md).
 const NAV_BUDGET_USEC := 2000
 
-## Whether a map with no route file is planned through dot-npc-ai's navigation annotations
+## Whether a map with no route file is planned through gs-npc-ai's navigation annotations
 ## (`airdrift_bot_nav.gd`) instead of aimed straight at the finish. The `bot_nav` cvar. Off by itself
-## when dot-npc-ai is not in the project (a delivered shell may not carry it).
+## when gs-npc-ai is not in the project (a delivered shell may not carry it).
 var use_nav: bool = true
 ## Where annotations (by their own key) and the baked meshes (by map id, in `mesh/`) are cached.
 var nav_cache_dir := "user://g2g_nav"
@@ -96,7 +96,7 @@ var _course_map: StringName = &""
 ## The cache's lookup, loaded once a map and shared by every bot's pilot.
 var _cache: GSBotSurfPilot = null
 var _route_points: Array[Dictionary] = []
-## dot-sim's `GSSimRouteBots` for this map (every route bot of a tick in one native call), or null.
+## gs-sim's `GSSimRouteBots` for this map (every route bot of a tick in one native call), or null.
 var _native_routes: Object = null
 ## The route points [member _native_route_id] was written from.
 var _native_points: Array[Dictionary] = []
@@ -105,7 +105,7 @@ var _native_route_id := -1
 var _batch: Array = []
 var _batch_space: PhysicsDirectSpaceState3D = null
 var _batch_tunables: GSFpsTunables = null
-## The planner for this map, or null (off, no dot-npc-ai, or the map has a route file).
+## The planner for this map, or null (off, no gs-npc-ai, or the map has a route file).
 var nav: RefCounted = null
 ## Whether the route is still being planned; the bots stand until it is.
 var _planning := false
@@ -354,7 +354,7 @@ func _start_nav() -> void:
 			have = true
 			break
 	if not have:
-		GSLog.info(CHANNEL, "dot-npc-ai is not in this project; bots go straight at the finish")
+		GSLog.info(CHANNEL, "gs-npc-ai is not in this project; bots go straight at the finish")
 		_planning = false
 		return
 	var script := load(path) as GDScript
@@ -459,7 +459,7 @@ func _put_back(player: AirdriftPlayer, rider: Dictionary) -> void:
 
 
 ## Gives [param route] a slot in this map's native route bots, writing the route there first when
-## it is new (dot-sim's `route` module; without it, or with `native_route` off, the script drives).
+## it is new (gs-sim's `route` module; without it, or with `native_route` off, the script drives).
 func _bind_native(route: AirdriftRouteBot) -> void:
 	if not AirdriftRouteBot.native_route or not GSSim.has(&"route"):
 		return

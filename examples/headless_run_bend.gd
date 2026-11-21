@@ -71,7 +71,7 @@ func _test_stages_descent() -> void:
 		else:
 			# Never into the face once in the crease between the slabs: pressed into one face
 			# with the other underneath, the motor's duplicate-plane early-out pins the rider
-			# there (dot-player-controller's crease hang), and whether a ride reached the crease
+			# there (gs-player-controller's crease hang), and whether a ride reached the crease
 			# pressing or not depended on what the sections before this one left in the world.
 			var into := at.x > hold_line and at.x < BhopStages.BONUS_X - CREASE_RELEASE
 			c.move = Vector2(-1.0 if into else 0.0, 1.0)

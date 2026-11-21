@@ -13,7 +13,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## surf without reading anything, which is the point. The conversion to the metres
 ## the simulation runs in is [AirdriftMovement]'s, and happens nowhere else.
 ##
-## [b]The tick rate is deliberately not here.[/b] It is dot-server's
+## [b]The tick rate is deliberately not here.[/b] It is gs-server's
 ## [code]sv_tickrate[/code], and the timer takes it from the engine — see
 ## [GSTimerConfig]. A second copy of that number is a second number that can
 ## disagree with the first, and the failure is a leaderboard wrong by their ratio with
@@ -79,7 +79,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 
 ## `sv_crestlaunch`: speed, as a multiple of `sv_maxspeed`, above which the top of a walkable
 ## ramp throws a player instead of holding them to the floor past it. 0 never throws
-## (dot-player-controller's `crest_launch_speed_scale`; a hop taken over a ramp's crest at
+## (gs-player-controller's `crest_launch_speed_scale`; a hop taken over a ramp's crest at
 ## speed leaves it, a run up it does not).
 @export_range(0.0, 10.0, 0.01) var crest_launch: float = 1.25
 
@@ -196,7 +196,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## owners still serves.
 @export var map_content_owner: String = ""
 
-## Draw an imported map from its dot-map world document (`worlds/<id>`, written by `bsp.py regen`) when one exists, instead of the legacy manifest's surfaces. Zones, spawns and collision still come from the manifest. `airdrift_global_worlds`.
+## Draw an imported map from its gs-map world document (`worlds/<id>`, written by `bsp.py regen`) when one exists, instead of the legacy manifest's surfaces. Zones, spawns and collision still come from the manifest. `airdrift_global_worlds`.
 @export var global_worlds: bool = false
 
 ## The cvar that sets [member map_content_owner]. One spelling for the module that registers
@@ -226,7 +226,7 @@ func map_content_id(id: StringName) -> String:
 @export_range(0.0, 86400.0, 30.0) var offline_map_seconds: float = 0.0
 
 ## The file that says which maps a server ROTATES: `cfg/maps.yml`, layered over the game's own
-## shipped `res://maps.yml` (see dot-map's `GSMapRotationFile` for the format: named
+## shipped `res://maps.yml` (see gs-map's `GSMapRotationFile` for the format: named
 ## rotations, `random` or `cycle`, wildcards). Empty, or no such file, rotates every map in the
 ## catalogue but a combat one, which is what this game always did.
 ##
@@ -238,7 +238,7 @@ func map_content_id(id: StringName) -> String:
 ## Seconds a map change waits for every connected client to say it has the new map.
 ## `sv_map_sync_timeout`.
 ##
-## [b]Thirty, where dot-map's own default is three hundred[/b], and the difference is who
+## [b]Thirty, where gs-map's own default is three hundred[/b], and the difference is who
 ## is waiting. The wait holds the whole server on the old map — every runner stopped, the
 ## clock frozen — for the slowest client, and a timer server's players came to run. A
 ## client that misses it is not dropped: the change goes ahead without it
@@ -251,10 +251,10 @@ func map_content_id(id: StringName) -> String:
 @export_group("Records")
 
 ## Where records go. Empty keeps them in memory only.
-@export var records_directory: String = "user://g2gfast/records"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
+@export var records_directory: String = "user://airdrift/records"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
 ## A database for records instead of files: [code]sqlite[/code], or [code]postgres[/code]
-## / [code]mysql[/code] through dot-sql's HTTP gateway. Empty keeps files.
+## / [code]mysql[/code] through gs-sql's HTTP gateway. Empty keeps files.
 ##
 ## [b]A database is what lets several servers share one leaderboard[/b], which files
 ## cannot: each server would keep its own. If the database cannot be opened at boot the
@@ -263,7 +263,7 @@ func map_content_id(id: StringName) -> String:
 @export var records_database: String = ""
 
 ## SQLite only: the database file.
-@export var records_database_path: String = "user://g2gfast/records.db"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
+@export var records_database_path: String = "user://airdrift/records.db"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
 ## Postgres or MySQL: the gateway's URL, e.g. http://10.0.0.5:8780.
 @export var records_database_url: String = ""
@@ -273,7 +273,7 @@ func map_content_id(id: StringName) -> String:
 @export var records_database_token: String = ""
 
 ## Table name prefix, so several games can share one database.
-@export var records_table_prefix: String = "dot_timer_"
+@export var records_table_prefix: String = "gs_timer_"
 
 ## Seconds a cached board read is served. Another server's new record is at most this
 ## old on this server's HUD; this server's own are on it at once.
@@ -396,10 +396,10 @@ const CFG_FILES := {
 ## The game's own id since the rename (Zee's Airdrift), and the ids it had before (oldest first).
 ## The cfg tree is `cfg/game/game-airdrift/`; a deployment tree under the former id still applies (registered below).
 const GAME_ID := "game-airdrift"
-const FORMER_IDS: PackedStringArray = ["game-g2gfast"]  # legacy id: operator cfg/rotation keys written before the rename
+const FORMER_IDS: PackedStringArray = ["game-airdrift"]  # legacy id: operator cfg/rotation keys written before the rename
 
 
-## Declares the rename to dot-core (API 31), so whatever names the game by its new id (rotation
+## Declares the rename to gs-core (API 31), so whatever names the game by its new id (rotation
 
 static func register_ids() -> void:
 	GSAddonConfig.register_former_game(GAME_ID, FORMER_IDS)

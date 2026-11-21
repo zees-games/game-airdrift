@@ -10,12 +10,12 @@ extends RefCounted
 ## [b]Everything countable here is already measured by something else, and none of it
 ## is measured twice.[/b] `GSFpsStats` counts jumps, perfect jumps, strafes and sync
 ## on every controller in the game — the movement addon has done it since it was
-## written — and dot-timer counts runs and finishes. This file does not re-derive any
+## written — and gs-timer counts runs and finishes. This file does not re-derive any
 ## of them; [AirdriftProgress] reads them out and files deltas, which is the only way two
 ## counters of one thing cannot disagree.
 ##
 ## [b]A time is a LOWEST stat, and getting that wrong is a personal best of zero.[/b]
-## [constant GSStatsDef.Kind.LOWEST] keeps the smaller of two readings, and dot-stats'
+## [constant GSStatsDef.Kind.LOWEST] keeps the smaller of two readings, and gs-stats'
 ## `merge` takes the incoming value whole when there is nothing held — which is the
 ## distinction between "held zero" and "never seen" that makes a first reading of 12
 ## seconds be 12 rather than min(12, 0).
@@ -68,7 +68,7 @@ const DEATHS := &"g2g.deaths"
 const HUNTERS_KILLED := &"g2g.hunters_killed"
 const PROPS_SPAWNED := &"g2g.props_spawned"
 
-## The published skill figure the site orders by (dot-stats' GSStatsRank).
+## The published skill figure the site orders by (gs-stats' GSStatsRank).
 const RANK_SCORE := &"rank_score"
 
 

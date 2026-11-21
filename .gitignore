@@ -2,52 +2,52 @@
 .godot/
 /android/
 
-# Every dot-* addon is a separate repository. For local development, symlink them:
-#   ln -s ../../dot-core/addons/dot_core addons/dot_core
+# Every gs-* addon is a separate repository. For local development, symlink them:
+#   ln -s ../../gs-core/addons/gs_core addons/gs_core
 # A shipped build copies them in instead.
-/addons/dot_core
-/addons/dot_input
-/addons/dot_profile
-/addons/dot_profiler
-/addons/dot_game
-# dot-sim: optional native library (movement motor and collision queries, bot senses, snapshot codec); without its built library the GDScript twins run.
-# bootstrap fetches this release's library for the machine (dot-bootstrap: bootstrap-natives); examples/headless_native_motor holds it to the script.
-# bootstrap-natives: dot-sim v0.2.10
-/addons/dot_sim
-/addons/dot_workbench
-/addons/dot_entity
-# bootstrap fetches the release zip into addons/dot_net/native/bin and export copies it beside the exe (dot-bootstrap: bootstrap-natives).
-# bootstrap-natives: dot-net v0.1.30 native/bin
-/addons/dot_net
-/addons/dot_server
-/addons/dot_server_query
-/addons/dot_timer
-/addons/dot_map
-/addons/dot_leaderboard
-/addons/dot_ui
-/addons/dot_combat
-/addons/dot_loadout
-/addons/dot_match
-/addons/dot_stats
-/addons/dot_achievements
-/addons/dot_replay
-/addons/dot_vote
-/addons/dot_mobile
-/addons/dot_props
-/addons/dot_npc
-/addons/dot_npc_ai
-/addons/dot_npc_ai_director
-/addons/dot_auth
-/addons/dot_browser
-/addons/dot_chat
-/addons/dot_cloud
-/addons/dot_moderation
-/addons/dot_platform
-/addons/dot_user
-/addons/dot_user_avatar
-/addons/dot_voice
-/addons/dot_weapon
-/addons/dot_camera
+/addons/gs_core
+/addons/gs_input
+/addons/gs_profile
+/addons/gs_profiler
+/addons/gs_game
+# gs-sim: optional native library (movement motor and collision queries, bot senses, snapshot codec); without its built library the GDScript twins run.
+# bootstrap fetches this release's library for the machine (gs-bootstrap: bootstrap-natives); examples/headless_native_motor holds it to the script.
+# bootstrap-natives: gs-sim v0.2.10
+/addons/gs_sim
+/addons/gs_workbench
+/addons/gs_entity
+# bootstrap fetches the release zip into addons/gs_net/native/bin and export copies it beside the exe (gs-bootstrap: bootstrap-natives).
+# bootstrap-natives: gs-net v0.1.30 native/bin
+/addons/gs_net
+/addons/gs_server
+/addons/gs_server_query
+/addons/gs_timer
+/addons/gs_map
+/addons/gs_leaderboard
+/addons/gs_ui
+/addons/gs_combat
+/addons/gs_loadout
+/addons/gs_match
+/addons/gs_stats
+/addons/gs_achievements
+/addons/gs_replay
+/addons/gs_vote
+/addons/gs_mobile
+/addons/gs_props
+/addons/gs_npc
+/addons/gs_npc_ai
+/addons/gs_npc_ai_director
+/addons/gs_auth
+/addons/gs_browser
+/addons/gs_chat
+/addons/gs_cloud
+/addons/gs_moderation
+/addons/gs_platform
+/addons/gs_user
+/addons/gs_user_avatar
+/addons/gs_voice
+/addons/gs_weapon
+/addons/gs_camera
 
 # Exports
 build/
@@ -72,43 +72,43 @@ Thumbs.db
 # rather than beside the hand-written maps, so this stays one line and never becomes a
 # list of map names to keep in step -- which is this tree's most repeated bug.
 #
-# They live in the airdrift-maps repository (../airdrift-maps; the bootstrap-link lines keep its old directory name, which bootstrap leaves as a link, so a box bootstrapped before the rename still resolves them), and dot-bootstrap links them here off the
+# They live in the airdrift-maps repository (../airdrift-maps; the bootstrap-link lines keep its old directory name, which bootstrap leaves as a link, so a box bootstrapped before the rename still resolves them), and gs-bootstrap links them here off the
 # comment line below (copies them, on Windows by default).
 # bootstrap-link: airdrift-maps/maps
 /maps/imported
 /tools/__pycache__/
 screenshots/
-/addons/dot_spectate
-/addons/dot_effects
-/addons/dot_settings
-/addons/dot_menu
-/addons/dot_audio
-/addons/dot_fx
-/addons/dot_console
-/addons/dot_peer_to_peer
-/addons/dot_physics
-/addons/dot_spawn
-/addons/dot_player
-/addons/dot_player_controller
-/addons/dot_player_char
-/addons/dot_animation
-/addons/dot_save
-/addons/dot_camera
-/addons/dot_player_class
-/addons/dot_team
-/addons/dot_lighting
-/addons/dot_bot
+/addons/gs_spectate
+/addons/gs_effects
+/addons/gs_settings
+/addons/gs_menu
+/addons/gs_audio
+/addons/gs_fx
+/addons/gs_console
+/addons/gs_peer_to_peer
+/addons/gs_physics
+/addons/gs_spawn
+/addons/gs_player
+/addons/gs_player_controller
+/addons/gs_player_char
+/addons/gs_animation
+/addons/gs_save
+/addons/gs_camera
+/addons/gs_player_class
+/addons/gs_team
+/addons/gs_lighting
+/addons/gs_bot
 
 # One-off debug scenes a session leaves at the root.
 /_scratch_*
-# Maps a player copies in by hand (dot-map GSMapLocalMaps); no leading slash, because hv reads `/addons/<name>` lines as links.
+# Maps a player copies in by hand (gs-map GSMapLocalMaps); no leading slash, because hv reads `/addons/<name>` lines as links.
 addons/maps/
-/addons/dot_sql
+/addons/gs_sql
 
-# Converted worlds (dot-map regen, `airdrift_global_worlds`) and the art stores they name (licence.pbr_store ../pbr-library): links to airdrift-maps.
+# Converted worlds (gs-map regen, `airdrift_global_worlds`) and the art stores they name (licence.pbr_store ../pbr-library): links to airdrift-maps.
 # bootstrap-link: airdrift-maps/worlds
 /worlds
 /pbr-library
 /model-library
-/addons/dot_bot_record
+/addons/gs_bot_record
 /addons/godot-sqlite

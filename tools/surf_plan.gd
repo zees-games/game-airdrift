@@ -7,8 +7,8 @@ const AirdriftUnits := preload("../game/airdrift_units.gd")
 const AirdriftSurfCourse := preload("../game/airdrift_surf_course.gd")
 
 ## Plans a surf stage on the real motor, saves what it found as the map's surf cache, and
-## measures the bot that rides from it. The planner and the pilot are dot-bot's
-## ([GSBotSurfPlanner], [GSBotSurfPilot]), the simulator dot-player-controller's
+## measures the bot that rides from it. The planner and the pilot are gs-bot's
+## ([GSBotSurfPlanner], [GSBotSurfPilot]), the simulator gs-player-controller's
 ## ([GSFpsSimulator]); the stage is [code]AirdriftSurfCourse[/code], read from the timer's zones.
 ##
 ##     godot --headless --fixed-fps 128 --path . tools/surf_plan.tscn -- surf_beginner 1

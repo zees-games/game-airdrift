@@ -39,20 +39,20 @@ func _test_the_menu_is_a_view_of_the_settings() -> void:
 	await get_tree().process_frame
 
 	var order: Array = menu.screen.visible_pages().map(func(page: GSMenuPage) -> StringName: return page.id)
-	# dot-menu may append its own optional `advanced` page (the connection overlay) after
+	# gs-menu may append its own optional `advanced` page (the connection overlay) after
 	# this game's six; it is the addon's, not a reordering of ours, so both shapes pass and
 	# anything else -- a page missing, moved or added elsewhere -- does not.
 	var ours: Array = [&"general", &"hud", &"gameplay", &"video", &"audio", &"controls"]
 	_check(order == ours or order == ours + [&"advanced"],
-		"six pages, in this game's order, then dot-menu's optional advanced page if it has one", str(order))
+		"six pages, in this game's order, then gs-menu's optional advanced page if it has one", str(order))
 
 	menu.open(&"general")
 	await get_tree().process_frame
 	_check(menu.is_open() and menu.screen.visible, "it opens")
 	var switches := _live(menu.screen, "GSMenuSwitch")
-	# dot-menu adds its Scoreboard section (one switch per hideable column) to General.
+	# gs-menu adds its Scoreboard section (one switch per hideable column) to General.
 	var board_switches := menu.scoreboard_column_rows().size()
-	_check(switches.size() == 7 + board_switches, "the General page has a switch per HUD setting, zones and the counter included, plus dot-menu's scoreboard columns (%d)" % switches.size())
+	_check(switches.size() == 7 + board_switches, "the General page has a switch per HUD setting, zones and the counter included, plus gs-menu's scoreboard columns (%d)" % switches.size())
 
 	(_row(menu, "show_speed") as Button).button_pressed = false
 	_check(not p.settings.get_bool(&"show_speed", true), "flipping one writes the setting it shows")
@@ -196,7 +196,7 @@ func _test_a_theme_is_every_screen() -> void:
 		"and the clock's plate and text are the theme's")
 	menu.follow_hud(hud, null, false)
 	_check(hud.hit_marker.colour(&"plate") == ember.hud_plate and hud.damage_numbers.colour(&"text") == ember.hud_text,
-		"and dot-ui's pieces on it (the hit marker, the damage numbers) are in the theme too")
+		"and gs-ui's pieces on it (the hit marker, the damage numbers) are in the theme too")
 
 	p.settings.set_value(&"ui_theme", &"midnight")
 	menu.queue_free()
@@ -338,7 +338,7 @@ func _test_the_timer_is_the_players_layout() -> void:
 	_done()
 
 
-## Hit feedback on a combat map, from dot-ui: the marker and the number come from a hit the
+## Hit feedback on a combat map, from gs-ui: the marker and the number come from a hit the
 ## authority applied (`confirm_hit`), and nothing is drawn before one.
 func _test_a_confirmed_hit_is_drawn() -> void:
 	_section("A hit the server confirmed is drawn, and nothing before it")
@@ -348,7 +348,7 @@ func _test_a_confirmed_hit_is_drawn() -> void:
 	await get_tree().process_frame
 
 	_check(hud.hit_marker != null and hud.damage_numbers != null,
-		"the HUD carries dot-ui's hit marker and damage numbers")
+		"the HUD carries gs-ui's hit marker and damage numbers")
 	_check(hud.hit_marker.alpha() == 0.0 and hud.damage_numbers.texts().is_empty(),
 		"and neither draws anything until a hit lands", str(hud.hit_marker.describe()))
 	hud.confirm_hit(7, 27.0, Vector3(0.0, 1.0, -4.0), false, true)

@@ -3,7 +3,7 @@ extends RefCounted
 const AirdriftGame := preload("airdrift_game.gd")
 const AirdriftPlayer := preload("airdrift_player.gd")
 
-## What dot-moderation's live tools mean on a timer server.
+## What gs-moderation's live tools mean on a timer server.
 ##
 ## [b]A time is the product here, so the first rule is that no admin tool can help one.[/b]
 ## Noclip abandons the run in progress the moment it is turned on, and `AirdriftPlayer` taints
