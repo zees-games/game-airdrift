@@ -88,7 +88,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## [code]fov_desired[/code]: horizontal field of view at 4:3, as those games define it.
 ##
 ## The one number a player carries between games. See
-## [method AirdriftUnits.horizontal_fov_to_vertical] for why it is not handed to the camera
+## [method AirdriftCamera.vertical_for] for why it is not handed to the camera
 ## directly.
 @export_range(30.0, 150.0, 1.0) var fov_desired: float = 90.0
 

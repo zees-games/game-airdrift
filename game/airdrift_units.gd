@@ -64,23 +64,6 @@ static func format_speed(metres_per_second: float) -> String:
 	return "%d" % int(round(to_units(metres_per_second)))
 
 
-## The genre's horizontal field of view into the vertical one Godot's camera wants.
-##
-## [b]A [code]fov_desired[/code] of 90 means 90° horizontal at 4:3, and that is the
-## whole subtlety.[/b] These games store FoV as horizontal on a 4:3 frame and widen it
-## for a wider screen, so the same setting shows more on a 16:9 monitor — which is what
-## every player's muscle memory expects. Godot's [Camera3D] takes a vertical angle and
-## keeps it fixed as the aspect changes. Converting through the 4:3 frame gives a
-## vertical angle that reproduces the original exactly: 90 becomes 73.74°, and on 16:9
-## the camera then shows 106.26° horizontally, which is what those games show.
-##
-## Setting Godot's fov to 90 directly — the obvious thing — gives a vertical 90, a
-## horizontal 121° on 16:9, and a player who feels seasick and cannot say why.
-static func horizontal_fov_to_vertical(fov_desired: float) -> float:
-	var horizontal := deg_to_rad(clampf(fov_desired, 30.0, 150.0))
-	return rad_to_deg(2.0 * atan(tan(horizontal * 0.5) * 3.0 / 4.0))
-
-
 ## The familiar [code]sensitivity[/code] cvar into degrees per mouse count.
 ##
 ## Those games turn the view by [code]sensitivity × m_yaw[/code] degrees per count, with

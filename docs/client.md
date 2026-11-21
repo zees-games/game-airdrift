@@ -4,7 +4,7 @@
 
 ## The genre's field of view, not Godot's
 
-`fov_desired 90` is 90° **horizontal at 4:3**, widened on a wider screen. Godot's `Camera3D.fov` is vertical and fixed. `AirdriftUnits.horizontal_fov_to_vertical` converts through the 4:3 frame: 90 becomes 73.74° vertical, which on 16:9 shows 106.26° horizontally, exactly what the genre shows. Handing 90 straight to Godot gives 121° at 16:9 and a player who cannot aim and cannot say why. The setting is `field_of_view`, the genre's 90 over 75..120.
+`fov_desired 90` is 90° **horizontal at 4:3**, widened on a wider screen. Godot's `Camera3D.fov` is vertical and fixed. `AirdriftCamera.vertical_for` converts through the 4:3 frame (dot-camera's `DotCameraFov.to_vertical`): 90 becomes 73.74° vertical, which on 16:9 shows 106.26° horizontally, exactly what the genre shows. Handing 90 straight to Godot gives 121° at 16:9 and a player who cannot aim and cannot say why. The setting is `field_of_view`, the genre's 90 over 75..120.
 
 `sensitivity` has its usual meaning: degrees per count is `sensitivity × 0.022`, so a player's 2.5 works unchanged.
 

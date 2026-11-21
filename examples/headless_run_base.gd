@@ -294,18 +294,18 @@ func _test_units() -> void:
 func _test_source_fov() -> void:
 	_section("the genre field of view")
 	# fov_desired 90 is 90° horizontal on a 4:3 frame. Vertical is 2·atan(tan(45°)·3/4).
-	var vertical := AirdriftUnits.horizontal_fov_to_vertical(90.0)
+	var vertical := AirdriftCamera.vertical_for(90.0)
 	_near(vertical, 73.74, 0.01, "fov_desired 90 is 73.74° vertical")
 
 	# On a 16:9 screen that vertical angle widens to what those games show.
-	var horizontal_16_9 := rad_to_deg(2.0 * atan(tan(deg_to_rad(vertical) * 0.5) * 16.0 / 9.0))
+	var horizontal_16_9 := DotCameraFov.to_horizontal(vertical, 16.0 / 9.0)
 	_near(horizontal_16_9, 106.26, 0.05, "which is 106.26° horizontal at 16:9, exactly the genre's")
 
 	# The obvious mistake, named so it stays a mistake.
 	var naive_16_9 := rad_to_deg(2.0 * atan(tan(deg_to_rad(90.0) * 0.5) * 16.0 / 9.0))
 	_check(naive_16_9 > 120.0, "handing 90 straight to a vertical fov would be over 120° wide", "%.1f" % naive_16_9)
 
-	_near(AirdriftUnits.horizontal_fov_to_vertical(75.0), 59.8, 0.1, "and 75 is 59.8°")
+	_near(AirdriftCamera.vertical_for(75.0), 59.8, 0.1, "and 75 is 59.8°")
 	_done()
 
 
@@ -587,7 +587,7 @@ func _test_cameras() -> void:
 	var camera := bot.camera
 
 	_check(camera.mode == AirdriftCamera.Mode.FIRST_PERSON, "starts in first person")
-	_near(camera.vertical_fov(), AirdriftUnits.horizontal_fov_to_vertical(90.0), 0.01, "with the genre field of view")
+	_near(camera.vertical_fov(), AirdriftCamera.vertical_for(90.0), 0.01, "with the genre field of view")
 	_check(camera.first.current, "and the first-person camera active")
 	_check((camera.first.cull_mask & (1 << (AirdriftRig.LAYER_LOCAL_BODY - 1))) == 0, "which culls the player's own rig")
 
