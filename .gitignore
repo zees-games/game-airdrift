@@ -46,6 +46,7 @@
 /addons/dot_user_avatar
 /addons/dot_voice
 /addons/dot_weapon
+/addons/dot_camera
 
 # Exports
 build/

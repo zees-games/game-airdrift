@@ -1,7 +1,6 @@
 extends Node3D
 
 const AirdriftRig := preload("airdrift_rig.gd")
-const AirdriftUnits := preload("airdrift_units.gd")
 
 ## First person and third person, with the genre's field of view.
 ##
@@ -14,7 +13,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## mid-run and a rebuilt camera would drop a frame at the worst moment.
 ##
 ## [b]The field of view is the genre's[/b]: [code]fov_desired[/code] is horizontal at
-## 4:3 and converted with [method AirdriftUnits.horizontal_fov_to_vertical], so 90 looks like
+## 4:3 and converted with [method vertical_for], so 90 looks like
 ## 90 does in those games on every aspect ratio. Handing 90 to Godot's vertical
 ## fov is the obvious thing, and produces a view nobody with that muscle memory can
 ## aim in.
@@ -22,6 +21,9 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## Third person adds nothing the simulation can see. The controller aims from the
 ## eye whichever camera is active; the player is looking at their own character
 ## rather than through it, and where the character is aiming is the same place.
+
+## Half life of the arm easing back out: `1 - exp(-8 dt)` per frame, which is `ln 2 / 8` seconds.
+const ARM_RETURN_HALF_LIFE := 0.0866434
 
 enum Mode {
 	FIRST_PERSON,
@@ -97,8 +99,25 @@ func _ready() -> void:
 	set_mode(mode)
 
 
+## The genre's horizontal field of view into the vertical one Godot's camera wants.
+##
+## [b]A [code]fov_desired[/code] of 90 means 90° horizontal at 4:3, and that is the
+## whole subtlety.[/b] These games store FoV as horizontal on a 4:3 frame and widen it
+## for a wider screen, so the same setting shows more on a 16:9 monitor — which is what
+## every player's muscle memory expects. Godot's [Camera3D] takes a vertical angle and
+## keeps it fixed as the aspect changes. Converting through the 4:3 frame gives a
+## vertical angle that reproduces the original exactly: 90 becomes 73.74°, and on 16:9
+## the camera then shows 106.26° horizontally, which is what those games show.
+##
+## Setting Godot's fov to 90 directly — the obvious thing — gives a vertical 90, a
+## horizontal 121° on 16:9, and a player who feels seasick and cannot say why.
+## The 4:3 frame is [DotCameraFov]'s `to_vertical` at aspect 4/3; the clamp is the range a player may set.
+static func vertical_for(fov_desired: float) -> float:
+	return DotCameraFov.to_vertical(clampf(fov_desired, 30.0, 150.0), 4.0 / 3.0)
+
+
 func _apply_fov() -> void:
-	var vertical := AirdriftUnits.horizontal_fov_to_vertical(fov_desired)
+	var vertical := vertical_for(fov_desired)
 
 	for camera in [first, third]:
 		if camera == null:
@@ -174,15 +193,14 @@ func look(pitch: float, delta: float) -> void:
 		arm.rotation = Vector3(deg_to_rad(pitch), 0.0, 0.0)
 		# Eased toward the configured length, so a camera pushed in by a wall comes
 		# back out rather than snapping. Frame-rate independent by construction.
-		arm.spring_length = lerpf(
-			arm.spring_length, third_person_distance,
-			1.0 - exp(-8.0 * delta)
+		arm.spring_length = DotCameraSmoothing.damp(
+			arm.spring_length, third_person_distance, ARM_RETURN_HALF_LIFE, delta
 		)
 
 
 ## The vertical field of view actually in use, for a HUD or a test.
 func vertical_fov() -> float:
-	return first.fov if first != null else AirdriftUnits.horizontal_fov_to_vertical(fov_desired)
+	return first.fov if first != null else vertical_for(fov_desired)
 
 
 func describe() -> Dictionary:
