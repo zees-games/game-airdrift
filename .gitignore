@@ -110,3 +110,5 @@ addons/maps/
 /worlds
 /pbr-library
 /model-library
+/addons/dot_bot_record
+/addons/godot-sqlite
