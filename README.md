@@ -10,6 +10,29 @@ The project and its assets are open source under the MIT license. Only the back-
 
 **Please treat this as partially tested.** It was built with Claude Code and has a headless test suite that passes, but little of it has been in front of real players. Please report anything you run into.
 
+## Screenshots
+
+Real gameplay captured on a GPU. Click an image for full size.
+
+<table>
+<tr>
+<td width="50%"><img src="https://raw.githubusercontent.com/zees-games/game-airdrift/main/docs/screenshots/surf-ramp.png" alt="Riding a surf ramp mid-run at 1226 u/s on a converted Source map."><br><sub>Riding a surf ramp mid-run at 1226 u/s on a converted Source map.</sub></td>
+<td width="50%"><img src="https://raw.githubusercontent.com/zees-games/game-airdrift/main/docs/screenshots/bhop-flat.png" alt="Bunny hopping a flat map, with the timer and strafe sync on screen."><br><sub>Bunny hopping a flat map, with the timer and strafe sync on screen.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="https://raw.githubusercontent.com/zees-games/game-airdrift/main/docs/screenshots/hud-speed-sync.png" alt="The timer HUD: speed, jumps, strafes and sync percentage."><br><sub>The timer HUD: speed, jumps, strafes and sync percentage.</sub></td>
+<td width="50%"><img src="https://raw.githubusercontent.com/zees-games/game-airdrift/main/docs/screenshots/start-zone.png" alt="Standing in the start zone before the timer starts."><br><sub>Standing in the start zone before the timer starts.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="https://raw.githubusercontent.com/zees-games/game-airdrift/main/docs/screenshots/style-select.png" alt="Choosing a style (normal, sideways, low gravity, prebhop and more)."><br><sub>Choosing a style (normal, sideways, low gravity, prebhop and more).</sub></td>
+<td width="50%"><img src="https://raw.githubusercontent.com/zees-games/game-airdrift/main/docs/screenshots/leaderboard.png" alt="The scoreboard with each runner's style, best time and rank."><br><sub>The scoreboard with each runner's style, best time and rank.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="https://raw.githubusercontent.com/zees-games/game-airdrift/main/docs/screenshots/map-select.png" alt="The map list, paged, with the course type and tier."><br><sub>The map list, paged, with the course type and tier.</sub></td>
+<td width="50%"><img src="https://raw.githubusercontent.com/zees-games/game-airdrift/main/docs/screenshots/converted-source-map.png" alt="A converted Source map, with its own textures and sky."><br><sub>A converted Source map, with its own textures and sky.</sub></td>
+</tr>
+</table>
+
 ## How it plays
 
 Each map has a start zone and an end zone. Leaving the start zone starts your timer; reaching the end stops it. Your best time on each map, track and style is a record, and the fastest on the server is the world record. Some maps have stages and bonus tracks.
