@@ -71,7 +71,7 @@ var _fx_since := 0
 
 
 func _initialize() -> void:
-	DotLog.set_level(DotLog.Level.WARN)
+	GSLog.set_level(GSLog.Level.WARN)
 	_fx_only = "--fx" in OS.get_cmdline_user_args()
 	_splits_only = "--splits" in OS.get_cmdline_user_args()
 	if _splits_only:
@@ -81,7 +81,7 @@ func _initialize() -> void:
 
 	# The movement actions, because the sampler reads them and an unregistered action
 	# pushes an engine error per action per tick. `AirdriftClient` registers the same set.
-	DotFpsSampler.register_default_actions()
+	GSFpsSampler.register_default_actions()
 
 	var config := AirdriftConfig.new()
 	config.auto_bhop = true
@@ -96,8 +96,8 @@ func _initialize() -> void:
 	root.add_child(_hud)
 
 
-## Frame sequence after each still (GS_SHOT_FRAMES, set by the .sh); see DotShotSeq. The state machine holds still while it records, and `_seq_end` defers the quit until it is done.
-var _seq := DotShotSeq.new()
+## Frame sequence after each still (GS_SHOT_FRAMES, set by the .sh); see GSShotSeq. The state machine holds still while it records, and `_seq_end` defers the quit until it is done.
+var _seq := GSShotSeq.new()
 var _seq_active := false
 var _seq_end := false
 
@@ -216,9 +216,9 @@ func _stage() -> void:
 func _arrange_run() -> void:
 	# A command with three keys down, so the key display has something to draw and the
 	# padding that keeps it from jumping sideways is visible.
-	var cmd := DotFpsCommand.new()
+	var cmd := GSFpsCommand.new()
 	cmd.move = Vector2(1.0, 1.0)
-	cmd.buttons = DotFpsCommand.BUTTON_JUMP
+	cmd.buttons = GSFpsCommand.BUTTON_JUMP
 	_player.controller.current_command = cmd
 	_player.controller.state.velocity = Vector3(14.0, 0.0, 6.0)
 
@@ -230,11 +230,11 @@ func _arrange_splits() -> void:
 	_hud.notice("Stage 2 — 00:21.40")
 	var store := _game.timers.store
 	if store == null:
-		store = DotTimerStoreMemory.new()
+		store = GSTimerStoreMemory.new()
 		_game.timers.store = store
 	var stages: int = _game.timers.stage_count(_player.timer.track)
 	var style: StringName = _player.timer.run.style_id
-	var record := DotTimerRecord.new()
+	var record := GSTimerRecord.new()
 	record.map_id = _game.maps.current.id
 	record.track = _player.timer.track
 	record.style_id = style
@@ -245,7 +245,7 @@ func _arrange_splits() -> void:
 		record.splits[k] = 15.0 * float(k)
 	var _put := store.put(record)
 	for k in range(1, stages + 2):
-		var section := DotTimerRecord.new()
+		var section := GSTimerRecord.new()
 		section.map_id = record.map_id
 		section.track = record.track
 		section.style_id = style
@@ -254,7 +254,7 @@ func _arrange_splits() -> void:
 		section.stage = k
 		section.time = 14.0 + 0.3 * float(k)
 		var _put_section := store.put(section)
-	var run: DotTimerRun = _player.timer.run
+	var run: GSTimerRun = _player.timer.run
 	run.begin(0.0)
 	var hz := 1.0 / maxf(run.tick_interval, 0.000001)
 	for line in [[1, 14.2], [2, 31.0]]:
@@ -284,7 +284,7 @@ func _arrange_notice() -> void:
 ## Forty minutes left — a thirty-minute map extended by ten — which no local map session
 ## on a client could ever say, so a picture showing it is a picture of the server's clock.
 func _arrange_clock() -> void:
-	var view := DotVoteClockView.new()
+	var view := GSVoteClockView.new()
 	view.adopt({"has_clock": true, "seconds_left": 2400, "running": true}, Time.get_ticks_msec() / 1000.0)
 	_hud.clock_view = view
 
@@ -292,7 +292,7 @@ func _arrange_clock() -> void:
 ## `trigger: rtv_only` with no limit. The slot between the map and autobhop must be gone,
 ## not showing the local session's number and not "no limit".
 func _arrange_no_clock() -> void:
-	var view := DotVoteClockView.new()
+	var view := GSVoteClockView.new()
 	view.adopt({"has_clock": false}, Time.get_ticks_msec() / 1000.0)
 	_hud.clock_view = view
 
@@ -301,7 +301,7 @@ func _arrange_no_clock() -> void:
 ## feet, the ripple, and the column above them that the map cannot hide.
 func _arrange_beacon() -> void:
 	_player.controller.state.velocity = Vector3.ZERO
-	_player.controller.current_command = DotFpsCommand.new()
+	_player.controller.current_command = GSFpsCommand.new()
 	var here := _player.controller.state.position
 	var yaw := deg_to_rad(_player.controller.state.yaw)
 	var ahead := here + Vector3(-sin(yaw), 0.0, -cos(yaw)) * 4.0
@@ -316,7 +316,7 @@ func _arrange_beacon() -> void:
 ## avatar action, early and later in the clip. The id goes through dot-user-avatar's own list.
 func _arrange_action(kind: StringName, action: String) -> void:
 	_player.controller.state.velocity = Vector3.ZERO
-	_player.controller.current_command = DotFpsCommand.new()
+	_player.controller.current_command = GSFpsCommand.new()
 	var here := _player.controller.state.position
 	var yaw := deg_to_rad(_player.controller.state.yaw)
 	var ahead := here + Vector3(-sin(yaw), 0.0, -cos(yaw)) * 2.5
@@ -324,7 +324,7 @@ func _arrange_action(kind: StringName, action: String) -> void:
 	_other.controller.state.position = ahead
 	_other.global_position = ahead
 	_other.controller.state.yaw = _player.controller.state.yaw + 180.0
-	var entry := DotAvatarActions.defaults().find(kind, action)
+	var entry := GSAvatarActions.defaults().find(kind, action)
 	var ok: bool = _other.rig != null and _other.rig.person != null and _other.rig.person.play_action(StringName(action), bool(entry.get("loop", false)), 0.0)
 	print("action %s/%s: played=%s" % [kind, action, ok])
 
@@ -351,7 +351,7 @@ func _arrange_blind() -> void:
 ## Pushed by hand here, as `AirdriftClient._process` pushes it from the bridge.
 func _arrange_loading() -> void:
 	_player.blinded = false
-	var cover := DotLoadingCover.new()
+	var cover := GSLoadingCover.new()
 	cover.show_cover()
 	cover.set_status("Loading surf mesa… 45%")
 	cover.set_progress(0.45)
@@ -369,7 +369,7 @@ func _stage_fx() -> void:
 		push_error("the presentation layer: %s" % built.error.message)
 	# Never the player's own settings file: a tool that writes `user://` changes the next
 	# run of the real client.
-	_presentation.settings.local_store = DotSettingsStoreMemory.new()
+	_presentation.settings.local_store = GSSettingsStoreMemory.new()
 	_presentation.settings.load_now()
 	_presentation.apply_all()
 	_presentation.fx.spawned.connect(func(id: StringName, node: Node, why: StringName) -> void:
@@ -393,7 +393,7 @@ func _arrange_fx(which: Array) -> void:
 	# Looking down a little, through the command because the command is what the tick
 	# applies: a gate is drawn at the feet, and level from the eye the floor ahead is
 	# behind the clock.
-	var look := DotFpsCommand.new()
+	var look := GSFpsCommand.new()
 	look.yaw = _player.controller.state.yaw
 	look.pitch = -24.0
 	_player.controller.current_command = look

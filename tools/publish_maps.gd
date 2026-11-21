@@ -48,7 +48,7 @@ func _initialize() -> void:
 	# An owner is a path segment in every client that mounts the pack; the same rule the
 	# site applies to a username, checked here so a typo fails before anything is signed.
 	if owner.is_empty() or not owner.to_lower() == owner or owner.contains("/") \
-			or DotPaths.slugify(owner) != owner:
+			or GSPaths.slugify(owner) != owner:
 		printerr("--owner must be a lowercase name the site would give a pack, e.g. gamemann")
 		quit(1)
 		return
@@ -83,7 +83,7 @@ func _initialize() -> void:
 			failed += 1
 			continue
 
-		var pub := DotCloudPublisher.new()
+		var pub := GSCloudPublisher.new()
 		pub.content_id = "%s/%s" % [owner, id]
 		pub.version = version if not version.is_empty() else AirdriftMapCatalogue.pack_version(source)
 		pub.display_name = id

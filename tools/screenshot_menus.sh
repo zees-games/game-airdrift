@@ -6,7 +6,7 @@
 # See tools/screenshot_menus.gd for the frames. xvfb-run because this needs a rendering
 # context; `--headless` gives a null renderer and every frame it saves is empty.
 set -euo pipefail
-# A short frame sequence beside each still (DotShotSeq), so Nightly -> Review can play and scrub it.
+# A short frame sequence beside each still (GSShotSeq), so Nightly -> Review can play and scrub it.
 export GS_SHOT_FRAMES=${GS_SHOT_FRAMES:-${DOT_SHOT_FRAMES:-8}} GS_SHOT_SECS=${GS_SHOT_SECS:-${DOT_SHOT_SECS:-1}}
 cd "$(dirname "$0")/.."
 mkdir -p screenshots

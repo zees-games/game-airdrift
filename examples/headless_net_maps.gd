@@ -30,8 +30,8 @@ func _make_game(server: bool, scope: StringName, parent: Node) -> AirdriftGame:
 	return game
 
 
-func _make_manager(server: bool, scope: StringName, peer_id: int, parent: Node, tick_rate: int) -> DotNetManager:
-	var manager := DotNetManager.new()
+func _make_manager(server: bool, scope: StringName, peer_id: int, parent: Node, tick_rate: int) -> GSNetManager:
+	var manager := GSNetManager.new()
 	manager.name = "Server" if server else "Client"
 	manager.is_server = server
 	manager.local_peer_id = peer_id
@@ -39,7 +39,7 @@ func _make_manager(server: bool, scope: StringName, peer_id: int, parent: Node, 
 	manager.auto_tick = false
 	manager.config_file = ""
 
-	var config := DotNetConfig.new()
+	var config := GSNetConfig.new()
 	config.tick_rate = tick_rate
 	config.snapshot_rate = SNAPSHOT_RATE
 	config.enable_lag_compensation = false
@@ -85,22 +85,22 @@ func _exchange() -> void:
 	_flush()
 
 
-func _step(command: DotFpsCommand = null) -> void:
+func _step(command: GSFpsCommand = null) -> void:
 	_tick += 1
 	_client_net.clock.advance(1.0 / float(_client_game.tick_rate))
 	_server_bridge.server_tick(_tick)
 	_flush()
-	_client_bridge.client_tick(_tick + INPUT_LEAD, command if command != null else DotFpsCommand.new())
+	_client_bridge.client_tick(_tick + INPUT_LEAD, command if command != null else GSFpsCommand.new())
 	_flush()
 
 
-func _steps(count: int, command: DotFpsCommand = null) -> void:
+func _steps(count: int, command: GSFpsCommand = null) -> void:
 	for _i in range(count):
 		_step(command)
 
 
-func _forward() -> DotFpsCommand:
-	var c := DotFpsCommand.new()
+func _forward() -> GSFpsCommand:
+	var c := GSFpsCommand.new()
 	c.move = Vector2(0.0, 1.0)
 	return c
 
@@ -121,7 +121,7 @@ func _client_player() -> AirdriftPlayer:
 ## A content client that takes its time over the first fetch, in front of a real one.
 ##
 ## [b]What is mounted is a real signed pack[/b], published by this suite into `user://` and
-## mounted by a real [DotCloudClient] at `res://dot_cloud/<id>/<version>/` — so what the
+## mounted by a real [GSCloudClient] at `res://dot_cloud/<id>/<version>/` — so what the
 ## client loads when its download lands is a world built from a manifest out of a pack, as
 ## a delivered map is. The delay is the suite's, so the server's timeout can pass while the
 ## client is still downloading: a straggler, on demand. Registered as `dot_cloud_client`,
@@ -134,7 +134,7 @@ class SlowCloud:
 
 	signal progress_changed(progress: Dictionary)
 
-	var real: DotCloudClient = null
+	var real: GSCloudClient = null
 	var delay_first: float = 0.0
 	## "id@version" of every fetch asked for, in order.
 	var asked: Array[String] = []
@@ -143,7 +143,7 @@ class SlowCloud:
 	func ensure(
 		content_id: StringName, version: String = "",
 		groups: PackedStringArray = PackedStringArray(), manifest_url: String = ""
-	) -> DotResult:
+	) -> GSResult:
 		asked.append("%s@%s" % [content_id, version])
 		if delay_first > 0.0 and not _delayed:
 			_delayed = true
@@ -170,7 +170,7 @@ const SYNC_TIMEOUT := 1.0
 const SLOW_FETCH := 5.0
 
 var _cloud: SlowCloud = null
-var _real_cloud: DotCloudClient = null
+var _real_cloud: GSCloudClient = null
 
 
 ## Runs a change on the server while pumping the link, and says how it ended.
@@ -184,13 +184,13 @@ func _change_and_pump(id: StringName, seconds: float, during: Callable = Callabl
 	var outcome := {"done": false, "ok": false, "reason": "", "ms": 0, "client_then": ""}
 	var started := Time.get_ticks_msec()
 
-	var on_finished := func(_map: DotMapDef) -> void:
+	var on_finished := func(_map: GSMapDef) -> void:
 		outcome["done"] = true
 		outcome["ok"] = true
 		outcome["ms"] = Time.get_ticks_msec() - started
 		# Where the client is at the moment the server swaps: the straggler's proof.
 		outcome["client_then"] = String(_client_game.maps.current.id) if _client_game.maps.current != null else ""
-	var on_failed := func(_map: DotMapDef, reason: String) -> void:
+	var on_failed := func(_map: GSMapDef, reason: String) -> void:
 		outcome["done"] = true
 		outcome["reason"] = reason
 		outcome["ms"] = Time.get_ticks_msec() - started
@@ -235,7 +235,7 @@ func _until_client_on(id: StringName, seconds: float) -> bool:
 ## files; [param extra] is merged into the manifest, so a republish can change them.
 func _publish_map_fixture(
 	id: StringName, version: String, keys: Dictionary, owner := "", extra := {}
-) -> DotResult:
+) -> GSResult:
 	var source := SYNC_FIXTURE_ROOT.path_join("src").path_join(String(id))
 	DirAccess.make_dir_recursive_absolute(source)
 	var manifest := {
@@ -251,7 +251,7 @@ func _publish_map_fixture(
 	bin.close()
 
 	var content := String(id) if owner.is_empty() else "%s/%s" % [owner, id]
-	var publisher := DotCloudPublisher.new()
+	var publisher := GSCloudPublisher.new()
 	publisher.content_id = content
 	publisher.version = version if not version.is_empty() else AirdriftMapCatalogue.pack_version(source)
 	publisher.signing_key_pem = str(keys["private"])
@@ -264,13 +264,13 @@ func _publish_map_fixture(
 
 ## One content client for both ends, behind [SlowCloud], trusting only this suite's key.
 func _start_content(keys: Dictionary) -> void:
-	var config := DotCloudConfig.new()
+	var config := GSCloudConfig.new()
 	config.side = "both"
 	config.cache_dir = SYNC_FIXTURE_ROOT.path_join("cache")
 	config.require_signed_manifests = true
 	config.trusted_keys = {"headless_net": str(keys["public"])}
 
-	_real_cloud = DotCloudClient.new()
+	_real_cloud = GSCloudClient.new()
 	_real_cloud.name = "RealCloud"
 	_real_cloud.config = config
 	_real_cloud.config_file = ""
@@ -283,7 +283,7 @@ func _start_content(keys: Dictionary) -> void:
 	_cloud.name = "SlowCloud"
 	_cloud.real = _real_cloud
 	add_child(_cloud)
-	DotRegistry.register(&"dot_cloud_client", _cloud)
+	GSRegistry.register(&"dot_cloud_client", _cloud)
 
 
 func _test_map_change() -> void:
@@ -295,9 +295,9 @@ func _test_map_change() -> void:
 
 	var order: Array[String] = []
 	var fetched: Array[String] = []
-	var on_ready := func(m: DotMapDef) -> void: order.append("client ready:" + String(m.id))
-	var on_swap := func(m: DotMapDef, _w: Node) -> void: order.append("server swap:" + String(m.id))
-	var on_fetch := func(m: DotMapDef) -> void: fetched.append(String(m.id))
+	var on_ready := func(m: GSMapDef) -> void: order.append("client ready:" + String(m.id))
+	var on_swap := func(m: GSMapDef, _w: Node) -> void: order.append("server swap:" + String(m.id))
+	var on_fetch := func(m: GSMapDef) -> void: fetched.append(String(m.id))
 	_client_bridge.map_client.content_ready.connect(on_ready)
 	_server_game.maps.changed.connect(on_swap)
 	_client_bridge.map_client.fetching.connect(on_fetch)
@@ -312,7 +312,7 @@ func _test_map_change() -> void:
 	var late_session := 9
 	var mid_change := func() -> void:
 		_server_bridge.add_player(late_peer, late_session, "Late")
-		var writer := DotNetWriter.new()
+		var writer := GSNetWriter.new()
 		_server_net.messages.encode(AirdriftRequest.new(AirdriftEvents.Ask.READY, PackedByteArray()), writer)
 		_server_bridge.receive_request(late_peer, writer.to_bytes())
 
@@ -354,7 +354,7 @@ func _test_map_change() -> void:
 
 ## [b]A map won by vote reaches the clients.[/b]
 ##
-## The vote's map source was handed `game.maps`, and `DotMapSession.change_to` swaps the
+## The vote's map source was handed `game.maps`, and `GSMapSession.change_to` swaps the
 ## server's own world and tells nobody — so on a live server a vote moved it to bhop_fur
 ## while both players stayed on surf_mesa, and the respawn put them at bhop_fur's start
 ## in the sky over a map they were still drawing. `_test_map_change` could not see it: it
@@ -415,8 +415,8 @@ func _test_map_by_vote() -> void:
 func _test_map_delivered() -> void:
 	_section("changing the map: an imported map that is delivered")
 
-	DotPaths.remove_tree(SYNC_FIXTURE_ROOT)
-	var keys := DotCloudSignature.generate_keypair()
+	GSPaths.remove_tree(SYNC_FIXTURE_ROOT)
+	var keys := GSCloudSignature.generate_keypair()
 	_check(keys.ok, "a signing key is made for this suite's content")
 	if not keys.ok:
 		return
@@ -431,7 +431,7 @@ func _test_map_delivered() -> void:
 	await get_tree().process_frame
 
 	# The server fetches it the way it fetches `content_maps`, and says what it is.
-	var fetched: DotResult = await _server_game.ensure_map_content(DELIVERED_FIXTURE)
+	var fetched: GSResult = await _server_game.ensure_map_content(DELIVERED_FIXTURE)
 	var on_server := _server_game.maps.catalogue.get_map(DELIVERED_FIXTURE)
 	var mount := "res://dot_cloud/%s/1.2.0/" % DELIVERED_FIXTURE
 	_check(fetched.ok and on_server != null, "the server fetches the map into its catalogue",
@@ -488,7 +488,7 @@ func _test_map_republished() -> void:
 	var source := SYNC_FIXTURE_ROOT.path_join("src").path_join(String(REPUB_FIXTURE))
 	var v1 := AirdriftMapCatalogue.pack_version(source)
 
-	var fetched: DotResult = await _server_game.ensure_map_content(REPUB_FIXTURE)
+	var fetched: GSResult = await _server_game.ensure_map_content(REPUB_FIXTURE)
 	var on_server := _server_game.maps.catalogue.get_map(REPUB_FIXTURE)
 	var outcome := await _change_and_pump(REPUB_FIXTURE, 8.0)
 	var followed := await _until_client_on(REPUB_FIXTURE, 3.0)
@@ -508,7 +508,7 @@ func _test_map_republished() -> void:
 	_server_game.maps.catalogue.remove(REPUB_FIXTURE)
 	_server_game._map_content_seen.erase(REPUB_FIXTURE)
 	var away := await _change_and_pump(DELIVERED_FIXTURE, 8.0)
-	var refetched: DotResult = await _server_game.ensure_map_content(REPUB_FIXTURE)
+	var refetched: GSResult = await _server_game.ensure_map_content(REPUB_FIXTURE)
 	on_server = _server_game.maps.catalogue.get_map(REPUB_FIXTURE)
 	_check(bool(away["ok"]) and refetched.ok and on_server != null
 		and on_server.content_version == v2,
@@ -539,14 +539,14 @@ func _test_map_owned() -> void:
 	# The key the delivered section made and the content client already trusts. A fresh
 	# one here replaced it, and every fixture signed before it stopped verifying.
 	var published := _publish_map_fixture(OWNED_FIXTURE, "1.0.0", _fixture_keys, "someone") \
-		if not _fixture_keys.is_empty() else DotResult.fail(DotError.CODE_STATE, "no key")
+		if not _fixture_keys.is_empty() else GSResult.fail(GSError.CODE_STATE, "no key")
 	_check(published.ok, "a map publishes as someone/<id>", str(published.error))
 	if not published.ok:
 		_done()
 		return
 
 	_server_game.config.map_content_owner = "someone"
-	var fetched: DotResult = await _server_game.ensure_map_content(OWNED_FIXTURE)
+	var fetched: GSResult = await _server_game.ensure_map_content(OWNED_FIXTURE)
 	var on_server := _server_game.maps.catalogue.get_map(OWNED_FIXTURE)
 	_check(fetched.ok and on_server != null,
 		"the server fetches it by the map id alone, with the owner from its config",
@@ -575,7 +575,7 @@ func _test_map_straggler() -> void:
 	# What `AirdriftGame.ensure_map_content` makes of a pack it fetched — built by hand, because
 	# a server in this process that mounted the pack would have mounted it for the client
 	# too (see [SlowCloud]). The server's own load at the swap mounts it for real.
-	var on_server := DotMapDef.new()
+	var on_server := GSMapDef.new()
 	on_server.id = SYNC_FIXTURE
 	on_server.scene_path = AirdriftMapCatalogue.IMPORTED_SCENE
 	on_server.content_id = SYNC_FIXTURE
@@ -671,7 +671,7 @@ func _test_map_refused() -> void:
 	# Loading it would mean loading a path of the host's choosing out of THIS build — the
 	# rule dot-map exists to enforce, now enforced over a real wire.
 	var stages := _server_game.maps.catalogue.get_map(&"bhop_g2g_stages")
-	var server_only := DotMapDef.from_dictionary(stages.to_dictionary())
+	var server_only := GSMapDef.from_dictionary(stages.to_dictionary())
 	server_only.id = &"airdrift_server_only"
 	_server_game.maps.catalogue.add(server_only)
 
@@ -691,7 +691,7 @@ func _test_map_refused() -> void:
 	# a timer server is a record set on geometry nobody else has.
 	refused.clear()
 	timed_out.clear()
-	var republished := DotMapDef.from_dictionary(stages.to_dictionary())
+	var republished := GSMapDef.from_dictionary(stages.to_dictionary())
 	republished.version = "2.0.0"
 	_server_game.maps.catalogue.remove(&"bhop_g2g_stages")
 	_server_game.maps.catalogue.add(republished)
@@ -714,11 +714,11 @@ func _test_map_refused() -> void:
 
 	host.peer_timed_out.disconnect(on_timeout)
 	_client_bridge.map_refused.disconnect(on_refused)
-	DotRegistry.unregister_instance(&"dot_cloud_client", _cloud)
+	GSRegistry.unregister_instance(&"dot_cloud_client", _cloud)
 	_cloud.queue_free()
 	_real_cloud.queue_free()
 	_server_game.maps.catalogue.remove(SYNC_FIXTURE)
 	_server_game.maps.catalogue.remove(DELIVERED_FIXTURE)
-	DotPaths.remove_tree(SYNC_FIXTURE_ROOT)
+	GSPaths.remove_tree(SYNC_FIXTURE_ROOT)
 	_steps(4)
 	_done()

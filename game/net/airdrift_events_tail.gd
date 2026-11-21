@@ -9,8 +9,8 @@ const NAME_BYTES := 64
 const AVATAR_BYTES := 4096
 
 
-static func _w() -> DotNetWriter:
-	return DotNetWriter.new()
+static func _w() -> GSNetWriter:
+	return GSNetWriter.new()
 
 
 static func write_int(value: int) -> PackedByteArray:
@@ -19,24 +19,24 @@ static func write_int(value: int) -> PackedByteArray:
 	return writer.to_bytes()
 
 
-static func read_int(reader: DotNetReader) -> int:
+static func read_int(reader: GSNetReader) -> int:
 	return reader.read_varint()
 
 
-static func write_avatar(avatar: DotAvatar) -> PackedByteArray:
+static func write_avatar(avatar: GSAvatar) -> PackedByteArray:
 	var writer := _w()
 	writer.write_string(JSON.stringify(avatar.to_dict()) if avatar != null else "", AVATAR_BYTES)
 	return writer.to_bytes()
 
 
-static func read_avatar(reader: DotNetReader) -> DotAvatar:
+static func read_avatar(reader: GSNetReader) -> GSAvatar:
 	var text := reader.read_string(AVATAR_BYTES)
 	if text == "":
 		return null
 	var parsed: Variant = JSON.parse_string(text)
 	if not (parsed is Dictionary):
 		return null
-	var built := DotAvatar.from_dict(parsed)
+	var built := GSAvatar.from_dict(parsed)
 	return built.value if built.ok else null
 
 
@@ -55,7 +55,7 @@ static func write_npc(net_id: int, kind_id: StringName, at: Vector3) -> PackedBy
 	return writer.to_bytes()
 
 
-static func read_npc(reader: DotNetReader) -> Dictionary:
+static func read_npc(reader: GSNetReader) -> Dictionary:
 	var out := {
 		"net_id": reader.read_varint(),
 		"kind_id": StringName(reader.read_string(NPC_ID_BYTES)),
@@ -71,7 +71,7 @@ static func write_npc_gone(net_id: int) -> PackedByteArray:
 	return writer.to_bytes()
 
 
-static func read_npc_gone(reader: DotNetReader) -> Dictionary:
+static func read_npc_gone(reader: GSNetReader) -> Dictionary:
 	var out := {"net_id": reader.read_varint()}
 	out["ok"] = reader.ok()
 	return out
@@ -103,7 +103,7 @@ static func write_rules(rules: Dictionary) -> PackedByteArray:
 ## Never fails into a half-read: anything that does not parse to a dictionary is
 ## [code]{"ok": false}[/code], and the flags a server left out read as their defaults
 ## (everything allowed), which is what a server older than the flag meant.
-static func read_rules(reader: DotNetReader) -> Dictionary:
+static func read_rules(reader: GSNetReader) -> Dictionary:
 	var text := reader.read_string(RULES_BYTES)
 	# A JSON instance rather than `JSON.parse_string`, which prints an engine ERROR with a
 	# backtrace for every malformed body: a server sending a bad one is the server's
@@ -144,7 +144,7 @@ static func write_maps(rows: Array) -> PackedByteArray:
 	return writer.to_bytes()
 
 
-static func read_maps(reader: DotNetReader) -> Array:
+static func read_maps(reader: GSNetReader) -> Array:
 	var text := reader.read_string(MAPS_BYTES)
 	var json := JSON.new()
 	if not reader.ok() or json.parse(text) != OK or not (json.data is Array):
@@ -163,12 +163,12 @@ static func write_map_id(id: String) -> PackedByteArray:
 	return writer.to_bytes()
 
 
-static func read_map_id(reader: DotNetReader) -> String:
+static func read_map_id(reader: GSNetReader) -> String:
 	return reader.read_string(NAME_BYTES)
 
 
 ## Whom a client is watching. [param target] is a player key ("u12", or the ghost's), empty
-## for nobody; [param mode] is a `DotSpectatorView.Mode`.
+## for nobody; [param mode] is a `GSSpectatorView.Mode`.
 static func write_spectate(target: String, mode: int, target_name: String = "") -> PackedByteArray:
 	var writer := _w()
 	writer.write_string(target, NAME_BYTES)
@@ -177,7 +177,7 @@ static func write_spectate(target: String, mode: int, target_name: String = "") 
 	return writer.to_bytes()
 
 
-static func read_spectate(reader: DotNetReader) -> Dictionary:
+static func read_spectate(reader: GSNetReader) -> Dictionary:
 	var target := reader.read_string(NAME_BYTES)
 	var mode := reader.read_uint(8)
 	var target_name := reader.read_string(NAME_BYTES)
@@ -196,7 +196,7 @@ static func write_spectators(target: String, names: PackedStringArray) -> Packed
 	return writer.to_bytes()
 
 
-static func read_spectators(reader: DotNetReader) -> Dictionary:
+static func read_spectators(reader: GSNetReader) -> Dictionary:
 	var target := reader.read_string(NAME_BYTES)
 	var count := mini(reader.read_varint(), SPECTATORS_MAX)
 	var names := PackedStringArray()
@@ -207,7 +207,7 @@ static func read_spectators(reader: DotNetReader) -> Dictionary:
 
 ## [constant Kind.DEATH]'s body: the victim's session id, then the fall when there is one. The
 ## fall is last and optional, so a reader that does not know it reads the victim and stops.
-static func write_death(player_id: int, death: DotPlayerDeath = null) -> PackedByteArray:
+static func write_death(player_id: int, death: GSPlayerDeath = null) -> PackedByteArray:
 	var writer := _w()
 	writer.write_varint(maxi(player_id, 0))
 	if death != null:
@@ -215,11 +215,11 @@ static func write_death(player_id: int, death: DotPlayerDeath = null) -> PackedB
 	return writer.to_bytes()
 
 
-static func read_death(reader: DotNetReader) -> Dictionary:
+static func read_death(reader: GSNetReader) -> Dictionary:
 	var out := {"player_id": reader.read_varint()}
 	# A byte or more left is the fall; less is the padding to the last byte.
 	if reader.bits_remaining() >= 8:
-		out["death"] = DotPlayerDeath.read_from(reader)
+		out["death"] = GSPlayerDeath.read_from(reader)
 	out["ok"] = reader.ok()
 	return out
 
@@ -235,7 +235,7 @@ static func write_shot(shooter: int, weapon: String, at: Vector3) -> PackedByteA
 	return writer.to_bytes()
 
 
-static func read_shot(reader: DotNetReader) -> Dictionary:
+static func read_shot(reader: GSNetReader) -> Dictionary:
 	var shooter := reader.read_varint()
 	var weapon := reader.read_string(32)
 	var at := Vector3(reader.read_float32(), reader.read_float32(), reader.read_float32())
@@ -255,7 +255,7 @@ static func write_hit(victim: int, amount: float, point: Vector3, killed: bool, 
 	return writer.to_bytes()
 
 
-static func read_hit(reader: DotNetReader) -> Dictionary:
+static func read_hit(reader: GSNetReader) -> Dictionary:
 	var victim := reader.read_varint()
 	var amount := reader.read_float_range(0.0, 1000.0, 14)
 	var point := Vector3(reader.read_float32(), reader.read_float32(), reader.read_float32())
@@ -274,7 +274,7 @@ static func write_kill(killer: int, victim: int, weapon: String, headshot: bool)
 	return writer.to_bytes()
 
 
-static func read_kill(reader: DotNetReader) -> Dictionary:
+static func read_kill(reader: GSNetReader) -> Dictionary:
 	var killer := reader.read_varint()
 	var victim := reader.read_varint()
 	var weapon := reader.read_string(32)
@@ -300,7 +300,7 @@ static func write_match_end(killcam_sec: float, rows: Array) -> PackedByteArray:
 	return writer.to_bytes()
 
 
-static func read_match_end(reader: DotNetReader) -> Dictionary:
+static func read_match_end(reader: GSNetReader) -> Dictionary:
 	var seconds := float(reader.read_varint()) / 10.0
 	var count := reader.read_uint(2)
 	var rows: Array = []

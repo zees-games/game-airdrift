@@ -17,11 +17,11 @@ func _test_cvars_reach_the_movement() -> void:
 
 	_run_command("sv_gravity 600")
 	var shooter := game.entities.id_for_key(&"u1")
-	var zoned := DotDamage.make(shooter, 9999, 5.0, game.combat.manager.damage_type(&"kinetic"))
-	zoned.hit_group = DotHitGroup.NECK
+	var zoned := GSDamage.make(shooter, 9999, 5.0, game.combat.manager.damage_type(&"kinetic"))
+	zoned.hit_group = GSHitGroup.NECK
 	zoned.weapon_id = &"probe"
 	game.progress.report_damage(zoned)
-	_check(game.progress.session_values(&"u1").get_cell(DotStatsHitzones.HITS, "zone:neck") >= 1.0,
+	_check(game.progress.session_values(&"u1").get_cell(GSStatsHitzones.HITS, "zone:neck") >= 1.0,
 		"a hit with a hit_group is filed by body zone through the dot-stats hitzone hook")
 	_check(game.progress.stats.schema.validate().ok, "the stats schema, hitzones included, validates")
 	_check(_stats_errors.is_empty(), "the stats layer logged no error", str(_stats_errors))
@@ -39,7 +39,7 @@ func _test_cvars_reach_the_movement() -> void:
 ## docs/movement.md "Two names for a movement setting": the shared spellings write AirdriftConfig, and the Airdrift ones keep working.
 func _test_stats_report() -> void:
 	_section("stats_report")
-	var cv: DotConVar = server.console.find_cvar("stats_report")
+	var cv: GSConVar = server.console.find_cvar("stats_report")
 	var progress: Object = game.progress
 	_check(cv != null and cv.get_string() == "0", "stats_report is registered and off by default")
 	_check(progress != null and progress.stats != null and not progress.stats.report_to_backbone,
@@ -54,11 +54,11 @@ func _test_stats_report() -> void:
 	script.source_code = "extends Node\nfunc post_integration(_a = null, _b = null, _c = null): return null\n"
 	var _reloaded := script.reload()
 	client.set_script(script)
-	DotRegistry.register(&"dot_backbone_client", client)
+	GSRegistry.register(&"dot_backbone_client", client)
 	var _r0 := cv.set_value("0")
 	var _r1 := cv.set_value("1")
 	_check(progress.stats.report_to_backbone, "on with a backbone client makes the tracker report")
-	_check(progress.stats.get_node_or_null(DotGameStatsReport.TIMER_NAME) != null, "and adds the flush timer")
+	_check(progress.stats.get_node_or_null(GSGameStatsReport.TIMER_NAME) != null, "and adds the flush timer")
 	var _r2 := cv.set_value("0")
 	_check(not progress.stats.report_to_backbone, "off stops it again")
 	# The boards' reporter is handed the registered client, or no record ever reaches the site.
@@ -72,7 +72,7 @@ func _test_stats_report() -> void:
 	_check(game.boards.reporter.client == client, "the boards' reporter takes the registered backbone client")
 	game.boards.reporter.client = null
 	game.config.report_to_backbone = was_reporting
-	DotRegistry.unregister_instance(&"dot_backbone_client", client)
+	GSRegistry.unregister_instance(&"dot_backbone_client", client)
 	client.free()
 	_done()
 
@@ -118,11 +118,11 @@ func _test_autobhop_live() -> void:
 	var player: AirdriftPlayer = game.players[&"u1"]
 	player.sampler = null
 
-	var hold := DotFpsCommand.new()
+	var hold := GSFpsCommand.new()
 	hold.move = Vector2(0.0, 1.0)
-	hold.set_button(DotFpsCommand.BUTTON_JUMP, true)
+	hold.set_button(GSFpsCommand.BUTTON_JUMP, true)
 
-	var walk := DotFpsCommand.new()
+	var walk := GSFpsCommand.new()
 	walk.move = Vector2(0.0, 1.0)
 
 	game.spawn_player(&"u1")
@@ -135,7 +135,7 @@ func _test_autobhop_live() -> void:
 	# A run in progress is abandoned by the cvar: half on one movement is a run on
 	# neither.
 	var stopped := [0]
-	player.timer.run_stopped.connect(func(_r: DotTimerRun, _why: StringName) -> void: stopped[0] += 1)
+	player.timer.run_stopped.connect(func(_r: GSTimerRun, _why: StringName) -> void: stopped[0] += 1)
 
 	_run_command("sv_autobunnyhopping 0")
 	_check(not player.controller.tunables.auto_hop, "sv_autobunnyhopping 0 reaches the player")
@@ -188,7 +188,7 @@ func _test_thirdperson_cvar() -> void:
 func _test_stagger_cvar() -> void:
 	_section("sv_stagger_snapshots")
 	var module := server.modules.get_module("g2gfast")
-	var net: DotNetManager = module.get("net") if module != null else null
+	var net: GSNetManager = module.get("net") if module != null else null
 	_check(net != null and net.config.stagger_snapshots, "snapshots are staggered by default (since 2026-10-09)")
 	_run_command("sv_stagger_snapshots 0")
 	_check(net != null and not net.config.stagger_snapshots and not game.config.stagger_snapshots,
@@ -201,7 +201,7 @@ func _test_stagger_cvar() -> void:
 func _test_config_and_noblock() -> void:
 	_section("the config surface and the block rules")
 	var module := server.modules.get_module("g2gfast")
-	var binder: DotGameConfigBinder = game.config_binder
+	var binder: GSGameConfigBinder = game.config_binder
 	_check(binder != null and binder.diff().is_empty(), "the config binder is built and the defaults hold no diff")
 	_check(server.console.find_cvar("airdrift_score_limit") != null and server.console.get_int("airdrift_max_players") == 64,
 		"the deathmatch and server fields are airdrift_ cvars")
@@ -209,8 +209,8 @@ func _test_config_and_noblock() -> void:
 	_run_command("airdrift_respawn_delay 3")
 	_check(game.config.respawn_delay == 3.0 and binder.source_of("respawn_delay") == "cvar", "an airdrift_ cvar writes the field")
 	_run_command("airdrift_respawn_delay 1")
-	var edit: Variant = module.workbench.api.handle(DotGameWorkbench.LOCAL_ACTOR, {"op": "set", "kind": "config_movement", "id": binder.profile_id, "key": "gravity", "value": 700})
-	_check(edit is DotResult and edit.ok and game.config.gravity == 700.0 and server.console.get_int("sv_gravity") == 700,
+	var edit: Variant = module.workbench.api.handle(GSGameWorkbench.LOCAL_ACTOR, {"op": "set", "kind": "config_movement", "id": binder.profile_id, "key": "gravity", "value": 700})
+	_check(edit is GSResult and edit.ok and game.config.gravity == 700.0 and server.console.get_int("sv_gravity") == 700,
 		"a workbench edit of a hand-bound field reaches the field and its sv_ cvar")
 	_run_command("sv_gravity 800")
 	var noblock: Variant = module.get("noblock")
@@ -224,7 +224,7 @@ func _test_config_and_noblock() -> void:
 	_check(not rules.call("blocks", 1, 2), "two runners are enemies in a free-for-all, and enemies pass at mp_enemyblock 0")
 	_run_command("mp_enemyblock 1")
 	_check(game.body_rules.blocks(1, 2), "mp_enemyblock 1 makes them solid")
-	var asked: DotResult = rules.call("request", 1, [DotTeamBlockRules.Relation.ENEMY], 0, true)
+	var asked: GSResult = rules.call("request", 1, [GSTeamBlockRules.Relation.ENEMY], 0, true)
 	_check(asked.ok and not game.body_rules.blocks(1, 2), "!noblock: a request to pass wins")
 	rules.call("forget", 1)
 	_check(game.body_rules.blocks(1, 2), "a player leaving forgets the request")
@@ -242,14 +242,14 @@ func _test_old_names() -> void:
 	_section("the old console names")
 	var module := server.modules.get_module("g2gfast")
 	var old: String = module.OLD_NAME_PREFIX
-	var status: DotConCommand = server.console.find_command("airdrift_status")
-	var old_status: DotConCommand = server.console.find_command(old + "status")
+	var status: GSConCommand = server.console.find_command("airdrift_status")
+	var old_status: GSConCommand = server.console.find_command(old + "status")
 	_check(status != null and old_status != null and old_status.handler == status.handler,
 		"the old name of airdrift_status runs the same handler")
 	_check(old_status != null and old_status.hidden and not status.hidden,
 		"and only the new name is listed")
-	var zone: DotConCommand = server.console.find_command("airdrift_zone_mark")
-	var old_zone: DotConCommand = server.console.find_command(old + "zone_mark")
+	var zone: GSConCommand = server.console.find_command("airdrift_zone_mark")
+	var old_zone: GSConCommand = server.console.find_command(old + "zone_mark")
 	_check(old_zone != null and old_zone.permission == zone.permission and old_zone.chat_policy == zone.chat_policy
 			and old_zone.usage == zone.usage and old_zone.min_args == zone.min_args,
 		"the old zone command keeps the new one's permission, chat gate and usage")
@@ -271,10 +271,10 @@ func _test_commands() -> void:
 	var airdrift := server.modules.get_module("g2gfast")
 	var vote_node: Object = airdrift.get("vote") if airdrift != null else null
 	var menu_half: Object = vote_node.get("commands").get("map_menu") if vote_node != null and vote_node.get("commands") != null else null
-	var player := DotCmdContext.new()
-	player.source = DotCmdContext.Source.CHAT
-	var staff := DotCmdContext.new()
-	staff.source = DotCmdContext.Source.CHAT
+	var player := GSCmdContext.new()
+	player.source = GSCmdContext.Source.CHAT
+	var staff := GSCmdContext.new()
+	staff.source = GSCmdContext.Source.CHAT
 	staff.permissions = PackedStringArray(["generic"])
 	var offer: Dictionary = menu_half.call("offer", player) if menu_half != null else {"maps": []}
 	_check(menu_half != null and (offer["maps"] as Array).size() == game.map_rows().size() and (offer["maps"] as Array).size() > 1
@@ -306,7 +306,7 @@ func _test_commands() -> void:
 	_run_command("airdrift_zone stage 0 5")
 	_run_command("airdrift_zone_mark 100 64 -456 0")
 	_run_command("airdrift_zone_mark 356 64 -200 128")
-	var drawn: DotTimerZone = game.timers.zones.zones.back() if game.timers.zones.zones.size() == before + 1 else null
+	var drawn: GSTimerZone = game.timers.zones.zones.back() if game.timers.zones.zones.size() == before + 1 else null
 	var lo := AirdriftUnits.vector_to_units(drawn.from).round() if drawn != null else Vector3.ZERO
 	var hi := AirdriftUnits.vector_to_units(drawn.to).round() if drawn != null else Vector3.ZERO
 	_check(drawn != null and lo == Vector3(100, 64, -456) and hi == Vector3(356, 192, -200) and int(drawn.number) == 5,
@@ -314,25 +314,25 @@ func _test_commands() -> void:
 	var _undone := _run_command("airdrift_zone_undo")
 	var unreachable := PackedStringArray()
 	for name in ["airdrift_zone", "airdrift_zone_mark", "airdrift_zone_undo", "airdrift_zone_save"]:
-		var c: DotConCommand = server.console.find_command(name)
+		var c: GSConCommand = server.console.find_command(name)
 		if c == null or not c.allows_chat(server.console.chat_commands_are_open()):
 			unreachable.append(name)
 	_check(unreachable.is_empty(), "and every command the editor sends is reachable from chat", ", ".join(unreachable))
-	var zone_cmd: DotConCommand = server.console.find_command("airdrift_zone")
-	_check(zone_cmd != null and zone_cmd.permission == DotAdminFlags.CHANGEMAP, "zone drawing needs changemap")
+	var zone_cmd: GSConCommand = server.console.find_command("airdrift_zone")
+	_check(zone_cmd != null and zone_cmd.permission == GSAdminFlags.CHANGEMAP, "zone drawing needs changemap")
 	_done()
 
 
 func _test_replay_bot_cvar() -> void:
 	_section("the replay bot, from the console")
-	var replay := DotTimerReplay.new()
+	var replay := GSTimerReplay.new()
 	replay.map_id = game.maps.current.id
 	replay.tick_rate = game.tick_rate
 	replay.time = 2.0
 	replay.player_name = "Ghost"
 	for i in range(game.tick_rate):
 		replay.append(Vector3(0.0, 1.0, 7.0 - 0.1 * float(i)), 0.0, 0.0)
-	var record := DotTimerRecord.new()
+	var record := GSTimerRecord.new()
 	record.map_id = game.maps.current.id
 	record.style_id = &"normal"
 	record.player_name = "Ghost"
@@ -379,20 +379,20 @@ func _test_query_and_chat() -> void:
 		"%d players keyed by session" % keyed.size())
 	if fields_fn.is_valid() and not keyed.is_empty():
 		var who: AirdriftPlayer = game.players[keyed[0]]
-		var row: Dictionary = fields_fn.call(DotClientSession.new(int(String(keyed[0]).trim_prefix("u"))))
+		var row: Dictionary = fields_fn.call(GSClientSession.new(int(String(keyed[0]).trim_prefix("u"))))
 		_check(row.has("best") and row.has("rank") and str(row.get("style", "")) == who.timer_style.display_name,
 			"each runner's style, best time and rank on this map", str(row))
 	for name in ["r", "wr", "top", "style", "track", "rtv", "airdrift_restart"]:
-		var command: DotConCommand = server.console.find_command(name)
+		var command: GSConCommand = server.console.find_command(name)
 		_check(command != null and command.chat_allowed, "!%s works from chat" % name)
 	# It used to read "and changing the map does not", and that was a refusal pointed at the
 	# operator holding CHANGEMAP rather than at a player: the chat gate ran before the
 	# permission check and never asked who was typing. What the flag refuses, it refuses on
 	# every source alike; what `sv_chat_commands` decides is only whether typing is a way in.
-	var map_command: DotConCommand = server.console.find_command("airdrift_map")
+	var map_command: GSConCommand = server.console.find_command("airdrift_map")
 	_check(
 		map_command != null
-			and map_command.permission == DotAdminFlags.CHANGEMAP
+			and map_command.permission == GSAdminFlags.CHANGEMAP
 			and map_command.allows_chat(server.console.chat_commands_are_open()),
 		"and changing the map does too, for whoever holds changemap"
 	)
@@ -404,22 +404,22 @@ func _test_query_and_chat() -> void:
 	# dot-map owns the plain name now. dot-server's `map` changed the GAME, which on a
 	# timer server running one game and a hundred maps was the wrong operation every time
 	# it was typed.
-	var plain_map: DotConCommand = server.console.find_command("map")
+	var plain_map: GSConCommand = server.console.find_command("map")
 	_check(plain_map != null, "`map` is registered, and it is dot-map's")
 	_check(
-		plain_map.chat_policy == DotConCommand.ChatPolicy.DEFAULT
+		plain_map.chat_policy == GSConCommand.ChatPolicy.DEFAULT
 			and plain_map.allows_chat(server.console.chat_commands_are_open()),
 		"and carries the same policy as airdrift_map: the permission decides, not the prefix"
 	)
 	# The knob that puts the old behaviour back, checked rather than described: an operator
 	# who wants a map change to cost a trip to the console has one line of config for it.
-	var closed := DotConCommand.new("probe", func(_c: Variant) -> void: pass)
+	var closed := GSConCommand.new("probe", func(_c: Variant) -> void: pass)
 	closed.no_chat()
 	_check(
 		not closed.allows_chat(true),
 		"and no_chat() outranks the server-wide default, for a deployment that wants that"
 	)
-	var plain_maps: DotConCommand = server.console.find_command("maps")
+	var plain_maps: GSConCommand = server.console.find_command("maps")
 	_check(plain_maps != null and plain_maps.chat_allowed, "while listing them from chat is fine")
 	_check(
 		server.console.find_command("game") != null,
@@ -440,7 +440,7 @@ func _test_query_and_chat() -> void:
 ##
 ## [b]Each of these five passes its own suite with a stub host.[/b] What is untested
 ## anywhere else is that they can all be brought up in one process against one
-## [DotServer] — and specifically that dot-moderation is up before the two routers that
+## [GSServer] — and specifically that dot-moderation is up before the two routers that
 ## look up the registry name it publishes, because a router that started first would
 ## find nothing, warn once, and enforce no gag for the life of the server.
 func _test_services() -> void:
@@ -463,8 +463,8 @@ func _test_services() -> void:
 
 	# The operator's switch: registered by the module, replicated so clients hide their key,
 	# and enforced on the router. Armed by the router relaying with it on.
-	var voice_cvar: DotConVar = server.console.find_cvar("sv_voice_enable")
-	_check(voice_cvar != null and voice_cvar.has_flag(DotConVar.FLAG_REPLICATED) and DotConsole.is_replicated(voice_cvar),
+	var voice_cvar: GSConVar = server.console.find_cvar("sv_voice_enable")
+	_check(voice_cvar != null and voice_cvar.has_flag(GSConVar.FLAG_REPLICATED) and GSConsole.is_replicated(voice_cvar),
 		"sv_voice_enable is registered and replicated to clients")
 	if voice_cvar != null and services.voice != null:
 		var _off := voice_cvar.set_value("0")
@@ -476,11 +476,11 @@ func _test_services() -> void:
 	_check(services.moderation != null, "moderation is running")
 
 	_check(
-		DotRegistry.get_service(DotModerationManager.MUTE_SERVICE) != null,
+		GSRegistry.get_service(GSModerationManager.MUTE_SERVICE) != null,
 		"and it published a mute source for the two routers to find"
 	)
 	_check(
-		DotRegistry.get_service(DotModerationManager.BAN_SERVICE) != null,
+		GSRegistry.get_service(GSModerationManager.BAN_SERVICE) != null,
 		"and a ban source for the admission check"
 	)
 
@@ -494,13 +494,13 @@ func _test_services() -> void:
 
 	var running := services.chat.channel(AirdriftServices.CH_RUNNING)
 	_check(
-		running != null and running.scope == DotChatChannel.Scope.MEMBERS,
+		running != null and running.scope == GSChatChannel.Scope.MEMBERS,
 		"and it really is decided by membership rather than by radius"
 	)
 
 	_check(services.chat.rules.escape_markup, "markup is escaped")
 
-	var dirty := DotChatFilter.sanitise(
+	var dirty := GSChatFilter.sanitise(
 		"[color=red]server[/color]: free stuff", services.chat.rules
 	)
 	_check(
@@ -511,9 +511,9 @@ func _test_services() -> void:
 
 	# A gag against the PERSON. dot-server's is two booleans on a session object, and
 	# a session dies with its connection — so a muted player reconnects and talks.
-	var subject := DotPunishmentSubject.for_uid("7788")
-	var issued: DotResult = await services.moderation.issue(
-		DotPunishment.Kind.GAG, subject, "testing", "suite", 3600
+	var subject := GSPunishmentSubject.for_uid("7788")
+	var issued: GSResult = await services.moderation.issue(
+		GSPunishment.Kind.GAG, subject, "testing", "suite", 3600
 	)
 	_check(issued.ok, "a gag can be issued", str(issued.error))
 	_check(
@@ -521,10 +521,10 @@ func _test_services() -> void:
 		"and it is held against the person rather than the connection"
 	)
 
-	var record: DotPunishment = issued.value if issued.ok else null
+	var record: GSPunishment = issued.value if issued.ok else null
 
 	if record != null:
-		var lifted: DotResult = await services.moderation.revoke(
+		var lifted: GSResult = await services.moderation.revoke(
 			record.id, "suite", "over"
 		)
 		_check(lifted.ok, "and lifted again", str(lifted.error))
@@ -539,7 +539,7 @@ func _test_services() -> void:
 
 	_check(identity.platform != null, "with a platform hub")
 	_check(
-		DotRegistry.get_node_service(DotPlatformHub.SERVICE) != null,
+		GSRegistry.get_node_service(GSPlatformHub.SERVICE) != null,
 		"registered, which is how dot-platform's module finds it"
 	)
 	_check(

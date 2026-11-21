@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 const AirdriftArsenal := preload("../game/airdrift_arsenal.gd")
 const AirdriftAvatars := preload("../game/airdrift_avatars.gd")
@@ -18,7 +18,7 @@ const ExitProbe := preload("dedicated_exit_probe.gd")
 const DedicatedWorld := preload("dedicated_world.gd")
 const Accounts := preload("dedicated_accounts.gd")
 
-## A real DotServer running Airdrift: the movement cvars, and sv_autobunnyhopping in
+## A real GSServer running Airdrift: the movement cvars, and sv_autobunnyhopping in
 ## particular, reaching every player live.
 ##
 ## [codeblock]
@@ -50,8 +50,8 @@ var _completed := 0
 ## listing prints it to say which game this is, and nothing treats it as proof.
 const APP_URL := "airdrift"
 
-var server: DotServer = null
-var query_host: DotQueryHost = null
+var server: GSServer = null
+var query_host: GSQueryHost = null
 var game: AirdriftGame = null
 
 
@@ -71,7 +71,7 @@ func _done() -> void:
 
 func _run_command(line: String) -> PackedStringArray:
 	var captured: Array[String] = []
-	var template := DotCmdContext.console("", PackedStringArray())
+	var template := GSCmdContext.console("", PackedStringArray())
 	template.reply_sink = func(text: String) -> void: captured.append(text)
 	server.console.execute(line, template)
 	return PackedStringArray(captured)
@@ -95,7 +95,7 @@ func _physics(frames: int) -> void:
 ## punishment store, which may be remote, so the reply can land a frame late.
 func _run_command_later(line: String) -> PackedStringArray:
 	var captured: Array[String] = []
-	var template := DotCmdContext.console("", PackedStringArray())
+	var template := GSCmdContext.console("", PackedStringArray())
 	template.reply_sink = func(text: String) -> void: captured.append(text)
 	server.console.execute(line, template)
 	await get_tree().process_frame

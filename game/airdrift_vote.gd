@@ -1,4 +1,4 @@
-extends DotVoteTimedGame
+extends GSVoteTimedGame
 
 const AirdriftGame := preload("airdrift_game.gd")
 const AirdriftVoteMapSource := preload("airdrift_vote_map_source.gd")
@@ -6,7 +6,7 @@ const AirdriftVoteMapSource := preload("airdrift_vote_map_source.gd")
 ## What plays next, decided by the players, with the genre's own rules.
 ##
 ## [b]This game already had a rock-the-vote and it was not one.[/b]
-## `AirdriftGame.rock_the_vote` forwards to [DotMapTimeLimit], which counts rtv votes
+## `AirdriftGame.rock_the_vote` forwards to [GSMapTimeLimit], which counts rtv votes
 ## against a fraction and expires the map — a countdown and a tally and nothing else.
 ## What a records community actually runs is a ballot: nominations with caps,
 ## seconding, an instant runoff so a six-option vote is not won by a fifth of the
@@ -15,7 +15,7 @@ const AirdriftVoteMapSource := preload("airdrift_vote_map_source.gd")
 ##
 ## dot-vote is fifty-five settings' worth of exactly that, and none of it is restated
 ## here. What this file is, is the four callables that say who the players are, plus
-## one rule about who calls [method DotVoteDirector.begin].
+## one rule about who calls [method GSVoteDirector.begin].
 ##
 ## [b]`begin_on_apply` is off, and getting it wrong halves every cooldown.[/b] The
 ## director can announce a change it just made, and so can the host through the map
@@ -67,10 +67,10 @@ func _init() -> void:
 	bare_voter_ids = false
 
 
-func setup() -> DotResult:
+func setup() -> GSResult:
 	if game == null or game.maps == null:
-		return DotResult.fail(
-			DotError.CODE_STATE, "The vote needs a game with a map session."
+		return GSResult.fail(
+			GSError.CODE_STATE, "The vote needs a game with a map session."
 		)
 
 	auto_apply = authoritative
@@ -91,15 +91,15 @@ func setup() -> DotResult:
 
 
 ## The session is the GAME's, not game.maps: change_map goes through the map-sync host, which tells the clients;
-## DotMapSession.change_to swaps this process's world alone. Our subclass of dot-vote's source adds the pack's title to a Workshop map's choice.
-func _make_source() -> DotVoteSource:
+## GSMapSession.change_to swaps this process's world alone. Our subclass of dot-vote's source adds the pack's title to a Workshop map's choice.
+func _make_source() -> GSVoteSource:
 	var maps_source := AirdriftVoteMapSource.new()
 	maps_source.catalogue = game.maps.catalogue
 	maps_source.session = GameMaps.new(game)
 	return maps_source if maps_source.is_usable() else null
 
 
-func _configure_director(d: DotVoteDirector) -> void:
+func _configure_director(d: GSVoteDirector) -> void:
 	# The ghost is a player in every sense that matters to the rest of this game — it
 	# has an id, a rig and a timer — and in no sense that matters to a vote. Counting
 	# it would let a one-player server pass a quorum of two, and let it rock the vote
@@ -111,20 +111,20 @@ func _configure_director(d: DotVoteDirector) -> void:
 ## The rules a records server votes by.
 ##
 ## [b]Instant runoff, and a per-map time limit.[/b] The second is the one dot-vote
-## built [member DotVoteChoice.time_limit_sec] for and it is this genre's own problem:
+## built [member GSVoteChoice.time_limit_sec] for and it is this genre's own problem:
 ## forty minutes of `surf_kitsune` and ten minutes of a three-stage bhop intro are not
 ## the same number, and a server that gives them the same one either rushes the first
 ## or bores everybody through the second. A map def carries it in `meta.vote`.
-func _rules() -> DotVoteRules:
-	var rules := DotVoteRules.new()
+func _rules() -> GSVoteRules:
+	var rules := GSVoteRules.new()
 
-	rules.trigger = DotVoteRules.Trigger.TIME_LIMIT
+	rules.trigger = GSVoteRules.Trigger.TIME_LIMIT
 	# Two and a half minutes: a ballot, a runoff and the result all fit with room to spare.
 	rules.vote_lead_sec = 150.0
 	rules.duration_sec = maxf(game.config.map_seconds, 300.0)
 	rules.vote_duration_sec = 30.0
-	rules.method = DotVoteRules.Method.INSTANT_RUNOFF
-	rules.tie_break = DotVoteRules.TieBreak.LEAST_RECENTLY_PLAYED
+	rules.method = GSVoteRules.Method.INSTANT_RUNOFF
+	rules.tie_break = GSVoteRules.TieBreak.LEAST_RECENTLY_PLAYED
 	rules.max_options = 6
 
 	# Extending matters more here than anywhere else in this family: a player two
@@ -149,11 +149,11 @@ func _rules() -> DotVoteRules:
 	# Immediately. A timer server has no rounds to end on, and "at the end of the
 	# round" on a game with none is a change that never happens — which is the shape
 	# of every setting this family has found that reads correctly and decides nothing.
-	rules.apply = DotVoteRules.Apply.IMMEDIATE
+	rules.apply = GSVoteRules.Apply.IMMEDIATE
 	rules.apply_delay_sec = 5.0
 
 	rules.cooldown = 5
-	rules.cooldown_mode = DotVoteRules.Cooldown.PLAYS
+	rules.cooldown_mode = GSVoteRules.Cooldown.PLAYS
 	# Capped against the pool, so a five-map cooldown on a three-map catalogue does
 	# not leave nothing to offer. dot-vote applies it; naming it here is what makes it
 	# a decision rather than a default nobody read.
@@ -211,29 +211,29 @@ func _voter_ids() -> Array[StringName]:
 ## The one call site. See the class note on `begin_on_apply`.
 
 
-func _on_map_changed(map: DotMapDef, _world: Node) -> void:
+func _on_map_changed(map: GSMapDef, _world: Node) -> void:
 	if director != null and map != null:
 		director.begin(map.id)
 
 
-func rock_the_vote(voter: StringName) -> DotResult:
+func rock_the_vote(voter: StringName) -> GSResult:
 	return (
 		director.rock_the_vote(voter) if director != null
-		else DotResult.fail(DotError.CODE_STATE, "No vote is running.")
+		else GSResult.fail(GSError.CODE_STATE, "No vote is running.")
 	)
 
 
-func nominate(voter: StringName, id: StringName) -> DotResult:
+func nominate(voter: StringName, id: StringName) -> GSResult:
 	return (
 		director.nominate(voter, id) if director != null
-		else DotResult.fail(DotError.CODE_STATE, "No vote is running.")
+		else GSResult.fail(GSError.CODE_STATE, "No vote is running.")
 	)
 
 
-func cast_one(voter: StringName, choice: StringName) -> DotResult:
+func cast_one(voter: StringName, choice: StringName) -> GSResult:
 	return (
 		director.cast_one(voter, choice) if director != null
-		else DotResult.fail(DotError.CODE_STATE, "No vote is running.")
+		else GSResult.fail(GSError.CODE_STATE, "No vote is running.")
 	)
 
 
@@ -263,5 +263,5 @@ class GameMaps extends RefCounted:
 	func _init(p_game: Node) -> void:
 		game = p_game
 
-	func change_to(id: StringName) -> DotResult:
+	func change_to(id: StringName) -> GSResult:
 		return await game.change_map(id)

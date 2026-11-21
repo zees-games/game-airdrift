@@ -14,7 +14,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## faces where the player is aiming.
 ##
 ## Attachment nodes are named for the schema's slots, which is how
-## [DotAvatarBuilder.apply] finds them — a slot whose node is missing is a warning
+## [GSAvatarBuilder.apply] finds them — a slot whose node is missing is a warning
 ## and an invisible part, never a crash.
 
 ## The render layer the local player's own rig is on, so a first-person camera can
@@ -50,10 +50,10 @@ var owner_sees_head: bool = true:
 		_apply_visibility()
 
 ## The avatar currently applied, for a HUD or a debug dump.
-var avatar: DotAvatar = null
+var avatar: GSAvatar = null
 
 ## The person drawn, or null before [method dress].
-var person: DotHumanoidFigure = null
+var person: GSHumanoidFigure = null
 
 var _crouch: float = 0.0
 
@@ -76,16 +76,16 @@ func _mount(slot: StringName, at: Vector3) -> Node3D:
 
 
 ## Puts an avatar on the rig: as one of the family's people (dot-player-char's
-## `DotHumanoidFigure`), coloured from the document by `AirdriftAvatars.look_of`, wearing the
+## `GSHumanoidFigure`), coloured from the document by `AirdriftAvatars.look_of`, wearing the
 ## document's hat. The parts are still built onto the mounts (conformed first, so a part from a
 ## newer client is dropped rather than refused, and the result counts the slots drawn), then
 ## the body and head parts are let go: the person is the body and the head. The hat stays, on
 ## the top of the person's head.
 func dress(
-	p_avatar: DotAvatar,
-	schema: DotAvatarSchema,
-	catalogue: DotAvatarCatalogue
-) -> DotResult:
+	p_avatar: GSAvatar,
+	schema: GSAvatarSchema,
+	catalogue: GSAvatarCatalogue
+) -> GSResult:
 	avatar = p_avatar
 
 	for mount in [body_mount, head_mount, hat_mount]:
@@ -105,7 +105,7 @@ func dress(
 	if person != null:
 		remove_child(person)
 		person.queue_free()
-	person = DotHumanoidFigure.new()
+	person = GSHumanoidFigure.new()
 	person.name = "Person"
 	add_child(person)
 	var height := AirdriftMovement.player_height()
@@ -124,7 +124,7 @@ const HAT_DROP := 0.3
 
 ## Tells the person how the player moves and advances its clip, once a frame: the drawn
 ## state's ground speed, vertical speed and floor. The crouch is [method set_crouch]'s.
-func move(state: DotFpsState, delta: float) -> void:
+func move(state: GSFpsState, delta: float) -> void:
 	if person == null:
 		return
 	var v := state.velocity

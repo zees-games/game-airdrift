@@ -1,6 +1,6 @@
 extends SceneTree
 
-## The third-person camera (AirdriftCamera's boom, dot-core's DotCameraBoom) flown round the walls
+## The third-person camera (AirdriftCamera's boom, dot-core's GSCameraBoom) flown round the walls
 ## of the start map, armed; `mp_forceview` and the older `sv_allow_thirdperson` through the
 ## camera's own path; with a display, both views of the real player.
 ##
@@ -17,8 +17,8 @@ var _failed := false
 
 
 func _initialize() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
-	DotFpsSampler.register_default_actions()
+	GSLog.set_level(GSLog.Level.ERROR)
+	GSFpsSampler.register_default_actions()
 	var config := AirdriftConfig.new()
 	config.auto_bhop = true
 	_game = AirdriftGame.new()
@@ -38,18 +38,18 @@ func _run() -> void:
 
 	var camera: AirdriftCamera = me.camera
 	var offset := Vector3(0.0, camera.third_person_height, camera.third_person_distance)
-	var pivots := DotCameraCheck.pivots_near_walls(root.get_world_3d(), AABB(Vector3(-200, -60, -200), Vector3(400, 160, 400)), 1, 1.6, 4.0, 3.0, 40)
+	var pivots := GSCameraCheck.pivots_near_walls(root.get_world_3d(), AABB(Vector3(-200, -60, -200), Vector3(400, 160, 400)), 1, 1.6, 4.0, 3.0, 40)
 	var got := {}
 	for pivot in pivots:
-		got = DotCameraCheck.add(got, DotCameraCheck.fly(root.get_world_3d(), DotCameraCheck.orbit_path(pivot), offset, 1))
-	_check(not got.is_empty() and DotCameraCheck.passed(got), "third person round %d places by the walls: %s" % [pivots.size(), DotCameraCheck.summary(got) if not got.is_empty() else "no places"])
+		got = GSCameraCheck.add(got, GSCameraCheck.fly(root.get_world_3d(), GSCameraCheck.orbit_path(pivot), offset, 1))
+	_check(not got.is_empty() and GSCameraCheck.passed(got), "third person round %d places by the walls: %s" % [pivots.size(), GSCameraCheck.summary(got) if not got.is_empty() else "no places"])
 
 	_check(camera.toggle() and camera.is_third_person(), "the view key goes to third person")
-	_game.view_rules.force_view = DotPlayerViewRules.FIRST_ONLY
+	_game.view_rules.force_view = GSPlayerViewRules.FIRST_ONLY
 	_check(not camera.is_third_person() and not camera.toggle(), "mp_forceview 1: back in first person, and the key refuses")
-	_game.view_rules.force_view = DotPlayerViewRules.THIRD_ONLY
+	_game.view_rules.force_view = GSPlayerViewRules.THIRD_ONLY
 	_check(camera.is_third_person() and not camera.toggle(), "mp_forceview 2: held in third person")
-	_game.view_rules.force_view = DotPlayerViewRules.ANY
+	_game.view_rules.force_view = GSPlayerViewRules.ANY
 	_check(not _game.config.allow_thirdperson == false, "and the config's switch follows the rule")
 
 	if DisplayServer.get_name() != "headless":

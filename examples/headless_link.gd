@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 const AirdriftTestPorts := preload("test_ports.gd")
 
 ## A module reload leaves ONE link under the server, and a real client over a real socket
@@ -31,20 +31,20 @@ var _completed := 0
 
 var _server_side: Node = null
 var _client_side: Node = null
-var _server: DotServer = null
+var _server: GSServer = null
 var _game: AirdriftGame = null
-var _link: DotClientLink = null
+var _link: GSClientLink = null
 var _client: AirdriftClient = null
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	print("Airdrift -- module reload and the link")
-	DotPaths.remove_tree(DATA)
+	GSPaths.remove_tree(DATA)
 	DirAccess.make_dir_recursive_absolute(DATA)
 	if await _boot():
 		await _test_reload()
@@ -64,7 +64,7 @@ func _boot() -> bool:
 	get_tree().set_multiplayer(MultiplayerAPI.create_default_interface(), _server_side.get_path())
 	get_tree().set_multiplayer(MultiplayerAPI.create_default_interface(), _client_side.get_path())
 
-	var config := DotServerConfig.new()
+	var config := GSServerConfig.new()
 	config.hostname = "Airdrift link"
 	config.port = PORT
 	config.bind_address = "127.0.0.1"
@@ -80,13 +80,13 @@ func _boot() -> bool:
 	config.enet_share_udp_port = false
 	config.stdin_console_enabled = false
 	config.log_level = "error"
-	_server = DotServer.new()
+	_server = GSServer.new()
 	_server.name = "Server"
 	_server.config = config
 	_server.config_file = ""
 	_server.auto_boot = false
 	_server_side.add_child(_server)
-	var booted: DotResult = await _server.boot()
+	var booted: GSResult = await _server.boot()
 	if not _check(booted.ok, "the server boots", str(booted.error)):
 		_done()
 		return false
@@ -101,7 +101,7 @@ func _boot() -> bool:
 	_server_side.add_child(_game)
 	await _until(func() -> bool: return _game.maps != null and _game.maps.current != null, 10.0)
 
-	var loaded: DotResult = await _load_module()
+	var loaded: GSResult = await _load_module()
 	_check(loaded.ok, "the module loads", str(loaded.error))
 	_done()
 	return loaded.ok
@@ -110,7 +110,7 @@ func _boot() -> bool:
 ## The punishment store path is a static on the module script and a reload does not keep what a
 ## test set, so it is set again every time: a reload that wrote the real store would be this
 ## suite's doing.
-func _load_module() -> DotResult:
+func _load_module() -> GSResult:
 	(load(MODULE) as GDScript).set("punishments_file", "%s/punishments.json" % DATA)
 	return await _server.modules.load_module(MODULE)
 
@@ -138,7 +138,7 @@ func _test_reload() -> void:
 
 func _test_client_hears_the_server() -> void:
 	_section("a real client over a socket still hears the server")
-	_link = DotClientLink.new()
+	_link = GSClientLink.new()
 	_link.name = "Server"
 	_link.player_name = "Ada"
 	_link.transport_preference = "udp"
@@ -151,7 +151,7 @@ func _test_client_hears_the_server() -> void:
 	_client = (load("res://game/airdrift.tscn") as PackedScene).instantiate() as AirdriftClient
 	_client_side.add_child(_client)
 	_client.mouse_capture_override = true
-	_client.presentation.settings.local_store = DotSettingsStoreMemory.new()
+	_client.presentation.settings.local_store = GSSettingsStoreMemory.new()
 	_client.presentation.settings.load_now()
 	var told := await _until(func() -> bool:
 		return _client.player != null and _client.net != null and _client.net.clock.is_synced() \
@@ -170,7 +170,7 @@ func _teardown() -> void:
 		_server.shutdown("done")
 	for _i in range(10):
 		await get_tree().process_frame
-	DotPaths.remove_tree(DATA)
+	GSPaths.remove_tree(DATA)
 
 
 func _until(condition: Callable, seconds: float) -> bool:

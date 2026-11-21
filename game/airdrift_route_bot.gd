@@ -86,7 +86,7 @@ var _held := 0.0
 var _unstick_left := 0.0
 var _unstick_turn := 0.0
 
-## The native twin (dot-sim's `DotSimRouteBots`, `rustport-airdrift-tick-1`): with it, AirdriftBots.drive
+## The native twin (dot-sim's `GSSimRouteBots`, `rustport-airdrift-tick-1`): with it, AirdriftBots.drive
 ## runs every route bot of a tick in one native call, the same commands to the bit, and this
 ## script's fields above are stale until [method pull]. Off (or no dot-sim `route`), this script drives.
 static var native_route := true
@@ -98,12 +98,12 @@ static var route_verify := false
 static var native_driven := 0
 static var verify_checked := 0
 static var verify_mismatches := 0
-## The `DotSimRouteBots` this bot holds a slot in, or null.
+## The `GSSimRouteBots` this bot holds a slot in, or null.
 var native: Object = null
 var native_slot := -1
 
 
-## Takes a slot on route [param route_id] of [param bots] (a `DotSimRouteBots`), from this bot's state.
+## Takes a slot on route [param route_id] of [param bots] (a `GSSimRouteBots`), from this bot's state.
 func bind_native(bots: Object, route_id: int) -> void:
 	native_slot = bots.add(route_id) if route_id >= 0 else -1
 	native = bots if native_slot >= 0 else null
@@ -116,7 +116,7 @@ func _notification(what: int) -> void:
 		native.remove(native_slot)
 
 
-## The fields as `DotSimRouteBots.get_state` lays them out.
+## The fields as `GSSimRouteBots.get_state` lays them out.
 func state_vector() -> PackedFloat64Array:
 	return PackedFloat64Array([index, surfed, _side, _leg_from.x, _leg_from.y, _leg_from.z, unstuck,
 		_anchor.x, _anchor.y, _anchor.z, _held, _unstick_left, _unstick_turn])
@@ -212,7 +212,7 @@ func _target() -> Vector3:
 
 
 ## This tick's command for a player in [param state], in [param space].
-func command(state: DotFpsState, space: PhysicsDirectSpaceState3D, tunables: DotFpsTunables, delta: float) -> DotFpsCommand:
+func command(state: GSFpsState, space: PhysicsDirectSpaceState3D, tunables: GSFpsTunables, delta: float) -> GSFpsCommand:
 	var max_slope := tunables.max_slope_angle
 	var at := state.position
 	if _leg_from == Vector3.INF:
@@ -229,7 +229,7 @@ func command(state: DotFpsState, space: PhysicsDirectSpaceState3D, tunables: Dot
 	var cap: float = point.get("max", DEFAULT_MAX)
 	var hop: bool = point.get("hop", false)
 
-	var c := DotFpsCommand.new()
+	var c := GSFpsCommand.new()
 	var ramp := ramp_under(space, at, flat, max_slope)
 	if ramp != Vector3.ZERO and bool(point.get("slide", false)):
 		c = _air(state, goal, flat, cap, tunables, delta)  # down the face to the point below it, not along it
@@ -251,7 +251,7 @@ func command(state: DotFpsState, space: PhysicsDirectSpaceState3D, tunables: Dot
 			var dir := flat.normalized() if speed > 30.0 else to.normalized()
 			jump = (hop and speed > JUMP_FROM) or ledge_ahead(space, at, dir, speed) or wall_ahead(space, at, dir) \
 					or _on_launch(at)
-		c.set_button(DotFpsCommand.BUTTON_JUMP, jump)
+		c.set_button(GSFpsCommand.BUTTON_JUMP, jump)
 	else:
 		c = _air(state, goal, flat, cap, tunables, delta)
 	return c
@@ -288,16 +288,16 @@ func _watch_progress(at: Vector3, delta: float) -> bool:
 
 
 ## Forward and jumping, turned [member _unstick_turn] degrees off the goal.
-func _unstick(state: DotFpsState, goal: Vector3) -> DotFpsCommand:
+func _unstick(state: GSFpsState, goal: Vector3) -> GSFpsCommand:
 	var at := state.position
-	var c := DotFpsCommand.new()
+	var c := GSFpsCommand.new()
 	c.yaw = rad_to_deg(atan2(-(goal.x - at.x), -(goal.z - at.z))) + _unstick_turn
 	c.move = Vector2(0.0, 1.0)
 	if not state.is_grounded() and (unstuck / 2) % 2 == 0:
 		# Forward alone gains nothing in the air: every other pair of attempts strafes to build speed off the spot.
 		_side = -_side
 		c.move = Vector2(_side, 1.0)
-	c.set_button(DotFpsCommand.BUTTON_JUMP, state.is_grounded())
+	c.set_button(GSFpsCommand.BUTTON_JUMP, state.is_grounded())
 	return c
 
 
@@ -308,9 +308,9 @@ func _unstick(state: DotFpsState, goal: Vector3) -> DotFpsCommand:
 ## as gain, which is what makes a 64-unit block reachable at speed. Too slow for the
 ## landing it wants, it strafes at right angles to its velocity (the most any wish adds)
 ## toward the target's side, which gains and turns at once.
-func _air(state: DotFpsState, goal: Vector3, flat: Vector3, cap: float,
-		tunables: DotFpsTunables, delta: float) -> DotFpsCommand:
-	var c := DotFpsCommand.new()
+func _air(state: GSFpsState, goal: Vector3, flat: Vector3, cap: float,
+		tunables: GSFpsTunables, delta: float) -> GSFpsCommand:
+	var c := GSFpsCommand.new()
 	var at := state.position
 	var to := Vector3(goal.x - at.x, 0.0, goal.z - at.z)
 	var g := tunables.gravity

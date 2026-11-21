@@ -28,7 +28,7 @@ const CHANNEL := "g2g.player"
 ## Whether an admin's help was on last tick, so [method _on_simulated] logs the edge.
 var _assisted := false
 
-signal finished(run: DotTimerRun)
+signal finished(run: GSTimerRun)
 
 ## The map did something to this player that the GAME has to finish: a sinking block
 ## carried them into its plate ([code]AirdriftMapMechanics.Event.BLOCK_SANK[/code]) or a lethal
@@ -72,12 +72,12 @@ var rider := AirdriftMapMechanics.Rider.new()
 
 ## Swimming, in the map's water. Registered on every player on every map, the same on
 ## every machine because the mode's id is on the wire; with no water it is never entered.
-var swim := DotFpsSwimMode.new()
+var swim := GSFpsSwimMode.new()
 
 ## Climbing, on the map's ladders. Registered beside [member swim], for the same reason.
 var ladder := AirdriftLadderMode.new()
 
-var controller: DotFpsController = null
+var controller: GSFpsController = null
 
 ## The motor's velocity, under the name the load gate asks any body for. Without it (and
 ## [method is_on_floor]) the gate counts this node as already at rest and lifts its cover
@@ -85,23 +85,23 @@ var controller: DotFpsController = null
 var velocity: Vector3:
 	get:
 		return controller.state.velocity if controller != null else Vector3.ZERO
-var sampler: DotFpsSampler = null
+var sampler: GSFpsSampler = null
 var rig: AirdriftRig = null
 var camera: AirdriftCamera = null
 
-## This player's timer. Owned by the game's [DotTimerManager].
-var timer: DotTimer = null
+## This player's timer. Owned by the game's [GSTimerManager].
+var timer: GSTimer = null
 
 ## How this player's body fell on their last death: the server's pick
 ## ([method AirdriftCombat.decide_death]), carried on DEATH to every client. Null before one.
-var death: DotPlayerDeath = null
+var death: GSPlayerDeath = null
 
-var movement_style: DotFpsStyle = null
-var timer_style: DotTimerStyle = null
+var movement_style: GSFpsStyle = null
+var timer_style: GSTimerStyle = null
 
 ## Set on a ghost: the player is driven by a replay rather than by commands, and
 ## its timer is never fed. See [method AirdriftGame.spawn_ghost].
-var replay: DotTimerReplayPlayer = null
+var replay: GSTimerReplayPlayer = null
 
 ## How long a ghost stands at the finish before starting over.
 const REPLAY_HOLD_SEC := 2.0
@@ -111,11 +111,11 @@ var _replay_previous: Vector3 = Vector3.ZERO
 var _replay_moving: bool = false
 
 ## The tunables this player was built with, before any style. See [method set_movement].
-var base_tunables: DotFpsTunables = null
+var base_tunables: GSFpsTunables = null
 
 ## The collision layers this player's movement sweeps against.
 ##
-## [b]Not `DotFpsTunables`' default of 1, and it has to be re-applied.[/b] One means
+## [b]Not `GSFpsTunables`' default of 1, and it has to be re-applied.[/b] One means
 ## bit 0, which is right only while every body in the game is on bit 0 — the state a
 ## layout exists to end. `set_movement` replaces the whole tunables object on every
 ## `sv_airaccelerate`, so a mask written once at build time is a mask the first cvar
@@ -149,22 +149,22 @@ var held_weapon: StringName = &""
 
 ## The marker [member beacon] draws, while it does. Client side; built and freed by
 ## [method present].
-var beacon_marker: DotFxBeacon = null
+var beacon_marker: GSFxBeacon = null
 
 
 func _ready() -> void:
 	if base_tunables == null:
 		base_tunables = AirdriftMovement.tunables_for(AirdriftConfig.new())
 
-	controller = DotFpsController.new()
+	controller = GSFpsController.new()
 	controller.name = "Controller"
 	controller.tick_rate = tick_rate
 	# EXTERNAL: the game owns the tick, so the timer can be fed the position the move
 	# just produced. See game-playlot's docs/simulation.md for the ordering argument.
-	controller.drive = DotFpsController.Drive.EXTERNAL
+	controller.drive = GSFpsController.Drive.EXTERNAL
 	controller.tunables = base_tunables
 	# Every player, both ends: an admin's noclip is a modifier whose index travels on the
-	# wire. See dot-player-controller's DotFpsAdminModifiers.
+	# wire. See dot-player-controller's GSFpsAdminModifiers.
 	controller.admin_abilities = true
 	base_tunables.collision_mask = collision_mask
 	# The genre's water, not a sandbox's: 200 u/s at most (its 0.8 of the run speed), and
@@ -204,9 +204,9 @@ func _ready() -> void:
 		_apply_own_body()
 
 	if samples_input:
-		sampler = DotFpsTouchSampler.new(controller.tunables) if DotPlatform.has_touch() \
-			else DotFpsSampler.new(controller.tunables)
-		DotFpsSampler.register_default_actions(sampler)
+		sampler = GSFpsTouchSampler.new(controller.tunables) if GSPlatform.has_touch() \
+			else GSFpsSampler.new(controller.tunables)
+		GSFpsSampler.register_default_actions(sampler)
 
 
 # --- Movement and style ----------------------------------------------------
@@ -221,7 +221,7 @@ func set_mechanics(value: AirdriftMapMechanics) -> void:
 	if controller != null and controller.state != null and controller.motor != null \
 			and ((controller.state.mode == swim.mode_id and swim.volumes.is_empty())
 				or (controller.state.mode == ladder.mode_id and ladder.volumes.is_empty())):
-		controller.motor.set_mode(controller.state, DotFpsState.Mode.AIR)
+		controller.motor.set_mode(controller.state, GSFpsState.Mode.AIR)
 
 
 ## Hands the player a new base movement, keeping whatever style they are on.
@@ -229,7 +229,7 @@ func set_mechanics(value: AirdriftMapMechanics) -> void:
 ## What a cvar change does to every player at once. The controller rebuilds its motor
 ## from the new base; the run is the game's to abandon, which it does before calling
 ## this.
-func set_movement(tunables: DotFpsTunables) -> DotResult:
+func set_movement(tunables: GSFpsTunables) -> GSResult:
 	base_tunables = tunables
 	controller.tunables = tunables
 	# Re-applied, because this is a NEW tunables object: `AirdriftMovement.tunables_for`
@@ -264,7 +264,7 @@ func use_collision_mask(mask: int) -> void:
 
 
 ## Both halves of a style, together.
-func set_style(movement: DotFpsStyle, ranking: DotTimerStyle) -> DotResult:
+func set_style(movement: GSFpsStyle, ranking: GSTimerStyle) -> GSResult:
 	movement_style = movement
 	timer_style = ranking
 
@@ -274,7 +274,7 @@ func set_style(movement: DotFpsStyle, ranking: DotTimerStyle) -> DotResult:
 	var result := controller.set_style(movement)
 
 	if not result.ok:
-		DotLog.warn(CHANNEL, "a style did not apply to a player's movement", {
+		GSLog.warn(CHANNEL, "a style did not apply to a player's movement", {
 			"player": String(name), "why": result.error.message,
 		})
 
@@ -315,7 +315,7 @@ func teleport(to: Vector3, yaw: float = INF, keep_run: bool = false) -> void:
 	global_position = to
 
 	if timer != null and not keep_run:
-		timer.stop(DotTimer.REASON_TELEPORT)
+		timer.stop(GSTimer.REASON_TELEPORT)
 
 
 ## The last tick a prediction ran for this player, -1 on the authority. Keys [member teleport_log].
@@ -340,7 +340,7 @@ func replay_teleport(tick: int) -> void:
 
 
 ## Whether the motor stands on something. Named for [CharacterBody3D] because that is what
-## [DotLoadGate] asks a settling body; see [member velocity].
+## [GSLoadGate] asks a settling body; see [member velocity].
 func is_on_floor() -> bool:
 	return controller != null and controller.state.is_grounded()
 
@@ -361,8 +361,8 @@ func simulate(tick: int, delta: float) -> void:
 		# While the gate settles the body under its cover the keys are off but the body
 		# still falls and lands (neutral command), and the sampler is left unread so a
 		# mouse turn does not pile up behind the cover.
-		if has_meta(DotLoadGate.SETTLING_META):
-			controller.apply_command(DotFpsCommand.new())
+		if has_meta(GSLoadGate.SETTLING_META):
+			controller.apply_command(GSFpsCommand.new())
 		else:
 			controller.apply_command(sampler.sample(delta))
 
@@ -410,7 +410,7 @@ func forget_probes() -> void:
 		controller.motor.invalidate_probe_cache()
 
 
-func _on_simulated(_tick: int, state: DotFpsState) -> void:
+func _on_simulated(_tick: int, state: GSFpsState) -> void:
 	var world := get_parent()
 	if world != null and world.has_method("world_is_static"):
 		controller.motor.static_world = world.world_is_static()
@@ -441,41 +441,41 @@ func _on_simulated(_tick: int, state: DotFpsState) -> void:
 	# than at the moment it is granted, because a run started afterwards has to carry it
 	# too. Freeze is not here: it can only cost a runner time.
 	if (
-		DotFpsAdminModifiers.is_noclipped(controller)
-		or not is_equal_approx(DotFpsAdminModifiers.speed_of(controller), 1.0)
-		or not is_equal_approx(DotFpsAdminModifiers.gravity_of(controller), 1.0)
+		GSFpsAdminModifiers.is_noclipped(controller)
+		or not is_equal_approx(GSFpsAdminModifiers.speed_of(controller), 1.0)
+		or not is_equal_approx(GSFpsAdminModifiers.gravity_of(controller), 1.0)
 	):
 		timer.taint()
 		# Logged on the edge, not the tick: an operator asking "why was this run not
 		# filed" wants the moment the help went on, not 128 lines a second of it.
 		if not _assisted:
 			_assisted = true
-			DotLog.info(CHANNEL, "an admin's help is on this player; their runs are assisted", {
+			GSLog.info(CHANNEL, "an admin's help is on this player; their runs are assisted", {
 				"player": String(name),
-				"noclip": DotFpsAdminModifiers.is_noclipped(controller),
-				"speed": DotFpsAdminModifiers.speed_of(controller),
-				"gravity": DotFpsAdminModifiers.gravity_of(controller),
+				"noclip": GSFpsAdminModifiers.is_noclipped(controller),
+				"speed": GSFpsAdminModifiers.speed_of(controller),
+				"gravity": GSFpsAdminModifiers.gravity_of(controller),
 			})
 	elif _assisted:
 		_assisted = false
-		DotLog.info(CHANNEL, "an admin's help is off this player", {"player": String(name)})
+		GSLog.info(CHANNEL, "an admin's help is off this player", {"player": String(name)})
 
 	if (
 		movement_style != null
 		and movement_style.prespeed_limit > 0.0
-		and timer.in_zone(DotTimerZone.Kind.START)
+		and timer.in_zone(GSTimerZone.Kind.START)
 	):
-		state.velocity = DotTimerRules.clamp_prespeed(
+		state.velocity = GSTimerRules.clamp_prespeed(
 			state.velocity, AirdriftUnits.to_metres(movement_style.prespeed_limit)
 		)
 
-	var speed_zone := timer.effect(DotTimerZone.Kind.SPEED_LIMIT)
+	var speed_zone := timer.effect(GSTimerZone.Kind.SPEED_LIMIT)
 
 	if speed_zone != null:
-		state.velocity = DotTimerRules.apply_speed_limit(state.velocity, speed_zone)
+		state.velocity = GSTimerRules.apply_speed_limit(state.velocity, speed_zone)
 
 
-func fill_sample(sample: DotTimerSample) -> void:
+func fill_sample(sample: GSTimerSample) -> void:
 	var state := controller.state
 	sample.position = state.position
 	sample.velocity = state.velocity
@@ -499,12 +499,12 @@ func fill_sample(sample: DotTimerSample) -> void:
 ## jittery in the browser" report, and it is why the run felt wrong while every
 ## number on the HUD was right.
 ##
-## [method DotFpsController.render_state] is the cure and has been there since the
+## [method GSFpsController.render_state] is the cure and has been there since the
 ## controller was written; nothing called it. See its own note for the second half of
 ## why — it refused every drive but the one no networked game uses.
 ##
 ## Only for a player this machine simulates. A remote player's position arrives
-## already interpolated by [DotNetInterpolator] through
+## already interpolated by [GSNetInterpolator] through
 ## [code]AirdriftPlayerNet._net_interpolated[/code], and its controller has no second tick
 ## to blend from: [member has_camera] is the local player in both the offline and the
 ## networked case, which is exactly the set that is simulated here.
@@ -542,7 +542,7 @@ func present(delta: float) -> void:
 ## Draws [member beacon], and says when it pings.
 ##
 ## Placed at the DRAWN position — the render state on the local player, the interpolated
-## one on a remote player — for the reason [DotFxBeacon] is top level.
+## one on a remote player — for the reason [GSFxBeacon] is top level.
 ##
 ## [b]Not hidden on a death, where game-fatal-contact's is.[/b] A runner here has no death a
 ## client can see: the deathmatch layer's health is the server's, a body that dies stays
@@ -575,8 +575,8 @@ func _present_beacon(delta: float, at: Vector3) -> void:
 ## (`AirdriftPresentation.BEACON_SOUND`, from [signal beacon_pulsed]), which the volume sliders
 ## and the hide-others setting already govern; the stock voice would be heard twice and obey
 ## neither. Red-orange because no prototype texture is, so it reads as a mark on any map.
-func _new_beacon_marker() -> DotFxBeacon:
-	var marker := DotFxBeacon.new()
+func _new_beacon_marker() -> GSFxBeacon:
+	var marker := GSFxBeacon.new()
 	marker.ring_radius = 0.56
 	marker.column_height = 14.0
 	marker.column_base = 1.7
@@ -619,7 +619,7 @@ func eye_position() -> Vector3:
 
 
 func aim_direction() -> Vector3:
-	return DotFpsMotor.aim_for(controller.state.yaw, controller.state.pitch)
+	return GSFpsMotor.aim_for(controller.state.yaw, controller.state.pitch)
 
 
 func describe() -> Dictionary:
@@ -640,7 +640,7 @@ var _teleported: bool = false
 
 
 ## The view to draw this frame, (yaw, pitch) in degrees, or null for the simulated
-## state's. Set every frame by the client from `DotFpsSampler.look_now()`.
+## state's. Set every frame by the client from `GSFpsSampler.look_now()`.
 ##
 ## [b]Because a frame with no tick in it would otherwise not turn.[/b] The state's angles
 ## change only when a tick runs, and with the display faster than the server's 128 ticks
@@ -654,7 +654,7 @@ var view_now: Variant = null
 
 ## Added to where the local player is drawn this frame: what is left of the last
 ## prediction corrections, easing to zero. Set every frame by the client from
-## `DotNetPredictor.visual_offset`; zero offline.
+## `GSNetPredictor.visual_offset`; zero offline.
 ##
 ## [b]A correction moves the simulation at once and the eye over a tenth of a second.[/b]
 ## When a snapshot says the prediction was wrong, the predictor rewinds and replays, and
@@ -673,10 +673,10 @@ func replay_flags() -> int:
 	if controller != null and controller.state != null:
 		var state := controller.state
 		if state.crouch_fraction > 0.5:
-			flags |= DotTimerReplay.FLAG_DUCKED
+			flags |= GSTimerReplay.FLAG_DUCKED
 		if state.time_since_jump < 1.5 / float(maxi(controller.tick_rate, 1)):
-			flags |= DotTimerReplay.FLAG_JUMPED
+			flags |= GSTimerReplay.FLAG_JUMPED
 	if _teleported:
-		flags |= DotTimerReplay.FLAG_TELEPORT
+		flags |= GSTimerReplay.FLAG_TELEPORT
 		_teleported = false
 	return flags

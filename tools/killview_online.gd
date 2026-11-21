@@ -22,7 +22,7 @@ func _ready() -> void:
 			"--data": data = args[i + 1]
 			"--camera": camera = args[i + 1]
 	name = "KillviewOnline"
-	DotLog.set_level(DotLog.Level.WARN)
+	GSLog.set_level(GSLog.Level.WARN)
 	DirAccess.make_dir_recursive_absolute(data)
 	if role == "server":
 		_serve.call_deferred()
@@ -31,7 +31,7 @@ func _ready() -> void:
 
 
 func _serve() -> void:
-	var config := DotServerConfig.new()
+	var config := GSServerConfig.new()
 	config.hostname = "killview"
 	config.port = port
 	config.bind_address = "*"
@@ -45,14 +45,14 @@ func _serve() -> void:
 	config.enet_share_udp_port = false
 	config.stdin_console_enabled = false
 	config.autoexec_config = ""
-	var server := DotServer.new()
+	var server := GSServer.new()
 	server.name = "Server"
 	server.config = config
 	server.config_file = ""
 	add_child(server)
 	for _i in range(120):
 		await get_tree().process_frame
-		if server.state == DotServer.State.RUNNING:
+		if server.state == GSServer.State.RUNNING:
 			break
 	var gc := AirdriftConfig.new()
 	gc.records_directory = ""
@@ -67,7 +67,7 @@ func _serve() -> void:
 		if game.maps != null and game.maps.current != null:
 			break
 	(load("res://game/airdrift_module.gd") as GDScript).set("punishments_file", data + "/punishments.json")
-	var loaded: DotResult = await server.modules.load_module("res://game/airdrift_module.gd")
+	var loaded: GSResult = await server.modules.load_module("res://game/airdrift_module.gd")
 	if not loaded.ok:
 		printerr("server: module failed: ", loaded.error.message)
 		get_tree().quit(1)
@@ -88,7 +88,7 @@ func _serve() -> void:
 				int(game.combat.match_node.state) if game.combat != null else -1])
 		if killed or killer == null or victim == null or game.combat == null:
 			continue
-		if game.combat.match_node.state != DotMatch.State.LIVE or not FileAccess.file_exists(data + "/go"):
+		if game.combat.match_node.state != GSMatch.State.LIVE or not FileAccess.file_exists(data + "/go"):
 			continue
 		if moved_at < 0.0:
 			var kp: Vector3 = killer.controller.state.position
@@ -99,7 +99,7 @@ func _serve() -> void:
 			continue
 		var kid: int = game.combat.entity_for(killer.player_id)
 		var vid: int = game.combat.entity_for(victim.player_id)
-		var damage := DotDamage.make(kid, vid, 500.0, game.combat.manager.damage_type(&""))
+		var damage := GSDamage.make(kid, vid, 500.0, game.combat.manager.damage_type(&""))
 		damage.tick = game.current_tick()
 		damage.weapon_id = &"deagle"
 		print("server: kill %s(%d) -> %s(%d), killer at %s, victim at %s" % [killer.player_id, kid,
@@ -118,7 +118,7 @@ func _find(game: Node, display: String) -> Object:
 
 
 func _play() -> void:
-	var link := DotClientLink.new()
+	var link := GSClientLink.new()
 	link.name = "Server"
 	link.player_name = role
 	link.transport_preference = "udp"
@@ -136,7 +136,7 @@ func _play() -> void:
 	client.set("mouse_capture_override", true)
 	add_child(client)
 	var settings: Object = client.get("presentation").get("settings")
-	settings.set("local_store", DotSettingsStoreMemory.new())
+	settings.set("local_store", GSSettingsStoreMemory.new())
 	settings.call("load_now")
 	while client.get("player") == null and Time.get_unix_time_from_system() - began < 60.0:
 		await get_tree().create_timer(0.1).timeout

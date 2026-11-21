@@ -1,6 +1,6 @@
 extends "headless_imported_zones.gd"
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -75,8 +75,8 @@ func _test_loads(manifest_path: String) -> void:
 func _test_pits_land_at_their_destination() -> void:
 	_section("pits")
 	var zones := game.timers.zones
-	var start := zones.first_of_kind(DotTimerZone.Kind.START, DotTimerTrack.MAIN)
-	var finish := zones.first_of_kind(DotTimerZone.Kind.END, DotTimerTrack.MAIN)
+	var start := zones.first_of_kind(GSTimerZone.Kind.START, GSTimerTrack.MAIN)
+	var finish := zones.first_of_kind(GSTimerZone.Kind.END, GSTimerTrack.MAIN)
 	if start == null or finish == null:
 		_check(true, "a sampled pit lands at its destination with the run kept", "no run to time")
 		_check(true, "a listed gated course is finished by walking its gates", "no run to time")
@@ -87,18 +87,18 @@ func _test_pits_land_at_their_destination() -> void:
 		bot = game.add_player(&"bot", "Bot", true)
 		bot.sampler = null
 	var timer := bot.timer
-	var pits: Array[DotTimerZone] = []
-	for pit in zones.of_kind(DotTimerZone.Kind.RESPAWN, DotTimerTrack.MAIN):
+	var pits: Array[GSTimerZone] = []
+	for pit in zones.of_kind(GSTimerZone.Kind.RESPAWN, GSTimerTrack.MAIN):
 		if pit.payload.has(AirdriftBspMap.SENDS_TO):
 			pits.append(pit)
 	var landed: Array = []
-	var hook := func(pid: StringName, zone: DotTimerZone) -> void:
-		if pid == &"bot" and zone.kind == DotTimerZone.Kind.RESPAWN:
+	var hook := func(pid: StringName, zone: GSTimerZone) -> void:
+		if pid == &"bot" and zone.kind == GSTimerZone.Kind.RESPAWN:
 			landed.append([zone, bot.global_position, bot.timer.run.is_active()])
 	game.timers.effect_requested.connect(hook)
 
 	var reasons: Array = []
-	var on_stop := func(_r: DotTimerRun, why: StringName) -> void:
+	var on_stop := func(_r: GSTimerRun, why: StringName) -> void:
 		reasons.append(why)
 	timer.run_stopped.connect(on_stop)
 	var bad: Array[String] = []
@@ -121,19 +121,19 @@ func _test_pits_land_at_their_destination() -> void:
 		# A pit whose middle lies in another pit's volume fires whichever the index finds first; that overlap is the map's,
 		# so the sample says only that SOME destination-carrying pit took the player exactly where it aims.
 		if landed.is_empty() or landed[0][0] != pit:
-			if landed.is_empty() or not (landed[0][0] as DotTimerZone).payload.has(AirdriftBspMap.SENDS_TO):
+			if landed.is_empty() or not (landed[0][0] as GSTimerZone).payload.has(AirdriftBspMap.SENDS_TO):
 				continue
 		sampled += 1
 		var why := ""
-		if (landed[0][1] as Vector3).distance_to((landed[0][0] as DotTimerZone).destination) > 0.05:
+		if (landed[0][1] as Vector3).distance_to((landed[0][0] as GSTimerZone).destination) > 0.05:
 			why = "landed %s" % str(landed[0][1])
-		elif landed[0][0] == pit and not landed[0][2] and not reasons.has(DotTimer.REASON_RESET) \
+		elif landed[0][0] == pit and not landed[0][2] and not reasons.has(GSTimer.REASON_RESET) \
 				and not start.contains(pit.destination + Vector3(0, 0.46, 0)):
 			# (A pit that sends back into the start line stops the run in any engine, and a
 			# RESET beside it is another zone's respawn in the same tick: bhop_sqee's pit
 			# sits in a volume that sends to the spawn, so the run was ended by that one.)
 			var held: Array[String] = []
-			for z2 in zones.of_kind(DotTimerZone.Kind.START):
+			for z2 in zones.of_kind(GSTimerZone.Kind.START):
 				if z2.contains(pit.centre()) or z2.contains(pit.destination + Vector3(0, 0.46, 0)):
 					held.append("start %d" % z2.track)
 			why = "stopped the run %s %s" % [held, reasons]
@@ -149,20 +149,20 @@ func _test_pits_land_at_their_destination() -> void:
 	# fell back to the spawn is a run nobody finishes. Each gate landing inside the next stage (or the finish) is walked into
 	# in stage order with the run going, and the run must come out finished.
 	var finishes: Array[float] = []
-	var on_finish := func(run: DotTimerRun) -> void:
+	var on_finish := func(run: GSTimerRun) -> void:
 		finishes.append(run.time())
 	timer.run_finished.connect(on_finish)
 	timer.stop()
 	_run_up(timer, start)
 	var hops := 0
-	var targets: Array[DotTimerZone] = []
-	for k in range(2, zones.stage_count(DotTimerTrack.MAIN) + 1):
-		var sz := zones.stage_zone(DotTimerTrack.MAIN, k)
+	var targets: Array[GSTimerZone] = []
+	for k in range(2, zones.stage_count(GSTimerTrack.MAIN) + 1):
+		var sz := zones.stage_zone(GSTimerTrack.MAIN, k)
 		if sz != null:
 			targets.append(sz)
 	targets.append(finish)
 	for tz in targets:
-		var gate: DotTimerZone = null
+		var gate: GSTimerZone = null
 		for pit in pits:
 			if tz.contains(pit.destination) or tz.contains(pit.destination + Vector3(0, 0.46, 0)):
 				gate = pit
@@ -191,8 +191,8 @@ func _test_pits_land_at_their_destination() -> void:
 
 ## Starts a run for the timer without walking: stand in the start, leave it. See
 ## [method _test_runnable] for why this is done inside one frame.
-func _run_up(timer: DotTimer, start: DotTimerZone) -> void:
-	var sample := DotTimerSample.new()
+func _run_up(timer: GSTimer, start: GSTimerZone) -> void:
+	var sample := GSTimerSample.new()
 	sample.grounded = true
 	var away := start.centre() + Vector3(0.0, start.size().y + 8.0, 0.0)
 	for point in [start.centre(), start.centre(), away]:
@@ -217,10 +217,10 @@ func _test_runs_its_route() -> void:
 	var why: Array = []
 	var points := RouteBot.load_points(_map_id, why)
 	var zones := game.timers.zones if game != null else null
-	var finish: DotTimerZone = null
+	var finish: GSTimerZone = null
 	if zones != null:
-		for zone: DotTimerZone in zones.of_kind(DotTimerZone.Kind.END):
-			if zone.track == DotTimerTrack.MAIN:
+		for zone: GSTimerZone in zones.of_kind(GSTimerZone.Kind.END):
+			if zone.track == GSTimerTrack.MAIN:
 				finish = zone
 	if points.is_empty():
 		_check(true, "a bot runs it start to finish on its route", why[0] if not why.is_empty() else "no route")
@@ -239,21 +239,21 @@ func _test_runs_its_route() -> void:
 	var router := RouteBot.new(points, finish.centre())
 	var put_back: Array[String] = []
 	var finished: Array[float] = []
-	var on_effect := func(pid: StringName, zone: DotTimerZone) -> void:
+	var on_effect := func(pid: StringName, zone: GSTimerZone) -> void:
 		if pid != &"bot":
 			return
 		match zone.kind:
-			DotTimerZone.Kind.RESPAWN, DotTimerZone.Kind.SLAY:
+			GSTimerZone.Kind.RESPAWN, GSTimerZone.Kind.SLAY:
 				if put_back.is_empty():
 					put_back.append(str(AirdriftUnits.vector_to_units(bot.global_position).round()))
-			DotTimerZone.Kind.TELEPORT:
+			GSTimerZone.Kind.TELEPORT:
 				router.teleported.call_deferred()
-	var on_finish := func(run: DotTimerRun) -> void:
+	var on_finish := func(run: GSTimerRun) -> void:
 		finished.append(run.time())
 	game.timers.effect_requested.connect(on_effect)
 	bot.timer.run_finished.connect(on_finish)
 	bot.timer.stop()
-	bot.teleport(node.spawn_for(DotTimerTrack.MAIN), node.spawn_yaw_for(DotTimerTrack.MAIN))
+	bot.teleport(node.spawn_for(GSTimerTrack.MAIN), node.spawn_yaw_for(GSTimerTrack.MAIN))
 	await get_tree().physics_frame
 
 	var delta := 1.0 / float(game.tick_rate)
@@ -311,7 +311,7 @@ func _test_follows_its_recording() -> void:
 	_check(float(result["finished"]) >= 0.0, "a bot follows its recorded run start to finish",
 		ReplayFollow.summary(result))
 
-	var lifted := DotTimerReplay.from_bytes(replay.to_bytes()).value as DotTimerReplay
+	var lifted := GSTimerReplay.from_bytes(replay.to_bytes()).value as GSTimerReplay
 	for i in range(LIFT_FROM_FRAME, lifted.frames.size()):
 		lifted.frames[i].position.y += AirdriftUnits.to_metres(LIFT_UNITS)
 	var off: Dictionary = await ReplayFollow.drive(game, bot, lifted, replay.duration() * 1.2)
@@ -353,7 +353,7 @@ func _test_surfs_from_its_cache() -> void:
 	var number: int = numbers[0]
 	var data: Dictionary = stages[str(number)]
 	var why: Array = []
-	var course: DotBotSurfCourse = AirdriftSurfCourse.for_stage(game, number, why)
+	var course: GSBotSurfCourse = AirdriftSurfCourse.for_stage(game, number, why)
 	if course == null:
 		_check(false, "the surf simulator is the motor", why[0])
 		_check(false, "a surf bot rides a stage from its cache into the next", why[0])
@@ -368,7 +368,7 @@ func _test_surfs_from_its_cache() -> void:
 		await get_tree().physics_frame
 	bot.teleport(course.start, course.start_yaw)
 	var base := bot.controller.state.duplicate_state()
-	var sim: DotFpsSimulator = course.simulator_for(bot.controller, game.mechanics)
+	var sim: GSFpsSimulator = course.simulator_for(bot.controller, game.mechanics)
 	var checks: Array = await SurfPlan.simulator_checks(game, bot, sim, base, course.reference_yaw(),
 		SurfPlan.first_ride_actions(data))
 	var bad: Array = checks.filter(func(c: Array) -> bool: return not c[0])
@@ -377,7 +377,7 @@ func _test_surfs_from_its_cache() -> void:
 	_check(bad.is_empty(), "the surf simulator is the motor",
 		"" if bad.is_empty() else "; ".join(bad.map(func(c: Array) -> String: return "%s %s" % [c[1], c[2]])))
 
-	var pilot := DotBotSurfPilot.new()
+	var pilot := GSBotSurfPilot.new()
 	pilot.load_stage(data, AirdriftUnits.METRES_PER_UNIT)
 	pilot.sim = sim
 	pilot.score = course.score

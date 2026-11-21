@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
@@ -28,7 +28,7 @@ var _client_net := AirdriftWeaponNet.new()
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -105,7 +105,7 @@ func _test_throw_and_pickup() -> void:
 	var before := layer.drops.count()
 	var victim := _server.combat.entity_for(&"u2")
 	_server.combat.health_of(&"u2").spawn_protection_ticks = 0
-	_server.combat.manager.apply_damage(DotDamage.make(0, victim, 5000.0, AirdriftArsenal.world()))
+	_server.combat.manager.apply_damage(GSDamage.make(0, victim, 5000.0, AirdriftArsenal.world()))
 	_check(layer.drops.count() == before + 1, "a kill leaves the dead player's weapon lying")
 
 	layer.clear()
@@ -240,7 +240,7 @@ func _test_replication() -> void:
 	net.sink = _to_wire
 	_check(joined.size() == layer.drops.count(), "a joiner is sent every weapon lying", str(joined.size()))
 	for entry in joined:
-		var _ok := _client_net.apply(entry[0], DotNetReader.new(entry[1]), joiner.weapon_layer)
+		var _ok := _client_net.apply(entry[0], GSNetReader.new(entry[1]), joiner.weapon_layer)
 	_check(joiner.weapon_layer.drops.count() == layer.drops.count() and joiner.weapon_layer.drops.has_drop(id),
 		"and builds the same floor from it")
 	joiner.queue_free()
@@ -248,7 +248,7 @@ func _test_replication() -> void:
 	layer.clear()
 	_pump()
 	_check(mirror.count() == 0, "a round reset reaches the client")
-	_check(not _client_net.apply(AirdriftEvents.Kind.SHOT, DotNetReader.new(PackedByteArray()), _client.weapon_layer),
+	_check(not _client_net.apply(AirdriftEvents.Kind.SHOT, GSNetReader.new(PackedByteArray()), _client.weapon_layer),
 		"an event that is not a weapon's is left to the bridge")
 	_completed += 1
 
@@ -259,10 +259,10 @@ func _to_wire(peer_id: int, kind: int, body: PackedByteArray) -> void:
 
 func _pump() -> void:
 	for item in _wire:
-		var _ok := _client_net.apply(item[1], DotNetReader.new(item[2]), _client.weapon_layer)
+		var _ok := _client_net.apply(item[1], GSNetReader.new(item[2]), _client.weapon_layer)
 	_wire.clear()
 
 
-func _hold_deagle(arsenal: DotWeaponArsenal) -> void:
+func _hold_deagle(arsenal: GSWeaponArsenal) -> void:
 	var _given := arsenal.give(AirdriftArsenal.ITEM_DEAGLE)
 	var _held := arsenal.equip(AirdriftArsenal.deagle().slot)

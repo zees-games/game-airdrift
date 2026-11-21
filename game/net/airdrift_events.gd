@@ -23,13 +23,13 @@ enum Kind {
 	## The movement changed under everybody. Carries the config fields.
 	MOVEMENT,
 	## One message of dot-map's map-change protocol, host to peer: announce, load or abort.
-	## A [DotMapMessage] as JSON. See [method write_map_message] and AirdriftNetBridge's
+	## A [GSMapMessage] as JSON. See [method write_map_message] and AirdriftNetBridge's
 	## "Map changes" section. It used to be a bare map id sent AFTER the server had
 	## changed, which a client resolved against its own build.
 	MAP,
-	## A player's run state changed: started, stopped, paused. A DotTimerNet.RunState.
+	## A player's run state changed: started, stopped, paused. A GSTimerNet.RunState.
 	TIMER,
-	## A player finished. A DotTimerNet.Finish plus the rank.
+	## A player finished. A GSTimerNet.Finish plus the rank.
 	FINISH,
 	## Somebody set a record worth announcing.
 	RECORD,
@@ -73,7 +73,7 @@ enum Kind {
 	## hit marker and the damage numbers are drawn from this, never predicted. Appended.
 	HIT,
 	## A player died, to everybody: who, and how their body falls (dot-player-char's
-	## [DotPlayerDeath], the server's pick, last and optional). Every client copies a ragdoll
+	## [GSPlayerDeath], the server's pick, last and optional). Every client copies a ragdoll
 	## from the figure it draws and hides the figure. Appended.
 	DEATH,
 	## A dead player is alive again, at a start: every client shows the figure it hid on
@@ -93,7 +93,7 @@ enum Kind {
 	## A weapon went off, to everybody: the shooter's session id, the weapon and where. The
 	## other clients play its report (and the room tail, by their own roof). Appended.
 	SHOT,
-	## The replay of the killer's view, to the victim only: a DotKillViewClip body. Appended.
+	## The replay of the killer's view, to the victim only: a GSKillViewClip body. Appended.
 	KILLVIEW,
 	## A deagle left a hand or a corpse: id, weapon, ammo, pose, throw, seconds left, at rest. Also one per lying weapon at signon.
 	WEAPON_DROP,
@@ -156,7 +156,7 @@ const RESTART_MAIN := 2
 
 const TEXT_BYTES := 256
 
-## A map-change message from the host: an announce carries the whole [DotMapDef], meta
+## A map-change message from the host: an announce carries the whole [GSMapDef], meta
 ## and all. A few hundred bytes in practice; the cap is what a hostile or broken host
 ## can make a client parse.
 const MAP_MESSAGE_BYTES := 4096
@@ -192,7 +192,7 @@ static func write_movement(config: AirdriftConfig) -> PackedByteArray:
 
 
 ## Applies a MOVEMENT body to a config. Returns the server's fingerprint.
-static func read_movement(reader: DotNetReader, config: AirdriftConfig) -> String:
+static func read_movement(reader: GSNetReader, config: AirdriftConfig) -> String:
 	for field in AirdriftConfig.MOVEMENT_FIELDS:
 		var current: Variant = config.get(field)
 		if current is bool:
@@ -222,7 +222,7 @@ static func write_hello(
 	return writer.to_bytes()
 
 
-static func read_hello(reader: DotNetReader) -> Dictionary:
+static func read_hello(reader: GSNetReader) -> Dictionary:
 	var out := {
 		"tick_rate": reader.read_uint(8),
 		"player_id": reader.read_varint(),
@@ -238,35 +238,35 @@ static func read_hello(reader: DotNetReader) -> Dictionary:
 
 static func write_join(
 	player_id: int, peer_id: int, net_id: int, display_name: String,
-	avatar: DotAvatar, style_index: int, track: int
+	avatar: GSAvatar, style_index: int, track: int
 ) -> PackedByteArray:
 	var writer := _w()
 	writer.write_varint(player_id)
 	writer.write_varint(peer_id)
 	writer.write_varint(net_id)
 	writer.write_string(display_name, NAME_BYTES)
-	writer.write_uint(style_index, DotTimerNet.STYLE_BITS)
-	DotTimerTrack.write_wire(writer, track)
+	writer.write_uint(style_index, GSTimerNet.STYLE_BITS)
+	GSTimerTrack.write_wire(writer, track)
 	var text := JSON.stringify(avatar.to_dict()) if avatar != null else ""
 	writer.write_string(text, AVATAR_BYTES)
 	return writer.to_bytes()
 
 
-static func read_join(reader: DotNetReader) -> Dictionary:
+static func read_join(reader: GSNetReader) -> Dictionary:
 	var out := {
 		"player_id": reader.read_varint(),
 		"peer_id": reader.read_varint(),
 		"net_id": reader.read_varint(),
 		"name": reader.read_string(NAME_BYTES),
-		"style_index": reader.read_uint(DotTimerNet.STYLE_BITS),
-		"track": DotTimerTrack.read_wire(reader),
+		"style_index": reader.read_uint(GSTimerNet.STYLE_BITS),
+		"track": GSTimerTrack.read_wire(reader),
 	}
 	var text := reader.read_string(AVATAR_BYTES)
 	out["avatar"] = null
 	if text != "":
 		var parsed: Variant = JSON.parse_string(text)
 		if parsed is Dictionary:
-			var built := DotAvatar.from_dict(parsed)
+			var built := GSAvatar.from_dict(parsed)
 			if built.ok:
 				out["avatar"] = built.value
 	out["ok"] = reader.ok()
@@ -279,21 +279,21 @@ static func write_player(player_id: int) -> PackedByteArray:
 	return writer.to_bytes()
 
 
-static func read_player(reader: DotNetReader) -> int:
+static func read_player(reader: GSNetReader) -> int:
 	return reader.read_varint()
 
 
 # --- MAP -------------------------------------------------------------------
 
-## One [DotMapMessage], as JSON inside a byte cap. Empty when it would not fit.
+## One [GSMapMessage], as JSON inside a byte cap. Empty when it would not fit.
 ##
 ## [b]JSON rather than a field-by-field encoding[/b], because dot-map owns these shapes
 ## and a game that re-encoded each one would have to change whenever dot-map added a
-## field to [method DotMapDef.to_dictionary] — silently dropping it until then. Every
+## field to [method GSMapDef.to_dictionary] — silently dropping it until then. Every
 ## value in them is a string, a bool or a number, and JSON's one lossy conversion, an
 ## int returned as a float, is one `from_dictionary` already undoes with `int()`.
 ##
-## [b]Empty rather than truncated.[/b] [method DotNetWriter.write_string] cuts at the cap
+## [b]Empty rather than truncated.[/b] [method GSNetWriter.write_string] cuts at the cap
 ## without a word, and half a JSON document is a parse failure on the far end that looks
 ## like a hostile host. The caller refuses to send an empty body and says why.
 static func write_map_message(payload: Dictionary, max_bytes: int = MAP_MESSAGE_BYTES) -> PackedByteArray:
@@ -307,9 +307,9 @@ static func write_map_message(payload: Dictionary, max_bytes: int = MAP_MESSAGE_
 
 ## The dictionary back, or an empty one for anything that is not a JSON object.
 ##
-## Empty is safe to hand straight to dot-map: [method DotMapMessage.is_map_message] says
+## Empty is safe to hand straight to dot-map: [method GSMapMessage.is_map_message] says
 ## no to it, and both halves of the protocol return false without acting.
-static func read_map_message(reader: DotNetReader, max_bytes: int = MAP_MESSAGE_BYTES) -> Dictionary:
+static func read_map_message(reader: GSNetReader, max_bytes: int = MAP_MESSAGE_BYTES) -> Dictionary:
 	var text := reader.read_string(max_bytes)
 	if not reader.ok() or text == "":
 		return {}
@@ -324,30 +324,30 @@ static func read_map_message(reader: DotNetReader, max_bytes: int = MAP_MESSAGE_
 
 # --- TIMER / FINISH --------------------------------------------------------
 
-static func write_timer(player_id: int, state: DotTimerNet.RunState) -> PackedByteArray:
+static func write_timer(player_id: int, state: GSTimerNet.RunState) -> PackedByteArray:
 	var writer := _w()
 	writer.write_varint(player_id)
 	state.write(writer)
 	return writer.to_bytes()
 
 
-static func read_timer(reader: DotNetReader) -> Dictionary:
+static func read_timer(reader: GSNetReader) -> Dictionary:
 	var player_id := reader.read_varint()
-	var state := DotTimerNet.RunState.new()
+	var state := GSTimerNet.RunState.new()
 	state.read(reader)
 	return {"player_id": player_id, "state": state, "ok": reader.ok()}
 
 
-static func write_finish(player_id: int, finish: DotTimerNet.Finish) -> PackedByteArray:
+static func write_finish(player_id: int, finish: GSTimerNet.Finish) -> PackedByteArray:
 	var writer := _w()
 	writer.write_varint(player_id)
 	finish.write(writer)
 	return writer.to_bytes()
 
 
-static func read_finish(reader: DotNetReader) -> Dictionary:
+static func read_finish(reader: GSNetReader) -> Dictionary:
 	var player_id := reader.read_varint()
-	var finish := DotTimerNet.Finish.new()
+	var finish := GSTimerNet.Finish.new()
 	finish.read(reader)
 	return {"player_id": player_id, "finish": finish, "ok": reader.ok()}
 
@@ -361,7 +361,7 @@ static func write_text(player_id: int, text: String) -> PackedByteArray:
 	return writer.to_bytes()
 
 
-static func read_text(reader: DotNetReader) -> Dictionary:
+static func read_text(reader: GSNetReader) -> Dictionary:
 	return {"player_id": reader.read_varint(), "text": reader.read_string(TEXT_BYTES)}
 
 
@@ -380,7 +380,7 @@ static func write_vote(cue: String, seconds_left: int, runoff: bool) -> PackedBy
 	return writer.to_bytes()
 
 
-static func read_vote(reader: DotNetReader) -> Dictionary:
+static func read_vote(reader: GSNetReader) -> Dictionary:
 	var out := {
 		"cue": reader.read_string(CUE_BYTES),
 		"seconds_left": reader.read_uint(8),
@@ -392,7 +392,7 @@ static func read_vote(reader: DotNetReader) -> Dictionary:
 
 # --- CLOCK -----------------------------------------------------------------
 
-## The vote's clock as [method DotVoteClockView.state_of] describes it: whether there is
+## The vote's clock as [method GSVoteClockView.state_of] describes it: whether there is
 ## one, the whole seconds left, and whether it is counting. A client counts it down
 ## itself between messages; the server sends another only when that count would be wrong.
 ## Times as whole microseconds in a varint: exact to the thousandth the boards are sorted
@@ -407,7 +407,7 @@ static func write_standing(player_id: int, standing: Dictionary) -> PackedByteAr
 	return writer.to_bytes()
 
 
-static func read_standing(reader: DotNetReader) -> Dictionary:
+static func read_standing(reader: GSNetReader) -> Dictionary:
 	var out := {
 		"player_id": reader.read_varint(),
 		"pb": float(reader.read_varint()) / 1000000.0,
@@ -449,7 +449,7 @@ static func write_stage_ref(player_id: int, reference: Dictionary) -> PackedByte
 	return writer.to_bytes()
 
 
-static func read_stage_ref(reader: DotNetReader) -> Dictionary:
+static func read_stage_ref(reader: GSNetReader) -> Dictionary:
 	var out := {
 		"player_id": reader.read_varint(),
 		"track": reader.read_varint(),
@@ -496,7 +496,7 @@ static func write_clock(state: Dictionary) -> PackedByteArray:
 	return writer.to_bytes()
 
 
-static func read_clock(reader: DotNetReader) -> Dictionary:
+static func read_clock(reader: GSNetReader) -> Dictionary:
 	var out := {
 		"has_clock": reader.read_bool(),
 		"seconds_left": reader.read_varint(),

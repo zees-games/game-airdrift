@@ -20,7 +20,7 @@ func _connect_server() -> void:
 		game.combat.weapon_used.connect(broadcast_shot)
 		# Every death, a hunter's included, and every return: before this nothing
 		# connected player_killed, and a dead runner stood upright on every screen.
-		game.combat.player_killed.connect(func(entry: DotKillFeed.Entry) -> void:
+		game.combat.player_killed.connect(func(entry: GSKillFeed.Entry) -> void:
 			broadcast_death(game.combat.player_id_for(entry.victim_key.to_int()))
 			killview.note_kill(entry)
 			broadcast_kill(entry))
@@ -35,11 +35,11 @@ func _connect_server() -> void:
 ## Adds a player and makes them a replicated entity. [param session_id] is the id
 ## everything is keyed by; a peer id is reassigned on reconnect.
 func add_player(
-	peer_id: int, session_id: int, display_name: String, avatar: DotAvatar = null,
+	peer_id: int, session_id: int, display_name: String, avatar: GSAvatar = null,
 	record_key: StringName = &""
-) -> DotResult:
+) -> GSResult:
 	if net == null or not net.is_server:
-		return DotResult.fail(DotError.CODE_FORBIDDEN, "Only the server adds players.")
+		return GSResult.fail(GSError.CODE_FORBIDDEN, "Only the server adds players.")
 
 	var id := _player_key(session_id)
 	_adding = true
@@ -47,7 +47,7 @@ func add_player(
 	_adding = false
 
 	if player == null:
-		return DotResult.fail(DotError.CODE_STATE, "The game refused the player.")
+		return GSResult.fail(GSError.CODE_STATE, "The game refused the player.")
 
 	var identity := _build_entity(player, peer_id)
 	var registered := net.registry.register(identity, 0, net.clock.tick, net.config)
@@ -67,7 +67,7 @@ func add_player(
 		_ready_unseated.erase(peer_id)
 		_admit(peer_id)
 
-	return DotResult.success(player)
+	return GSResult.success(player)
 
 
 func remove_peer(peer_id: int) -> void:
@@ -180,7 +180,7 @@ func _send_timer(session_id: int, to_peer: int = 0) -> void:
 	if player == null or player.timer == null:
 		return
 
-	var state := DotTimerNet.state_of(
+	var state := GSTimerNet.state_of(
 		player.timer.run, _tick,
 		_style_index(player.timer.style.id if player.timer.style != null else &"normal")
 	)
@@ -192,18 +192,18 @@ func _send_timer(session_id: int, to_peer: int = 0) -> void:
 		_broadcast(AirdriftEvents.Kind.TIMER, body)
 
 
-func _on_run_started(id: StringName, _run: DotTimerRun) -> void:
+func _on_run_started(id: StringName, _run: GSTimerRun) -> void:
 	_send_timer(session_of(game.match_id(id)))
 
 
-func _on_run_stopped(id: StringName, _run: DotTimerRun, _reason: StringName) -> void:
+func _on_run_stopped(id: StringName, _run: GSTimerRun, _reason: StringName) -> void:
 	_send_timer(session_of(game.match_id(id)))
 
 
 func _on_staged(id: StringName, number: int, split: float) -> void:
 	var session_id := session_of(game.match_id(id))
 	_tell(peer_for_player(session_id), AirdriftEvents.Kind.NOTICE, AirdriftEvents.write_text(
-		session_id, "Stage %d — %s" % [number, DotTimerRun.format_time(split)]
+		session_id, "Stage %d — %s" % [number, GSTimerRun.format_time(split)]
 	))
 
 
@@ -226,13 +226,13 @@ func _on_announced(id: StringName, text: String, everyone: bool) -> void:
 		_tell(peer_for_player(session_id), AirdriftEvents.Kind.NOTICE, AirdriftEvents.write_text(session_id, text))
 
 
-func _on_run_filed(id: StringName, run: DotTimerRun, rank: int, reason: String) -> void:
+func _on_run_filed(id: StringName, run: GSTimerRun, rank: int, reason: String) -> void:
 	var session_id := session_of(id)
 	var player: AirdriftPlayer = game.players.get(id)
 	if player == null or run == null:
 		return
 
-	var finish := DotTimerNet.finish_of(run, _style_index(run.style_id), rank)
+	var finish := GSTimerNet.finish_of(run, _style_index(run.style_id), rank)
 	_broadcast(AirdriftEvents.Kind.FINISH, AirdriftEvents.write_finish(session_id, finish))
 
 	# What a finish MEANT is `AirdriftGame.announced` (`_on_announced`): a new record to
@@ -279,7 +279,7 @@ func _on_movement_changed(config: AirdriftConfig) -> void:
 ## protocol: a map id broadcast from `map_ready`, which fires AFTER the server has already
 ## swapped, to clients that were never asked whether they had it. The change is now
 ## announced before it happens and loaded after everybody is ready; see "Map changes".
-func _on_map_ready(_map: DotMapDef) -> void:
+func _on_map_ready(_map: GSMapDef) -> void:
 	for session_id in _behaviours.keys():
 		_broadcast(AirdriftEvents.Kind.JOIN, _join_body(int(session_id)))
 
@@ -329,7 +329,7 @@ func _exit_tree() -> void:
 ## Server and client: the half of the protocol this end needs.
 func _build_map_sync() -> void:
 	if net.is_server:
-		map_host = DotMapSyncHost.new()
+		map_host = GSMapSyncHost.new()
 		map_host.name = "MapSync"
 		map_host.session = game.maps
 		map_host.sync_timeout_sec = game.config.map_sync_seconds
@@ -338,7 +338,7 @@ func _build_map_sync() -> void:
 		add_child(map_host)
 		game.map_sync = map_host
 	else:
-		map_client = DotMapSyncClient.new()
+		map_client = GSMapSyncClient.new()
 		map_client.name = "MapSync"
 		map_client.session = game.maps
 		map_client.send_fn = _send_map_reply
@@ -346,11 +346,11 @@ func _build_map_sync() -> void:
 		map_client.trusted_template_scenes = PackedStringArray([AirdriftMapCatalogue.IMPORTED_SCENE])
 		map_client.template_path_keys = PackedStringArray(["manifest"])
 		map_client.fetch_failed.connect(_on_map_fetch_failed)
-		map_client.fetching.connect(func(_map: DotMapDef) -> void: map_fetch_fraction = 0.0)
+		map_client.fetching.connect(func(_map: GSMapDef) -> void: map_fetch_fraction = 0.0)
 		map_client.fetch_progress.connect(func(fraction: float) -> void:
 			map_fetch_fraction = fraction
 		)
-		map_client.changed.connect(func(map: DotMapDef) -> void: map_loaded.emit(map))
+		map_client.changed.connect(func(map: GSMapDef) -> void: map_loaded.emit(map))
 		add_child(map_client)
 
 
@@ -360,8 +360,8 @@ func _send_map(peer_id: int, payload: Dictionary) -> void:
 	if body.is_empty():
 		# An announce is a map definition and its meta; one that does not fit is a
 		# catalogue entry somebody has filled with something it should not carry.
-		DotLog.error(CHANNEL, "a map-change message is too large to send", {
-			"peer": peer_id, "kind": String(DotMapMessage.kind_of(payload)),
+		GSLog.error(CHANNEL, "a map-change message is too large to send", {
+			"peer": peer_id, "kind": String(GSMapMessage.kind_of(payload)),
 			"cap": AirdriftEvents.MAP_MESSAGE_BYTES,
 		})
 		return
@@ -388,7 +388,7 @@ func _map_forget(peer_id: int) -> void:
 
 ## Server: a ready or a progress from a peer.
 func _on_map_reply(peer_id: int, payload: Dictionary) -> void:
-	if map_host == null or not DotMapMessage.is_map_message(payload):
+	if map_host == null or not GSMapMessage.is_map_message(payload):
 		return
 	map_host.handle(peer_id, payload)
 
@@ -405,7 +405,7 @@ func _on_map_reply(peer_id: int, payload: Dictionary) -> void:
 func _on_map_straggler(peer_id: int) -> void:
 	var session_id := player_for_peer(peer_id)
 	var pending := String(map_host.describe().get("pending", "-")) if map_host != null else "-"
-	DotLog.info(CHANNEL, "a client did not have the map in time; changing without it", {
+	GSLog.info(CHANNEL, "a client did not have the map in time; changing without it", {
 		"peer": peer_id, "session": session_id, "map": pending,
 	})
 	_tell(peer_id, AirdriftEvents.Kind.NOTICE, AirdriftEvents.write_text(
@@ -415,14 +415,14 @@ func _on_map_straggler(peer_id: int) -> void:
 
 ## Client: one protocol message to the host. dot-map's `send_fn`.
 ##
-## Progress arrives here already throttled (`DotMapSyncClient.progress_interval_sec`),
+## Progress arrives here already throttled (`GSMapSyncClient.progress_interval_sec`),
 ## because dot-net's server allows a client so many messages a second and drops the
 ## excess without asking which — so a burst of progress could cost the `ready` behind it.
 func _send_map_reply(payload: Dictionary) -> void:
 	var body := AirdriftEvents.write_map_message(payload, AirdriftEvents.MAP_REPLY_BYTES)
 	if body.is_empty():
-		DotLog.error(CHANNEL, "a map-change reply is too large to send", {
-			"kind": String(DotMapMessage.kind_of(payload)), "cap": AirdriftEvents.MAP_REPLY_BYTES,
+		GSLog.error(CHANNEL, "a map-change reply is too large to send", {
+			"kind": String(GSMapMessage.kind_of(payload)), "cap": AirdriftEvents.MAP_REPLY_BYTES,
 		})
 		return
 	_ask(AirdriftEvents.Ask.MAP, body)
@@ -434,22 +434,22 @@ func _send_map_reply(payload: Dictionary) -> void:
 ## fetch on its own, and a `load` that overtakes that fetch — a straggler's — is held by
 ## dot-map until the fetch lands.
 func _on_map_message(payload: Dictionary) -> void:
-	if not DotMapMessage.is_map_message(payload):
-		DotLog.warn(CHANNEL, "the server sent a map message this client cannot read")
+	if not GSMapMessage.is_map_message(payload):
+		GSLog.warn(CHANNEL, "the server sent a map message this client cannot read")
 		return
 	if map_client == null:
 		return
 
 	# The server sends `load` when it has swapped, so this is the map it simulates now.
 	# See [method in_transit].
-	if DotMapMessage.kind_of(payload) == DotMapMessage.KIND_LOAD:
+	if GSMapMessage.kind_of(payload) == GSMapMessage.KIND_LOAD:
 		_server_map = StringName(str(payload.get("map", "")))
 
 	# A refused announce is reported with no map, synchronously, from inside `handle`.
 	var def: Variant = payload.get("map", {})
 	_map_handling = (
 		StringName(str((def as Dictionary).get("id", "")))
-		if DotMapMessage.kind_of(payload) == DotMapMessage.KIND_ANNOUNCE and def is Dictionary
+		if GSMapMessage.kind_of(payload) == GSMapMessage.KIND_ANNOUNCE and def is Dictionary
 		else &""
 	)
 	map_client.handle(payload)
@@ -462,12 +462,12 @@ func _on_map_message(payload: Dictionary) -> void:
 ## leaving over it is the designed outcome rather than a failure of this code; an ERROR
 ## here would staple a backtrace to every refusal and read like a crash in the one log
 ## where somebody is looking for why a player left.
-func _on_map_fetch_failed(map: DotMapDef, error: DotError) -> void:
+func _on_map_fetch_failed(map: GSMapDef, error: GSError) -> void:
 	var id := map.id if map != null else _map_handling
 	var why := error.message if error != null else "unknown"
 	if error != null and error.detail != "":
 		why = "%s (%s)" % [why, error.detail]
-	DotLog.warn(CHANNEL, "cannot follow the server to its map", {"map": String(id), "why": why})
+	GSLog.warn(CHANNEL, "cannot follow the server to its map", {"map": String(id), "why": why})
 	map_refused.emit(id, why)
 
 
@@ -508,10 +508,10 @@ func ask_spectate(step: int) -> void:
 ## camera then follows the target from the poses this client already draws, once a frame.
 func _apply_spectate(target: String, mode: int, target_name: String) -> void:
 	var key := String(_player_key(local_player_id))
-	var manager: DotSpectatorManager = game.spectate.manager if game != null and game.spectate != null else null
+	var manager: GSSpectatorManager = game.spectate.manager if game != null and game.spectate != null else null
 	if manager != null:
-		var wanted := mode if target != "" or mode == DotSpectatorView.Mode.ROAMING \
-			else DotSpectatorView.Mode.NONE
+		var wanted := mode if target != "" or mode == GSSpectatorView.Mode.ROAMING \
+			else GSSpectatorView.Mode.NONE
 		manager.apply_wire({"k": key, "v": {"m": wanted, "t": target, "u": -1}})
 	spectate_received.emit(StringName(target), target_name)
 
@@ -530,7 +530,7 @@ func ask_maps(id: String = "") -> void:
 	_ask(AirdriftEvents.Ask.MAPS, AirdriftEvents.write_map_id(id))
 
 
-func publish_avatar(avatar: DotAvatar) -> void:
+func publish_avatar(avatar: GSAvatar) -> void:
 	_ask(AirdriftEvents.Ask.AVATAR, AirdriftEvents.write_avatar(avatar))
 
 
@@ -546,7 +546,7 @@ func ask_respawn() -> void:
 	_ask(AirdriftEvents.Ask.RESPAWN, PackedByteArray())
 
 
-func _on_request(message: DotNetMessage) -> void:
+func _on_request(message: GSNetMessage) -> void:
 	var ask := message as AirdriftRequest
 	if ask == null or net == null or not net.is_server:
 		return
@@ -572,7 +572,7 @@ func _on_request(message: DotNetMessage) -> void:
 				_broadcast(AirdriftEvents.Kind.JOIN, _join_body(session_id))
 		AirdriftEvents.Ask.TRACK:
 			var track := AirdriftEvents.read_int(reader)
-			if DotTimerTrack.is_valid(track) and game.timers.set_player_track(game.record_key(id), track):
+			if GSTimerTrack.is_valid(track) and game.timers.set_player_track(game.record_key(id), track):
 				game.spawn_player(id)
 				_broadcast(AirdriftEvents.Kind.JOIN, _join_body(session_id))
 		AirdriftEvents.Ask.AVATAR:
@@ -615,7 +615,7 @@ func _on_request(message: DotNetMessage) -> void:
 
 func _track_of(id: StringName) -> int:
 	var found := game.timers.player(game.record_key(id)) if game != null and game.timers != null else null
-	return found.timer.track if found != null else DotTimerTrack.MAIN
+	return found.timer.track if found != null else GSTimerTrack.MAIN
 
 
 ## A click while spectating, or the first one. The answer is a SPECTATE event (from the
@@ -625,7 +625,7 @@ func _on_spectate_asked(peer_id: int, session_id: int, id: StringName, step: int
 	if game.spectate == null:
 		_tell(peer_id, AirdriftEvents.Kind.NOTICE, AirdriftEvents.write_text(session_id, "Spectating is not available here."))
 		return
-	var res: DotResult
+	var res: GSResult
 	match step:
 		AirdriftEvents.SPECTATE_STOP:
 			game.spectate.stop(id)
@@ -655,8 +655,8 @@ func _on_maps_asked(peer_id: int, session_id: int, id: String) -> void:
 	if game.maps.catalogue == null or not game.maps.catalogue.has(StringName(id)):
 		_tell(peer_id, AirdriftEvents.Kind.NOTICE, AirdriftEvents.write_text(session_id, "No map called %s." % id))
 		return
-	DotLog.info(CHANNEL, "a map change from the map list", {"by": session_id, "map": id})
-	var changed: DotResult = await game.change_map(StringName(id))
+	GSLog.info(CHANNEL, "a map change from the map list", {"by": session_id, "map": id})
+	var changed: GSResult = await game.change_map(StringName(id))
 	if not changed.ok:
 		_tell(peer_id, AirdriftEvents.Kind.NOTICE, AirdriftEvents.write_text(session_id, changed.error.message))
 
@@ -683,7 +683,7 @@ func _checkpoint(id: StringName, action: int) -> void:
 # --- Client: applying ---------------------------------------------------------
 
 ## The spectate, hit, death, kill, shot and match-end events, split off to keep _on_event short.
-func _on_watch_event(kind: int, reader: DotNetReader) -> void:
+func _on_watch_event(kind: int, reader: GSNetReader) -> void:
 	match kind:
 		AirdriftEvents.Kind.SPECTATE:
 			var spec := AirdriftEvents.read_spectate(reader)

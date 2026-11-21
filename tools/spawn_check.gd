@@ -58,7 +58,7 @@ func _init() -> void:
 		await physics_frame
 		await physics_frame
 
-		var body := DotFpsPhysicsBody.for_node(root)
+		var body := GSFpsPhysicsBody.for_node(root)
 		var points := _spawn_points(map)
 		var bad := PackedStringArray()
 

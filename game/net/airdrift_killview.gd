@@ -8,18 +8,18 @@ const KillPov := preload("../airdrift_kill_pov.gd")
 ## Most bytes a KILLVIEW body may take: the event body's cap, less its framing.
 const BYTES := 15000
 
-var server: DotKillViewServer = null
+var server: GSKillViewServer = null
 var _game: Node = null
 
 
 func _init(game: Node) -> void:
 	_game = game
-	server = DotKillViewServer.new(game.killview_rules)
+	server = GSKillViewServer.new(game.killview_rules)
 	server.tick_rate = game.tick_rate
 	server.eyes_fn = _eyes
 	server.use_respawn_queue(
 		func() -> Variant: return game.combat.match_node.respawns if game.combat != null and game.combat.match_node != null else null,
-		func(entity: Variant) -> DotResult: return game.combat.respawn_now(int(entity)))
+		func(entity: Variant) -> GSResult: return game.combat.respawn_now(int(entity)))
 
 
 ## Records this tick, and returns [{victim: session id, body}] for the clips that are ready.
@@ -30,11 +30,11 @@ func tick(tick_number: int) -> Array:
 	for ready: Dictionary in server.collect(now, tick_number):
 		var victim: StringName = _game.combat.player_id_for(int(ready["victim"]))
 		if victim != &"":
-			out.append({"player": victim, "body": DotKillViewClip.pack(ready["clip"], ready["info"], BYTES)})
+			out.append({"player": victim, "body": GSKillViewClip.pack(ready["clip"], ready["info"], BYTES)})
 	return out
 
 
-func note_kill(entry: DotKillFeed.Entry) -> void:
+func note_kill(entry: GSKillFeed.Entry) -> void:
 	if not entry.killer_key.is_valid_int() or not entry.victim_key.is_valid_int():
 		return
 	var killer_id: StringName = _game.combat.player_id_for(int(entry.killer_key))
@@ -44,7 +44,7 @@ func note_kill(entry: DotKillFeed.Entry) -> void:
 		# A client numbers no entity: it finds the bodies by this key, not by the clip's server id.
 		"killer_key": String(killer_id)})
 	if not res.ok:
-		DotLog.trace(CHANNEL, "no kill view", {"why": res.error.message})
+		GSLog.trace(CHANNEL, "no kill view", {"why": res.error.message})
 
 
 func skip(player_id: StringName) -> void:
@@ -63,11 +63,11 @@ func _eyes() -> Array:
 	var eyes: Array = []
 	for id: StringName in _game.players:
 		var p = _game.players[id]
-		var health: DotHealth = _game.combat.health_of(id)
+		var health: GSHealth = _game.combat.health_of(id)
 		if health == null or not health.alive or p.controller == null:
 			continue
-		var st: DotFpsState = p.controller.state
+		var st: GSFpsState = p.controller.state
 		var basis := Basis.from_euler(Vector3(deg_to_rad(st.pitch), deg_to_rad(st.yaw), 0.0))
 		eyes.append({"id": _game.combat.entity_for(id), "transform": Transform3D(basis, p.eye_position()),
-			"aux": KillPov.aux_of(p, DotKillViewRing.AUX)})
+			"aux": KillPov.aux_of(p, GSKillViewRing.AUX)})
 	return eyes

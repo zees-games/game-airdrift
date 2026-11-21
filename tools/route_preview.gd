@@ -92,7 +92,7 @@ func _ready() -> void:
 ## way the map faces an arriving player (`_a`), and facing the next waypoint (`_b`),
 ## which is the one that shows whether the way on can be seen at all.
 func _walk(map: Node3D, id: String, track: int, out: String) -> void:
-	var zones: DotTimerZoneSet = map.call("timer_zones")
+	var zones: GSTimerZoneSet = map.call("timer_zones")
 	var points: Array[Vector3] = []
 	var yaws: Array[float] = []
 	var names: Array[String] = []
@@ -112,10 +112,10 @@ func _walk(map: Node3D, id: String, track: int, out: String) -> void:
 		# is not written anywhere, so it is walked nearest-first from the spawn -- a
 		# guess, but one that only decides which frame is numbered first.
 		if zones.stage_count(track) == 0:
-			var doors: Array[DotTimerZone] = []
-			for z: DotTimerZone in zones.of_kind(DotTimerZone.Kind.TELEPORT, track):
+			var doors: Array[GSTimerZone] = []
+			for z: GSTimerZone in zones.of_kind(GSTimerZone.Kind.TELEPORT, track):
 				var seen := false
-				for d: DotTimerZone in doors:
+				for d: GSTimerZone in doors:
 					seen = seen or d.destination.distance_to(z.destination) < 1.0
 				if not seen and z.destination.distance_to(points[0]) > 1.0:
 					doors.append(z)
@@ -130,7 +130,7 @@ func _walk(map: Node3D, id: String, track: int, out: String) -> void:
 				yaws.append(doors[best].destination_yaw)
 				names.append("door%d" % points.size())
 				doors.remove_at(best)
-		var end := zones.first_of_kind(DotTimerZone.Kind.END, track)
+		var end := zones.first_of_kind(GSTimerZone.Kind.END, track)
 		if end != null:
 			# At the finish's floor, not its centre: a finish volume is often tall, and
 			# its centre is inside whatever roof is over it.

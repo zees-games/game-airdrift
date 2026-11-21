@@ -33,7 +33,7 @@ const AirdriftSurfCourse := preload("../game/airdrift_surf_course.gd")
 ## zones file and re-imported.
 ##
 ## [b]A planned stage is ridden by the pilot.[/b] When `maps/routes/<id>.surf.json` holds the
-## stage (`tools/surf_plan.tscn`), the bot follows that line with dot-bot's [DotBotSurfPilot]
+## stage (`tools/surf_plan.tscn`), the bot follows that line with dot-bot's [GSBotSurfPilot]
 ## instead of the rule below: a rule cannot find the line off a standstill deck over a gable
 ## (surf_beginner2 stage 2 presses into the face and perches on the ridge). `RIDE_RULE=1`
 ## forces the rule.
@@ -62,7 +62,7 @@ var _before := Vector3.ZERO  ## where the bot stood the tick before the last one
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -80,18 +80,18 @@ func _run() -> void:
 	bot.sampler = null
 	await get_tree().physics_frame
 
-	var track := DotTimerTrack.MAIN
+	var track := GSTimerTrack.MAIN
 	var total := zones.stage_count(track)
 	# Stage 0 is the whole run: from the main spawn, with the finish as the only goal, so
 	# the bot has to cross every stage line and every door on the way (`g2g-maps-1`).
 	var whole := number == 0
-	var from: DotTimerZone = null if whole else zones.stage_zone(track, number)
+	var from: GSTimerZone = null if whole else zones.stage_zone(track, number)
 	if from == null and not whole:
 		print("[ride] %s has no stage %d on main (1..%d)" % [id, number, total])
 		get_tree().quit(1)
 		return
 
-	# The stage zone's own destination and yaw, as `DotTimerManager.request_stage` gives them.
+	# The stage zone's own destination and yaw, as `GSTimerManager.request_stage` gives them.
 	# Moved here directly: nothing in this game listens to `stage_requested`.
 	var map := game.current_map_node()
 	var arrival: Vector3 = map.spawn_for(track) if whole else from.destination
@@ -117,14 +117,14 @@ func _run() -> void:
 	# a bhop corridor's line is the straight one, and a door moves it closer.
 	var aim_at_finish := whole and finish != arrival
 	var router: RouteBot = _route_for(id, zones, track, total, finish) if whole else null
-	var pilot: DotBotSurfPilot = null
+	var pilot: GSBotSurfPilot = null
 	if not whole and not override and not OS.has_environment("RIDE_RULE"):
 		pilot = _pilot_for(id, number, bot)
 	var finished: Array[float] = []
-	bot.timer.run_finished.connect(func(run: DotTimerRun) -> void: finished.append(run.time()))
+	bot.timer.run_finished.connect(func(run: GSTimerRun) -> void: finished.append(run.time()))
 	# Taken on the finish rather than read after it: the manager drops `last_replay` once
 	# nothing will keep the run, which with no store is straight after `player_finished`.
-	var finished_replay: Array[DotTimerReplay] = [null]
+	var finished_replay: Array[GSTimerReplay] = [null]
 	var watchers := _watch_timers(bot, router, events, put_back, finished_replay)
 
 	var start := bot.global_position
@@ -206,12 +206,12 @@ func _load_game(id: StringName) -> bool:
 
 
 ## What counts as getting somewhere: the next stage's line, or the finish.
-func _goals_for(zones: DotTimerZoneSet, track: int, number: int, total: int, whole: bool) -> Array:
+func _goals_for(zones: GSTimerZoneSet, track: int, number: int, total: int, whole: bool) -> Array:
 	var goals: Array = []
 	for n in range(number + 1, total + 1):
 		if not whole:
 			goals.append(["stage %d" % n, zones.stage_zone(track, n)])
-	for zone: DotTimerZone in zones.of_kind(DotTimerZone.Kind.END):
+	for zone: GSTimerZone in zones.of_kind(GSTimerZone.Kind.END):
 		if zone.track == track:
 			goals.append(["the finish", zone])
 	return goals
@@ -221,13 +221,13 @@ func _finish_of(goals: Array, arrival: Vector3) -> Vector3:
 	var finish := arrival
 	for goal: Array in goals:
 		if goal[0] == "the finish":
-			finish = (goal[1] as DotTimerZone).centre()
+			finish = (goal[1] as GSTimerZone).centre()
 	return finish
 
 
 ## The whole run follows the map's route (`maps/routes/<id>.json`, see game/airdrift_route_bot.gd)
 ## when it has one, and otherwise its stage lines in order and then the finish.
-func _route_for(id: StringName, zones: DotTimerZoneSet, track: int, total: int, finish: Vector3) -> RouteBot:
+func _route_for(id: StringName, zones: GSTimerZoneSet, track: int, total: int, finish: Vector3) -> RouteBot:
 	var why: Array = []
 	var route := RouteBot.load_points(id, why)
 	if route.is_empty():
@@ -242,20 +242,20 @@ func _route_for(id: StringName, zones: DotTimerZoneSet, track: int, total: int, 
 
 ## Connects the effect and finish watchers; returns them as [effect, finish] to disconnect.
 func _watch_timers(bot: AirdriftPlayer, router: RouteBot, events: Array[String], put_back: Array[bool],
-		finished_replay: Array[DotTimerReplay]) -> Array[Callable]:
-	var on_effect := func(pid: StringName, zone: DotTimerZone) -> void:
+		finished_replay: Array[GSTimerReplay]) -> Array[Callable]:
+	var on_effect := func(pid: StringName, zone: GSTimerZone) -> void:
 		if pid != &"bot":
 			return
 		# A pit the route walks into on purpose (a stage trigger the planner reads as a door) is a door.
-		var planned := zone.kind == DotTimerZone.Kind.RESPAWN and zone.payload.has(AirdriftBspMap.SENDS_TO) \
+		var planned := zone.kind == GSTimerZone.Kind.RESPAWN and zone.payload.has(AirdriftBspMap.SENDS_TO) \
 			and router != null and router.index < router.points.size() \
 			and bool(router.points[router.index]["door"]) and zone.contains(router.points[router.index]["at"])
 		match zone.kind:
-			DotTimerZone.Kind.RESPAWN when not planned:
+			GSTimerZone.Kind.RESPAWN when not planned:
 				put_back[0] = true
-			DotTimerZone.Kind.SLAY:
+			GSTimerZone.Kind.SLAY:
 				put_back[0] = true
-			DotTimerZone.Kind.TELEPORT, DotTimerZone.Kind.RESPAWN:
+			GSTimerZone.Kind.TELEPORT, GSTimerZone.Kind.RESPAWN:
 				if router != null:
 					router.teleported.call_deferred()
 				events.append("a door at %s u -> %s u" % [
@@ -271,10 +271,10 @@ func _watch_timers(bot: AirdriftPlayer, router: RouteBot, events: Array[String],
 
 
 ## One tick's command: the pilot's, the route's, a strafe into a face, or forward and hop.
-func _command_for(bot: AirdriftPlayer, flat: Vector3, ramp: Vector3, pilot: DotBotSurfPilot, router: RouteBot,
-		aim_at_finish: bool, finish: Vector3) -> DotFpsCommand:
+func _command_for(bot: AirdriftPlayer, flat: Vector3, ramp: Vector3, pilot: GSBotSurfPilot, router: RouteBot,
+		aim_at_finish: bool, finish: Vector3) -> GSFpsCommand:
 	var state := bot.controller.state
-	var c := DotFpsCommand.new()
+	var c := GSFpsCommand.new()
 	if pilot != null:
 		c = pilot.command(state)
 		_surfed += 1 if not state.is_grounded() else 0
@@ -288,7 +288,7 @@ func _command_for(bot: AirdriftPlayer, flat: Vector3, ramp: Vector3, pilot: DotB
 		# The way the route goes, not the way the bot happens to be moving: a
 		# landing deflects a rider sideways, and following that climbs the face.
 		var going := flat if AirdriftUnits.to_units(flat.length()) > 300.0 \
-			else DotFpsMotor.forward_for(_heading)
+			else GSFpsMotor.forward_for(_heading)
 		if along.dot(going) < 0.0:
 			along = -along
 		c.yaw = rad_to_deg(atan2(-along.x, -along.z))
@@ -303,7 +303,7 @@ func _command_for(bot: AirdriftPlayer, flat: Vector3, ramp: Vector3, pilot: DotB
 		c.move = Vector2(0.0, 1.0)
 		# A jump from a standstill creeps at the air cap for ever (headless_run's
 		# `_prestrafe`), so only once walking has built the speed.
-		c.set_button(DotFpsCommand.BUTTON_JUMP,
+		c.set_button(GSFpsCommand.BUTTON_JUMP,
 			state.is_grounded() and AirdriftUnits.to_units(flat.length()) > 230.0)
 	return c
 
@@ -328,14 +328,14 @@ func _reached_at(at: Vector3, finished: Array[float], put_back: bool, goals: Arr
 		return "PUT BACK by a pit at %s u (last at %s u, route point %d)" % [str(AirdriftUnits.vector_to_units(at).round()),
 			str(AirdriftUnits.vector_to_units(_last_good).round()), _point_index]
 	for goal: Array in goals:
-		if (goal[1] as DotTimerZone).contains(at):
+		if (goal[1] as GSTimerZone).contains(at):
 			return "REACHED %s at %s u" % [goal[0], str(AirdriftUnits.vector_to_units(at).round())]
 	return ""
 
 
 ## `RIDE_SAVE_REPLAY=maps/routes/<id>.replay` keeps the finished run's dot-timer replay, for
 ## `tools/follow_replay.tscn` and `headless_imported`'s *follows a recorded run*.
-func _save_replay(id: StringName, save_to: String, replay: DotTimerReplay) -> void:
+func _save_replay(id: StringName, save_to: String, replay: GSTimerReplay) -> void:
 	if replay == null:
 		print("[ride] no replay to save: the timer kept none")
 		return
@@ -369,7 +369,7 @@ func _ramp_under(bot: AirdriftPlayer, flat: Vector3, limit: float) -> Vector3:
 
 
 ## The pilot over this stage's cached line, or null when the map has no cache for it.
-func _pilot_for(id: StringName, number: int, bot: AirdriftPlayer) -> DotBotSurfPilot:
+func _pilot_for(id: StringName, number: int, bot: AirdriftPlayer) -> GSBotSurfPilot:
 	var data: Dictionary = AirdriftSurfCourse.read_stage(id, number)
 	if data.is_empty():
 		return null
@@ -377,7 +377,7 @@ func _pilot_for(id: StringName, number: int, bot: AirdriftPlayer) -> DotBotSurfP
 	var course := AirdriftSurfCourse.for_stage(game, number, why)
 	if course == null:
 		return null
-	var pilot := DotBotSurfPilot.new()
+	var pilot := GSBotSurfPilot.new()
 	pilot.load_stage(data, AirdriftUnits.METRES_PER_UNIT)
 	pilot.sim = course.simulator_for(bot.controller, game.mechanics)
 	pilot.score = course.score

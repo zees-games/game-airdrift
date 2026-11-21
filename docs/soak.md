@@ -1,6 +1,6 @@
 # Bot soak
 
-`./game.sh soak [map] [minutes]` runs `tools/soak.tscn`: four of the game's course-riding bots (`game/airdrift_bots.gd`) on one map, driven by dot-bot's `DotBotSoak` with dot-spawn's `DotSpawnWatch` for stuck and fell-out verdicts. The report is `.godot/test-logs/soak-<map>.json` and one `SOAK {...}` line. There is no combat here, so the kill check is off. There is no navigation mesh either, so off-nav and unreachable are off; a bot rides its stage or the route, and the course puts it back when it arrives, falls or runs out of `RIDE_SECONDS`.
+`./game.sh soak [map] [minutes]` runs `tools/soak.tscn`: four of the game's course-riding bots (`game/airdrift_bots.gd`) on one map, driven by dot-bot's `GSBotSoak` with dot-spawn's `GSSpawnWatch` for stuck and fell-out verdicts. The report is `.godot/test-logs/soak-<map>.json` and one `SOAK {...}` line. There is no combat here, so the kill check is off. There is no navigation mesh either, so off-nav and unreachable are off; a bot rides its stage or the route, and the course puts it back when it arrives, falls or runs out of `RIDE_SECONDS`.
 
 First run, 2026-10-22, 0.5 simulated minutes per map, 4 bots, 62 of the 64 maps: 32 pass, 30 fail, all failures `stuck` (a bot within one radius for over 10 s). Tick cost is not the problem: p95 is 0 to 4 ms at 128 Hz, worst single tick 91 ms (surf_lt_omnific, map load or plan step), object and memory growth within limits everywhere.
 

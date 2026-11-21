@@ -6,7 +6,7 @@ func _ready() -> void:
 	var at := args.find("--only")
 	if at >= 0 and at + 1 < args.size():
 		_only = args[at + 1]
-	DotLog.set_level(DotLog.Level.INFO if _verbose else DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.INFO if _verbose else GSLog.Level.ERROR)
 
 	var early := Early.new()
 	early.probe = self
@@ -24,7 +24,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	print("game-airdrift: what a connected player sees, through a real socket")
-	DotPaths.remove_tree(DATA)
+	GSPaths.remove_tree(DATA)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(DATA))
 
 	if await _boot() and await _connect():
@@ -131,7 +131,7 @@ func _test_a_correction_is_eased() -> void:
 	Input.action_press(&"dot_fps_forward")
 	await _until(func() -> bool: return false, 1.0)
 
-	var net: DotNetManager = _client.net
+	var net: GSNetManager = _client.net
 	var corrections_before := int(net.predictor.get("_corrections_applied"))
 	var eyes: Array[Vector3] = []
 	var velocities: Array[Vector3] = []
@@ -254,7 +254,7 @@ func _slip_frames(forget: bool) -> Array:
 		eyes.append(_client.player.camera.active().global_position)
 		velocities.append(_client.player.controller.state.velocity)
 		deltas.append(delta)
-	var tunables: DotFpsTunables = _client.player.controller.tunables
+	var tunables: GSFpsTunables = _client.player.controller.tunables
 	var steady := 0.95 * tunables.max_speed
 	var is_steady := func(i: int) -> bool:
 		var v: Vector3 = velocities[i]
@@ -318,7 +318,7 @@ func _play_window(window: Array) -> void:
 	_turning = true
 	await _until(func() -> bool: return false, 1.5)
 
-	var net: DotNetManager = _client.net
+	var net: GSNetManager = _client.net
 	_relay.reset_counts()
 	if _tcp != null:
 		_tcp.reset_counts()

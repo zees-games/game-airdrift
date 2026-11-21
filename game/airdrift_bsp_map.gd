@@ -15,7 +15,7 @@ const AirdriftMapCatalogue := preload("airdrift_map_catalogue.gd")
 ##
 ## [b]There is no scene and no script per map, and that is what makes a map droppable.[/b]
 ## Every imported map is THIS scene -- one `imported_map.tscn` that ships inside the
-## build -- pointed at a different manifest through [member DotMapDef.meta]. The
+## build -- pointed at a different manifest through [member GSMapDef.meta]. The
 ## alternative, a generated `<id>.gd` and `<id>.tscn` beside the data, cannot work for a
 ## map that arrives after the export: `res://` is a read-only PCK in a shipped build, so
 ## a scene that is not in it does not exist, and a script in a mounted dot-cloud pack
@@ -32,7 +32,7 @@ const AirdriftMapCatalogue := preload("airdrift_map_catalogue.gd")
 ## made in code.
 
 ## An imported map is content an operator dropped in, so what goes wrong loading one is
-## theirs to read: DotLog, not `push_error`, which reaches stderr and the editor's dock and
+## theirs to read: GSLog, not `push_error`, which reaches stderr and the editor's dock and
 ## neither the log file nor anything shipping it.
 const CHANNEL := "g2g.bsp"
 ## Meta on a collision shape whose hull is not plain solid: "clip", "glass", "fence" or "sky".
@@ -68,8 +68,8 @@ const VERTEX_FLOATS := 10          # position 3, normal 3, uv 2, uv2 2
 
 ## Draw from the dot-map world document when one is found (see [member AirdriftConfig.global_worlds]). Set before [method build_from].
 var global_worlds := false
-## The [DotMapWorld] drawn in place of the manifest's surfaces, or null.
-var global_world: DotMapWorld = null
+## The [GSMapWorld] drawn in place of the manifest's surfaces, or null.
+var global_world: GSMapWorld = null
 
 ## The mesh prefix of a map copied in by hand (`AirdriftMapCatalogue._local`), or empty for an imported one.
 var local_prefix := ""
@@ -84,10 +84,10 @@ var _water_sky := Color(0, 0, 0, 0)
 
 ## Nothing is built on entering the tree.
 ##
-## [DotMapSession] instantiates a map scene and adds it in one call, with no hook in
+## [GSMapSession] instantiates a map scene and adds it in one call, with no hook in
 ## between, so a node that built itself in `_ready()` would have to know which map it
 ## is before anybody could tell it. The host calls [method build_from] instead, from
-## `changed`, which carries both the [DotMapDef] and the node -- and does so before it
+## `changed`, which carries both the [GSMapDef] and the node -- and does so before it
 ## asks for [method timer_zones], which is the ordering this depends on.
 func _build() -> void:
 	if not manifest_path.is_empty():
@@ -96,14 +96,14 @@ func _build() -> void:
 
 
 ## Build this map from the manifest named by a catalogue entry.
-func build_from(map: DotMapDef) -> bool:
+func build_from(map: GSMapDef) -> bool:
 	if map == null:
 		return false
 	if not str(map.meta.get("local_prefix", "")).is_empty():
 		return _build_local(String(map.id), str(map.meta["local_prefix"]))
 	var path := str(map.meta.get("manifest", ""))
 	if path.is_empty():
-		DotLog.error(CHANNEL, "the catalogue entry names no manifest", {"map": String(map.id)})
+		GSLog.error(CHANNEL, "the catalogue entry names no manifest", {"map": String(map.id)})
 		return false
 	return build_from_path(path)
 
@@ -140,7 +140,7 @@ func _construct() -> void:
 
 	var blob := FileAccess.get_file_as_bytes(dir.path_join("%s.bin" % manifest.get("id", "")))
 	if blob.is_empty():
-		DotLog.error(CHANNEL, "the mesh binary is missing or empty", {
+		GSLog.error(CHANNEL, "the mesh binary is missing or empty", {
 			"path": dir.path_join("%s.bin" % manifest.get("id", "")),
 		})
 		return
@@ -163,7 +163,7 @@ func _construct() -> void:
 		_draw_global_world(drawn + props.filter(func(mi: MeshInstance3D) -> bool: return mi.name.begins_with("Props")))
 
 	_apply_lighting(dir)
-	DotLog.info(CHANNEL, "imported map built", {
+	GSLog.info(CHANNEL, "imported map built", {
 		"map": str(manifest.get("id", "?")),
 		"surfaces": written,
 		"surfaces_in_manifest": surfaces.size(),
@@ -172,7 +172,7 @@ func _construct() -> void:
 	})
 
 
-## A local map: dot-map's [DotMapWorld] draws it and makes it solid, and [member manifest] is written to hold only the
+## A local map: dot-map's [GSMapWorld] draws it and makes it solid, and [member manifest] is written to hold only the
 ## spawn, so the zones ([method _legacy_zones]) and the brush mechanics read it as an old import with nothing else.
 ## Its doors stand still: nothing here steps the world's movers.
 func _build_local(id: String, prefix: String) -> bool:
@@ -185,24 +185,24 @@ func _build_local(id: String, prefix: String) -> bool:
 	var surfaces := AirdriftMapCatalogue.local_surfaces(StringName(id))
 	if surfaces != null:
 		options["surfaces"] = surfaces
-	var built := DotMapWorld.build(prefix, {}, options)
+	var built := GSMapWorld.build(prefix, {}, options)
 	# A copy without its `.doc.json` (the entity logic) is still a world to stand in, with no doors or triggers.
 	if not built.ok and not FileAccess.file_exists(prefix + ".doc.json"):
 		options["doc"] = {"format": "dot-bsp-source", "version": 1, "entities": [], "commands": []}
-		built = DotMapWorld.build(prefix, {}, options)
+		built = GSMapWorld.build(prefix, {}, options)
 	if not built.ok:
-		DotLog.error(CHANNEL, "a local map would not build", {"map": id, "why": str(built.error)})
+		GSLog.error(CHANNEL, "a local map would not build", {"map": id, "why": str(built.error)})
 		return false
 	global_world = built.value
 	global_world.name = "GlobalWorld"
 	add_child(global_world)
-	var spots := DotMapLocalMaps.spawns(global_world.mesh)
+	var spots := GSMapLocalMaps.spawns(global_world.mesh)
 	var spot: Dictionary = spots[0] if not spots.is_empty() else {"origin": Vector3.ZERO, "yaw": 0.0}
 	var at := AirdriftUnits.vector_to_units(spot["origin"])
 	fallback_spawn_units = at
 	manifest = {"id": id, "spawn": {"origin": [at.x, at.y, at.z], "yaw": float(spot["yaw"])}}
 	AirdriftLighting.apply(self, {})
-	DotLog.info(CHANNEL, "local map built", {"map": id, "prefix": prefix, "spawns": spots.size()})
+	GSLog.info(CHANNEL, "local map built", {"map": id, "prefix": prefix, "spawns": spots.size()})
 	return true
 
 
@@ -221,11 +221,11 @@ func _read_manifest() -> bool:
 		return false
 	var text := FileAccess.get_file_as_string(manifest_path)
 	if text.is_empty():
-		DotLog.error(CHANNEL, "cannot read the manifest", {"path": manifest_path})
+		GSLog.error(CHANNEL, "cannot read the manifest", {"path": manifest_path})
 		return false
 	var parsed: Variant = JSON.parse_string(text)
 	if typeof(parsed) != TYPE_DICTIONARY:
-		DotLog.error(CHANNEL, "not a manifest", {"path": manifest_path})
+		GSLog.error(CHANNEL, "not a manifest", {"path": manifest_path})
 		return false
 	manifest = parsed
 	return true
@@ -237,20 +237,20 @@ func _world_prefix(id: String) -> String:
 	return prefix if FileAccess.file_exists(prefix + ".json") and FileAccess.file_exists(prefix + ".bin") else ""
 
 
-## Draws the map through dot-map's [DotMapWorld] and hides [param legacy], the manifest's own meshes: those stay built so
+## Draws the map through dot-map's [GSMapWorld] and hides [param legacy], the manifest's own meshes: those stay built so
 ## probes find `World`, and collision, zones and spawns are still the manifest's.
 func _draw_global_world(legacy: Array) -> void:
 	var id := str(manifest.get("id", ""))
 	var prefix := _world_prefix(id)
 	if prefix.is_empty():
-		DotLog.info(CHANNEL, "no world document, drawing the manifest", {"map": id})
+		GSLog.info(CHANNEL, "no world document, drawing the manifest", {"map": id})
 		return
-	var built := DotMapWorld.build(prefix, {}, {
+	var built := GSMapWorld.build(prefix, {}, {
 		"authoritative": false, "collision": false, "environment": false, "sounds": false,
 		"props": true, "map_id": id, "draw": true,
 	})
 	if not built.ok:
-		DotLog.warn(CHANNEL, "the world document would not build, drawing the manifest",
+		GSLog.warn(CHANNEL, "the world document would not build, drawing the manifest",
 			{"map": id, "why": str(built.error)})
 		return
 	global_world = built.value
@@ -258,7 +258,7 @@ func _draw_global_world(legacy: Array) -> void:
 	add_child(global_world)
 	for mi: MeshInstance3D in legacy:
 		mi.visible = false
-	DotLog.info(CHANNEL, "drawn from the world document", {"map": id, "prefix": prefix})
+	GSLog.info(CHANNEL, "drawn from the world document", {"map": id, "prefix": prefix})
 
 
 ## Which instance family a manifest surface is drawn in: `World`, `Props` or `Sky`.
@@ -671,7 +671,7 @@ func _apply_packed_sky(lighting: Dictionary, dir: String) -> void:
 	for suffix: String in ["rt", "lf", "bk", "ft", "up", "dn"]:
 		var tex := _load_texture(dir.path_join("textures").path_join(str((faces as Dictionary).get(suffix, ""))))
 		if tex == null:
-			DotLog.warn(CHANNEL, "a packed sky face did not load; the sky stays a colour", {"face": suffix})
+			GSLog.warn(CHANNEL, "a packed sky face did not load; the sky stays a colour", {"face": suffix})
 			return
 		mat.set_shader_parameter("face_" + suffix, tex)
 	for child in get_children():

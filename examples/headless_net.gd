@@ -2,7 +2,7 @@ extends "headless_net_views.gd"
 
 ## game-airdrift's netcode, end to end, in one process.
 ##
-## A server game and a client game, each with its own [DotNetManager] and [AirdriftNetBridge], with a
+## A server game and a client game, each with its own [GSNetManager] and [AirdriftNetBridge], with a
 ## lossy loopback where the socket would be. This proves the bridge, not dot-net.
 ##
 ## [b]The client's tick lead is hand-stamped[/b] (INPUT_LEAD): a command for tick N
@@ -24,7 +24,7 @@ const SECTIONS := 37
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.WARN)
+	GSLog.set_level(GSLog.Level.WARN)
 	_run.call_deferred()
 
 
@@ -82,23 +82,23 @@ func _test_command_wire() -> void:
 	packet.move.move = Vector2(-1.0, 0.5)
 	packet.move.yaw = 45.0
 	packet.move.pitch = -20.0
-	packet.move.set_button(DotFpsCommand.BUTTON_JUMP, true)
-	packet.move.set_button(DotFpsCommand.BUTTON_CROUCH, true)
+	packet.move.set_button(GSFpsCommand.BUTTON_JUMP, true)
+	packet.move.set_button(GSFpsCommand.BUTTON_CROUCH, true)
 
-	var writer := DotNetWriter.new()
+	var writer := GSNetWriter.new()
 	packet.write(writer)
 	var back := AirdriftNetCommand.new()
-	back.read(DotNetReader.new(writer.to_bytes()))
+	back.read(GSNetReader.new(writer.to_bytes()))
 
 	_check(back.tick == 77, "tick")
 	_check(back.move.move.distance_to(packet.move.move) < 0.01, "move axes", str(back.move.move))
 	_check(absf(back.move.yaw - 45.0) < 0.2 and absf(back.move.pitch + 20.0) < 0.5, "view angles", "%s %s" % [back.move.yaw, back.move.pitch])
-	_check(back.move.is_pressed(DotFpsCommand.BUTTON_JUMP) and back.move.is_pressed(DotFpsCommand.BUTTON_CROUCH), "buttons")
+	_check(back.move.is_pressed(GSFpsCommand.BUTTON_JUMP) and back.move.is_pressed(GSFpsCommand.BUTTON_CROUCH), "buttons")
 	# Quantised once is quantised for good: a second trip must change nothing.
-	var again := DotNetWriter.new()
+	var again := GSNetWriter.new()
 	back.write(again)
 	var twice := AirdriftNetCommand.new()
-	twice.read(DotNetReader.new(again.to_bytes()))
+	twice.read(GSNetReader.new(again.to_bytes()))
 	_check(twice.equals(back), "and is stable under a second trip, which is what input compression rests on")
 	_done()
 
@@ -109,7 +109,7 @@ func _test_neutralise() -> void:
 	command.attack = true
 	command.move.move = Vector2(0.0, 1.0)
 	command.move.yaw = 40.0
-	command.move.set_button(DotFpsCommand.BUTTON_JUMP, true)
+	command.move.set_button(GSFpsCommand.BUTTON_JUMP, true)
 	command._neutralise()
 	_check(not command.attack and command.move.move == Vector2.ZERO and command.move.buttons == 0,
 		"attack, move and buttons are cleared")
@@ -124,7 +124,7 @@ func _test_movement_wire() -> void:
 	config.gravity = 600.0
 	config.auto_bhop = false
 
-	var reader := DotNetReader.new(AirdriftEvents.write_movement(config))
+	var reader := GSNetReader.new(AirdriftEvents.write_movement(config))
 	var received := AirdriftConfig.new()
 	var fingerprint := AirdriftEvents.read_movement(reader, received)
 
@@ -139,7 +139,7 @@ func _test_movement_wire() -> void:
 func _test_hello_wire() -> void:
 	_section("hello")
 	var config := AirdriftConfig.new()
-	var reader := DotNetReader.new(AirdriftEvents.write_hello(128, 7, 2, 4096, config))
+	var reader := GSNetReader.new(AirdriftEvents.write_hello(128, 7, 2, 4096, config))
 	var hello := AirdriftEvents.read_hello(reader)
 	_check(bool(hello["ok"]), "parses")
 	_check(int(hello["tick_rate"]) == 128 and int(hello["player_id"]) == 7 and int(hello["peer_id"]) == 2, "with ids")
@@ -148,23 +148,23 @@ func _test_hello_wire() -> void:
 	_check(int(hello["server_tick"]) == 4096 and not hello.has("map_id"), "the tick, and no map: the protocol's announce carries that")
 
 	# The protocol's own messages, through the game's codec both ways.
-	var map := DotMapDef.new()
+	var map := GSMapDef.new()
 	map.id = &"surf_g2g_intro"
 	map.scene_path = "res://maps/surf_g2g_intro.tscn"
 	map.tier = 4
-	var announce := AirdriftEvents.read_map_message(DotNetReader.new(
-		AirdriftEvents.write_map_message(DotMapMessage.announce(map))))
-	var back := DotMapDef.from_dictionary(announce.get("map", {}))
-	_check(DotMapMessage.kind_of(announce) == DotMapMessage.KIND_ANNOUNCE and back.id == map.id
+	var announce := AirdriftEvents.read_map_message(GSNetReader.new(
+		AirdriftEvents.write_map_message(GSMapMessage.announce(map))))
+	var back := GSMapDef.from_dictionary(announce.get("map", {}))
+	_check(GSMapMessage.kind_of(announce) == GSMapMessage.KIND_ANNOUNCE and back.id == map.id
 		and back.tier == 4 and back.version == map.version and back.is_local(),
 		"a map announce survives the wire, tier and all", str(announce))
-	var huge := DotMapMessage.announce(map)
+	var huge := GSMapMessage.announce(map)
 	(huge["map"] as Dictionary)["description"] = "x".repeat(AirdriftEvents.MAP_MESSAGE_BYTES)
 	_check(AirdriftEvents.write_map_message(huge).is_empty(),
 		"one too big to send is refused whole rather than cut into JSON nobody can parse")
-	var garbage := DotNetWriter.new()
+	var garbage := GSNetWriter.new()
 	garbage.write_string("{not json", AirdriftEvents.MAP_REPLY_BYTES)
-	_check(AirdriftEvents.read_map_message(DotNetReader.new(garbage.to_bytes()), AirdriftEvents.MAP_REPLY_BYTES).is_empty(),
+	_check(AirdriftEvents.read_map_message(GSNetReader.new(garbage.to_bytes()), AirdriftEvents.MAP_REPLY_BYTES).is_empty(),
 		"and a reply that is not a JSON object reads as nothing, which dot-map ignores")
 	# A kind goes out in a fixed field the writer masks without a word, so one past it aliases a
 	# smaller kind: game-zombie-zone sent HURT and AMMO as HELLO and MAP that way. The track has
@@ -175,7 +175,7 @@ func _test_hello_wire() -> void:
 		"%d kinds in %d bits" % [AirdriftEvents.Ask.size(), AirdriftRequest.KIND_BITS])
 	for joined_track in [0, 8, 14, 15, 40, 100000]:
 		var join_bytes := AirdriftEvents.write_join(1, 2, 3, "a", null, 0, joined_track)
-		var join_back := AirdriftEvents.read_join(DotNetReader.new(join_bytes))
+		var join_back := AirdriftEvents.read_join(GSNetReader.new(join_bytes))
 		_check(int(join_back["track"]) == joined_track,
 			"JOIN carries track %d unchanged (got %s)" % [joined_track, join_back["track"]])
 	_done()
@@ -244,7 +244,7 @@ func _build() -> bool:
 	# clock, so the client must not ask for dot-net's input-lead report: steered by reports
 	# about commands it never stamped, the clock runs away from them (only dot-net's cap
 	# holds it). By the constant map, so this parses against a dot-net from before the report.
-	var lead_bit := int((DotNetMessageRegistry as Script).get_script_constant_map().get("FEATURE_INPUT_LEAD", 0))
+	var lead_bit := int((GSNetMessageRegistry as Script).get_script_constant_map().get("FEATURE_INPUT_LEAD", 0))
 	_client_net.messages.features &= ~lead_bit
 
 	_server_bridge = AirdriftNetBridge.new()
@@ -263,7 +263,7 @@ func _build() -> bool:
 	var wrong := AirdriftNetBridge.new()
 	add_child(wrong)
 	var refused := wrong.attach(_client_game, _server_net, self)
-	_check(not refused.ok and refused.error.code == DotError.CODE_STATE, "a client game on a server manager is refused")
+	_check(not refused.ok and refused.error.code == GSError.CODE_STATE, "a client game on a server manager is refused")
 	wrong.queue_free()
 
 	_server_net.messages.seal()
@@ -272,7 +272,7 @@ func _build() -> bool:
 
 	_server_bridge.link.loopback = _on_server_send
 	_client_bridge.link.loopback = _on_client_send
-	# What a real client wires to DotClientLink.ping_ms(). Without it the clock
+	# What a real client wires to GSClientLink.ping_ms(). Without it the clock
 	# believes the link is instant and every command arrives a flight time late.
 	_client_bridge.rtt_source = func() -> float:
 		return 40.0
@@ -321,7 +321,7 @@ func _test_handshake() -> void:
 		"a READY before the seat admits nothing yet")
 
 	var loaded: Array[String] = []
-	_client_bridge.map_loaded.connect(func(m: DotMapDef) -> void: loaded.append(String(m.id)))
+	_client_bridge.map_loaded.connect(func(m: GSMapDef) -> void: loaded.append(String(m.id)))
 	var standings := []
 	_client_bridge.standing_received.connect(func(id: int, _standing: Dictionary) -> void: standings.append(id))
 
@@ -333,7 +333,7 @@ func _test_handshake() -> void:
 	_check(_server_net.peers().has(CLIENT_PEER), "asking admits them")
 	# The client's announce reached the server, so snapshots to it carry the unchanged list.
 	# By the constant map, so this parses against a dot-net from before the feature.
-	var runs_bit := int((DotNetMessageRegistry as Script).get_script_constant_map().get("FEATURE_UNCHANGED_RUNS", 0))
+	var runs_bit := int((GSNetMessageRegistry as Script).get_script_constant_map().get("FEATURE_UNCHANGED_RUNS", 0))
 	_check(runs_bit == 0 or _server_net.messages.peer_supports(CLIENT_PEER, runs_bit),
 		"the server knows its client reads the unchanged list")
 	_check(hellos == [SESSION], "and the client is told who it is", str(hellos))
@@ -362,7 +362,7 @@ func _handshake_stage_ref() -> void:
 		"wr": {"splits": {1: 9.0, 2: 20.0, 3: 29.5}, "total": 31.75},
 		"bests": {1: 9.5, 3: 11.0, 4: 12.0},
 	}
-	var wire := AirdriftEvents.read_stage_ref(DotNetReader.new(AirdriftEvents.write_stage_ref(SESSION, sent)))
+	var wire := AirdriftEvents.read_stage_ref(GSNetReader.new(AirdriftEvents.write_stage_ref(SESSION, sent)))
 	_check(bool(wire["ok"]) and int(wire["stages"]) == 3 and is_equal_approx(float(wire["pb"]["total"]), 33.125)
 		and wire["pb"]["splits"].size() == 2 and is_equal_approx(float(wire["wr"]["splits"][3]), 29.5)
 		and wire["bests"].size() == 3 and not wire["bests"].has(2),
@@ -371,7 +371,7 @@ func _handshake_stage_ref() -> void:
 	# A message from before the map id was added ends after the bests: refused whole.
 	var short := AirdriftEvents.write_stage_ref(SESSION, sent)
 	short = short.slice(0, short.size() - 1 - "bhop_x".length())
-	var old_wire := AirdriftEvents.read_stage_ref(DotNetReader.new(short))
+	var old_wire := AirdriftEvents.read_stage_ref(GSNetReader.new(short))
 	_check(not bool(old_wire["ok"]), "and one without a map id is refused, not guessed at", str(old_wire.get("ok")))
 	_server_game.stage_reference_changed.emit(AirdriftNetBridge._player_key(SESSION), sent)
 	_exchange()
@@ -488,10 +488,10 @@ func _test_prediction_hopping() -> void:
 	_steps(4)
 	_flush()
 	for i in range(600):
-		var c := DotFpsCommand.new()
+		var c := GSFpsCommand.new()
 		c.move = Vector2(1.0 if (i / 40) % 2 == 0 else -1.0, 1.0)
 		c.yaw = float(i) * 0.7
-		c.set_button(DotFpsCommand.BUTTON_JUMP, true)
+		c.set_button(GSFpsCommand.BUTTON_JUMP, true)
 		_step(c)
 		if i % 4 == 0:
 			_flush()
@@ -558,18 +558,18 @@ func _test_pit_zone_predicted() -> void:
 	var pit := server.global_position
 	_server_game.spawn_player(server.player_id)
 	_steps(30)
-	var added: Array[DotTimerZone] = []
+	var added: Array[GSTimerZone] = []
 	for game: AirdriftGame in [_server_game, _client_game]:
-		var zone := DotTimerZone.make(DotTimerZone.Kind.RESPAWN, DotTimerTrack.MAIN).set_box(
+		var zone := GSTimerZone.make(GSTimerZone.Kind.RESPAWN, GSTimerTrack.MAIN).set_box(
 			pit - Vector3(1.0, 1.0, 1.0), pit + Vector3(1.0, 1.0, 1.0))
 		game.timers.zones.add(zone)
 		game.timers.set_zones(game.timers.zones)
 		added.append(zone)
 	var hits := {"server": 0, "client": 0}
-	var on_server := func(_id: StringName, zone: DotTimerZone) -> void:
+	var on_server := func(_id: StringName, zone: GSTimerZone) -> void:
 		if zone == added[0]:
 			hits["server"] += 1
-	var on_client := func(_id: StringName, zone: DotTimerZone) -> void:
+	var on_client := func(_id: StringName, zone: GSTimerZone) -> void:
 		if zone == added[1]:
 			hits["client"] += 1
 	_server_game.timers.effect_requested.connect(on_server)
@@ -624,15 +624,15 @@ func _test_timer() -> void:
 	_server_game.spawn_player(server.player_id)
 	_steps(2)
 
-	_check(server.timer.in_zone(DotTimerZone.Kind.START), "the server player spawns on the start pad")
+	_check(server.timer.in_zone(GSTimerZone.Kind.START), "the server player spawns on the start pad")
 
 	var hold := _forward()
-	hold.set_button(DotFpsCommand.BUTTON_JUMP, true)
+	hold.set_button(GSFpsCommand.BUTTON_JUMP, true)
 	_steps(120, _forward())
 	_steps(120, hold)
 
 	_check(server.timer.run.is_running(), "the server's run starts when its player hops off the pad",
-		"in start: %s, %s" % [server.timer.in_zone(DotTimerZone.Kind.START), AirdriftUnits.format_speed(server.speed())])
+		"in start: %s, %s" % [server.timer.in_zone(GSTimerZone.Kind.START), AirdriftUnits.format_speed(server.speed())])
 	_check(client.timer.run.is_running(), "and the client's mirror is running too")
 	_check(client.timer.run.style_id == server.timer.run.style_id, "in the same style")
 	var drift := absf(client.timer.run.time() - server.timer.run.time())
@@ -657,7 +657,7 @@ func _test_finish() -> void:
 	_check(server.timer.run.is_running(), "a walked run is going", str(server.timer.describe()))
 	var before := server.timer.run.time()
 
-	var end := _server_game.timers.zones.first_of_kind(DotTimerZone.Kind.END, 0)
+	var end := _server_game.timers.zones.first_of_kind(GSTimerZone.Kind.END, 0)
 	server.controller.state.position = end.centre() + Vector3.UP * 0.3
 	server.controller.state.velocity = Vector3(0.0, 0.0, -3.0)
 	_steps(6, _forward())
@@ -698,17 +698,17 @@ func _test_style_and_track() -> void:
 		str(_server_player().timer_style.id) if _server_player().timer_style else "")
 	_check(_client_player().timer_style != null and _client_player().timer_style.id == &"sideways", "and tells the client")
 
-	_client_bridge.ask_track(DotTimerTrack.BONUS_FIRST)
+	_client_bridge.ask_track(GSTimerTrack.BONUS_FIRST)
 	_exchange()
-	_check(_server_player().timer.track == DotTimerTrack.BONUS_FIRST, "a bonus track, on the server")
-	_check(_client_player().timer.track == DotTimerTrack.BONUS_FIRST, "and on the client")
+	_check(_server_player().timer.track == GSTimerTrack.BONUS_FIRST, "a bonus track, on the server")
+	_check(_client_player().timer.track == GSTimerTrack.BONUS_FIRST, "and on the client")
 
-	_client_bridge.ask_track(1 << DotTimerTrack.WIDE_BITS)
+	_client_bridge.ask_track(1 << GSTimerTrack.WIDE_BITS)
 	_exchange()
-	_check(_server_player().timer.track == DotTimerTrack.BONUS_FIRST, "an invalid track is ignored")
+	_check(_server_player().timer.track == GSTimerTrack.BONUS_FIRST, "an invalid track is ignored")
 
 	_client_bridge.ask_style(&"normal")
-	_client_bridge.ask_track(DotTimerTrack.MAIN)
+	_client_bridge.ask_track(GSTimerTrack.MAIN)
 	_exchange()
 	_done()
 

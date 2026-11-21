@@ -20,7 +20,7 @@ func _init() -> void:
 		return
 	for id in ids:
 		var script: GDScript = load("res://maps/%s.gd" % id)
-		var zones: DotTimerZoneSet = script.build_zones()
+		var zones: GSTimerZoneSet = script.build_zones()
 		var path := "res://maps/%s.zones.json" % id
 		var wrote := zones.save_json(path)
 		if wrote.ok:

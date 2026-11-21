@@ -64,7 +64,7 @@ func _build() -> void:
 	# every `!s<n>` destination, because a stage a player restarts from a standstill is
 	# a chain that begins at run speed rather than at whatever the stages before it
 	# built. The surf bonus declares nothing: it is a drop onto a bank, not a jump.
-	add_course("main", DotTimerTrack.MAIN, AirdriftReach.Kind.CHAIN, bodies)
+	add_course("main", GSTimerTrack.MAIN, AirdriftReach.Kind.CHAIN, bodies)
 
 	_build_bonus()
 	_build_ridge()
@@ -98,7 +98,7 @@ func _build_ridge() -> void:
 
 	# RUN: every gap is a jump from the lip at run speed, which is what the route
 	# promises and what `headless_run` drives a bot along to prove it.
-	add_course("the ridge", DotTimerTrack.of_bonus(2), AirdriftReach.Kind.RUN, bodies)
+	add_course("the ridge", GSTimerTrack.of_bonus(2), AirdriftReach.Kind.RUN, bodies)
 
 
 ## Bonus 3, `the weave`. See [constant WEAVE_SECTIONS].
@@ -123,7 +123,7 @@ func _build_weave() -> void:
 		Vector3(256.0, BLOCK_THICKNESS, 384.0), AirdriftGeometry.ROLE_END
 	))
 
-	add_course("the weave", DotTimerTrack.of_bonus(3), AirdriftReach.Kind.RUN, bodies)
+	add_course("the weave", GSTimerTrack.of_bonus(3), AirdriftReach.Kind.RUN, bodies)
 
 
 ## Bonus 4, `the bend`. See [constant BEND_SECTIONS].
@@ -149,7 +149,7 @@ func _build_bend() -> void:
 		Basis(Vector3.UP, deg_to_rad(float(pad["yaw"])))
 	))
 
-	add_course("the bend", DotTimerTrack.of_bonus(4), AirdriftReach.Kind.RUN, bodies)
+	add_course("the bend", GSTimerTrack.of_bonus(4), AirdriftReach.Kind.RUN, bodies)
 
 
 ## The bonus: a two-ramp surf descent onto a pad.
@@ -192,21 +192,21 @@ func _build_bonus() -> void:
 	)
 
 
-func timer_zones() -> DotTimerZoneSet:
+func timer_zones() -> GSTimerZoneSet:
 	return build_zones()
 
 
-static func build_zones() -> DotTimerZoneSet:
-	var zones := DotTimerZoneSet.new()
+static func build_zones() -> GSTimerZoneSet:
+	var zones := GSTimerZoneSet.new()
 	zones.map_id = &"bhop_g2g_stages"
 	zones.meta["tier"] = 4
 	zones.meta["author"] = "g2gfast"
 
-	var main := DotTimerTrack.MAIN
+	var main := GSTimerTrack.MAIN
 	var course := _course()
 	var last: Dictionary = course[course.size() - 1]
 
-	zones.add(zone_box(DotTimerZone.Kind.START, main,
+	zones.add(zone_box(GSTimerZone.Kind.START, main,
 		Vector3(-192.0, FLOOR_Y, START_Z - 320.0),
 		Vector3(192.0, FLOOR_Y + 192.0, START_Z + 320.0)))
 
@@ -215,7 +215,7 @@ static func build_zones() -> DotTimerZoneSet:
 	# the pad. That is correct here — a player can only arrive at it along the course —
 	# and it is why the box is drawn from the pad's centre rather than its corners.
 	var end_at := _pad_centre(last)
-	zones.add(zone_box(DotTimerZone.Kind.END, main,
+	zones.add(zone_box(GSTimerZone.Kind.END, main,
 		end_at - Vector3(256.0, 0.0, 256.0),
 		end_at + Vector3(256.0, 192.0, 256.0)))
 
@@ -252,7 +252,7 @@ static func build_zones() -> DotTimerZoneSet:
 	for block: Dictionary in course:
 		lowest = minf(lowest, float(block["y"]))
 
-	zones.add(zone_box(DotTimerZone.Kind.RESPAWN, main,
+	zones.add(zone_box(GSTimerZone.Kind.RESPAWN, main,
 		Vector3(-16384.0, lowest - 4096.0, -16384.0),
 		Vector3(16384.0, lowest - 256.0, 16384.0)))
 
@@ -267,14 +267,14 @@ static func build_zones() -> DotTimerZoneSet:
 
 
 ## Bonus 1, the surf descent, with its pit; returns the bonus pit floor.
-static func _zones_bonus_surf(zones: DotTimerZoneSet, lowest: float) -> float:
+static func _zones_bonus_surf(zones: GSTimerZoneSet, lowest: float) -> float:
 	# The bonus: the surf descent.
-	var bonus := DotTimerTrack.of_bonus(1)
+	var bonus := GSTimerTrack.of_bonus(1)
 
-	zones.add(zone_box(DotTimerZone.Kind.START, bonus,
+	zones.add(zone_box(GSTimerZone.Kind.START, bonus,
 		Vector3(BONUS_X - 256.0, FLOOR_Y + 1024.0, START_Z - 256.0),
 		Vector3(BONUS_X + 256.0, FLOOR_Y + 1216.0, START_Z + 256.0)))
-	zones.add(zone_box(DotTimerZone.Kind.END, bonus,
+	zones.add(zone_box(GSTimerZone.Kind.END, bonus,
 		Vector3(BONUS_X - 384.0, FLOOR_Y - 384.0, START_Z - 3456.0),
 		Vector3(BONUS_X + 384.0, FLOOR_Y - 128.0, START_Z - 2688.0)))
 	zones.add(zone_spawn(
@@ -287,24 +287,24 @@ static func _zones_bonus_surf(zones: DotTimerZoneSet, lowest: float) -> float:
 	# whole map -- the bonus's finish pad sits below the main course -- so neither
 	# route's geometry is ever inside it.
 	var bonus_floor := minf(lowest, FLOOR_Y - 384.0 - BLOCK_THICKNESS)
-	zones.add(zone_box(DotTimerZone.Kind.RESPAWN, bonus,
+	zones.add(zone_box(GSTimerZone.Kind.RESPAWN, bonus,
 		Vector3(-16384.0, bonus_floor - 4096.0, -16384.0),
 		Vector3(16384.0, bonus_floor - 256.0, 16384.0)))
 	return bonus_floor
 
 
 ## Bonus 2, the ridge.
-static func _zones_ridge(zones: DotTimerZoneSet, bonus_floor: float) -> void:
+static func _zones_ridge(zones: GSTimerZoneSet, bonus_floor: float) -> void:
 	# Bonus 2, the ridge: a start, two stage splits, a finish, a spawn and a pit.
-	var ridge := DotTimerTrack.of_bonus(2)
+	var ridge := GSTimerTrack.of_bonus(2)
 	var pad := ridge_pad()
 
-	zones.add(zone_box(DotTimerZone.Kind.START, ridge,
+	zones.add(zone_box(GSTimerZone.Kind.START, ridge,
 		Vector3(RIDGE_X - 128.0, FLOOR_Y, START_Z - RIDGE_PAD_LENGTH * 0.5),
 		Vector3(RIDGE_X + 128.0, FLOOR_Y + 192.0, START_Z + RIDGE_PAD_LENGTH * 0.5)))
 	# The pad's last 320 units: it begins 64 in from the pad's near edge, so a player
 	# has landed rather than grazed the lip when the clock stops.
-	zones.add(zone_box(DotTimerZone.Kind.END, ridge,
+	zones.add(zone_box(GSTimerZone.Kind.END, ridge,
 		Vector3(RIDGE_X - 128.0, pad.y, pad.z - 192.0),
 		Vector3(RIDGE_X + 128.0, pad.y + 192.0, pad.z + 128.0)))
 
@@ -322,21 +322,21 @@ static func _zones_ridge(zones: DotTimerZoneSet, bonus_floor: float) -> void:
 		))
 
 	zones.add(zone_spawn(ridge, Vector3(RIDGE_X, FLOOR_Y + 8.0, START_Z + 128.0), 0.0))
-	zones.add(zone_box(DotTimerZone.Kind.RESPAWN, ridge,
+	zones.add(zone_box(GSTimerZone.Kind.RESPAWN, ridge,
 		Vector3(-16384.0, bonus_floor - 4096.0, -16384.0),
 		Vector3(16384.0, pad.y - BLOCK_THICKNESS - 256.0, 16384.0)))
 
 
 ## Bonus 3, the weave.
-static func _zones_weave(zones: DotTimerZoneSet, bonus_floor: float) -> void:
+static func _zones_weave(zones: GSTimerZoneSet, bonus_floor: float) -> void:
 	# Bonus 3, the weave: the ridge's shape of zone set, read off `weave_blocks`.
-	var weave := DotTimerTrack.of_bonus(3)
+	var weave := GSTimerTrack.of_bonus(3)
 	var weave_end := weave_pad()
 
-	zones.add(zone_box(DotTimerZone.Kind.START, weave,
+	zones.add(zone_box(GSTimerZone.Kind.START, weave,
 		Vector3(WEAVE_X - 128.0, FLOOR_Y, START_Z - RIDGE_PAD_LENGTH * 0.5),
 		Vector3(WEAVE_X + 128.0, FLOOR_Y + 192.0, START_Z + RIDGE_PAD_LENGTH * 0.5)))
-	zones.add(zone_box(DotTimerZone.Kind.END, weave,
+	zones.add(zone_box(GSTimerZone.Kind.END, weave,
 		Vector3(WEAVE_X - 128.0, weave_end.y, weave_end.z - 192.0),
 		Vector3(WEAVE_X + 128.0, weave_end.y + 192.0, weave_end.z + 128.0)))
 
@@ -354,24 +354,24 @@ static func _zones_weave(zones: DotTimerZoneSet, bonus_floor: float) -> void:
 		))
 
 	zones.add(zone_spawn(weave, Vector3(WEAVE_X, FLOOR_Y + 8.0, START_Z + 128.0), 0.0))
-	zones.add(zone_box(DotTimerZone.Kind.RESPAWN, weave,
+	zones.add(zone_box(GSTimerZone.Kind.RESPAWN, weave,
 		Vector3(-16384.0, bonus_floor - 4096.0, -16384.0),
 		Vector3(16384.0, weave_end.y - BLOCK_THICKNESS - 256.0, 16384.0)))
 
 
 ## Bonus 4, the bend.
-static func _zones_bend(zones: DotTimerZoneSet, bonus_floor: float) -> void:
+static func _zones_bend(zones: GSTimerZoneSet, bonus_floor: float) -> void:
 	# Bonus 4, the bend: the weave's shape of zone set, read off `bend_blocks`. Its blocks
 	# are turned, and a zone is a box, so each stage line and the finish are boxes inside
 	# the block's footprint (the largest square any yaw keeps inside it), not around it.
-	var bend := DotTimerTrack.of_bonus(4)
+	var bend := GSTimerTrack.of_bonus(4)
 	var bend_end := bend_pad()
 	var end_centre: Vector3 = bend_end["centre"]
 
-	zones.add(zone_box(DotTimerZone.Kind.START, bend,
+	zones.add(zone_box(GSTimerZone.Kind.START, bend,
 		Vector3(BEND_X - 128.0, FLOOR_Y, START_Z - RIDGE_PAD_LENGTH * 0.5),
 		Vector3(BEND_X + 128.0, FLOOR_Y + 192.0, START_Z + RIDGE_PAD_LENGTH * 0.5)))
-	zones.add(zone_box(DotTimerZone.Kind.END, bend,
+	zones.add(zone_box(GSTimerZone.Kind.END, bend,
 		Vector3(end_centre.x - 88.0, end_centre.y, end_centre.z - 88.0),
 		Vector3(end_centre.x + 88.0, end_centre.y + 192.0, end_centre.z + 88.0)))
 
@@ -390,6 +390,6 @@ static func _zones_bend(zones: DotTimerZoneSet, bonus_floor: float) -> void:
 		))
 
 	zones.add(zone_spawn(bend, Vector3(BEND_X, FLOOR_Y + 8.0, START_Z + 128.0), 0.0))
-	zones.add(zone_box(DotTimerZone.Kind.RESPAWN, bend,
+	zones.add(zone_box(GSTimerZone.Kind.RESPAWN, bend,
 		Vector3(-16384.0, bonus_floor - 4096.0, -16384.0),
 		Vector3(16384.0, end_centre.y - BLOCK_THICKNESS - 256.0, 16384.0)))

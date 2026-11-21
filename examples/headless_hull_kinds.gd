@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 ## The importer's per-hull kinds reach the scene: a manifest with `collision.hull_kinds` tags those shapes (meta `hull_kind`) and an older manifest loads as all solid.
 ## Run: AIRDRIFT_HULL_KIND_DIR=<dir of migrated maps, <id>/<id>.json> (or a copy in .hull_kinds_local/, never committed) godot --headless --path . res://examples/headless_hull_kinds.tscn
@@ -11,7 +11,7 @@ var _completed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 

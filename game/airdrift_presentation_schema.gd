@@ -12,8 +12,8 @@ const SOUND_DIR := "res://audio"
 
 
 
-static func schema() -> DotSettingsSchema:
-	var s := DotSettingsSchema.new()
+static func schema() -> GSSettingsSchema:
+	var s := GSSettingsSchema.new()
 	s.version = SCHEMA_VERSION
 
 	# The audio, window, frame rate, sensitivity and theme are dot-menu's stock settings, declared
@@ -22,24 +22,24 @@ static func schema() -> DotSettingsSchema:
 
 	# The style is remembered per person, not per machine. Somebody who runs sideways
 	# runs sideways everywhere.
-	s.add(DotSettingsDef.text(&"preferred_style", "normal", &"running").with_scope(
-		DotSettingsDef.Scope.ACCOUNT
+	s.add(GSSettingsDef.text(&"preferred_style", "normal", &"running").with_scope(
+		GSSettingsDef.Scope.ACCOUNT
 	).with_description("Which style to ask for on joining. The server decides."))
 
-	s.add(DotSettingsDef.boolean(&"show_speed", true, &"running").with_scope(
-		DotSettingsDef.Scope.ACCOUNT
+	s.add(GSSettingsDef.boolean(&"show_speed", true, &"running").with_scope(
+		GSSettingsDef.Scope.ACCOUNT
 	))
-	s.add(DotSettingsDef.boolean(&"show_splits", true, &"running").with_scope(
-		DotSettingsDef.Scope.ACCOUNT
+	s.add(GSSettingsDef.boolean(&"show_splits", true, &"running").with_scope(
+		GSSettingsDef.Scope.ACCOUNT
 	))
-	s.add(DotSettingsDef.boolean(&"show_stage_splits", true, &"running").with_scope(
-		DotSettingsDef.Scope.ACCOUNT
+	s.add(GSSettingsDef.boolean(&"show_stage_splits", true, &"running").with_scope(
+		GSSettingsDef.Scope.ACCOUNT
 	).with_description("The stage-by-stage panel on a map that has stages."))
-	s.add(DotSettingsDef.boolean(&"show_keys", true, &"running").with_scope(
-		DotSettingsDef.Scope.ACCOUNT
+	s.add(GSSettingsDef.boolean(&"show_keys", true, &"running").with_scope(
+		GSSettingsDef.Scope.ACCOUNT
 	))
-	s.add(DotSettingsDef.boolean(&"show_crosshair", true, &"running").with_scope(
-		DotSettingsDef.Scope.ACCOUNT
+	s.add(GSSettingsDef.boolean(&"show_crosshair", true, &"running").with_scope(
+		GSSettingsDef.Scope.ACCOUNT
 	))
 	_schema_hud(s)
 	_schema_chat(s)
@@ -49,55 +49,55 @@ static func schema() -> DotSettingsSchema:
 	_schema_audio(s)
 
 	# Everything else a game has: volumes, the window, the frame rate, the mouse, the theme.
-	return DotMenuStock.declare(s)
+	return GSMenuStock.declare(s)
 
 
 ## The timer layout, status and dragged-HUD settings.
-static func _schema_hud(s: DotSettingsSchema) -> void:
+static func _schema_hud(s: GSSettingsSchema) -> void:
 	# [b]The timer's layout, as the player's own.[/b] Timer plugins in this genre let a
 	# server pick one of a few layouts; here every line of the clock's block is a switch,
 	# the block goes where the player drags it, and all of it is ACCOUNT scope, because a
 	# runner who arranged their screen once arranged it for every server. Each line is one
-	# of `DotTimerHud`'s own fields, so turning one off removes it from the block rather
+	# of `GSTimerHud`'s own fields, so turning one off removes it from the block rather
 	# than leaving a gap. See AirdriftHud.apply_layout.
-	s.add(DotSettingsDef.boolean(&"timer_show_time", true, &"hud").with_scope(DotSettingsDef.Scope.ACCOUNT)
+	s.add(GSSettingsDef.boolean(&"timer_show_time", true, &"hud").with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("The running time itself."))
-	s.add(DotSettingsDef.boolean(&"timer_show_track", true, &"hud").with_scope(DotSettingsDef.Scope.ACCOUNT)
+	s.add(GSSettingsDef.boolean(&"timer_show_track", true, &"hud").with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("The style and the track, beside the clock."))
-	s.add(DotSettingsDef.boolean(&"timer_show_stage", true, &"hud").with_scope(DotSettingsDef.Scope.ACCOUNT)
+	s.add(GSSettingsDef.boolean(&"timer_show_stage", true, &"hud").with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("Stage 2 / 5, on a map that has stages."))
-	s.add(DotSettingsDef.boolean(&"timer_show_stats", true, &"hud").with_scope(DotSettingsDef.Scope.ACCOUNT)
+	s.add(GSSettingsDef.boolean(&"timer_show_stats", true, &"hud").with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("Jumps, strafes and sync."))
-	s.add(DotSettingsDef.boolean(&"timer_show_standing", true, &"hud").with_scope(DotSettingsDef.Scope.ACCOUNT)
+	s.add(GSSettingsDef.boolean(&"timer_show_standing", true, &"hud").with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("The record, your best and your place."))
-	s.add(DotSettingsDef.choice(&"timer_comparison", &"pb", [&"pb", &"wr", &"none"] as Array[StringName], &"hud")
-		.with_scope(DotSettingsDef.Scope.ACCOUNT)
+	s.add(GSSettingsDef.choice(&"timer_comparison", &"pb", [&"pb", &"wr", &"none"] as Array[StringName], &"hud")
+		.with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("What the split is against: your best, the record, or nothing."))
-	s.add(DotSettingsDef.boolean(&"timer_compact", true, &"hud").with_scope(DotSettingsDef.Scope.ACCOUNT)
+	s.add(GSSettingsDef.boolean(&"timer_compact", true, &"hud").with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("Style, track, stage and statistics on one line rather than four."))
-	s.add(DotSettingsDef.integer(&"timer_size", 30, 18, 56, &"hud").with_scope(DotSettingsDef.Scope.ACCOUNT)
+	s.add(GSSettingsDef.integer(&"timer_size", 30, 18, 56, &"hud").with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("The clock's size; the rest of the block scales with it."))
-	s.add(DotSettingsDef.choice(&"timer_position", &"bottom_centre", [
+	s.add(GSSettingsDef.choice(&"timer_position", &"bottom_centre", [
 		&"bottom_centre", &"bottom_left", &"bottom_right", &"top_left", &"top_centre", &"top_right",
 	] as Array[StringName], &"hud")
-		.with_scope(DotSettingsDef.Scope.ACCOUNT)
+		.with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("Where the clock's block sits, unless it has been dragged."))
-	s.add(DotSettingsDef.boolean(&"show_status", true, &"hud").with_scope(DotSettingsDef.Scope.ACCOUNT)
+	s.add(GSSettingsDef.boolean(&"show_status", true, &"hud").with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("The map, time left and rules along the top."))
-	s.add(DotSettingsDef.boolean(&"show_spectators", true, &"hud").with_scope(DotSettingsDef.Scope.ACCOUNT)
+	s.add(GSSettingsDef.boolean(&"show_spectators", true, &"hud").with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("Who is spectating you, when the server shares it (sv_spec_list)."))
 	# Where each dragged piece of the HUD sits, as `{"timer": [x, y], ...}`: the CENTRE of
 	# each, as a fraction of the window, so a layout arranged on a laptop lands in the same
 	# place on a 4K screen. Empty is every piece in its default place. Text rather than one
 	# setting per piece, because the pieces are the HUD's to name and the schema should not
 	# need a migration to add one.
-	s.add(DotSettingsDef.text(&"hud_positions", "", &"hud").with_scope(DotSettingsDef.Scope.ACCOUNT)
+	s.add(GSSettingsDef.text(&"hud_positions", "", &"hud").with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("Where each dragged HUD element sits. Empty is the default layout."))
 
 	# Every start, stage and finish drawn as a glowing box. On by default: a line a runner
 	# cannot see is a line they find by failing. See AirdriftZoneOutlines.
-	s.add(DotSettingsDef.boolean(&"show_zones", true, &"running").with_scope(
-		DotSettingsDef.Scope.ACCOUNT
+	s.add(GSSettingsDef.boolean(&"show_zones", true, &"running").with_scope(
+		GSSettingsDef.Scope.ACCOUNT
 	).with_description("Draw the start, stage and finish zones as glowing boxes."))
 
 	# [b]Everybody else, the ghost, and what they carry.[/b] The genre's `!hide`, which every
@@ -105,39 +105,39 @@ static func _schema_hud(s: DotSettingsSchema) -> void:
 	# body on the block they are about to land on. Drawing only: the others are still
 	# simulated and still replicated, so turning it off shows them where they really are.
 	# ACCOUNT, because somebody who hides others hides them on every server.
-	s.add(DotSettingsDef.boolean(&"hide_others", false, &"running").with_scope(
-		DotSettingsDef.Scope.ACCOUNT
+	s.add(GSSettingsDef.boolean(&"hide_others", false, &"running").with_scope(
+		GSSettingsDef.Scope.ACCOUNT
 	).with_description("Hide every other player and the record's ghost, with their beacons."))
 
 
 ## The chat keys and settings.
-static func _schema_chat(s: DotSettingsSchema) -> void:
+static func _schema_chat(s: GSSettingsSchema) -> void:
 	# Chat. ACCOUNT scope for all three, for the reason the sensitivity above has it: a
 	# runner who found their key once should never have to find it again.
-	s.add(DotSettingsDef.choice(
+	s.add(GSSettingsDef.choice(
 		&"chat_window",
 		&"auto",
 		[&"auto", &"on", &"off"] as Array[StringName],
 		&"chat"
-	).with_scope(DotSettingsDef.Scope.ACCOUNT).with_description(
+	).with_scope(GSSettingsDef.Scope.ACCOUNT).with_description(
 		"auto hides the box on a server already carrying chat somewhere the player can "
 		+ "see it; on always draws it; off never does."
 	))
-	s.add(DotSettingsDef.binding(&"chat_open_key", "Y", &"chat").with_scope(
-		DotSettingsDef.Scope.ACCOUNT
+	s.add(GSSettingsDef.binding(&"chat_open_key", "Y", &"chat").with_scope(
+		GSSettingsDef.Scope.ACCOUNT
 	))
-	s.add(DotSettingsDef.binding(&"chat_team_key", "U", &"chat").with_scope(
-		DotSettingsDef.Scope.ACCOUNT
+	s.add(GSSettingsDef.binding(&"chat_team_key", "U", &"chat").with_scope(
+		GSSettingsDef.Scope.ACCOUNT
 	))
 
 
 ## Field of view and the own body.
-static func _schema_video(s: DotSettingsSchema) -> void:
+static func _schema_video(s: GSSettingsSchema) -> void:
 	# [b]The genre's `fov_desired`: horizontal at 4:3, so 90 is what a player expects.[/b] It
 	# was declared as 110 over 70..130 and read by nothing, so the number never meant either
 	# thing; AirdriftCamera converts it through AirdriftUnits like the cvar it stands for.
-	s.add(DotSettingsDef.integer(&"field_of_view", 90, 75, 120, &"video").with_scope(
-		DotSettingsDef.Scope.SERVER_CLAMPED
+	s.add(GSSettingsDef.integer(&"field_of_view", 90, 75, 120, &"video").with_scope(
+		GSSettingsDef.Scope.SERVER_CLAMPED
 	).with_description("Horizontal field of view at 4:3, as fov_desired."))
 
 	# [b]Off, which is both this genre's convention and the only default that costs a
@@ -151,8 +151,8 @@ static func _schema_video(s: DotSettingsSchema) -> void:
 	# server. What it reaches is `AirdriftPlayer.show_own_body`; the head and the hat stay
 	# culled whatever this says, because those mounts are at the eye and drawing them
 	# fills the view with the inside of a cube.
-	s.add(DotSettingsDef.boolean(&"show_own_body", false, &"video").with_scope(
-		DotSettingsDef.Scope.ACCOUNT
+	s.add(GSSettingsDef.boolean(&"show_own_body", false, &"video").with_scope(
+		GSSettingsDef.Scope.ACCOUNT
 	).with_description(
 		"Draw your own character's body in first person. Off by default; the head is "
 		+ "never drawn, because the camera is inside it."
@@ -160,38 +160,38 @@ static func _schema_video(s: DotSettingsSchema) -> void:
 
 
 ## Shake, flashes and reduced motion.
-static func _schema_accessibility(s: DotSettingsSchema) -> void:
+static func _schema_accessibility(s: GSSettingsSchema) -> void:
 	# [b]Zero by default, which is the opposite of every other game here.[/b] A surf ramp
 	# is a precision input at speed; shaking the camera for a landing is taking the run
 	# away. It is still a setting because the same server runs a deathmatch layer.
-	s.add(DotSettingsDef.number(&"shake_scale", 0.0, 0.0, 2.0, &"accessibility")
+	s.add(GSSettingsDef.number(&"shake_scale", 0.0, 0.0, 2.0, &"accessibility")
 		.with_description(
 			"Zero by default on a timer server: a shaken camera is a lost run."
 		))
-	s.add(DotSettingsDef.boolean(&"allow_flashes", false, &"accessibility")
+	s.add(GSSettingsDef.boolean(&"allow_flashes", false, &"accessibility")
 		.with_description("Off by default here, for the same reason as the shake."))
-	s.add(DotSettingsDef.boolean(&"reduce_motion", false, &"accessibility").with_scope(DotSettingsDef.Scope.ACCOUNT)
+	s.add(GSSettingsDef.boolean(&"reduce_motion", false, &"accessibility").with_scope(GSSettingsDef.Scope.ACCOUNT)
 		.with_description("The end-of-match announcement appears at once, with nothing sliding, rising or bursting."))
 
 
 ## Sound levels declared before the stock set so these defaults win.
-static func _schema_audio(s: DotSettingsSchema) -> void:
+static func _schema_audio(s: GSSettingsSchema) -> void:
 	# [b]Effects at 0.6, not the stock 1.0 (fgr-g2g-audio-1).[/b] The landing on every hop and
 	# the footsteps sat on top of the bed and the timer's cues at full level, which a runner
 	# hears hundreds of times a minute. Declared before the stock set so it is the one kept;
 	# a player who wants the old level still has the slider.
-	s.add(DotSettingsDef.number(&"sfx_volume", 0.6, 0.0, 1.0, &"audio"))
+	s.add(GSSettingsDef.number(&"sfx_volume", 0.6, 0.0, 1.0, &"audio"))
 	# The wind and birdsong bed is off until a player turns it up: a runner listens for the
 	# landings and the timer. Still a slider (Audio page), and Effects scales it as well.
-	s.add(DotSettingsDef.number(&"ambience_volume", 0.0, 0.0, 1.0, &"audio"))
+	s.add(GSSettingsDef.number(&"ambience_volume", 0.0, 0.0, 1.0, &"audio"))
 	# The wind is the speedometer's second half: the bed's level runs from `snd_wind_min` at
 	# a standstill to `snd_wind_max` at `snd_wind_full_speed` genre units a second, linearly,
 	# so a slow walk is a breeze and a surf at 3000 is a roar. Settings, so each one is a cvar.
-	s.add(DotSettingsDef.number(&"snd_wind_min", 0.3, 0.0, 2.0, &"audio").with_description(
+	s.add(GSSettingsDef.number(&"snd_wind_min", 0.3, 0.0, 2.0, &"audio").with_description(
 		"Bed level when standing still."))
-	s.add(DotSettingsDef.number(&"snd_wind_max", 1.1, 0.0, 2.0, &"audio").with_description(
+	s.add(GSSettingsDef.number(&"snd_wind_max", 1.1, 0.0, 2.0, &"audio").with_description(
 		"Bed level at snd_wind_full_speed."))
-	s.add(DotSettingsDef.number(&"snd_wind_full_speed", 1500.0, 100.0, 5000.0, &"audio").with_description(
+	s.add(GSSettingsDef.number(&"snd_wind_full_speed", 1500.0, 100.0, 5000.0, &"audio").with_description(
 		"Horizontal speed in units per second at which the bed reaches snd_wind_max."))
 
 
@@ -230,11 +230,11 @@ static func migrations() -> Dictionary:
 ##   genuinely feedback rather than decoration;
 ## - **the start, the split and the finish**, which are the run;
 ## - **a personal best**, which is the only reason anybody is here.
-static func sound_catalogue() -> DotAudioCatalogue:
-	var c := DotAudioCatalogue.new()
-	DotAudioStock.add_to(c)
+static func sound_catalogue() -> GSAudioCatalogue:
+	var c := GSAudioCatalogue.new()
+	GSAudioStock.add_to(c)
 
-	var land := DotAudioDef.new()
+	var land := GSAudioDef.new()
 	land.id = &"land"
 	land.path = "%s/land.ogg" % SOUND_DIR
 	land.bus = &"SFX"
@@ -247,7 +247,7 @@ static func sound_catalogue() -> DotAudioCatalogue:
 	# going when you landed is the information.
 	c.add(land)
 
-	var jump := DotAudioDef.new()
+	var jump := GSAudioDef.new()
 	jump.id = &"jump"
 	jump.path = "%s/jump.ogg" % SOUND_DIR
 	jump.bus = &"SFX"
@@ -257,7 +257,7 @@ static func sound_catalogue() -> DotAudioCatalogue:
 	c.add(jump)
 
 	for id in [&"timer_start", &"timer_split", &"timer_finish", &"personal_best"]:
-		var d := DotAudioDef.new()
+		var d := GSAudioDef.new()
 		d.id = id
 		d.path = "%s/%s.ogg" % [SOUND_DIR, id]
 		d.bus = &"UI"
@@ -270,7 +270,7 @@ static func sound_catalogue() -> DotAudioCatalogue:
 	# about a place on the course. The ids are AirdriftVote's, which is also what its rules
 	# name — one copy.
 	for vote_id in [AirdriftVote.CUE_START, AirdriftVote.CUE_END, AirdriftVote.CUE_WARNING, AirdriftVote.CUE_COUNT]:
-		var cue := DotAudioDef.new()
+		var cue := GSAudioDef.new()
 		cue.id = vote_id
 		cue.path = "%s/%s.ogg" % [SOUND_DIR, String(vote_id)]
 		cue.bus = &"UI"
@@ -280,7 +280,7 @@ static func sound_catalogue() -> DotAudioCatalogue:
 		cue.priority = 60
 		c.add(cue)
 
-	var teleport := DotAudioDef.new()
+	var teleport := GSAudioDef.new()
 	teleport.id = &"teleport"
 	teleport.path = "%s/teleport.ogg" % SOUND_DIR
 	teleport.bus = &"UI"
@@ -297,10 +297,10 @@ static func sound_catalogue() -> DotAudioCatalogue:
 	# for as long as an admin leaves it on must never take a voice from the rhythm a runner
 	# keeps time by — dropping a ping costs a second's reminder, dropping a landing costs
 	# a hop.
-	var ping := DotAudioDef.new()
+	var ping := GSAudioDef.new()
 	ping.id = BEACON_SOUND
 	ping.path = "%s/beacon.ogg" % SOUND_DIR
-	ping.kind = DotAudioDef.Kind.POSITIONAL_3D
+	ping.kind = GSAudioDef.Kind.POSITIONAL_3D
 	ping.bus = &"SFX"
 	ping.unit_size = 20.0
 	ping.max_distance = 200.0
@@ -316,7 +316,7 @@ static func sound_catalogue() -> DotAudioCatalogue:
 	# The flashlight's click, on and off. The quietest and least important thing in the
 	# bank — a light switched mid-run must never take a voice from the landing — and pitched
 	# well above the split's CLICK, which is the same voice, so the two are never mistaken.
-	var light := DotAudioDef.new()
+	var light := GSAudioDef.new()
 	light.id = FLASHLIGHT_SOUND
 	light.path = "%s/flashlight.ogg" % SOUND_DIR
 	light.bus = &"SFX"
@@ -331,12 +331,12 @@ static func sound_catalogue() -> DotAudioCatalogue:
 	# A body landing: dot-player-char's stock death sounds (Kenney, CC0), shipped in the addon.
 	# Under the landing and the timer: a body somewhere on the map must never take a voice
 	# from the rhythm a runner keeps time by.
-	for row: Dictionary in DotPlayerDeathSounds.rows():
-		var fall := DotAudioDef.new()
+	for row: Dictionary in GSPlayerDeathSounds.rows():
+		var fall := GSAudioDef.new()
 		fall.id = row["id"]
 		fall.path = row["path"]
 		fall.variants = row["variants"]
-		fall.kind = DotAudioDef.Kind.POSITIONAL_3D
+		fall.kind = GSAudioDef.Kind.POSITIONAL_3D
 		fall.bus = &"SFX"
 		fall.unit_size = 8.0
 		fall.max_distance = 45.0

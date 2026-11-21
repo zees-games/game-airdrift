@@ -107,5 +107,5 @@ static func _load() -> void:
 	if parsed is Dictionary:
 		_entries = (parsed as Dictionary).get("entries", [])
 	else:
-		DotLog.warn("g2g.bsp", "no stock substitutes table; imported maps keep the grid",
+		GSLog.warn("g2g.bsp", "no stock substitutes table; imported maps keep the grid",
 			{"path": TABLE})

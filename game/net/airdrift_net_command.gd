@@ -1,8 +1,8 @@
-extends DotNetInput
+extends GSNetInput
 
 const AirdriftNetCommand := preload("airdrift_net_command.gd")
 
-## One tick of a player's intent, on the wire: a [DotFpsCommand], and the trigger.
+## One tick of a player's intent, on the wire: a [GSFpsCommand], and the trigger.
 ##
 ## [b]The only thing a client may send about itself.[/b] Clients send inputs, never
 ## state — a client that could send a position could send any position, and dot-net's
@@ -17,14 +17,14 @@ const AirdriftNetCommand := preload("airdrift_net_command.gd")
 ## position every time. It is one bit; the aim it is fired along is already here, in
 ## the movement command's own yaw and pitch.
 ##
-## [b]It is a bit and not a [DotWeaponCommand].[/b] dot-combat's command carries a slot
+## [b]It is a bit and not a [GSWeaponCommand].[/b] dot-combat's command carries a slot
 ## request, a reload, an alternate fire and a zoom, and this game has two weapons with
 ## no magazine between them — so all but one of those fields would be a field nothing
 ## reads, quantised and sent sixty-four times a second per player. `AirdriftCombat` builds
 ## the full command on the server from this bit and the movement's angles, which is the
 ## same place it would have had to correct a client's aim anyway.
 
-var move: DotFpsCommand = DotFpsCommand.new()
+var move: GSFpsCommand = GSFpsCommand.new()
 
 ## Whether the attack button is down this tick.
 ##
@@ -34,13 +34,13 @@ var move: DotFpsCommand = DotFpsCommand.new()
 var attack: bool = false
 
 
-func _write(writer: DotNetWriter) -> void:
+func _write(writer: GSNetWriter) -> void:
 	move.write(writer)
 	writer.write_bool(attack)
 
 
-func _read(reader: DotNetReader) -> void:
-	move = DotFpsCommand.new()
+func _read(reader: GSNetReader) -> void:
+	move = GSFpsCommand.new()
 	move.read(reader)
 	attack = reader.read_bool()
 
@@ -57,6 +57,6 @@ func _neutralise() -> void:
 	attack = false
 
 
-func _equals(other: DotNetInput) -> bool:
+func _equals(other: GSNetInput) -> bool:
 	var them := other as AirdriftNetCommand
 	return them != null and attack == them.attack and move.equals(them.move)

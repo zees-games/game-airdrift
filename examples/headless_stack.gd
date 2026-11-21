@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
@@ -34,7 +34,7 @@ var _game: AirdriftGame = null
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run()
 
 
@@ -103,7 +103,7 @@ func _test_physics_layout() -> void:
 
 	# The half that was missing: names in ProjectSettings and nothing wearing them.
 	var mask := _stack().player_collision_mask()
-	_check(mask != 1, "the player mask is the layout's, not DotFpsTunables' default of 1")
+	_check(mask != 1, "the player mask is the layout's, not GSFpsTunables' default of 1")
 	_check(
 		mask & physics.layout.layer_mask(&"world") != 0,
 		"and it still includes the world, which is what a player stands on"
@@ -176,7 +176,7 @@ func _test_classes() -> void:
 	# The bridge that had no caller anywhere in this family.
 	var health := StubHealth.new()
 	_check(
-		DotPlayerClassApply.to_health(def, health) > 0,
+		GSPlayerClassApply.to_health(def, health) > 0,
 		"a class's numbers can be written onto a health component"
 	)
 	_check(
@@ -194,32 +194,32 @@ func _test_spawn_director() -> void:
 	var spawns := _stack().spawns
 	_check(spawns.sites().size() > 0, "the director has the map's starts in it")
 
-	var main := _stack().choose_start(&"ada", DotTimerTrack.MAIN)
+	var main := _stack().choose_start(&"ada", GSTimerTrack.MAIN)
 	_check(main.ok, "and answers for the main track", )
 
 	if not main.ok:
 		return
 
-	var chosen := main.value as DotSpawnChoice
+	var chosen := main.value as GSSpawnChoice
 	_check(
-		int(chosen.site.meta.get("track", -1)) == DotTimerTrack.MAIN,
+		int(chosen.site.meta.get("track", -1)) == GSTimerTrack.MAIN,
 		"with the site belonging to the track that was asked for — a course's tracks "
 		+ "each start somewhere else, so any site is the wrong site"
 	)
 
 	var map := _game.current_map_node()
 	_check(
-		chosen.transform.origin.distance_to(map.spawn_for(DotTimerTrack.MAIN)) < 0.01,
+		chosen.transform.origin.distance_to(map.spawn_for(GSTimerTrack.MAIN)) < 0.01,
 		"and the same place the map itself would have said"
 	)
 
 	# The yaw, which is the pair of unit conversions nothing had ever exercised: a site
-	# holds radians and DotFpsState.yaw is degrees, and the site was being built from the
+	# holds radians and GSFpsState.yaw is degrees, and the site was being built from the
 	# map's degrees.
 	_check(
 		absf(
 			rad_to_deg(chosen.transform.basis.get_euler().y)
-			- map.spawn_yaw_for(DotTimerTrack.MAIN)
+			- map.spawn_yaw_for(GSTimerTrack.MAIN)
 		) < 0.5,
 		"facing the way the map says, which is a radians-to-degrees conversion at both "
 		+ "ends and was wrong at both"
@@ -227,17 +227,17 @@ func _test_spawn_director() -> void:
 
 	# And the part a map change breaks.
 	var before := spawns.sites().size()
-	var changed: DotResult = await _game.change_map(&"surf_g2g_intro")
+	var changed: GSResult = await _game.change_map(&"surf_g2g_intro")
 	_check(changed.ok, "the map changes")
 
-	var after := _stack().choose_start(&"ada", DotTimerTrack.MAIN)
+	var after := _stack().choose_start(&"ada", GSTimerTrack.MAIN)
 	_check(after.ok, "and the director still answers")
 
 	if after.ok:
 		var new_map := _game.current_map_node()
 		_check(
-			(after.value as DotSpawnChoice).transform.origin.distance_to(
-				new_map.spawn_for(DotTimerTrack.MAIN)
+			(after.value as GSSpawnChoice).transform.origin.distance_to(
+				new_map.spawn_for(GSTimerTrack.MAIN)
 			) < 0.01,
 			"from the NEW map — a director holding the previous map's sites answers "
 			+ "with a real site, a real transform and a successful result, for a map "
@@ -275,7 +275,7 @@ func _test_protection_is_shut_without_deathmatch() -> void:
 
 # --- Harness ---------------------------------------------------------------
 
-## Stands in for a `DotHealth` without this project installing dot-combat.
+## Stands in for a `GSHealth` without this project installing dot-combat.
 class StubHealth extends Object:
 	var max_health: float = 1.0
 	var max_armour: float = 0.0

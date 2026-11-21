@@ -9,10 +9,10 @@ const OLD_NAME_PREFIX := "g2g_"
 ## The cvar aliases [method _add_old_names] set; the console is not the module's, so unload takes them back.
 var _old_cvar_names: PackedStringArray = PackedStringArray()
 
-func _module_load() -> DotResult:
-	game = DotRegistry.get_node_service(AirdriftGame.SERVICE) as AirdriftGame
+func _module_load() -> GSResult:
+	game = GSRegistry.get_node_service(AirdriftGame.SERVICE) as AirdriftGame
 	if game == null:
-		return DotResult.fail(DotError.CODE_STATE, "No AirdriftGame is registered.")
+		return GSResult.fail(GSError.CODE_STATE, "No AirdriftGame is registered.")
 
 	var wb_made := _make_workbench()
 	if not wb_made.ok:
@@ -39,7 +39,7 @@ func _module_load() -> DotResult:
 	# than assumed: a pack runs on whatever dot-server the host has, and one from before
 	# the roster has neither property.
 	if "scoreboard_fields" in server:
-		server.set(&"scoreboard_fields", func(session: DotClientSession) -> Dictionary:
+		server.set(&"scoreboard_fields", func(session: GSClientSession) -> Dictionary:
 			if game == null or not is_instance_valid(game):
 				return {}
 			return game.board_fields(AirdriftNetBridge._player_key(session.userid)))
@@ -49,7 +49,7 @@ func _module_load() -> DotResult:
 			return {"header": {"": "Time left %s" % game.time_left_text()}})
 	hook_post("client_spawn", _on_client_spawn)
 	hook_post("player_avatar_changed", _on_avatar_changed)
-	add_command("airdrift_net", func(ctx: DotCmdContext) -> void: ctx.reply_lines(net.describe_lines()), "Netcode state", "")
+	add_command("airdrift_net", func(ctx: GSCmdContext) -> void: ctx.reply_lines(net.describe_lines()), "Netcode state", "")
 	_register_games()
 
 	# What a server browser sees. Registered through the module so it goes away with
@@ -59,7 +59,7 @@ func _module_load() -> DotResult:
 	query.bridge = bridge
 	var provided := add_query_provider(query)
 	if not provided.ok:
-		DotLog.info(CHANNEL, "no query provider", {"why": provided.error.message})
+		GSLog.info(CHANNEL, "no query provider", {"why": provided.error.message})
 
 	game.maps.changed.connect(_report_map)
 	_report_map(game.maps.current)
@@ -68,25 +68,25 @@ func _module_load() -> DotResult:
 	# continues rather than refusing to load: a module that would not load because a
 	# punishment file was unreadable is a module that takes the game down over a
 	# permissions mistake, and the game is what the players came for.
-	var identified: DotResult = await _build_identity()
-	DotLog.result(CHANNEL, "the identity layer", identified)
+	var identified: GSResult = await _build_identity()
+	GSLog.result(CHANNEL, "the identity layer", identified)
 
-	var serviced: DotResult = await _build_services()
-	DotLog.result(CHANNEL, "chat, voice and moderation", serviced)
+	var serviced: GSResult = await _build_services()
+	GSLog.result(CHANNEL, "chat, voice and moderation", serviced)
 
 	var voted := _build_vote()
-	DotLog.result(CHANNEL, "the vote", voted)
+	GSLog.result(CHANNEL, "the vote", voted)
 
 	_add_server_commands()
 	_add_old_names()
 	log_info("Airdrift loaded", {"autobhop": game.config.auto_bhop, "tick_rate": game.tick_rate})
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 func _module_unload() -> void:
 	_remove_old_names()
-	if game != null and game.progress != null and DotRegistry.get_service(DotGameStatsFeed.SERVICE) == game.progress.stats:
-		DotRegistry.unregister_instance(DotGameStatsFeed.SERVICE, game.progress.stats)
+	if game != null and game.progress != null and GSRegistry.get_service(GSGameStatsFeed.SERVICE) == game.progress.stats:
+		GSRegistry.unregister_instance(GSGameStatsFeed.SERVICE, game.progress.stats)
 	# The link and the runtime hold each other through broadcast.
 	if profile_link != null:
 		profile_link.release()
@@ -137,7 +137,7 @@ func _add_old_names() -> void:
 		if not command_name.begins_with(NAME_PREFIX):
 			continue
 		var old_name := OLD_NAME_PREFIX + command_name.substr(NAME_PREFIX.length())
-		var current: DotConCommand = console.find_command(command_name)
+		var current: GSConCommand = console.find_command(command_name)
 		if current == null or console.has_name(old_name):
 			continue
 		var copy := add_command(old_name, current.handler, "Old name of %s." % command_name, current.permission)
@@ -169,15 +169,15 @@ func _remove_old_names() -> void:
 
 ## The manager and the bridge. The module drives the tick, because the game's tick
 ## has to happen INSIDE dot-net's — between applying inputs and building the snapshot.
-func _build_netcode() -> DotResult:
-	net = DotNetManager.new()
+func _build_netcode() -> GSResult:
+	net = GSNetManager.new()
 	net.name = "Net"
 	net.is_server = true
 	net.local_peer_id = 1
 	net.auto_tick = false
 	net.config_file = ""
 
-	var config := DotNetConfig.new()
+	var config := GSNetConfig.new()
 	config.tick_rate = game.tick_rate
 	config.snapshot_rate = AirdriftGame.snapshot_rate_for(game.tick_rate)
 	config.enable_prediction = true
@@ -192,8 +192,8 @@ func _build_netcode() -> DotResult:
 	var ready_result := net.setup()
 	if not ready_result.ok:
 		return ready_result.wrap("The netcode could not start")
-	# net_skip_idle and net_visibility, the switches dot-game's own games get from DotGameNetcode (dot-game 52; by name, so an older host still parses this).
-	if DotAddonApi.build_level("dot_game") >= 52:
+	# net_skip_idle and net_visibility, the switches dot-game's own games get from GSGameNetcode (dot-game 52; by name, so an older host still parses this).
+	if GSAddonApi.build_level("dot_game") >= 52:
 		load("res://addons/dot_game/net/dot_game_relevance.gd").call(&"bind_toggles", console, net)
 
 	bridge = AirdriftNetBridge.new()
@@ -217,22 +217,22 @@ func _build_netcode() -> DotResult:
 		# Level 7 is the map menu that fails closed and counts humans; an older one read an
 		# empty flag as "anybody", so on a host still on it this answers `changemap` alone.
 		var menu_half: Variant = vote.commands.get(&"map_menu") if vote != null and vote.commands != null else null
-		if menu_half is Object and DotAddonApi.build_level("dot_vote") >= 7:
-			var ctx := session.make_context("mapmenu", PackedStringArray(), DotCmdContext.Source.CHAT)
+		if menu_half is Object and GSAddonApi.build_level("dot_vote") >= 7:
+			var ctx := session.make_context("mapmenu", PackedStringArray(), GSCmdContext.Source.CHAT)
 			return bool((menu_half as Object).call(&"may_change", ctx))
-		return DotAdminFlags.granted(session.permissions, DotAdminFlags.CHANGEMAP)
+		return GSAdminFlags.granted(session.permissions, GSAdminFlags.CHANGEMAP)
 
 	# Avatar actions: the relay, and the loadouts the join/leave handlers below tell.
-	var avatar := DotGameAvatarActionRelay.serve(net, self, server)
+	var avatar := GSGameAvatarActionRelay.serve(net, self, server)
 	if not avatar.ok:
 		log_warn("avatar actions not served", {"why": avatar.error.message})
 
 	# The remote workbench's frame, inert until sv_workbench_remote is 1; and the profile rows, so an admin's edit reaches every client.
-	var bench := DotGameWorkbenchRemote.serve(net)
+	var bench := GSGameWorkbenchRemote.serve(net)
 	if not bench.ok:
 		log_warn("remote workbench not served", {"why": bench.error.message})
 	if _wb_runtime != null:
-		profile_link = DotNetProfileLink.attach(net, _wb_runtime)
+		profile_link = GSNetProfileLink.attach(net, _wb_runtime)
 		if bench.ok and workbench.serve_remote(net) == null:
 			log_warn("remote workbench not bound", {})
 		bridge.peer_ready_fn = func(peer: int) -> void:
@@ -243,7 +243,7 @@ func _build_netcode() -> DotResult:
 	# [b]A client whose game messages cannot work with this server's is dropped, in words.[/b]
 	# dot-net compares the two schema tables and refuses a pair where either lacks a type
 	# the other REQUIRES, but it owns no socket and can only say so; this is the socket.
-	# The same line DotGameNetcode.refuse_peer is for games built on dot-game.
+	# The same line GSGameNetcode.refuse_peer is for games built on dot-game.
 	net.peer_schema_refused.connect(_refuse_peer)
 	return net.start()
 
@@ -251,7 +251,7 @@ func _build_netcode() -> DotResult:
 ## The event carries `userid`, not `peer_id` — dot-2d-hungry's note on this, in full:
 ## looking a session up by a peer id that is not in the payload returns null every
 ## time, and nobody is ever added, with no error.
-func _on_client_spawn(event: DotEvent) -> void:
+func _on_client_spawn(event: GSEvent) -> void:
 	var session := server.session_by_userid(event.get_int("userid"))
 	if session == null or _joined.has(session.userid):
 		return
@@ -279,7 +279,7 @@ func _on_client_spawn(event: DotEvent) -> void:
 
 	_joined[session.userid] = true
 
-	var loadouts := DotGameAvatarActionRelay.loadouts_of(net)
+	var loadouts := GSGameAvatarActionRelay.loadouts_of(net)
 	if loadouts != null:
 		loadouts.add_peer(session.peer_id)
 
@@ -290,9 +290,9 @@ func _on_client_spawn(event: DotEvent) -> void:
 ## The avatar dot-platform resolved for this session, if there is a dot-platform.
 ##
 ## Duck-typed: a module that answers `player_for` is enough, and naming
-## DotPlatformModule would make a LAN server impossible without the identity stack.
+## GSPlatformModule would make a LAN server impossible without the identity stack.
 ## Without one, the game gives the player a stock character.
-func _avatar_for(session: DotClientSession) -> DotAvatar:
+func _avatar_for(session: GSClientSession) -> GSAvatar:
 	var platform: Object = server.modules.get_module("platform")
 	if platform == null or not platform.has_method("player_for"):
 		return _identity_avatar(session)
@@ -300,8 +300,8 @@ func _avatar_for(session: DotClientSession) -> DotAvatar:
 	if player == null or not (player is Object):
 		return _identity_avatar(session)
 	var avatar: Variant = (player as Object).get("avatar")
-	if avatar is DotAvatar:
-		return avatar as DotAvatar
+	if avatar is GSAvatar:
+		return avatar as GSAvatar
 	return _identity_avatar(session)
 
 
@@ -317,7 +317,7 @@ func _avatar_for(session: DotClientSession) -> DotAvatar:
 ## after the spawn as before. For those, asking the hub directly closes the gap: it
 ## answers with what it has, and `AirdriftIdentity.avatar_for` falls back to the stock
 ## document, which is a real avatar over the same schema. dot-platform docs/design.md.
-func _identity_avatar(session: DotClientSession) -> DotAvatar:
+func _identity_avatar(session: GSClientSession) -> GSAvatar:
 	if identity == null or session == null:
 		return null
 
@@ -326,7 +326,7 @@ func _identity_avatar(session: DotClientSession) -> DotAvatar:
 
 ## dot-platform's broadcast_avatar_changes, received: the player is redressed and
 ## everybody is told, through the same JOIN a style change sends.
-func _on_avatar_changed(event: DotEvent) -> void:
+func _on_avatar_changed(event: GSEvent) -> void:
 	var session := server.session_by_userid(event.get_int("userid"))
 	if session == null or bridge == null:
 		return
@@ -337,43 +337,43 @@ func _on_avatar_changed(event: DotEvent) -> void:
 
 ## Disconnects a peer whose message schema this server cannot play with, with dot-net's
 ## sentence as the reason. See `peer_schema_refused` above.
-func _refuse_peer(peer_id: int, error: DotError) -> void:
-	var session: DotClientSession = server.session_of(peer_id) if server != null else null
+func _refuse_peer(peer_id: int, error: GSError) -> void:
+	var session: GSClientSession = server.session_of(peer_id) if server != null else null
 	if session != null:
 		server.kick(session, error.message, error)
 
 
 ## The workbench node and its runtime, before the netcode: the remote frame and the profile link register before the seal.
-func _make_workbench() -> DotResult:
-	_noblock_made = DotGameNoblock.create(AirdriftGame.CONFIG_GAME_ID, Callable(game, "block_side"))
-	if not _noblock_made.ok and _noblock_made.error.code != DotError.CODE_UNSUPPORTED:
+func _make_workbench() -> GSResult:
+	_noblock_made = GSGameNoblock.create(AirdriftGame.CONFIG_GAME_ID, Callable(game, "block_side"))
+	if not _noblock_made.ok and _noblock_made.error.code != GSError.CODE_UNSUPPORTED:
 		return _noblock_made.wrap("noblock")
-	workbench = DotGameWorkbench.new()
+	workbench = GSGameWorkbench.new()
 	workbench.name = "Workbench"
 	workbench.dedicated = DisplayServer.get_name() == "headless"
-	for set: DotProfileSet in game.config_binder.profile_sets():
+	for set: GSProfileSet in game.config_binder.profile_sets():
 		workbench.add_set(set, "Game settings: %s" % set.rel_path.trim_prefix("config_"))
 	if _noblock_made.ok:
-		workbench.add_set((_noblock_made.value as DotGameNoblock).binder.profile_set(), "Block rules")
+		workbench.add_set((_noblock_made.value as GSGameNoblock).binder.profile_set(), "Block rules")
 	add_child(workbench)
 	var started := workbench.start()
 	_wb_runtime = workbench.api.runtime if started.ok and workbench.api != null else null
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## The config as cvars (`airdrift_<field>`), commands, the workbench and the block rules.
-func _bind_config() -> DotResult:
+func _bind_config() -> GSResult:
 	var binder := game.config_binder
 	var made := _noblock_made
 	var wanted := made.ok
 	if not wanted:
-		DotLog.warn(CHANNEL, "noblock unavailable: dot-team is not in this build")
+		GSLog.warn(CHANNEL, "noblock unavailable: dot-team is not in this build")
 	var runtime := _wb_runtime
 
 	var covered := PackedStringArray()
 	for field: String in HAND_CVARS:
 		covered.append("airdrift_%s" % field)
-	binder.bind_cvars(add_cvar, DotConVar.FLAG_ARCHIVE,
+	binder.bind_cvars(add_cvar, GSConVar.FLAG_ARCHIVE,
 		func(name: String) -> bool: return covered.has(name) or console.has_name(name))
 	binder.bind_commands(add_command)
 	binder.field_changed.connect(_on_config_field)
@@ -393,7 +393,7 @@ func _bind_config() -> DotResult:
 			return bound.wrap("noblock")
 		noblock.feed(game.body_rules)
 		game.block_rules = noblock.rules
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## A workbench or file edit of a field: pushed through its cvar, or applied directly.

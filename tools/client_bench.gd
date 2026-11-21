@@ -1,9 +1,9 @@
-extends DotGameClientBench
+extends GSGameClientBench
 
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 
-## Client prediction bench (dot-game's DotGameClientBench): see that class for the flags.
+## Client prediction bench (dot-game's GSGameClientBench): see that class for the flags.
 ## The world is the timer server and module a dedicated server loads, on bhop_g2g_intro; there are no server bots, so `--bots` is ignored.
 
 
@@ -12,7 +12,7 @@ func _configure() -> void:
 	tick_rate = ProjectSettings.get_setting("physics/common/physics_ticks_per_second", 128)
 
 
-func _boot_server(_bots_wanted: int, data_dir: String) -> DotNetManager:
+func _boot_server(_bots_wanted: int, data_dir: String) -> GSNetManager:
 	var cfg := AirdriftConfig.new()
 	cfg.records_directory = ""
 	cfg.records_database = ""
@@ -24,18 +24,18 @@ func _boot_server(_bots_wanted: int, data_dir: String) -> DotNetManager:
 	add_child(game)
 	var config := make_server_config(data_dir)
 	config.max_players = 16
-	var server := DotServer.new()
+	var server := GSServer.new()
 	server.name = "Server"
 	server.config = config
 	add_child(server)
 	for _i in 60:
 		await get_tree().process_frame
-		if server.state == DotServer.State.RUNNING:
+		if server.state == GSServer.State.RUNNING:
 			break
 	var deadline := Time.get_ticks_msec() + 15000
 	while (game.maps == null or game.maps.current == null) and Time.get_ticks_msec() < deadline:
 		await get_tree().process_frame
-	var loaded: DotResult = await server.modules.load_module("res://game/airdrift_module.gd")
+	var loaded: GSResult = await server.modules.load_module("res://game/airdrift_module.gd")
 	if not loaded.ok:
 		printerr("client_bench server: ", loaded.error)
 		return null

@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 const AirdriftTestPorts := preload("test_ports.gd")
 
 const AirdriftConfig := preload("../game/airdrift_config.gd")
@@ -6,7 +6,7 @@ const AirdriftGame := preload("../game/airdrift_game.gd")
 const AirdriftPlayer := preload("../game/airdrift_player.gd")
 const AirdriftSurfCourse := preload("../game/airdrift_surf_course.gd")
 
-## The server's bots on a live server: a real `DotServer` with `AirdriftModule` at 128 ticks, the
+## The server's bots on a live server: a real `GSServer` with `AirdriftModule` at 128 ticks, the
 ## bots asked for through `bot_quota`, and what each map gives them to ride (`airdrift_bots.gd`).
 ##
 ## [codeblock]
@@ -54,7 +54,7 @@ const NAV_STEP_LIMIT_MS := 150.0
 ## which a cold run of the biggest of those maps would otherwise spend half a minute making.
 const NAV_CACHE := "user://airdrift_bots_nav_cache"
 
-var server: DotServer = null
+var server: GSServer = null
 var game: AirdriftGame = null
 
 var _entered := 0
@@ -62,13 +62,13 @@ var _completed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	print("Airdrift — bots on a live server")
-	DotPaths.remove_tree(SERVER_DIR)
+	GSPaths.remove_tree(SERVER_DIR)
 	DirAccess.make_dir_recursive_absolute(SERVER_DIR)
 
 	await _boot()
@@ -80,7 +80,7 @@ func _run() -> void:
 		await _test_quota_zero_takes_them_away()
 
 	await _shut_down()
-	DotPaths.remove_tree(SERVER_DIR)
+	GSPaths.remove_tree(SERVER_DIR)
 
 	print("")
 	_report_sections(_entered, _completed, SECTIONS, CHECKS - _skipped_checks)
@@ -93,7 +93,7 @@ func _boot() -> void:
 	cfg.store_line("sv_tickrate 128")
 	cfg.close()
 
-	var config := DotServerConfig.new()
+	var config := GSServerConfig.new()
 	config.startup_config = cfg_path
 	config.autoexec_config = ""
 	config.port = AirdriftTestPorts.free_port()
@@ -104,14 +104,14 @@ func _boot() -> void:
 	config.bans_path = "%s/bans.json" % SERVER_DIR
 	config.audit_log_path = "%s/audit.jsonl" % SERVER_DIR
 	config.stdin_console_enabled = false
-	server = DotServer.new()
+	server = GSServer.new()
 	server.config = config
 	add_child(server)
 	for _i in range(60):
 		await get_tree().process_frame
-		if server.state == DotServer.State.RUNNING:
+		if server.state == GSServer.State.RUNNING:
 			break
-	_check(server.state == DotServer.State.RUNNING, "the server boots")
+	_check(server.state == GSServer.State.RUNNING, "the server boots")
 
 	var airdrift_config := AirdriftConfig.new()
 	airdrift_config.records_directory = ""
@@ -128,7 +128,7 @@ func _boot() -> void:
 		"tick rate %d" % game.tick_rate)
 
 	(load("res://game/airdrift_module.gd") as GDScript).set("punishments_file", "%s/punishments.json" % SERVER_DIR)
-	var loaded: DotResult = await server.modules.load_module("res://game/airdrift_module.gd")
+	var loaded: GSResult = await server.modules.load_module("res://game/airdrift_module.gd")
 	_check(loaded.ok and server.console.find_cvar("bot_quota") != null,
 		"the module loads and registers bot_quota", loaded.error.message if not loaded.ok else "")
 	_check(server.console.find_cvar("bot_quota").get_string() == "0" and (game.bots.get("ids") as Array).is_empty(),
@@ -180,7 +180,7 @@ func _test_surf_cache_layouts() -> void:
 		return
 	var shipped: Dictionary = AirdriftSurfCourse.read_cache(SURF_MAP)
 	var tmp := "user://airdrift_surf_layouts"
-	DotPaths.remove_tree(tmp)
+	GSPaths.remove_tree(tmp)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(tmp))
 	# The single-file layout, written from what is shipped, then split.
 	var single := tmp + "/x.surf.json"
@@ -201,7 +201,7 @@ func _test_surf_cache_layouts() -> void:
 	_check(both["stages"][first]["reference_yaw"] == 123.0 and both["stages"].size() == shipped["stages"].size(),
 		"a stage file wins over the single file's entry")
 	_check(shipped["stages"].has("1") and not (shipped["stages"]["1"].get("entries", []) as Array).is_empty(), "the shipped cache holds stage 1")
-	DotPaths.remove_tree(tmp)
+	GSPaths.remove_tree(tmp)
 	_done()
 
 
@@ -213,7 +213,7 @@ func _test_a_bot_rides_the_surf_stage() -> void:
 			_check(true, what, "no maps/imported/%s" % SURF_MAP)
 		_done()
 		return
-	var changed: DotResult = await game.change_map(SURF_MAP)
+	var changed: GSResult = await game.change_map(SURF_MAP)
 	_check(changed.ok and game.maps.current.id == SURF_MAP, "the map changes", changed.error.message if not changed.ok else "")
 	await _ticks(4)
 	var described: Dictionary = game.bots.call("describe")
@@ -266,7 +266,7 @@ func _test_nav_routes_get_further() -> void:
 			if not DirAccess.dir_exists_absolute("res://maps/imported/%s" % map_id):
 				far[[use, map_id]] = -1.0
 				continue
-			var changed: DotResult = await game.change_map(map_id)
+			var changed: GSResult = await game.change_map(map_id)
 			if not changed.ok:
 				far[[use, map_id]] = -1.0
 				continue
@@ -348,7 +348,7 @@ func _shut_down() -> void:
 
 func _run_command(line: String) -> PackedStringArray:
 	var captured: Array[String] = []
-	var template := DotCmdContext.console("", PackedStringArray())
+	var template := GSCmdContext.console("", PackedStringArray())
 	template.reply_sink = func(text: String) -> void: captured.append(text)
 	server.console.execute(line, template)
 	return PackedStringArray(captured)

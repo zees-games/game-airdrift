@@ -1,10 +1,10 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftMovement := preload("../game/airdrift_movement.gd")
 
 ## dot-sim's native motor held to the all-script motor on this game's own movement and maps, to the bit. [codeblock] godot --headless --path . res://examples/headless_native_motor.tscn [/codeblock] dot-player-controller's parity suites prove the library against the script on their own test world and tunables. This one replays seeded strafe-and-hop streams on the three maps built in code, with the
-## movement `AirdriftMovement.tunables_for` gives a player (air acceleration 1000, auto-hop, the genre's gravity), at 128 Hz (the game's rate) and 64 Hz, four ways: all script; the native collision body (`DotFpsPhysicsBody.native_enabled`, the default wherever the library is linked); the native tick's start and end (`DotFpsMotor.native_tick` with `native_full` off); and the whole tick in the library (`native_tick` and `native_full`). Every tick's state and the motor's counters must be identical, because a web client runs the script while a native server and native clients run the library, and surf bots plan on
+## movement `AirdriftMovement.tunables_for` gives a player (air acceleration 1000, auto-hop, the genre's gravity), at 128 Hz (the game's rate) and 64 Hz, four ways: all script; the native collision body (`GSFpsPhysicsBody.native_enabled`, the default wherever the library is linked); the native tick's start and end (`GSFpsMotor.native_tick` with `native_full` off); and the whole tick in the library (`native_tick` and `native_full`). Every tick's state and the motor's counters must be identical, because a web client runs the script while a native server and native clients run the library, and surf bots plan on
 ## the same motor. The ladder (`AirdriftLadderMode`, a custom mode) always runs in script and is not replayed here. Nothing here touches hit registration or lag compensation. With no dot-sim library it says the native half was skipped and passes; `GS_SIM_REQUIRE_NATIVE=1` fails instead. Armed by nudging one native run's spawn by a millimetre: the first tick differs and the check says so.
 
 const MAPS: Array[String] = ["res://maps/bhop_g2g_intro.tscn", "res://maps/bhop_g2g_stages.tscn", "res://maps/surf_g2g_intro.tscn"]
@@ -20,16 +20,16 @@ var _completed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	print("Airdrift — native motor parity")
-	var was_enabled := DotFpsPhysicsBody.native_enabled
-	var was_tick := DotFpsMotor.native_tick
-	var was_full := DotFpsMotor.native_full
-	if not DotFpsPhysicsBody.native_full_available():
+	var was_enabled := GSFpsPhysicsBody.native_enabled
+	var was_tick := GSFpsMotor.native_tick
+	var was_full := GSFpsMotor.native_full
+	if not GSFpsPhysicsBody.native_full_available():
 		print("SKIP: dot-sim's motor (motor_tick) is not loaded: the native half is skipped")
 		if (OS.get_environment("GS_SIM_REQUIRE_NATIVE") if OS.has_environment("GS_SIM_REQUIRE_NATIVE") else OS.get_environment("DOT_SIM_REQUIRE_NATIVE")) == "1":
 			_check(false, "the library is loaded (GS_SIM_REQUIRE_NATIVE=1)")
@@ -37,9 +37,9 @@ func _run() -> void:
 		return
 	for path in MAPS:
 		await _map_runs(path)
-	DotFpsPhysicsBody.native_enabled = was_enabled
-	DotFpsMotor.native_tick = was_tick
-	DotFpsMotor.native_full = was_full
+	GSFpsPhysicsBody.native_enabled = was_enabled
+	GSFpsMotor.native_tick = was_tick
+	GSFpsMotor.native_full = was_full
 	_report_sections(_entered, _completed, MAPS.size())
 
 
@@ -91,14 +91,14 @@ func _map_runs(path: String) -> void:
 
 ## Strafe-and-hop input: forward with a side key held while the view turns the same way, the jump held
 ## (auto-hop rides it), now and then a crouch, a stop or a turn the other way; a new choice every few ticks.
-func _stream(seed: int, start_yaw: float, ticks: int) -> Array[DotFpsCommand]:
+func _stream(seed: int, start_yaw: float, ticks: int) -> Array[GSFpsCommand]:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed
-	var out: Array[DotFpsCommand] = []
+	var out: Array[GSFpsCommand] = []
 	var yaw := start_yaw
 	var side := 1.0
 	var forward := -1.0
-	var buttons := DotFpsCommand.BUTTON_JUMP
+	var buttons := GSFpsCommand.BUTTON_JUMP
 	for tick in range(ticks):
 		if tick % 40 == 0 or rng.randf() < 0.02:
 			side = -side if rng.randf() < 0.7 else 0.0
@@ -107,11 +107,11 @@ func _stream(seed: int, start_yaw: float, ticks: int) -> Array[DotFpsCommand]:
 			forward = -1.0 if rng.randf() < 0.6 else float(rng.randi_range(-1, 1))
 			buttons = 0
 			if rng.randf() < 0.75:
-				buttons |= DotFpsCommand.BUTTON_JUMP
+				buttons |= GSFpsCommand.BUTTON_JUMP
 			if rng.randf() < 0.12:
-				buttons |= DotFpsCommand.BUTTON_CROUCH
+				buttons |= GSFpsCommand.BUTTON_CROUCH
 		yaw = wrapf(yaw + side * rng.randf_range(0.0, 0.03), -PI, PI)
-		var c := DotFpsCommand.new()
+		var c := GSFpsCommand.new()
 		c.move = Vector2(side, forward)
 		c.buttons = buttons
 		c.yaw = yaw
@@ -119,29 +119,29 @@ func _stream(seed: int, start_yaw: float, ticks: int) -> Array[DotFpsCommand]:
 	return out
 
 
-func _replay(way: int, map: Node3D, spawn: Vector3, stream: Array[DotFpsCommand], step: float) -> Dictionary:
-	DotFpsPhysicsBody.native_enabled = way > 0
-	DotFpsMotor.native_tick = way >= 2
-	DotFpsMotor.native_full = way == 3
+func _replay(way: int, map: Node3D, spawn: Vector3, stream: Array[GSFpsCommand], step: float) -> Dictionary:
+	GSFpsPhysicsBody.native_enabled = way > 0
+	GSFpsMotor.native_tick = way >= 2
+	GSFpsMotor.native_full = way == 3
 	var tunables := AirdriftMovement.tunables_for(AirdriftConfig.new())
 	tunables.collision_mask = 1
-	var physics := DotFpsPhysicsBody.for_node(map)
-	var motor := DotFpsMotor.new(tunables, physics)
-	var s := DotFpsState.new()
+	var physics := GSFpsPhysicsBody.for_node(map)
+	var motor := GSFpsMotor.new(tunables, physics)
+	var s := GSFpsState.new()
 	s.position = spawn
-	s.mode = DotFpsState.Mode.AIR
+	s.mode = GSFpsState.Mode.AIR
 	var ticks: Array[PackedByteArray] = []
-	var before := DotFpsPhysicsBody.native_ticks
+	var before := GSFpsPhysicsBody.native_ticks
 	var top := 0.0
 	var ground := 0
 	for c in stream:
 		motor.simulate(s, c, step)
 		top = maxf(top, Vector2(s.velocity.x, s.velocity.z).length())
-		ground += 1 if s.mode == DotFpsState.Mode.GROUND else 0
+		ground += 1 if s.mode == GSFpsState.Mode.GROUND else 0
 		ticks.append(var_to_bytes([s.position, s.velocity, s.mode, s.move_flags(), s.ground_normal, s.ground_id, s.surface,
 			s.crouch_held, s.time_since_grounded, s.time_since_jump_pressed, s.time_since_jump, s.previous_buttons]))
 	var counters := [motor.stuck_ticks, motor.duplicate_plane_ticks, motor.crease_leg_ticks, motor.split_leg_ticks,
 		motor.depenetrated_ticks, motor.embedded_ticks, motor.lifted_ticks, motor.settled_ground_ticks, motor.reused_ground_ticks]
 	return {"ticks": ticks, "counters": counters, "end": s.position, "top": top, "ground": ground,
 		"moved": s.position.distance_to(spawn), "native_body": physics.uses_native(),
-		"native_ticks": DotFpsPhysicsBody.native_ticks - before}
+		"native_ticks": GSFpsPhysicsBody.native_ticks - before}

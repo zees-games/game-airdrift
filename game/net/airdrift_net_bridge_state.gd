@@ -15,7 +15,7 @@ const AirdriftHunters := preload("../airdrift_hunters.gd")
 const AirdriftRequest := preload("airdrift_request.gd")
 const AirdriftWeaponNet := preload("airdrift_weapon_net.gd")
 
-## Joins a [AirdriftGame] to a [DotNetManager]: the only file in this project that names both.
+## Joins a [AirdriftGame] to a [GSNetManager]: the only file in this project that names both.
 ## dot-net simulates per entity but this game ticks as a whole, so [method ensure_game_ticked]
 ## lets the first behaviour through run the game and the rest find it done.
 
@@ -54,10 +54,10 @@ signal rules_received(rules: Dictionary)
 ## because a client on a world the server is not simulating is corrected into the air every tick.
 signal map_refused(map_id: StringName, reason: String)
 ## The map-change protocol put this client on a map. Client side.
-signal map_loaded(map: DotMapDef)
+signal map_loaded(map: GSMapDef)
 
 var game: AirdriftGame = null
-var net: DotNetManager = null
+var net: GSNetManager = null
 var killview: AirdriftKillView = null
 
 ## The dropped-weapon events; its sink is the bridge's own send.
@@ -75,7 +75,7 @@ var voice_in_fn: Callable = Callable()
 
 ## [code]func(speaker_peer: int, bytes: PackedByteArray) -> void[/code]. Where a
 ## client's captured audio goes on a server. [AirdriftServices] points it at
-## `DotVoiceRouter.relay`.
+## `GSVoiceRouter.relay`.
 var voice_relay_fn: Callable = Callable()
 
 ## [code]func(player_id: StringName) -> void[/code]. What a client's RTV request does on the server.
@@ -83,7 +83,7 @@ var voice_relay_fn: Callable = Callable()
 ## module points this at the vote so `!rtv` and the wire request are one vote.
 var rtv_fn: Callable = Callable()
 
-## [code]func() -> Dictionary[/code], in [method DotVoteClockView.state_of]'s shape: the map's time
+## [code]func() -> Dictionary[/code], in [method GSVoteClockView.state_of]'s shape: the map's time
 ## left, told to a joining peer. Server side; empty sends nothing and the client shows its own
 ## session's clock.
 var clock_fn: Callable = Callable()
@@ -121,7 +121,7 @@ signal hit_received(victim: int, amount: float, point: Vector3, killed: bool, he
 signal killview_received(clip: Dictionary, info: Dictionary)
 
 ## A player died: their key, and how the body falls (null from a server that did not say).
-signal death_received(player_id: StringName, death: DotPlayerDeath)
+signal death_received(player_id: StringName, death: GSPlayerDeath)
 
 ## A dead player is alive again: their key.
 signal alive_received(player_id: StringName)
@@ -134,19 +134,19 @@ signal match_end_received(killcam_sec: float, rows: Array)
 
 ## The map's time left as the server last described it. Client side; what the HUD draws.
 ## Never adopted means never told, which the HUD answers with the local clock.
-var clock_view: DotVoteClockView = DotVoteClockView.new()
+var clock_view: GSVoteClockView = GSVoteClockView.new()
 
 ## Which session this process is. Zero on a server.
 var local_player_id: int = 0
 
 ## The host half of dot-map's map-change protocol. Server side; built by [method attach]
 ## and handed to the game as [member AirdriftGame.map_sync]. See "Map changes" below.
-var map_host: DotMapSyncHost = null
+var map_host: GSMapSyncHost = null
 
 ## The peer half. Client side; built by [method attach].
-var map_client: DotMapSyncClient = null
+var map_client: GSMapSyncClient = null
 
-## Where the clock learns the link's length in milliseconds (`DotClientLink.ping_ms()`); dot-net
+## Where the clock learns the link's length in milliseconds (`GSClientLink.ping_ms()`); dot-net
 ## cannot measure it. Unfed, the clock assumes an instant link and stamps commands for ticks
 ## already simulated. Read on every snapshot.
 var rtt_source: Callable = Callable()
@@ -183,5 +183,5 @@ var _server_map: StringName = &""
 ## Client: how far the announced map's download has got, 0..1. For the loading cover.
 var map_fetch_fraction: float = 0.0
 
-## A style index -> id table both ends build identically. See [DotTimerNet].
+## A style index -> id table both ends build identically. See [GSTimerNet].
 var _style_ids: Array[StringName] = []

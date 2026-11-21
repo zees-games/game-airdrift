@@ -20,7 +20,7 @@ func _avatar_figure(peer_id: int) -> Object:
 ## stop the simulation itself: [member AirdriftGame.covered] freezes the tick and the timers,
 ## [method AirdriftPlayer.simulate] skips a frozen body, and the keys and netcode sampling check [method _covered].
 func _build_gate() -> void:
-	platform = DotGameClient.new()
+	platform = GSGameClient.new()
 	platform.name = "Platform"
 	platform.force_offline = force_offline
 	# The rest of the platform stays this client's own: its presentation layer owns the
@@ -36,8 +36,8 @@ func _build_gate() -> void:
 	# platform each frame, so nothing needs forwarding from each of them.
 	platform.busy_fn = _input_busy
 	add_child(platform)
-	# The Performance card and the profiler_* commands: DotGameClient places the profiler only in a full setup, and this one is gate-only.
-	DotGameClientExtras.add_profiler(platform)
+	# The Performance card and the profiler_* commands: GSGameClient places the profiler only in a full setup, and this one is gate-only.
+	GSGameClientExtras.add_profiler(platform)
 	gate = platform.gate
 	gate.hold(&"map", "Loading the map")
 	# The cover blocks input too, so the sampler is still while it is up.
@@ -47,11 +47,11 @@ func _build_gate() -> void:
 ## dot-workbench over the config: the F9 panel in the editor and debug builds (never in production);
 ## a window of its own, so a client has no HTTP page.
 func _build_workbench() -> void:
-	workbench = DotGameWorkbench.new()
+	workbench = GSGameWorkbench.new()
 	workbench.name = "Workbench"
 	workbench.listen_host_fn = platform.listen_host_fn
 	workbench.config = {"enabled": false}
-	for set: DotProfileSet in game.config_binder.profile_sets():
+	for set: GSProfileSet in game.config_binder.profile_sets():
 		workbench.add_set(set, "Game settings: %s" % set.rel_path.trim_prefix("config_"))
 	var started := workbench.start()
 	if started.ok and workbench.api != null:
@@ -69,12 +69,12 @@ func _build_workbench() -> void:
 func _start_remote_workbench() -> void:
 	if _workbench_remote == null:
 		return
-	var wb := DotGameWorkbench.new()
+	var wb := GSGameWorkbench.new()
 	wb.name = "Workbench"
 	wb.remote_client = _workbench_remote
 	wb.remote_fn = func() -> bool: return true
 	var started := wb.start(_profile_runtime)
-	DotLog.result("g2g.client", "the remote workbench", started)
+	GSLog.result("g2g.client", "the remote workbench", started)
 	if not started.ok:
 		wb.queue_free()
 		return
@@ -98,10 +98,10 @@ func _say_ready() -> void:
 ## it arrives with the server's `load`.
 func _wire_gate_to_maps() -> void:
 	game.maps.changing.connect(
-		func(_from: DotMapDef, _to: DotMapDef) -> void: gate.hold(&"map", "Loading the map")
+		func(_from: GSMapDef, _to: GSMapDef) -> void: gate.hold(&"map", "Loading the map")
 	)
 	game.maps.changed.connect(
-		func(_map: DotMapDef, _loaded: Node) -> void: gate.release(&"map")
+		func(_map: GSMapDef, _loaded: Node) -> void: gate.release(&"map")
 	)
 	if game.maps.current != null:
 		gate.release(&"map")
@@ -118,9 +118,9 @@ func _covered() -> bool:
 const SUMMARY_BOARD_SEC := 8.0
 
 ## The final killcam: records every frame, replays the last kill before the winner reveal.
-var killcam: DotKillcamHost = null
+var killcam: GSKillcamHost = null
 var killcam_bodies := AirdriftKillcamBodies.new()
-var winner_reveal: DotWinnerReveal = null
+var winner_reveal: GSWinnerReveal = null
 
 var _end_rows: Array = []
 var _end_active: bool = false
@@ -130,8 +130,8 @@ var _killcam_sec: float = 0.0
 
 
 func _build_killcam() -> void:
-	if DotAddonApi.build_level("dot_replay") >= 6:
-		killcam = DotKillcamHost.new()
+	if GSAddonApi.build_level("dot_replay") >= 6:
+		killcam = GSKillcamHost.new()
 		killcam_bodies.configure(killcam, game)
 		killcam.seconds_fn = func() -> float: return _killcam_sec
 		killcam.over.connect(func(_skipped: bool) -> void: _reveal_winner())
@@ -142,12 +142,12 @@ func _build_killcam() -> void:
 
 
 func _build_winner_reveal() -> void:
-	winner_reveal = DotWinnerReveal.new()
+	winner_reveal = GSWinnerReveal.new()
 	winner_reveal.name = "WinnerReveal"
 	winner_reveal.skip_actions = AirdriftKillcamBodies.SKIP_ACTIONS
 	winner_reveal.finished.connect(_on_reveal_finished)
 	add_child(winner_reveal)
-	game.map_ready.connect(func(_map: DotMapDef) -> void: _leave_match_end())
+	game.map_ready.connect(func(_map: GSMapDef) -> void: _leave_match_end())
 
 
 ## The deathmatch ended: the final killcam if there is a kill to show, then the winner.
@@ -158,7 +158,7 @@ func _match_over(killcam_sec: float, rows: Array) -> void:
 	if killcam == null:
 		_reveal_winner()
 	elif killcam.match_ended():
-		DotLog.debug("g2g.client", "the winner waits for the final killcam")
+		GSLog.debug("g2g.client", "the winner waits for the final killcam")
 
 
 ## The top three on a podium, after the killcam and before the board.
@@ -224,7 +224,7 @@ func _leave_match_end() -> void:
 ## once; emptied on a map change (a body on the old map's floor would hang in the new one's
 ## air). Connected, the deaths arrive as DEATH and ALIVE through the bridge instead.
 func _build_ragdolls() -> void:
-	ragdolls = DotPlayerRagdolls.new()
+	ragdolls = GSPlayerRagdolls.new()
 	ragdolls.name = "Ragdolls"
 	ragdolls.rules = game.ragdoll_rules
 	ragdolls.sound_fn = func(id: StringName, at: Vector3, volume: float) -> void:
@@ -232,7 +232,7 @@ func _build_ragdolls() -> void:
 			var _played := presentation.on_body(id, at, volume)
 	add_child(ragdolls)
 
-	game.map_ready.connect(func(_map: DotMapDef) -> void:
+	game.map_ready.connect(func(_map: GSMapDef) -> void:
 		ragdolls.clear()
 		for id: StringName in game.players:
 			rise(id)
@@ -241,7 +241,7 @@ func _build_ragdolls() -> void:
 	# Solo, the world is this process's and there is no DEATH message: the death the combat
 	# layer decided is on the player.
 	if game.combat != null:
-		game.combat.player_killed.connect(func(entry: DotKillFeed.Entry) -> void:
+		game.combat.player_killed.connect(func(entry: GSKillFeed.Entry) -> void:
 			var id := game.combat.player_id_for(entry.victim_key.to_int())
 			var who: AirdriftPlayer = game.players.get(id)
 			var _fell := fall(id, who.death if who != null else null)
@@ -256,7 +256,7 @@ func _build_ragdolls() -> void:
 		game.combat.weapon_equipped.connect(func(id: StringName, _weapon: StringName, at: Vector3) -> void:
 			if player != null and id == player.player_id:
 				presentation.on_weapon_equipped(at))
-		game.combat.player_killed.connect(func(entry: DotKillFeed.Entry) -> void:
+		game.combat.player_killed.connect(func(entry: GSKillFeed.Entry) -> void:
 			if killcam != null:
 				killcam.note_kill(entry.killer_key.to_int(), entry.victim_key.to_int(), entry.cause, entry.headshot)
 		)
@@ -272,7 +272,7 @@ func _build_ragdolls() -> void:
 ## copied from the rig this client draws, which stays hidden until [method rise]. Null when
 ## the server's style hides bodies, or nobody here draws that body: a player the client is
 ## hiding, or this client's own in first person (the camera is inside its head).
-func fall(id: StringName, death: DotPlayerDeath) -> DotPlayerRagdoll:
+func fall(id: StringName, death: GSPlayerDeath) -> GSPlayerRagdoll:
 	if killcam != null:
 		killcam_bodies.set_alive(id, false)
 	var who: AirdriftPlayer = game.players.get(id) if game != null else null
@@ -281,7 +281,7 @@ func fall(id: StringName, death: DotPlayerDeath) -> DotPlayerRagdoll:
 	if not who.visible or (who == player and not who.rig.visible_to_owner):
 		return null
 	var velocity := who.controller.state.velocity if who.controller != null else Vector3.ZERO
-	return ragdolls.spawn(who.rig, death if death != null else DotPlayerDeath.new(), velocity)
+	return ragdolls.spawn(who.rig, death if death != null else GSPlayerDeath.new(), velocity)
 
 
 ## [param id] is alive again: the rig a fall hid is drawn again where they now stand.
@@ -297,7 +297,7 @@ func rise(id: StringName) -> void:
 ## Lists what the browser found, on the HUD. What `!servers` and F3 both call.
 ##
 ## [b]A chat command rather than a screen, and game-fatal-contact has a screen.[/b] That game
-## has a [DotScreenStack]; this client has a HUD and a keyboard, and the genre's answer
+## has a [GSScreenStack]; this client has a HUD and a keyboard, and the genre's answer
 ## to "show me the servers" is a chat trigger, because that is what a bhop player's
 ## fingers already do. The list model, the sources, the filters and the favourites are
 ## the same addon doing the same work either way.
@@ -307,7 +307,7 @@ func show_servers() -> void:
 
 	hud.notice("Looking for servers…")
 
-	var found: DotResult = await servers.refresh()
+	var found: GSResult = await servers.refresh()
 
 	if not found.ok:
 		hud.notice(found.error.message)
@@ -324,7 +324,7 @@ func show_servers() -> void:
 ## reads CAPTURED, the cursor stays), so the mouse leaves the window mid-run.
 ## Desktop captures immediately.
 func _grab_mouse() -> void:
-	if not DotPlatform.is_web():
+	if not GSPlatform.is_web():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		return
 
@@ -364,7 +364,7 @@ func _say_click_to_play() -> void:
 ## `JOIN` is what creates you — `AirdriftNetBridge._apply_join` calls `game.add_player` — so a
 ## networked client that resolved [member player] here and never again held null for the
 ## whole session. Nothing errored: the HUD binds by id and worked, movement is polled
-## from the [InputMap] by `DotFpsSampler.sample` and worked, and the camera follows the
+## from the [InputMap] by `GSFpsSampler.sample` and worked, and the camera follows the
 ## entity rather than this reference. What did not work was every line below the
 ## `player == null` guard in [method _unhandled_input] — which is mouse look, F5, Tab, R,
 ## C, V and M. **The whole keyboard and the whole mouse, on a client that otherwise
@@ -466,7 +466,7 @@ func _adopt(candidate: AirdriftPlayer) -> void:
 ## The bridge's signals about the world: deaths, shots, the server's rules, the clock and the vote.
 func _wire_bridge_world() -> void:
 	# Every death on the server, a hunter's swipe included, and every return to a start.
-	bridge.death_received.connect(func(id: StringName, death: DotPlayerDeath) -> void:
+	bridge.death_received.connect(func(id: StringName, death: GSPlayerDeath) -> void:
 		var _fell := fall(id, death)
 	)
 	bridge.alive_received.connect(rise)
@@ -497,7 +497,7 @@ func _wire_bridge_world() -> void:
 		var _solid := game.body_rules.follow_cvars(link)
 		var blocked := platform.add_noblock(game, Callable(game, "block_side"))
 		if not blocked.ok:
-			DotLog.result("g2g.client", "the block rules", blocked)
+			GSLog.result("g2g.client", "the block rules", blocked)
 		# mp_forcecamera, mp_freeroam and mp_freeroam_speed: whether the free camera is
 		# offered, and how fast it flies.
 		if game.spectate != null and game.spectate.manager != null:
@@ -526,11 +526,11 @@ func _wire_bridge_world() -> void:
 ##
 ## [b]The sampler is the half that is easy to forget, and on a timer server it is the
 ## expensive one.[/b] `swallows_input` keeps typed keys out of `_unhandled_input`, but
-## movement here is POLLED — `DotFpsSampler.sample` reads the device every physics frame
+## movement here is POLLED — `GSFpsSampler.sample` reads the device every physics frame
 ## and does not care what consumed an event. Without `suspended`, typing during a run
 ## strafes the player off a ramp and ends it.
 func _wire_chat_window() -> void:
-	var window: DotChatWindow = presentation.chat_window if presentation != null else null
+	var window: GSChatWindow = presentation.chat_window if presentation != null else null
 
 	if window == null:
 		return
@@ -582,7 +582,7 @@ func _on_said(speaker: String, text: String, kind: String) -> void:
 func _on_hello(player_id: int) -> void:
 	_watch(StringName("u%d" % player_id))
 	# The server dressed us from dot-platform's admission if it could; a launcher
-	# that resolved one locally through DotAvatarManager sets [member avatar] and it
+	# that resolved one locally through GSAvatarManager sets [member avatar] and it
 	# goes up now, to be conformed against the server's schema like any other.
 	if avatar != null and bridge != null:
 		bridge.publish_avatar(avatar)
@@ -624,7 +624,7 @@ func _physics_process(delta: float) -> void:
 		if net.clock.is_synced():
 			# The clock above has advanced; only the sampling waits, so the mouse does not pile
 			# up a turn behind the cover and the server sees an idle body until it lifts.
-			var command: DotFpsCommand = DotFpsCommand.new() if _covered() else _sampler.sample(delta)
+			var command: GSFpsCommand = GSFpsCommand.new() if _covered() else _sampler.sample(delta)
 			bridge.client_tick(net.clock.input_tick() - (ticks - 1 - i), command)
 
 
@@ -670,13 +670,13 @@ func _fold_correction() -> void:
 
 
 ## Hands the local player's controller the clock its ticks are counted on, so its
-## `render_state` draws at `DotNetClock.render_alpha` (dot-net) rather than the engine's
+## `render_state` draws at `GSNetClock.render_alpha` (dot-net) rather than the engine's
 ## physics fraction: the clock stretches and shrinks its ticks while it settles on the
 ## server, a physics frame now and then runs no tick or two, and drawn at the engine's
 ## fraction the eye stood still on one frame and moved double on the next.
 ## `headless_feel`'s *a clock slip* section measures it beside its control.
 ##
-## By name both ways: `set` on a shell's older `DotFpsController` is a no-op, and the
+## By name both ways: `set` on a shell's older `GSFpsController` is a no-op, and the
 ## controller asks the clock for `render_alpha` by name, so a shell older than either draws
 ## exactly as before. Null offline, where every physics frame is one tick.
 func _fold_clock() -> void:
@@ -686,7 +686,7 @@ func _fold_clock() -> void:
 	player.controller.set(&"render_clock", net.clock if connected else null)
 
 
-## Mouse motion while roaming, as radians for [DotSpectatorFreeCam.look]: x turns the view
+## Mouse motion while roaming, as radians for [GSSpectatorFreeCam.look]: x turns the view
 ## left for positive (so mouse right is negative), y up for positive (mouse down is negative).
 func _roam_mouse(motion: InputEventMouseMotion) -> void:
 	var sampler := _active_sampler()
@@ -720,7 +720,7 @@ func mouse_drives_view() -> bool:
 	return Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 
 
-## Whether a click may take the pointer back: not while a modal holds it through [method DotGameClient.hold_pointer] (or a `dot_pointer_modal` node). Spectating is exempt because it is also "busy" to the platform and still needs the click.
+## Whether a click may take the pointer back: not while a modal holds it through [method GSGameClient.hold_pointer] (or a `dot_pointer_modal` node). Spectating is exempt because it is also "busy" to the platform and still needs the click.
 func click_may_capture() -> bool:
 	return platform == null or is_spectating() or not platform.is_input_blocked()
 

@@ -34,7 +34,7 @@ func _make() -> AirdriftPresentation:
 	# A memory store. A suite that writes to `user://` is one whose result depends on
 	# what the last run left there -- which this family already shipped once, as a
 	# dedicated suite that began failing on its ninth run.
-	p.settings.local_store = DotSettingsStoreMemory.new()
+	p.settings.local_store = GSSettingsStoreMemory.new()
 	p.settings.load_now()
 	p.apply_all()
 	return p
@@ -48,9 +48,9 @@ class FakeServer extends RefCounted:
 class FakeConsole extends RefCounted:
 	var ran := PackedStringArray()
 
-	func execute(line: String) -> DotResult:
+	func execute(line: String) -> GSResult:
 		ran.append(line)
-		return DotResult.success("")
+		return GSResult.success("")
 
 	func command_names() -> PackedStringArray:
 		return PackedStringArray(["s3", "quit"])
@@ -72,11 +72,11 @@ func _drawn_by(node: Node, mask: int) -> int:
 
 
 ## The real menu as the client builds it: dot-menu's, with this game's keys and pages.
-func _menu_for(p: AirdriftPresentation, host: Node) -> DotMenu:
-	var menu := DotMenu.new()
+func _menu_for(p: AirdriftPresentation, host: Node) -> GSMenu:
+	var menu := GSMenu.new()
 	menu.settings = p.settings
 	menu.bindings = p.bindings
-	menu.config = DotMenuConfig.new()
+	menu.config = GSMenuConfig.new()
 	menu.config.escape_grace_ms = 0
 	menu.manage_pointer = false
 	menu.help_action = &"airdrift_help"
@@ -93,7 +93,7 @@ func _live(root: Node, type: String) -> Array:
 		func(n: Node) -> bool: return n.is_inside_tree() and not n.is_queued_for_deletion())
 
 
-func _row(menu: DotMenu, id: String) -> Node:
+func _row(menu: GSMenu, id: String) -> Node:
 	return menu.screen.find_child("Row_%s" % id, true, false)
 
 

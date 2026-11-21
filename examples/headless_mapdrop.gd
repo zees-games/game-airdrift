@@ -1,6 +1,6 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
-## Maps handed to Airdrift through dot-map's DotMapDropIntake (AirdriftMapDrop, API 30): dragged onto the window, dropped on
+## Maps handed to Airdrift through dot-map's GSMapDropIntake (AirdriftMapDrop, API 30): dragged onto the window, dropped on
 ## the executable or named by `--map-path=`, all through the one intake and the one HUD line. A path that holds no
 ## converted map is refused out loud with what the game takes. Folder/zip copying itself: headless_local_maps.
 ## [codeblock] ./game.sh test headless_mapdrop [/codeblock]
@@ -26,13 +26,13 @@ var _game: AirdriftGame = null
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
 func _run() -> void:
-	if DotAddonApi.build_level("dot_map") < AirdriftMapDrop.NEEDS_LEVEL:
-		print("-- skipped: dot-map API %d < %d (no DotMapDropIntake)" % [DotAddonApi.build_level("dot_map"), AirdriftMapDrop.NEEDS_LEVEL])
+	if GSAddonApi.build_level("dot_map") < AirdriftMapDrop.NEEDS_LEVEL:
+		print("-- skipped: dot-map API %d < %d (no GSMapDropIntake)" % [GSAddonApi.build_level("dot_map"), AirdriftMapDrop.NEEDS_LEVEL])
 		_report_sections(0, 0, 0)
 		return
 	var entered := 0
@@ -86,7 +86,7 @@ func _start_game() -> bool:
 	var config := AirdriftConfig.new()
 	config.records_directory = ""
 	config.map_seconds = 0.0
-	config.initial_map = StringName(START + DotMapLocalMaps.ID_SUFFIX)
+	config.initial_map = StringName(START + GSMapLocalMaps.ID_SUFFIX)
 	_game = AirdriftGame.new()
 	_game.config = config
 	add_child(_game)
@@ -104,7 +104,7 @@ func _start_game() -> bool:
 func _test_window() -> void:
 	print("-- a window drop goes through the intake: a deep download, a depth limit, junk, a missing path")
 	var intake := _game.map_drop
-	var id := StringName(MAP + DotMapLocalMaps.ID_SUFFIX)
+	var id := StringName(MAP + GSMapLocalMaps.ID_SUFFIX)
 	var deep := SOURCE.path_join("deep")
 	_pack_as(deep.path_join("a/b/c").path_join(MAP).path_join("convert"), MAP)
 	var said := _game.add_dropped_maps(_global(deep))
@@ -112,7 +112,7 @@ func _test_window() -> void:
 	_check(not _game.maps.catalogue.has(id), "and not listed")
 	intake.set(&"search_depth", 0)
 	said = _game.add_dropped_maps(_global(deep))
-	_check(said.begins_with("Added ") and said.contains(DotMapLocalMaps.TAG), "search_depth 0 is no limit: found five folders down", said)
+	_check(said.begins_with("Added ") and said.contains(GSMapLocalMaps.TAG), "search_depth 0 is no limit: found five folders down", said)
 	_check(_game.maps.catalogue.has(id), "M lists it without a restart")
 	_check(DirAccess.dir_exists_absolute(DROPPED), "copied into user://maps under its own folder")
 	var result: Dictionary = intake.get(&"last_result")
@@ -138,11 +138,11 @@ func _test_cmdline() -> void:
 	print("-- dropped on the executable / --map-path: added and said like a window drop")
 	var client := AirdriftClient.new()
 	client.game = _game
-	var id := StringName(MAP + DotMapLocalMaps.ID_SUFFIX)
+	var id := StringName(MAP + GSMapLocalMaps.ID_SUFFIX)
 	var folder := SOURCE.path_join("exe").path_join(MAP)
 	_pack_as(folder, MAP)
 	var said := client._take_cmdline_drops(PackedStringArray(["--headless", "--map-path=" + ProjectSettings.globalize_path(folder)]))
-	_check(said.begins_with("Added ") and said.contains(DotMapLocalMaps.TAG), "a --map-path map is added and said", said)
+	_check(said.begins_with("Added ") and said.contains(GSMapLocalMaps.TAG), "a --map-path map is added and said", said)
 	_check(_game.maps.catalogue.has(id), "M lists it")
 	_check(str((_game.map_drop.get(&"last_result") as Dictionary).get("source", "")) == "command line",
 		"the intake knows it came from the command line")

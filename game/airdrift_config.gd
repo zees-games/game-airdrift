@@ -1,9 +1,9 @@
-extends DotConfig
+extends GSConfig
 
 const AirdriftUnits := preload("airdrift_units.gd")
 
 ## Everything an Airdrift server is configured with, in genre units, layered like every
-## [DotConfig]: exported defaults, then a JSON file, then [code]AIRDRIFT_*[/code]
+## [GSConfig]: exported defaults, then a JSON file, then [code]AIRDRIFT_*[/code]
 ## environment variables, then [code]--airdrift-*[/code] arguments ([constant LEGACY_ENV_PREFIX] and
 ## [constant LEGACY_CLI_PREFIX], the old spellings, are still read; the new ones win).
 ##
@@ -15,7 +15,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ##
 ## [b]The tick rate is deliberately not here.[/b] It is dot-server's
 ## [code]sv_tickrate[/code], and the timer takes it from the engine — see
-## [DotTimerConfig]. A second copy of that number is a second number that can
+## [GSTimerConfig]. A second copy of that number is a second number that can
 ## disagree with the first, and the failure is a leaderboard wrong by their ratio with
 ## no error anywhere.
 
@@ -173,7 +173,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## server holds the built-in scenes and whatever has been FETCHED, and nothing has been
 ## fetched until somebody asks for it by name.
 ##
-## What that costs is not the `map` command — [member DotMapCommands.may_fetch_unknown]
+## What that costs is not the `map` command — [member GSMapCommands.may_fetch_unknown]
 ## lets a typed id through to the fetch — it is everything that reads the catalogue as
 ## a SET: `maps` lists three scenes on a surf server, the rotation can only ever choose
 ## between those three, and `rtv` offers them. A rotation that silently excludes every
@@ -226,7 +226,7 @@ func map_content_id(id: StringName) -> String:
 @export_range(0.0, 86400.0, 30.0) var offline_map_seconds: float = 0.0
 
 ## The file that says which maps a server ROTATES: `cfg/maps.yml`, layered over the game's own
-## shipped `res://maps.yml` (see dot-map's `DotMapRotationFile` for the format: named
+## shipped `res://maps.yml` (see dot-map's `GSMapRotationFile` for the format: named
 ## rotations, `random` or `cycle`, wildcards). Empty, or no such file, rotates every map in the
 ## catalogue but a combat one, which is what this game always did.
 ##
@@ -242,7 +242,7 @@ func map_content_id(id: StringName) -> String:
 ## is waiting. The wait holds the whole server on the old map — every runner stopped, the
 ## clock frozen — for the slowest client, and a timer server's players came to run. A
 ## client that misses it is not dropped: the change goes ahead without it
-## ([member DotMapSyncHost.swap_without_stragglers] stays on), it is told so, and it
+## ([member GSMapSyncHost.swap_without_stragglers] stays on), it is told so, and it
 ## follows the moment its download finishes, because the load it was sent is queued
 ## behind its own fetch rather than lost. So a short wait costs the slow client a few
 ## seconds on the wrong map and a long one costs everybody else the same seconds.
@@ -280,7 +280,7 @@ func map_content_id(id: StringName) -> String:
 @export_range(0.0, 600.0, 1.0) var records_cache_seconds: float = 10.0
 
 ## How records are scored: [code]curve[/code], [code]tiered[/code] or
-## [code]placement[/code]. See DotTimerPoints. `timer_points_formula`.
+## [code]placement[/code]. See GSTimerPoints. `timer_points_formula`.
 @export var points_formula: String = "curve"
 
 ## Decay down a player's list of records when totalling them. 1 = a plain sum.
@@ -402,13 +402,13 @@ const FORMER_IDS: PackedStringArray = ["game-g2gfast"]  # legacy id: operator cf
 ## Declares the rename to dot-core (API 31), so whatever names the game by its new id (rotation
 
 static func register_ids() -> void:
-	DotAddonConfig.register_former_game(GAME_ID, FORMER_IDS)
+	GSAddonConfig.register_former_game(GAME_ID, FORMER_IDS)
 
 
 ## The binder every entry point uses: [param config] layered, one cfg file per [constant CFG_FILES] entry.
-static func make_binder(config: DotConfig, json_path := "") -> DotGameConfigBinder:
+static func make_binder(config: GSConfig, json_path := "") -> GSGameConfigBinder:
 	register_ids()
-	var b := DotGameConfigBinder.create(config, "game-airdrift", "airdrift", json_path)
+	var b := GSGameConfigBinder.create(config, "game-airdrift", "airdrift", json_path)
 	b.grouped = true
 	b.group_files = CFG_FILES
 	return b
@@ -429,24 +429,24 @@ func cli_prefix() -> String:
 	return "--airdrift-"
 
 
-## [method DotConfig.apply_env] under the old prefix first, then the new one, so the new one wins.
+## [method GSConfig.apply_env] under the old prefix first, then the new one, so the new one wins.
 func apply_env(prefix_override: String = "") -> PackedStringArray:
 	if prefix_override != "":
 		return super(prefix_override)
 	var legacy := super(LEGACY_ENV_PREFIX)
 	if not legacy.is_empty():
-		DotLog.warn(CHANNEL, "old environment prefix read; rename it", {"prefix": LEGACY_ENV_PREFIX,
+		GSLog.warn(CHANNEL, "old environment prefix read; rename it", {"prefix": LEGACY_ENV_PREFIX,
 			"use": env_prefix(), "keys": legacy})
 	return _merged(legacy, super())
 
 
-## [method DotConfig.apply_cli] under the old prefix first, then the new one, so the new one wins.
+## [method GSConfig.apply_cli] under the old prefix first, then the new one, so the new one wins.
 func apply_cli(prefix_override: String = "") -> PackedStringArray:
 	if prefix_override != "":
 		return super(prefix_override)
 	var legacy := super(LEGACY_CLI_PREFIX)
 	if not legacy.is_empty():
-		DotLog.warn(CHANNEL, "old argument prefix read; rename it", {"prefix": LEGACY_CLI_PREFIX,
+		GSLog.warn(CHANNEL, "old argument prefix read; rename it", {"prefix": LEGACY_CLI_PREFIX,
 			"use": cli_prefix(), "keys": legacy})
 	return _merged(legacy, super())
 
@@ -459,17 +459,17 @@ static func _merged(a: PackedStringArray, b: PackedStringArray) -> PackedStringA
 	return out
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if max_speed > max_velocity:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"max_velocity must not be below max_speed.",
 			"%.0f vs %.0f u/s" % [max_velocity, max_speed]
 		)
 
 	if zone_editor_max_number < 0 or zone_editor_max_height < 0.0 or zone_mark_max_height < 0.0:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"The zone limits must not be negative (0 is unlimited).",
 			"%d, %.0f, %.0f" % [zone_editor_max_number, zone_editor_max_height, zone_mark_max_height]
 		)
@@ -483,11 +483,11 @@ func validate() -> DotResult:
 	# exactly right for a client. Visible in the browser and in no headless run, because
 	# the suites build their client config in code and never layer it.
 	if authoritative and initial_map == &"":
-		return DotResult.fail(
-			DotError.CODE_INVALID, "There has to be a map to start on."
+		return GSResult.fail(
+			GSError.CODE_INVALID, "There has to be a map to start on."
 		)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 func describe_summary() -> String:

@@ -25,29 +25,29 @@ const AirdriftAmbience := preload("airdrift_ambience.gd")
 const CHANNEL := "g2g.presentation"
 
 
-var settings: DotSettingsManager = null
+var settings: GSSettingsManager = null
 
 ## Every key the client reads. See [AirdriftBindings].
-var bindings: DotMenuBindings = AirdriftBindings.make()
+var bindings: GSMenuBindings = AirdriftBindings.make()
 
 ## What pushes the stock settings at the engine, the audio and the effects. See
 ## [method _build_settings].
-var applier: DotMenuApplier = null
-var audio: DotAudioManager = null
+var applier: GSMenuApplier = null
+var audio: GSAudioManager = null
 
 ## Footsteps by surface and a bed per map: dot-audio's stock (Kenney's footsteps and generated
 ## beds, CC0; the addon's stock/CREDITS.md). Under the landing and the timer, never over them.
-var steps: DotAudioFootsteps = null
-var ambience: DotAudioAmbience = null
+var steps: GSAudioFootsteps = null
+var ambience: GSAudioAmbience = null
 ## The mood layer over the bed: a mood per map, indoors under a roof, the server's `airdrift_ambient*` times the player's sliders.
-var ambient: DotAmbienceDirector = null
-var fx: DotFxManager = null
+var ambient: GSAmbienceDirector = null
+var fx: GSFxManager = null
 ## The player's console, built by [method build_console] once the client has a menu.
-var console: DotConsoleController = null
-var console_panel: DotConsolePanel = null
+var console: GSConsoleController = null
+var console_panel: GSConsolePanel = null
 
 ## The in-game chat box. See [method _build_chat].
-var chat_window: DotChatWindow = null
+var chat_window: GSChatWindow = null
 
 var client: Node = null
 
@@ -61,11 +61,11 @@ var _was_grounded := true
 var _last_at := Vector3.ZERO
 
 ## The timers [method follow_runs] is listening to, and whose runs it plays.
-var _followed_timers: DotTimerManager = null
+var _followed_timers: GSTimerManager = null
 var _followed_id: StringName = &""
 
 
-func setup() -> DotResult:
+func setup() -> GSResult:
 	var settled := _build_settings()
 	if not settled.ok:
 		return settled
@@ -79,7 +79,7 @@ func setup() -> DotResult:
 	applier.bind_audio(audio)
 	applier.bind_fx(fx)
 	var _applied := applier.setup()
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 func apply_all() -> void:
@@ -108,11 +108,11 @@ func apply_own_body() -> void:
 	player.set("show_own_body", bool(settings.get_value(&"show_own_body")))
 
 
-func _build_settings() -> DotResult:
-	settings = DotSettingsManager.new()
+func _build_settings() -> GSResult:
+	settings = GSSettingsManager.new()
 	settings.name = "Settings"
 	settings.schema = schema()
-	settings.local_store = DotSettingsStoreFile.new("user://g2g_settings")
+	settings.local_store = GSSettingsStoreFile.new("user://g2g_settings")
 	settings.app_namespace = &"game_g2gfast"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 	settings.migrations = migrations()
 	settings.shared_namespace = &"tmc_account"
@@ -124,17 +124,17 @@ func _build_settings() -> DotResult:
 
 	# dot-menu's applier pushes the stock settings and the keys; what is this game's —
 	# the body, the chat box and its two keys — is the handler below, on the same signal.
-	applier = DotMenuApplier.new()
+	applier = GSMenuApplier.new()
 	applier.name = "Applier"
 	applier.settings = settings
 	applier.bindings = bindings
 	add_child(applier)
 	applier.on_any(_on_setting_changed)
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## This game's own settings. The stock ones — volumes, window, frame rate, shake, flashes,
-## effects quality, and every key — are [DotMenuApplier]'s, which calls this for every key.
+## effects quality, and every key — are [GSMenuApplier]'s, which calls this for every key.
 func _on_setting_changed(key: StringName, value: Variant, _why: StringName) -> void:
 	match key:
 		&"show_own_body":
@@ -149,11 +149,11 @@ func _on_setting_changed(key: StringName, value: Variant, _why: StringName) -> v
 
 # --- Audio ------------------------------------------------------------------
 
-func _build_audio() -> DotResult:
-	audio = DotAudioManager.new()
+func _build_audio() -> GSResult:
+	audio = GSAudioManager.new()
 	audio.name = "Audio"
 	audio.catalogue = sound_catalogue()
-	audio.mixer = DotAudioMixer.new()
+	audio.mixer = GSAudioMixer.new()
 	audio.mixer.master = settings.get_float(&"master_volume", 0.8)
 	# Small. There is one player making noises and the rest is a timer.
 	audio.voices = 12
@@ -167,19 +167,19 @@ func _build_audio() -> DotResult:
 	if not res.ok:
 		return res.wrap("Airdrift's audio")
 
-	steps = DotAudioFootsteps.new()
+	steps = GSAudioFootsteps.new()
 	steps.name = "Footsteps"
 	steps.manager = audio
 	# The landing is this game's own sound (the rhythm of a hop, pitched by speed); a stock
 	# landing step on top would smear it.
 	steps.landing_air_time = 1.0e9
 	add_child(steps)
-	ambience = DotAudioAmbience.new()
+	ambience = GSAudioAmbience.new()
 	ambience.name = "Ambience"
 	ambience.manager = audio
 	add_child(ambience)
 	ambience.set_map_bed(bed_for(&""))
-	ambient = DotAmbienceDirector.new()
+	ambient = GSAmbienceDirector.new()
 	ambient.name = "Ambient"
 	ambient.manager = audio
 	ambient.default_mood = AirdriftAmbience.DEFAULT_MOOD
@@ -194,23 +194,23 @@ func _build_audio() -> DotResult:
 	# device, and on a headless server there is nothing to bake for. Building the bank
 	# anyway would be arithmetic per dedicated-server startup for streams no process on
 	# that machine can play.
-	var godot_sink := audio.sink as DotAudioSinkGodot
+	var godot_sink := audio.sink as GSAudioSinkGodot
 	if godot_sink != null:
-		godot_sink.bank = DotAudioSynth.bank(audio.catalogue, sound_recipes())
-		DotLog.info(
+		godot_sink.bank = GSAudioSynth.bank(audio.catalogue, sound_recipes())
+		GSLog.info(
 			CHANNEL,
 			"no audio files; synthesised stand-ins are in use",
 			{"ids": sound_recipes().size(), "dir": SOUND_DIR}
 		)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
-func _build_fx() -> DotResult:
-	fx = DotFxManager.new()
+func _build_fx() -> GSResult:
+	fx = GSFxManager.new()
 	fx.name = "Fx"
 	fx.catalogue = fx_catalogue()
-	fx.config = DotFxConfig.new()
+	fx.config = GSFxConfig.new()
 	fx.config.quality = settings.get_int(&"fx_quality", 3)
 	fx.config.shake_scale = settings.get_float(&"shake_scale", 0.0)
 	fx.config.allow_flashes = settings.get_bool(&"allow_flashes", false)
@@ -230,17 +230,17 @@ func _build_fx() -> DotResult:
 	# for a build that lost one anyway.
 	var missing := fx.catalogue.missing_scenes()
 	if not missing.is_empty():
-		DotLog.warn(CHANNEL, "effect scenes missing; those effects will not draw", {
+		GSLog.warn(CHANNEL, "effect scenes missing; those effects will not draw", {
 			"paths": ", ".join(missing),
 		})
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 # --- Console ----------------------------------------------------------------
 
 ## dot-console's kit, with this game's two differences, and registered with [param menu].
 ##
-## Called by [AirdriftClient] after its [DotMenu] exists, not from [method setup]: the menu is
+## Called by [AirdriftClient] after its [GSMenu] exists, not from [method setup]: the menu is
 ## built from this layer's settings, and the kit makes the console one of the menu's
 ## overlays, which is what stops the runner. A console that is not an overlay walks the
 ## player while they type: the sampler polls the keys, and a focused line edit does not
@@ -254,26 +254,26 @@ func _build_fx() -> DotResult:
 ## and loses the run they were three stages into. So the kit's bridge is taken out and
 ## [ServerPrefixed] put in: `server <line>`.
 func build_console(menu: Object = null) -> void:
-	console = DotConsoleKit.build(self, settings, menu)
+	console = GSConsoleKit.build(self, settings, menu)
 	var kit_sources: Array = console.sources()
-	if not kit_sources.is_empty() and kit_sources[0] is DotConsoleLocal:
+	if not kit_sources.is_empty() and kit_sources[0] is GSConsoleLocal:
 		var _icons_bound := AirdriftWeaponIcons.shared.bind_console(kit_sources[0])
 
-	var bridged: DotConsoleBridge = null
+	var bridged: GSConsoleBridge = null
 	for s in console.sources().slice(1):
 		console.remove_source(s)
-		if s is DotConsoleBridge:
+		if s is GSConsoleBridge:
 			bridged = s
 	console.add_source(_local_commands())
 	if bridged != null:
 		console.add_source(ServerPrefixed.new(bridged))
 
-	console_panel = get_node_or_null(^"ConsoleLayer/ConsolePanel") as DotConsolePanel
+	console_panel = get_node_or_null(^"ConsoleLayer/ConsolePanel") as GSConsolePanel
 
 
 ## This game's own command; the kit has `help`, `clear`, `settings` and every setting.
-func _local_commands() -> DotConsoleLocal:
-	var local := DotConsoleLocal.new()
+func _local_commands() -> GSConsoleLocal:
+	var local := GSConsoleLocal.new()
 	local.add_command(&"quit", "Leave", func(_a: PackedStringArray) -> Variant:
 		get_tree().quit()
 		return null
@@ -282,21 +282,21 @@ func _local_commands() -> DotConsoleLocal:
 
 
 ## An in-process server's console, reached only as `server <line>`. See [method build_console].
-class ServerPrefixed extends DotConsoleSource:
+class ServerPrefixed extends GSConsoleSource:
 	const PREFIX := "server"
 
-	var _bridge: DotConsoleBridge = null
+	var _bridge: GSConsoleBridge = null
 
-	func _init(bridge: DotConsoleBridge) -> void:
+	func _init(bridge: GSConsoleBridge) -> void:
 		_bridge = bridge
 
 	func claims(name: String) -> bool:
 		return name.to_lower() == PREFIX and _bridge != null and _bridge.valid()
 
-	func execute(line: String) -> DotResult:
-		var parts := DotConsoleLine.split_line(line)
+	func execute(line: String) -> GSResult:
+		var parts := GSConsoleLine.split_line(line)
 		if parts.size() < 2:
-			return DotResult.fail(DotError.CODE_INVALID, "usage: %s <command>" % PREFIX)
+			return GSResult.fail(GSError.CODE_INVALID, "usage: %s <command>" % PREFIX)
 		return _bridge.execute(line.substr(line.find(parts[1], parts[0].length())))
 
 	func names() -> PackedStringArray:
@@ -313,7 +313,7 @@ class ServerPrefixed extends DotConsoleSource:
 
 ## The box a runner types in, and the three settings that decide it.
 ##
-## [b]This game could receive a chat line and could not send one.[/b] `DotChatClient` held
+## [b]This game could receive a chat line and could not send one.[/b] `GSChatClient` held
 ## the history, the HUD drew the notice, and there was no key anywhere that opened
 ## anything to type in — so a player could be talked to and could not talk back.
 ##
@@ -325,13 +325,13 @@ func _build_chat() -> void:
 	_chat_layer.layer = 100
 	add_child(_chat_layer)
 
-	chat_window = DotChatWindow.new()
+	chat_window = GSChatWindow.new()
 	chat_window.name = "ChatWindow"
 	chat_window.open_action = &"airdrift_chat"
 	chat_window.team_action = &"airdrift_chat_team"
 	# [b]An outline, because the floors are pale.[/b] Light-blue names and white text over
 	# light grey tiles were a log the players asked, in that log, to be able to read. dot-ui
-	# outlines rather than panels on purpose (see `DotFeedView`): a backing box is a grey
+	# outlines rather than panels on purpose (see `GSFeedView`): a backing box is a grey
 	# rectangle in the corner of the view even when nobody is talking.
 	chat_window.outline_size = 5
 	chat_window.width = CHAT_WIDTH
@@ -368,7 +368,7 @@ func fit_chat_beside(plate: Rect2) -> void:
 
 ## The width a box may have beside [param plate] on a screen [param screen_height] tall.
 ## Snapped to 16 pixels, so a plate that grows a digit does not re-wrap the log every frame.
-static func chat_width_beside(plate: Rect2, window: DotChatWindow, screen_height: float) -> float:
+static func chat_width_beside(plate: Rect2, window: GSChatWindow, screen_height: float) -> float:
 	if plate.size.x <= 0.0:
 		return CHAT_WIDTH
 
@@ -392,10 +392,10 @@ func _bind_chat(action: StringName, text: String) -> void:
 	if action == &"" or text.strip_edges() == "":
 		return
 
-	var bound := DotInputBinding.apply(action, text)
+	var bound := GSInputBinding.apply(action, text)
 
 	if bound == "":
-		DotLog.warn(CHANNEL, "a chat key was not understood", {
+		GSLog.warn(CHANNEL, "a chat key was not understood", {
 			"action": String(action), "binding": text
 		})
 
@@ -480,11 +480,11 @@ func watch_movement(grounded: bool, speed: float, at: Vector3) -> void:
 			speed * AirdriftUnits.UNITS_PER_METRE,
 			settings.get_float(&"snd_wind_min", 0.3),
 			settings.get_float(&"snd_wind_max", 1.1),
-			settings.get_float(&"snd_wind_full_speed", 1500.0)) / DotAudioAmbience.DEFAULT_LEVEL
+			settings.get_float(&"snd_wind_full_speed", 1500.0)) / GSAudioAmbience.DEFAULT_LEVEL
 
 
 ## The stock weapon sound each of this game's two weapons plays (dot-audio's weapon stock,
-## in the catalogue through DotAudioStock.add_to).
+## in the catalogue through GSAudioStock.add_to).
 const WEAPON_SOUNDS := {&"deagle": &"weapon_magnum_fire", &"knife": &"weapon_swing"}
 
 ## Beyond this, a deagle is heard as its distant recording.
@@ -492,9 +492,9 @@ const FAR_METRES := 60.0
 
 
 ## Whether the listener stands under a roof, stepped by the client each frame: roofed, a deagle shot is followed by its room tail.
-var shot_roof := DotAmbienceRoof.new()
+var shot_roof := GSAmbienceRoof.new()
 
-## Tails waiting out [constant DotWeaponSound.TAIL_DELAY]: `{id, at, left}`.
+## Tails waiting out [constant GSWeaponSound.TAIL_DELAY]: `{id, at, left}`.
 var _tails: Array[Dictionary] = []
 
 
@@ -511,7 +511,7 @@ func _advance_tails(delta: float) -> void:
 		tail.left -= delta
 		if tail.left <= 0.0:
 			_tails.erase(tail)
-			var _voice := audio.play_at(tail.id, tail.at, db_to_linear(DotWeaponSound.TAIL_GAIN_DB))
+			var _voice := audio.play_at(tail.id, tail.at, db_to_linear(GSWeaponSound.TAIL_GAIN_DB))
 
 
 ## A weapon went off at [param at]. Positional, so a shot across a course has a direction.
@@ -522,8 +522,8 @@ func on_weapon_used(weapon: StringName, at: Vector3, listener: Vector3) -> void:
 	if weapon == &"deagle" and listener.distance_to(at) > FAR_METRES:
 		id = &"weapon_magnum_far"
 	var _voice := audio.play_at(id, at)
-	if weapon == &"deagle" and shot_roof.roofed and DotWeaponSound.pick_tail(&"magnum", true) != null:
-		_tails.append({"id": &"weapon_magnum_far", "at": at, "left": DotWeaponSound.TAIL_DELAY})
+	if weapon == &"deagle" and shot_roof.roofed and GSWeaponSound.pick_tail(&"magnum", true) != null:
+		_tails.append({"id": &"weapon_magnum_far", "at": at, "left": GSWeaponSound.TAIL_DELAY})
 
 
 ## The trigger fell on nothing.
@@ -549,16 +549,16 @@ static func wind_level(units_per_second: float, level_min: float, level_max: flo
 ## [b]The four sounds that ARE the game were reachable from the suite and from nothing
 ## else.[/b] `on_run_started`, `on_split` and `on_run_finished` were written, tested with
 ## a null sink, and never called by the client — so a run started, split and finished in
-## silence on every build. Listened for on the client's OWN [DotTimerManager], which is
+## silence on every build. Listened for on the client's OWN [GSTimerManager], which is
 ## fed on a netted client too (`AirdriftGame.tick_timers_only`), so the start is heard on the
 ## tick the local prediction crosses the line rather than a round trip later.
 ##
-## A personal best is [signal DotTimerManager.record_accepted], which only fires where
+## A personal best is [signal GSTimerManager.record_accepted], which only fires where
 ## records are filed — offline, here. A netted client is told a rank, not whether it beat
 ## its own time, and plays the finish without the fanfare rather than guessing.
 ##
 ## Called again whenever the followed player changes; connects once per manager.
-func follow_runs(timers: DotTimerManager, player_id: StringName) -> void:
+func follow_runs(timers: GSTimerManager, player_id: StringName) -> void:
 	_followed_id = player_id
 
 	if timers == _followed_timers:
@@ -581,7 +581,7 @@ func follow_runs(timers: DotTimerManager, player_id: StringName) -> void:
 	timers.record_accepted.connect(_on_followed_record)
 
 
-func _on_followed_started(id: StringName, _run: DotTimerRun) -> void:
+func _on_followed_started(id: StringName, _run: GSTimerRun) -> void:
 	if id == _followed_id:
 		on_run_started(_last_at)
 
@@ -591,12 +591,12 @@ func _on_followed_staged(id: StringName, _number: int, _split: float) -> void:
 		on_split()
 
 
-func _on_followed_finished(id: StringName, _run: DotTimerRun) -> void:
+func _on_followed_finished(id: StringName, _run: GSTimerRun) -> void:
 	if id == _followed_id:
 		on_run_finished(_last_at, false)
 
 
-func _on_followed_record(record: DotTimerRecord, previous: DotTimerRecord, _rank: int) -> void:
+func _on_followed_record(record: GSTimerRecord, previous: GSTimerRecord, _rank: int) -> void:
 	if record == null or record.player_id != _followed_id:
 		return
 

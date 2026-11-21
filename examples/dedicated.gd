@@ -2,14 +2,14 @@ extends "dedicated_votes.gd"
 const AirdriftTestPorts := preload("test_ports.gd")
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
-	DotLog.signals().record.connect(_on_log_record)
+	GSLog.set_level(GSLog.Level.ERROR)
+	GSLog.signals().record.connect(_on_log_record)
 	_run.call_deferred()
 
 
 ## An ERROR from the stats layer would otherwise scroll past and leave a stat dead with every check green.
 func _on_log_record(rec: Dictionary) -> void:
-	if int(rec.get("level", 0)) >= DotLog.Level.ERROR and String(rec.get("channel", "")).begins_with("stats"):
+	if int(rec.get("level", 0)) >= GSLog.Level.ERROR and String(rec.get("channel", "")).begins_with("stats"):
 		_stats_errors.append(str(rec.get("message", rec)))
 
 
@@ -21,7 +21,7 @@ func _run() -> void:
 	if not _is_exit_probe():
 		probe = await ExitProbe.run(self, EXIT_PROBE_FLAG)
 
-	DotPaths.remove_tree(SERVER_DIR)
+	GSPaths.remove_tree(SERVER_DIR)
 	DirAccess.make_dir_recursive_absolute(SERVER_DIR)
 
 	await _boot()
@@ -53,7 +53,7 @@ func _run() -> void:
 		_test_exits_clean(probe)
 
 	await _shut_down()
-	DotPaths.remove_tree(SERVER_DIR)
+	GSPaths.remove_tree(SERVER_DIR)
 
 	print("")
 	# The copy of this suite that the exit probe runs does not run the probe itself.
@@ -99,7 +99,7 @@ func _boot() -> void:
 	cfg.store_line("hostname \"airdrift test\"")
 	cfg.close()
 
-	var config := DotServerConfig.new()
+	var config := GSServerConfig.new()
 	config.startup_config = cfg_path
 	config.autoexec_config = ""
 	config.port = AirdriftTestPorts.free_port()
@@ -115,7 +115,7 @@ func _boot() -> void:
 	# never exits.
 	config.stdin_console_enabled = false
 
-	server = DotServer.new()
+	server = GSServer.new()
 	server.config = config
 	add_child(server)
 
@@ -123,16 +123,16 @@ func _boot() -> void:
 	# default deliberately — the server here boots itself, so the host is ready
 	# before the server has registered and has to wait for it, which is the path
 	# a real deployment takes and the one worth exercising.
-	query_host = DotQueryHost.new()
+	query_host = GSQueryHost.new()
 	query_host.name = "QueryHost"
 	query_host.app_url = APP_URL
 	add_child(query_host)
 
 	for _i in range(60):
 		await get_tree().process_frame
-		if server.state == DotServer.State.RUNNING:
+		if server.state == GSServer.State.RUNNING:
 			break
-	_check(server.state == DotServer.State.RUNNING, "the server boots")
+	_check(server.state == GSServer.State.RUNNING, "the server boots")
 
 	# The host attaches through the registry, which cannot happen before the
 	# server has registered itself, so it lands a frame or two after boot.
@@ -174,7 +174,7 @@ func _boot() -> void:
 		"punishments_file", "%s/punishments.json" % SERVER_DIR
 	)
 
-	var loaded: DotResult = await server.modules.load_module(
+	var loaded: GSResult = await server.modules.load_module(
 		"res://game/airdrift_module.gd"
 	)
 	_check(loaded.ok, "the Airdrift module loads", loaded.error.message if not loaded.ok else "")
@@ -226,7 +226,7 @@ func _test_browser() -> void:
 	)
 	_check(added.ok, "a server can be added by address", str(added.error))
 
-	var refreshed: DotResult = await servers.refresh()
+	var refreshed: GSResult = await servers.refresh()
 	_check(refreshed.ok, "and asked", str(refreshed.error))
 
 	var entries := servers.browser.entries()
@@ -314,7 +314,7 @@ func _test_live_tools() -> void:
 		"the live tools' commands are on the console"
 	)
 
-	var session := DotClientSession.new()
+	var session := GSClientSession.new()
 	session.peer_id = 9001
 	session.userid = 1
 	session.display_name = "One"
@@ -322,7 +322,7 @@ func _test_live_tools() -> void:
 
 	var player: AirdriftPlayer = game.players[&"u1"]
 	var stopped: Array[StringName] = []
-	var on_stop := func(_r: DotTimerRun, why: StringName) -> void: stopped.append(why)
+	var on_stop := func(_r: GSTimerRun, why: StringName) -> void: stopped.append(why)
 	player.timer.run_stopped.connect(on_stop)
 
 	# Out of the start zone first. Standing in it ends a run (dot-timer v0.1.4, as in every
@@ -332,7 +332,7 @@ func _test_live_tools() -> void:
 
 	player.timer.run.begin(0.0)
 	var _on := await _run_command_later("noclip One")
-	_check(DotFpsAdminModifiers.is_noclipped(player.controller), "`noclip One` puts them in noclip")
+	_check(GSFpsAdminModifiers.is_noclipped(player.controller), "`noclip One` puts them in noclip")
 	_check(
 		stopped.has(&"noclip") and not player.timer.run.is_active(),
 		"and abandons the run they were on", str(stopped)
@@ -372,17 +372,17 @@ func _test_live_tools() -> void:
 
 	# `return` after a map change. Moved once by a moderator, so `return` has somewhere to
 	# put them: a position on THIS map, which a change frees. The change is announced the
-	# way every change ends, on `DotMapSession.changed`, rather than made: `change_map`
+	# way every change ends, on `GSMapSession.changed`, rather than made: `change_map`
 	# goes through the map-sync host, which waits on every peer and an adopted session has
 	# none (FC's first draft of this check hung there). Armed 2026-09-27: without the
 	# clear, `return One` put them back at the spot on the previous map.
 	var module: Object = server.modules.get_module("g2gfast")
-	var tools: DotModTools = (module.get("services") as AirdriftServices).mod_tools if module != null else null
-	var _moved: DotResult = await tools.teleport(&"", &"1", player.global_position + Vector3(6.0, 0.0, 0.0))
+	var tools: GSModTools = (module.get("services") as AirdriftServices).mod_tools if module != null else null
+	var _moved: GSResult = await tools.teleport(&"", &"1", player.global_position + Vector3(6.0, 0.0, 0.0))
 	_check(tools.can_return(&"1"), "a moderator moves One, so `return` has somewhere to put them")
 	game.maps.changed.emit(game.maps.current, game.current_map_node())
 	await _physics(2)
-	var returned: DotResult = await tools.return_player(&"", &"1")
+	var returned: GSResult = await tools.return_player(&"", &"1")
 	_check(not tools.can_return(&"1") and not returned.ok,
 		"and after a map change `return` has nowhere to put them",
 		"it put them at %s, a spot on the previous map" % (str(returned.value) if returned.ok else "-"))
@@ -399,8 +399,8 @@ func _stand_past_start(player: AirdriftPlayer) -> bool:
 	var zones := player.timer.zones
 	if zones == null:
 		return false
-	var starts := zones.of_kind(DotTimerZone.Kind.START, DotTimerTrack.MAIN)
-	var ends := zones.of_kind(DotTimerZone.Kind.END, DotTimerTrack.MAIN)
+	var starts := zones.of_kind(GSTimerZone.Kind.START, GSTimerTrack.MAIN)
+	var ends := zones.of_kind(GSTimerZone.Kind.END, GSTimerTrack.MAIN)
 	if starts.is_empty() or ends.is_empty():
 		return false
 	var start := starts[0]
@@ -421,7 +421,7 @@ func _stand_past_start(player: AirdriftPlayer) -> bool:
 func _test_blind_and_beacon() -> void:
 	_section("blind and beacon")
 
-	var session := DotClientSession.new()
+	var session := GSClientSession.new()
 	session.peer_id = 9001
 	session.userid = 1
 	session.display_name = "One"
@@ -429,7 +429,7 @@ func _test_blind_and_beacon() -> void:
 
 	var module: Object = server.modules.get_module("g2gfast")
 	var bridge: Object = module.get("bridge") if module != null else null
-	var tools: DotModTools = (module.get("services") as AirdriftServices).mod_tools if module != null else null
+	var tools: GSModTools = (module.get("services") as AirdriftServices).mod_tools if module != null else null
 	var player: AirdriftPlayer = game.players[&"u1"]
 	var net: Object = bridge.call("behaviour_for", 1) if bridge != null else null
 
@@ -469,7 +469,7 @@ func _test_blind_and_beacon() -> void:
 	var _dark_off := await _run_command_later("blind One off")
 	var _unlit := await _run_command_later("beacon One off")
 	await _physics(2)
-	var identity: DotNetIdentity = (net as DotNetBehaviour).identity if net != null else null
+	var identity: GSNetIdentity = (net as GSNetBehaviour).identity if net != null else null
 	_check(
 		not player.beacon and net.get("net_beacon") == false,
 		"`beacon One off` takes it off the entity"
@@ -482,8 +482,8 @@ func _test_blind_and_beacon() -> void:
 		"and leaves them relevant to everybody, as every runner here is"
 	)
 	_check(
-		tools != null and not tools.is_active(&"1", DotModTools.ACTION_BEACON)
-		and not tools.is_active(&"1", DotModTools.ACTION_BLIND),
+		tools != null and not tools.is_active(&"1", GSModTools.ACTION_BEACON)
+		and not tools.is_active(&"1", GSModTools.ACTION_BLIND),
 		"and the tools' record agrees with the world"
 	)
 
@@ -515,14 +515,14 @@ func _test_unload() -> void:
 	# A DIFFERENT map from the one it is on, or the spawn check below cannot tell the
 	# old map's pads from the new one's.
 	var next_map: StringName = &"surf_g2g_intro" if game.maps.current.id == &"bhop_g2g_intro" else &"bhop_g2g_intro"
-	var after: DotResult = await game.change_map(next_map)
+	var after: GSResult = await game.change_map(next_map)
 	_check(after.ok and game.maps.current.id == next_map,
 		"so a map change after it is this process's own", str(after.error) if not after.ok else "")
 	# The SECOND map change with the combat layer built — the first one that has old
 	# spawn points to clear. `AirdriftCombat._on_map_ready` called a method dot-match has never
 	# had, and the script error left the previous map's points as the deathmatch's.
 	var points: Array = game.combat.match_node.spawn_points() if game.combat != null else []
-	var main_pad: Vector3 = game.current_map_node().spawn_for(DotTimerTrack.MAIN)
+	var main_pad: Vector3 = game.current_map_node().spawn_for(GSTimerTrack.MAIN)
 	_check(points.size() == 2 and points.all(func(p: Variant) -> bool:
 			return is_instance_valid(p) and not (p as Node).is_queued_for_deletion())
 			and points.any(func(p: Variant) -> bool: return (p as Node3D).position.is_equal_approx(main_pad)),
@@ -533,8 +533,8 @@ func _test_unload() -> void:
 
 ## [b]The one line that leaked mg-buses-from-hell's whole script graph at exit.[/b]
 ##
-## A script that `extends DotNetMessage` and preloads ITSELF, first loaded from a module a
-## running [DotServer] loads — which is how every deployed server loads this game — leaves
+## A script that `extends GSNetMessage` and preloads ITSELF, first loaded from a module a
+## running [GSServer] loads — which is how every deployed server loads this game — leaves
 ## every loaded script alive at exit on Godot 4.7.2 (measured in mg-buses-from-hell,
 ## 8ed866c). This game's event and request both did it, for a typed `of()` factory.
 ##
@@ -557,8 +557,8 @@ func _test_weapons_keep_wall_clock_time() -> void:
 	var raw64 := _weapon_shots(64, false)
 	_check(raw64.size() < at128.size(), "rows naming no rate fire slower at 64 Hz", "%s vs %s" % [raw64, at128])
 
-	var deagle: DotWeaponDef = AirdriftArsenal.deagle()
-	var b := deagle.tuning as DotWeaponBallistics
+	var deagle: GSWeaponDef = AirdriftArsenal.deagle()
+	var b := deagle.tuning as GSWeaponBallistics
 	_check(
 		is_equal_approx(deagle.per_tick_at(b.bloom_recovery, 64), 2.0 * deagle.per_tick_at(b.bloom_recovery, 128)),
 		"bloom recovers twice as much per tick at 64 Hz, the same per second"
@@ -575,13 +575,13 @@ func _test_weapons_keep_wall_clock_time() -> void:
 ## The times, in seconds, an arsenal at [param rate] fires: knife in hand, deagle asked for,
 ## the trigger pressed and released every 1/64 s for three seconds.
 func _weapon_shots(rate: int, authored: bool) -> Array[float]:
-	var catalogue := DotWeaponCatalogue.new()
-	for def: DotWeaponDef in AirdriftArsenal.weapons():
+	var catalogue := GSWeaponCatalogue.new()
+	for def: GSWeaponDef in AirdriftArsenal.weapons():
 		if not authored:
 			def.authored_tick_rate = 0
 		catalogue.add(def)
 
-	var arsenal := DotWeaponArsenal.new()
+	var arsenal := GSWeaponArsenal.new()
 	arsenal.catalogue = catalogue
 	arsenal.tick_rate = rate
 	arsenal.authority = true
@@ -593,13 +593,13 @@ func _weapon_shots(rate: int, authored: bool) -> Array[float]:
 	arsenal.give(AirdriftArsenal.ITEM_DEAGLE)
 
 	var out: Array[float] = []
-	var previous: DotWeaponCommand = null
+	var previous: GSWeaponCommand = null
 	for t in range(3 * rate):
-		var cmd := DotWeaponCommand.new()
+		var cmd := GSWeaponCommand.new()
 		cmd.slot = 2
-		cmd.set_button(DotWeaponCommand.BUTTON_ATTACK, (t * 64 / rate) % 2 == 0)
+		cmd.set_button(GSWeaponCommand.BUTTON_ATTACK, (t * 64 / rate) % 2 == 0)
 		var used := arsenal.simulate_tick(
-			cmd, DotWeaponContext.make(1, t, Vector3(0.0, 1.6, 0.0), Vector3.FORWARD), previous
+			cmd, GSWeaponContext.make(1, t, Vector3(0.0, 1.6, 0.0), Vector3.FORWARD), previous
 		)
 		if used.used:
 			out.append(float(t) / float(rate))
@@ -658,7 +658,7 @@ func _test_no_message_preloads_itself() -> void:
 func _extends_message(source: String) -> bool:
 	for line in source.split("\n"):
 		if line.begins_with("extends "):
-			return line.contains("DotNetMessage") or line.contains("dot_net_message.gd")
+			return line.contains("GSNetMessage") or line.contains("dot_net_message.gd")
 	return false
 
 

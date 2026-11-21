@@ -28,7 +28,7 @@ func _arg(name: String, fallback: String) -> String:
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -43,9 +43,9 @@ func _run() -> void:
 	if not await _start(map_id, bots, warm):
 		get_tree().quit(2)
 		return
-	var scripts: DotProfilerScripts = null
+	var scripts: GSProfilerScripts = null
 	if script_top > 0:
-		scripts = DotProfilerScripts.new()
+		scripts = GSProfilerScripts.new()
 		var started := scripts.start()
 		if not started.ok:
 			printerr("TICKPROF ", started.error.message)
@@ -113,7 +113,7 @@ func _start(map_id: StringName, bots: int, warm: int) -> bool:
 		if _game.maps != null and _game.maps.current != null:
 			break
 	if map_id != _game.maps.current.id:
-		var changed: DotResult = await _game.change_map(map_id)
+		var changed: GSResult = await _game.change_map(map_id)
 		if not changed.ok:
 			printerr("TICKPROF map failed: ", changed.error.message)
 			return false

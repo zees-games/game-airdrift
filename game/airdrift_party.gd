@@ -27,17 +27,17 @@ extends Node
 const CHANNEL := "g2g.party"
 
 signal open(code: String)
-signal closed(res: DotResult)
+signal closed(res: GSResult)
 
-var session: DotP2PSession = null
+var session: GSP2PSession = null
 
 @export var signalling_url: String = ""
 
-var _http: DotHttp = null
+var _http: GSHttp = null
 
 
-func setup() -> DotResult:
-	session = DotP2PSession.new()
+func setup() -> GSResult:
+	session = GSP2PSession.new()
 	session.name = "P2P"
 	session.config = _config()
 	add_child(session)
@@ -47,16 +47,16 @@ func setup() -> DotResult:
 		return res.wrap("Airdrift's party session")
 
 	session.signaller = _make_signaller()
-	session.ended.connect(func(r: DotResult) -> void: closed.emit(r))
-	return DotResult.success(null)
+	session.ended.connect(func(r: GSResult) -> void: closed.emit(r))
+	return GSResult.success(null)
 
 
-func _config() -> DotP2PConfig:
-	var c := DotP2PConfig.new()
+func _config() -> GSP2PConfig:
+	var c := GSP2PConfig.new()
 	# Small. A surf map is a queue of one at a time in practice, and the wire cost of a
 	# runner is one movement state.
 	c.max_peers = 8
-	c.trust = DotP2PConfig.Trust.SANDBOXED
+	c.trust = GSP2PConfig.Trust.SANDBOXED
 	# Off. A host leaving mid-run is a run that ends; handing the timer to somebody else
 	# mid-run would produce a time made of two machines' clocks, which is worse than no
 	# time at all.
@@ -65,31 +65,31 @@ func _config() -> DotP2PConfig:
 	return c
 
 
-func _make_signaller() -> DotP2PSignaller:
+func _make_signaller() -> GSP2PSignaller:
 	if signalling_url.is_empty():
-		return DotP2PSignallerLoopback.new(session.local_id)
-	_http = DotHttp.new()
+		return GSP2PSignallerLoopback.new(session.local_id)
+	_http = GSHttp.new()
 	_http.name = "PartyHttp"
 	add_child(_http)
-	return DotP2PSignallerHttp.new(signalling_url, session.local_id, _http)
+	return GSP2PSignallerHttp.new(signalling_url, session.local_id, _http)
 
 
-func host(display_name: String) -> DotResult:
-	if not DotP2PSession.available():
-		return DotResult.fail(
-			DotError.CODE_UNSUPPORTED,
+func host(display_name: String) -> GSResult:
+	if not GSP2PSession.available():
+		return GSResult.fail(
+			GSError.CODE_UNSUPPORTED,
 			"this build cannot host a practice session",
-			DotP2PSession.unavailable_reason()
+			GSP2PSession.unavailable_reason()
 		)
 	# Awaited: dot-peer-to-peer's session awaits its signaller since 37d47c1, because an
 	# HTTP rendezvous answers a frame later at best. A caller of this awaits it too.
-	var res: DotResult = await session.host(display_name)
+	var res: GSResult = await session.host(display_name)
 	if res.ok:
 		open.emit(str(res.value))
 		# Said once, plainly, at the moment somebody could still choose otherwise. A
 		# player who finds out their session's times did not count *after* setting one is
 		# a player who has lost an evening.
-		DotLog.info(
+		GSLog.info(
 			CHANNEL,
 			"a practice session is open. Runs made in it are tainted and are not records.",
 			{"code": str(res.value)}
@@ -97,7 +97,7 @@ func host(display_name: String) -> DotResult:
 	return res
 
 
-func join(code: String, display_name: String) -> DotResult:
+func join(code: String, display_name: String) -> GSResult:
 	return await session.join(code, display_name)
 
 
@@ -117,7 +117,7 @@ func ranked() -> bool:
 ## Taints a run that is starting, when this session is one nobody can vouch for.
 ##
 ## [b]Called at the START of a run rather than at the end, and that is the whole point.[/b]
-## A run tainted on finishing is one a player made believing it counted. `DotTimerRun.tainted`
+## A run tainted on finishing is one a player made believing it counted. `GSTimerRun.tainted`
 ## is the field, `AirdriftEffects` was its first caller, and this is the second — both for the
 ## same reason: *a style you did not choose is a record you did not set*, and a host you
 ## cannot vouch for is the same sentence about the machine instead of about the movement.
@@ -126,10 +126,10 @@ func ranked() -> bool:
 func taint_if_unranked(run: Object) -> bool:
 	if ranked() or run == null:
 		return false
-	if not (run is DotTimerRun):
+	if not (run is GSTimerRun):
 		return false
-	(run as DotTimerRun).tainted = true
-	DotLog.info(CHANNEL, "a run was tainted: this is a peer-to-peer session")
+	(run as GSTimerRun).tainted = true
+	GSLog.info(CHANNEL, "a run was tainted: this is a peer-to-peer session")
 	return true
 
 

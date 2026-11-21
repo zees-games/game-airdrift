@@ -2,7 +2,7 @@ extends "airdrift_hud_layout.gd"
 
 ## The competitive-shooter timer HUD: the clock, the speed in u/s, the keys, the strafes.
 ##
-## Composed from [DotTimerHud] rather than replacing it. What this adds is the genre's
+## Composed from [GSTimerHud] rather than replacing it. What this adds is the genre's
 ## conventions: speed in genre units, a key display, the stage, and PRACTICE the moment a
 ## checkpoint is used.
 
@@ -27,20 +27,20 @@ func _ready() -> void:
 	blind_overlay.visible = false
 	add_child(blind_overlay)
 
-	# The whole rect, not a box in the corner: `DotTimerHud` places its own block inside it.
-	timer_hud = DotTimerHud.new()
+	# The whole rect, not a box in the corner: `GSTimerHud` places its own block inside it.
+	timer_hud = GSTimerHud.new()
 	timer_hud.name = "Timer"
 	timer_hud.set_anchors_preset(Control.PRESET_FULL_RECT)
 	timer_hud.offset_left = 0.0
 	timer_hud.offset_top = 0.0
 	timer_hud.offset_right = 0.0
 	timer_hud.offset_bottom = 0.0
-	timer_hud.corner = DotTimerHud.Placement.BOTTOM_CENTRE
+	timer_hud.corner = GSTimerHud.Placement.BOTTOM_CENTRE
 	timer_hud.margin = Vector2(24.0, 92.0)
 	timer_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(timer_hud)
 
-	splits_panel = DotTimerSplitsPanel.new()
+	splits_panel = GSTimerSplitsPanel.new()
 	splits_panel.name = "StageSplits"
 	splits_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	splits_panel.offset_left = 0.0
@@ -80,7 +80,7 @@ func _build_labels() -> void:
 
 func _build_crosshair() -> void:
 	# A first-person view with an empty centre reads as broken; dot-ui draws one without art.
-	_crosshair = DotCrosshair.new()
+	_crosshair = GSCrosshair.new()
 	_crosshair.name = "Crosshair"
 	_crosshair.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_crosshair.offset_left = 0.0
@@ -88,19 +88,19 @@ func _build_crosshair() -> void:
 	_crosshair.offset_right = 0.0
 	_crosshair.offset_bottom = 0.0
 	_crosshair.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if DotAddonApi.build_level("dot_ui") >= 14:
+	if GSAddonApi.build_level("dot_ui") >= 14:
 		# Hidden while dead (dot-ui API 14); a client with no combat layer cannot tell, so shown.
 		_crosshair.set(&"alive_source", _viewer_alive)
 	add_child(_crosshair)
 
 	# Hit feedback, from dot-ui: drawn only from a hit the authority applied (`confirm_hit`).
-	damage_numbers = DotDamageNumbers.new()
+	damage_numbers = GSDamageNumbers.new()
 	damage_numbers.name = "DamageNumbers"
 	damage_numbers.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	damage_numbers.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(damage_numbers)
 
-	hit_marker = DotHitMarker.new()
+	hit_marker = GSHitMarker.new()
 	hit_marker.name = "HitMarker"
 	hit_marker.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hit_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -109,7 +109,7 @@ func _build_crosshair() -> void:
 
 func _build_ammo_and_notice() -> void:
 	# Placed by `place()`, which knows where the clock is.
-	ammo = DotAmmoCounter.new()
+	ammo = GSAmmoCounter.new()
 	ammo.name = "Ammo"
 	ammo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ammo)
@@ -177,7 +177,7 @@ func bind(p_game: AirdriftGame, p_player: StringName) -> void:
 			if everyone or id == player_id:
 				notice(text)
 	)
-	game.map_ready.connect(func(map: DotMapDef) -> void: notice(now_playing_text(map)))
+	game.map_ready.connect(func(map: GSMapDef) -> void: notice(now_playing_text(map)))
 	game.movement_changed.connect(
 		func(config: AirdriftConfig) -> void:
 			notice("Movement changed: autobhop %s, airaccel %.0f" % [
@@ -187,7 +187,7 @@ func bind(p_game: AirdriftGame, p_player: StringName) -> void:
 	game.timers.player_staged.connect(
 		func(id: StringName, number: int, split: float) -> void:
 			if id == player_id:
-				notice("Stage %d — %s" % [number, DotTimerRun.format_time(split)])
+				notice("Stage %d — %s" % [number, GSTimerRun.format_time(split)])
 	)
 
 	# How many stages this map's track has, and the player's own best split at each,
@@ -198,7 +198,7 @@ func bind(p_game: AirdriftGame, p_player: StringName) -> void:
 	# is a database handle behind an interface written to be asynchronous; asking it
 	# 128 times a second for a number that changes twice an hour is the cost this HUD
 	# would never notice locally and a server would.
-	game.map_ready.connect(func(_map: DotMapDef) -> void:
+	game.map_ready.connect(func(_map: GSMapDef) -> void:
 		# A comparison for the map just left is not this one's; the server sends the new
 		# one, and one that already arrived for this map stays.
 		if not _remote_reference.is_empty() and not _remote_is_for_this_map():
@@ -213,7 +213,7 @@ func bind(p_game: AirdriftGame, p_player: StringName) -> void:
 				refresh_stage_reference()
 	)
 	game.run_filed.connect(
-		func(id: StringName, _run: DotTimerRun, _rank: int, _reason: String) -> void:
+		func(id: StringName, _run: GSTimerRun, _rank: int, _reason: String) -> void:
 			if id == player_id:
 				refresh_stage_reference()
 	)
@@ -244,7 +244,7 @@ func show_weapon(player: AirdriftPlayer) -> void:
 	weapon_icon.texture = sprite
 	weapon_icon.visible = sprite != null
 	AirdriftWeaponIcons.shared.filter(weapon_icon, true)
-	var def: DotWeaponDef = _weapon_defs().get(id)
+	var def: GSWeaponDef = _weapon_defs().get(id)
 	ammo.show_ammo(def.display_name if def != null else String(id), -1, -1, false, true)
 
 
@@ -301,17 +301,17 @@ func _process(delta: float) -> void:
 	var move := cmd.move if cmd != null else Vector2.ZERO
 	var buttons := cmd.buttons if cmd != null else 0
 
-	# No speed here: `DotTimerHud` draws it, and the same number twice was the old layout.
+	# No speed here: `GSTimerHud` draws it, and the same number twice was the old layout.
 	_keys.text = "%s %s %s %s    %s  %s" % [
 		"W" if move.y > 0.1 else "·",
 		"A" if move.x < -0.1 else "·",
 		"S" if move.y < -0.1 else "·",
 		"D" if move.x > 0.1 else "·",
-		"JUMP" if buttons & DotFpsCommand.BUTTON_JUMP else "····",
-		"DUCK" if buttons & DotFpsCommand.BUTTON_CROUCH else "····",
+		"JUMP" if buttons & GSFpsCommand.BUTTON_JUMP else "····",
+		"DUCK" if buttons & GSFpsCommand.BUTTON_CROUCH else "····",
 	]
 
-	# No track either: `DotTimerHud` draws it beside the style.
+	# No track either: `GSTimerHud` draws it beside the style.
 	var parts := PackedStringArray([
 		game.maps.current.label() if game.maps.current != null else "-",
 	])
@@ -362,7 +362,7 @@ func timer_rect() -> Rect2:
 
 
 func _viewer_alive() -> bool:
-	var health: DotHealth = game.combat.health_of(player_id) if game != null and game.combat != null else null
+	var health: GSHealth = game.combat.health_of(player_id) if game != null and game.combat != null else null
 	return health == null or health.alive
 
 
@@ -388,11 +388,11 @@ func present_blind(delta: float) -> void:
 ## The line a map change puts on screen: the map, and who made it when that is known.
 ##
 ## [b]The credit is the point.[/b] The imported maps are other people's work, kept on the
-## condition that their authors are credited, and `DotMapDef.author` carried each name
+## condition that their authors are credited, and `GSMapDef.author` carried each name
 ## from its zones file into the catalogue while nothing ever drew it (`[credit-1]`). A
 ## credit nobody can see is not a credit. A hand-built map has no author field and reads
 ## as it always did, and so does an import nobody has credited yet.
-static func now_playing_text(map: DotMapDef) -> String:
+static func now_playing_text(map: GSMapDef) -> String:
 	if map == null:
 		return ""
 	var line := "Now playing %s" % map.label()
@@ -404,7 +404,7 @@ static func now_playing_text(map: DotMapDef) -> String:
 
 ## What the status line says about the map's time left: the server's clock when it has
 ## said anything — empty when that clock does not exist — and [param local] otherwise.
-static func time_left_text(view: DotVoteClockView, local: String, now: float) -> String:
+static func time_left_text(view: GSVoteClockView, local: String, now: float) -> String:
 	if view != null and view.known:
 		return view.formatted_at(now)
 
@@ -422,7 +422,7 @@ func apply_standing(standing: Dictionary) -> void:
 	refresh_stage_reference()
 
 
-func _on_run_filed(id: StringName, run: DotTimerRun, rank: int, reason: String) -> void:
+func _on_run_filed(id: StringName, run: GSTimerRun, rank: int, reason: String) -> void:
 	if id != player_id:
 		return
 	# A game with a store says more through `announced` (the personal best, the gap, the

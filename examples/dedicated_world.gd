@@ -5,11 +5,11 @@ const AirdriftProps := preload("../game/airdrift_props.gd")
 
 ## The hunter and placed-block sections of `dedicated.gd`'s modes test, run against the suite's own game.
 
-var s: DotGameCheckSuite
+var s: GSGameCheckSuite
 var game: AirdriftGame
 
 
-func _init(suite: DotGameCheckSuite, g: AirdriftGame) -> void:
+func _init(suite: GSGameCheckSuite, g: AirdriftGame) -> void:
 	s = suite
 	game = g
 
@@ -17,7 +17,7 @@ func _init(suite: DotGameCheckSuite, g: AirdriftGame) -> void:
 func run() -> void:
 	if game.hunters != null:
 		# A timer map is a critical path — start pad, stage lines, end zone — and
-		# `DotNpcDirectorFlow` is exactly that as a thing a position can be measured
+		# `GSNpcDirectorFlow` is exactly that as a thing a position can be measured
 		# along. So there is no navigation graph and the route is the map's zones.
 		s._check(
 			game.hunters.flow != null and game.hunters.flow.has_route(),
@@ -83,14 +83,14 @@ func run() -> void:
 
 ## The sight hooks a smoke or flash source calls: a blinded hunter, or one behind a cloud, does not see a player in view.
 func _senses_hooks() -> void:
-	if DotAddonApi.build_level("dot_npc") < 6:
+	if GSAddonApi.build_level("dot_npc") < 6:
 		return
 
 	var hunters = game.hunters
 	var origin := Vector3(0.0, 800.0, 0.0)
 	var why: Array = []
 	hunters.spawner.refused.connect(func(_o, _n, r: String) -> void: why.append(r))
-	var npc: DotNpcInstance = hunters.spawner.spawn(&"g2g_stalker", hunters.patrol_point(0.5), &"sight_hooks")
+	var npc: GSNpcInstance = hunters.spawner.spawn(&"g2g_stalker", hunters.patrol_point(0.5), &"sight_hooks")
 	if npc != null:
 		(npc.node as Node3D).global_position = origin
 	s._check(npc != null, "a hunter spawns for the sight hooks", str(why))
@@ -98,8 +98,8 @@ func _senses_hooks() -> void:
 	if npc == null:
 		return
 
-	var senses: DotNpcSenses = hunters.senses
-	var cand := DotNpcSenses.Candidate.new(&"u1", origin + npc.facing() * 12.0, &"runner", 0.0)
+	var senses: GSNpcSenses = hunters.senses
+	var cand := GSNpcSenses.Candidate.new(&"u1", origin + npc.facing() * 12.0, &"runner", 0.0)
 	senses.now = 100.0
 	s._check(senses.perceives(npc, cand), "a hunter sees a player in view")
 
@@ -113,5 +113,5 @@ func _senses_hooks() -> void:
 	senses.now = 112.0
 	s._check(senses.perceives(npc, cand), "and the cloud ends on time")
 
-	hunters.spawner.remove(npc.instance_id, DotNpcSpawner.REASON_ADMIN)
+	hunters.spawner.remove(npc.instance_id, GSNpcSpawner.REASON_ADMIN)
 	s._check(hunters.flash(origin, 20.0, 5.0) == 0, "a flash with no hunter in reach blinds none")

@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
 const AirdriftConfig := preload("../game/airdrift_config.gd")
@@ -62,7 +62,7 @@ var _falls: Dictionary = {}
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -177,16 +177,16 @@ func _test_pits() -> void:
 	var pits: Array = []
 	var dests := {}
 	if zones != null:
-		for zone: DotTimerZone in zones.of_kind(DotTimerZone.Kind.RESPAWN):
+		for zone: GSTimerZone in zones.of_kind(GSTimerZone.Kind.RESPAWN):
 			if zone.payload.has(AirdriftBspMap.SENDS_TO):
 				var key := _u(zone.destination)
 				if not dests.has(key):
 					dests[key] = zone
 	pits = _sample(dests.values(), SAMPLE)
-	var total_pits := zones.of_kind(DotTimerZone.Kind.RESPAWN).size() if zones != null else 0
+	var total_pits := zones.of_kind(GSTimerZone.Kind.RESPAWN).size() if zones != null else 0
 	var sending := 0
 	if zones != null:
-		for z: DotTimerZone in zones.of_kind(DotTimerZone.Kind.RESPAWN):
+		for z: GSTimerZone in zones.of_kind(GSTimerZone.Kind.RESPAWN):
 			if z.payload.has(AirdriftBspMap.SENDS_TO):
 				sending += 1
 	_planned += 1
@@ -196,15 +196,15 @@ func _test_pits() -> void:
 
 	var bot := _bot()
 	var fell := PackedStringArray()
-	for zone: DotTimerZone in pits:
+	for zone: GSTimerZone in pits:
 		bot.teleport(zone.destination, zone.destination_yaw, true)
 		# Counted in distinct ticks, not events: a pit cut into slabs (`hull_boxes`) is
 		# several overlapping zones, and a player inside three of them is sent three times
 		# on ONE tick -- surf_the_gloaming's hub under its jail read as a loop that way.
 		var resent := [0]
 		var resent_ticks := {}
-		var handler := func(id: StringName, z: DotTimerZone) -> void:
-			if id == &"bot" and z.kind == DotTimerZone.Kind.RESPAWN:
+		var handler := func(id: StringName, z: GSTimerZone) -> void:
+			if id == &"bot" and z.kind == GSTimerZone.Kind.RESPAWN:
 				var frame := Engine.get_physics_frames()
 				if not resent_ticks.has(frame):
 					resent_ticks[frame] = true
@@ -247,14 +247,14 @@ func _test_pits() -> void:
 func _test_pit_keeps_the_run() -> void:
 	_section("a pit keeps the run")
 	var zones := game.timers.zones
-	var pit: DotTimerZone = null
-	var start: DotTimerZone = null
+	var pit: GSTimerZone = null
+	var start: GSTimerZone = null
 	if zones != null:
-		for z: DotTimerZone in zones.of_kind(DotTimerZone.Kind.RESPAWN, DotTimerTrack.MAIN):
+		for z: GSTimerZone in zones.of_kind(GSTimerZone.Kind.RESPAWN, GSTimerTrack.MAIN):
 			if z.payload.has(AirdriftBspMap.SENDS_TO):
 				pit = z
 				break
-		start = zones.first_of_kind(DotTimerZone.Kind.START, DotTimerTrack.MAIN)
+		start = zones.first_of_kind(GSTimerZone.Kind.START, GSTimerTrack.MAIN)
 	_planned += 1
 	if pit == null or start == null:
 		_check(true, "a pit keeps the run", "no start, or no pit with a destination")
@@ -263,7 +263,7 @@ func _test_pit_keeps_the_run() -> void:
 	var bot := _bot()
 	var timer := bot.timer
 	timer.stop()
-	var sample := DotTimerSample.new()
+	var sample := GSTimerSample.new()
 	sample.grounded = true
 	var away := start.centre() + Vector3(0.0, start.size().y + 8.0, 0.0)
 	for point in [start.centre(), start.centre(), away]:
@@ -303,7 +303,7 @@ func _hop_stays(bot: AirdriftPlayer, dest: Vector3) -> bool:
 		await get_tree().physics_frame
 		if bot.controller.state.is_grounded():
 			bot.controller.state.velocity.y = AirdriftUnits.to_metres(AirdriftUnits.JUMP_VELOCITY)
-			bot.controller.motor.set_mode(bot.controller.state, DotFpsState.Mode.AIR)
+			bot.controller.motor.set_mode(bot.controller.state, GSFpsState.Mode.AIR)
 		if bot.global_position.distance_to(dest) < AirdriftUnits.to_metres(32.0):
 			return false
 	return true
@@ -436,7 +436,7 @@ func _test_boosters() -> void:
 			continue
 		lifted += 1
 		bot.controller.state.velocity = Vector3.UP * AirdriftUnits.to_metres(600.0)
-		bot.controller.motor.set_mode(bot.controller.state, DotFpsState.Mode.AIR)
+		bot.controller.motor.set_mode(bot.controller.state, GSFpsState.Mode.AIR)
 		var last := bot.controller.state.velocity.dot(dir)
 		var kick := -INF
 		var out_for := 0
@@ -491,7 +491,7 @@ func _test_pushes() -> void:
 		bot.controller.state.velocity = Vector3.ZERO
 		var before := at
 		var sent := [0]
-		var watch := func(id: StringName, _z: DotTimerZone) -> void:
+		var watch := func(id: StringName, _z: GSTimerZone) -> void:
 			if id == &"bot":
 				sent[0] += 1
 		game.timers.effect_requested.connect(watch)
@@ -560,7 +560,7 @@ func _test_ladders() -> void:
 		if not picked:
 			continue
 		tried += 1
-		var command := DotFpsCommand.new()
+		var command := GSFpsCommand.new()
 		command.move = Vector2(0.0, 1.0)
 		command.yaw = bot.controller.state.yaw
 		var y0 := bot.global_position.y
@@ -572,7 +572,7 @@ func _test_ladders() -> void:
 			climbed += 1
 		else:
 			slow.append("%s rose %.0f" % [_u(box.position), rose])
-		bot.controller.apply_command(DotFpsCommand.new())
+		bot.controller.apply_command(GSFpsCommand.new())
 	_planned += 1
 	_check(climbed == tried, "a player holding forward at a ladder's foot climbs it (%d of %d)" % [climbed, tried],
 		", ".join(slow))
@@ -585,7 +585,7 @@ func _in_pit(at: Vector3) -> bool:
 	var zones := game.timers.zones
 	if zones == null:
 		return false
-	for z: DotTimerZone in zones.of_kind(DotTimerZone.Kind.RESPAWN):
+	for z: GSTimerZone in zones.of_kind(GSTimerZone.Kind.RESPAWN):
 		if z.contains(at) or z.contains(at + Vector3.UP * AirdriftUnits.to_metres(36.0)):
 			return true
 	return false
@@ -635,8 +635,8 @@ func _test_water() -> void:
 		tried += 1
 		swam += 1
 		var y0 := bot.global_position.y
-		var command := DotFpsCommand.new()
-		command.buttons = DotFpsCommand.BUTTON_JUMP
+		var command := GSFpsCommand.new()
+		command.buttons = GSFpsCommand.BUTTON_JUMP
 		for _i in range(32):
 			bot.controller.apply_command(command)
 			await get_tree().physics_frame
@@ -646,7 +646,7 @@ func _test_water() -> void:
 		else:
 			stuck.append("%s %.0f -> %.0f u, mode %d, surface %.0f" % [_u(feet), AirdriftUnits.to_units(y0),
 				AirdriftUnits.to_units(bot.global_position.y), bot.controller.state.mode, AirdriftUnits.to_units(w.end.y)])
-		bot.controller.apply_command(DotFpsCommand.new())
+		bot.controller.apply_command(GSFpsCommand.new())
 	_planned += 2
 	_check(tried == placed, "a player put in the water swims (%d of %d pools)" % [tried, placed], "nobody entered the swim mode")
 	_check(rose == tried, "and holding jump rises to the surface (%d of %d)" % [rose, tried], ", ".join(stuck))

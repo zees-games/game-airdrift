@@ -52,7 +52,7 @@ Short forms; the reasoning is in the linked file.
 - A movement change abandons every run; styles' `auto_hop`/`easy_bhop` are `INHERIT` (except `prebhop`); validate a cvar on a copy before writing it. [movement](docs/movement.md#auto-bhop-is-the-servers-and-the-styles-defer-to-it)
 - A bot walks before it hops: a held jump from standstill creeps at 30 u/s, faithfully. [movement](docs/movement.md#a-held-jump-from-a-standstill-creeps-at-30-us-and-that-is-faithful)
 - A movement effect is refused during a ranked run, classified by what the definition changes, never by id. [movement](docs/movement.md#a-movement-effect-is-a-style-and-a-style-you-did-not-choose-is-a-record-you-did-not-set)
-- Third person is `AirdriftCamera` over one motor, never `DotTpsController`; arm `DotCameraBoom`, decided by `mp_forceview`; `tools/camera_check.gd` after touching either. [movement](docs/movement.md#third-person-is-cosmetic-and-stays-airdriftcameras)
+- Third person is `AirdriftCamera` over one motor, never `GSTpsController`; arm `GSCameraBoom`, decided by `mp_forceview`; `tools/camera_check.gd` after touching either. [movement](docs/movement.md#third-person-is-cosmetic-and-stays-airdriftcameras)
 - A ladder wins over water; the ladder mode never calls `categorise_ground`. [movement](docs/movement.md#ladders-and-water)
 
 - A map may change movement cvars through `cfg/game/game-airdrift/dot_map/map/%.yml` (`AirdriftMapConfig`; default `sv_airaccelerate` 1000 for every map, 100 for the two maps that ask for it), restored on the next map. [movement](docs/movement.md#a-map-may-change-some-movement-cvars)
@@ -72,7 +72,7 @@ Short forms; the reasoning is in the linked file.
 
 - Geometry, zones and the bot read one list per route; `_pad_centre()` answers "where is the finish". [maps](docs/maps.md#geometry-and-zones-come-from-one-description)
 - Every route needs a start, a finish, a spawn and a pit of its own; every zone must hang over something. [maps](docs/maps.md#every-route-has-a-start-a-finish-a-spawn-and-a-pit-of-its-own)
-- The surf bot plans on a second motor (`DotFpsSimulator`), never a model of one; regenerate `maps/routes/<id>.surf.json` (`tools/surf_plan.tscn`) after a movement or collision change. [routes](docs/routes.md#a-surf-bot-planned-on-the-motor)
+- The surf bot plans on a second motor (`GSFpsSimulator`), never a model of one; regenerate `maps/routes/<id>.surf.json` (`tools/surf_plan.tscn`) after a movement or collision change. [routes](docs/routes.md#a-surf-bot-planned-on-the-motor)
 - Server bots: `bot_quota` 0 by default, no timer (never filed), put back by the course; the surf pilot with no forecast (`veto_horizon` 0) where a cache exists, else the route bot, planned through dot-npc-ai's link annotations (`bot_nav`, `airdrift_bot_nav.gd`) when the map has no route file. [routes](docs/routes.md#bots-on-a-server)
 - A new bonus is a RUN route sized inside `AirdriftReach`, declared with `add_course`, driven pad to finish with no reset and a pace check. [routes](docs/routes.md#how-the-bots-drive)
 - There is no list of maps anywhere; discover. [map-delivery](docs/map-delivery.md#maps-are-dropped-in-not-listed)
@@ -126,7 +126,7 @@ Short forms; the reasoning is in the linked file.
 - The HUD follows the menu's theme (`apply_theme`, and `follow_hud(hud, null, false)` for dot-ui's pieces), never `hud_scale`. [client](docs/client.md#the-hud)
 - The flashlight is a shader default texture, never a `global uniform`. [client](docs/client.md#the-flashlight-lights-unshaded-surfaces-too)
 - Shake 0, flashes off, effect budget 24; emitters `local_coords`. [client](docs/client.md#presentation-settings-sound-and-effects)
-- **The loading cover is dot-game's `DotGameClient`** (`AirdriftClient.platform`, `gate` is `platform.gate`), with settings, console and pointer left to this client (`use_settings`, `use_console`, `capture_pointer` off; a partial migration like FC and playlot, because the menu pages, console, click-to-play pointer and roster board are the presentation's). `platform.busy_fn` (`_input_busy`) and `input_blocked_changed` suspend the samplers, so the cover stills them too, and the platform flushes the browser's filesystem: the menu and console are `AirdriftPresentation`'s and `AirdriftMenuPages`'s, the click-to-play notice is `_grab_mouse`'s. `tools/gate_shot.gd` renders the cover and the lift. `headless_maps` runs dot-core's `DotCollisionAudit` over each hand-built map and fails on a finding; `headless_imported` prints the count per imported map and fails on none (the Sky mesh is opted out with `dot_no_collision`).
+- **The loading cover is dot-game's `GSGameClient`** (`AirdriftClient.platform`, `gate` is `platform.gate`), with settings, console and pointer left to this client (`use_settings`, `use_console`, `capture_pointer` off; a partial migration like FC and playlot, because the menu pages, console, click-to-play pointer and roster board are the presentation's). `platform.busy_fn` (`_input_busy`) and `input_blocked_changed` suspend the samplers, so the cover stills them too, and the platform flushes the browser's filesystem: the menu and console are `AirdriftPresentation`'s and `AirdriftMenuPages`'s, the click-to-play notice is `_grab_mouse`'s. `tools/gate_shot.gd` renders the cover and the lift. `headless_maps` runs dot-core's `GSCollisionAudit` over each hand-built map and fails on a finding; `headless_imported` prints the count per imported map and fails on none (the Sky mesh is opted out with `dot_no_collision`).
 - Typing suspends the sampler as well as swallowing input; the console is a menu overlay, built after the menu (`build_console(menu)`). [client](docs/client.md#the-chat-box-and-a-run-nobody-may-lose-to-a-keystroke)
 
 **Services and layers**
@@ -135,11 +135,11 @@ Short forms; the reasoning is in the linked file.
 - One rock-the-vote; the vote's clock is the one every screen shows; the session's clock ends no map while there is a vote. [services](docs/services.md#the-vote)
 - The fire command is a bit on the command, consumed on read, never retained over a lost packet; never `get_meta(key, null)`. [modes](docs/modes.md#the-trigger-is-one-ticks-input)
 - Weapon rows set `authored_tick_rate` (128). The held weapon reaches its owner only (`net_weapon`, `AirdriftArsenal.WIRE_IDS` appended). [modes](docs/modes.md#deathmatch-is-a-layer)
-- Entity ids from `DotEntityTable`, never derived; the userid is a separate thing. [modes](docs/modes.md#deathmatch-is-a-layer)
+- Entity ids from `GSEntityTable`, never derived; the userid is a separate thing. [modes](docs/modes.md#deathmatch-is-a-layer)
 - Hunters have no navigation graph (`require_navigable_spawn` off). Practice blocks spawn frozen, `only_practice` on. [modes](docs/modes.md#a-timer-map-is-a-critical-path-so-the-hunters-have-no-navigation-graph)
 - A hunter brain seeds from `npc.seed`, never `npc.instance_id`. dot-npc `docs/runtime.md`
 - Spectating: `force_camera` 0 unless deathmatch; `sv_spec_list` gated on the server. [modes](docs/modes.md#spectating)
-- A death's fall is the server's (`AirdriftCombat.decide_death`), sent as DEATH, undone by ALIVE; every `DotDamage` carries `tick`. [modes](docs/modes.md#a-dead-player-falls)
+- A death's fall is the server's (`AirdriftCombat.decide_death`), sent as DEATH, undone by ALIVE; every `GSDamage` carries `tick`. [modes](docs/modes.md#a-dead-player-falls)
 
 ## Not here yet
 

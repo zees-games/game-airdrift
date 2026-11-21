@@ -1,7 +1,7 @@
 extends Node
 
 ## Touch controls on a phone or tablet: dot-mobile's stick, drag-look and buttons over the HUD, driving the client's
-## own [DotFpsTouchSampler]. Nothing shows on a desktop; the server's `sv_mobile_*` cvars bound the rest.
+## own [GSFpsTouchSampler]. Nothing shows on a desktop; the server's `sv_mobile_*` cvars bound the rest.
 ## See docs/touch.md.
 
 ## Jump and crouch hold their command bits on the sampler, so a run sees a thumb exactly as it sees Space and Ctrl.
@@ -9,10 +9,10 @@ const RESTART := &"restart"
 ## Held while a finger is on it; the client reads it where it reads the mouse button (see AirdriftClientNetcode.fire_wanted).
 const FIRE := &"fire"
 
-var controls: DotMobileControls = null
+var controls: GSMobileControls = null
 var menu_button: Button = null
 
-## () -> DotFpsSampler: the sampler the keys drive now (the player's own offline, the netcode's online).
+## () -> GSFpsSampler: the sampler the keys drive now (the player's own offline, the netcode's online).
 var sampler_fn: Callable = Callable()
 ## () -> bool: a menu, the console, the load gate or spectating has the screen.
 var busy_fn: Callable = Callable()
@@ -20,8 +20,8 @@ var busy_fn: Callable = Callable()
 
 ## Builds the overlay under [param host] (the client), above its HUD. [param on_restart] and [param on_menu] are what R
 ## and Escape do.
-func build(host: Node, rules: DotMobileRules, on_restart: Callable, on_menu: Callable) -> void:
-	controls = DotMobileControls.new()
+func build(host: Node, rules: GSMobileRules, on_restart: Callable, on_menu: Callable) -> void:
+	controls = GSMobileControls.new()
 	controls.name = "TouchControls"
 	controls.rules = rules
 	controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -49,8 +49,8 @@ func build(host: Node, rules: DotMobileRules, on_restart: Callable, on_menu: Cal
 ## The buttons a runner needs, offsets from the bottom-right corner.
 static func layout() -> Array[Dictionary]:
 	return [
-		{"id": &"jump", "label": "JUMP", "offset": Vector2(70, 60), "radius": 56.0, "hold": DotFpsCommand.BUTTON_JUMP},
-		{"id": &"crouch", "label": "DUCK", "offset": Vector2(190, 40), "radius": 42.0, "hold": DotFpsCommand.BUTTON_CROUCH},
+		{"id": &"jump", "label": "JUMP", "offset": Vector2(70, 60), "radius": 56.0, "hold": GSFpsCommand.BUTTON_JUMP},
+		{"id": &"crouch", "label": "DUCK", "offset": Vector2(190, 40), "radius": 42.0, "hold": GSFpsCommand.BUTTON_CROUCH},
 		{"id": FIRE, "label": "FIRE", "offset": Vector2(300, 80), "radius": 52.0},
 		{"id": RESTART, "label": "R", "offset": Vector2(60, 200), "radius": 32.0},
 	]
@@ -65,7 +65,7 @@ func fire_held() -> bool:
 func sync() -> void:
 	if controls == null:
 		return
-	var sampler: DotFpsSampler = sampler_fn.call() if sampler_fn.is_valid() else null
+	var sampler: GSFpsSampler = sampler_fn.call() if sampler_fn.is_valid() else null
 	if sampler != null and sampler != controls.sampler:
 		controls.setup(sampler, layout())
 	controls.paused = busy_fn.is_valid() and bool(busy_fn.call())

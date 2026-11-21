@@ -1,10 +1,10 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 const RouteBot := preload("../game/airdrift_route_bot.gd")
 
-## dot-sim's route bots (`DotSimRouteBots`, every route bot of a tick in one native call) held to
+## dot-sim's route bots (`GSSimRouteBots`, every route bot of a tick in one native call) held to
 ## `AirdriftRouteBot.command` in script, to the bit. [codeblock] godot --headless --path . res://examples/headless_native_route.tscn [/codeblock]
 ## Per map, the same seeded lobby of route bots is ridden three times from a fresh game: all script
 ## (`native_route` off), native, and native under `route_verify` (each bot's tick re-run in script
@@ -25,7 +25,7 @@ var _routed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -33,7 +33,7 @@ func _run() -> void:
 	print("Airdrift — native route bots parity")
 	var was := RouteBot.native_route
 	var was_verify := RouteBot.route_verify
-	if not DotSim.has(&"route"):
+	if not GSSim.has(&"route"):
 		print("SKIP: dot-sim's route module is not loaded: the native half is skipped")
 		if (OS.get_environment("GS_SIM_REQUIRE_NATIVE") if OS.has_environment("GS_SIM_REQUIRE_NATIVE") else OS.get_environment("DOT_SIM_REQUIRE_NATIVE")) == "1":
 			_check(false, "the library is loaded (GS_SIM_REQUIRE_NATIVE=1)")
@@ -102,7 +102,7 @@ func _ride(id: StringName, native: bool, verify: bool) -> Dictionary:
 		game.queue_free()
 		return {}
 	if game.maps.current.id != id:
-		var changed: DotResult = await game.change_map(id)
+		var changed: GSResult = await game.change_map(id)
 		if not changed.ok:
 			game.queue_free()
 			return {}
@@ -127,7 +127,7 @@ func _ride(id: StringName, native: bool, verify: bool) -> Dictionary:
 			var player: Node = game.players.get(bot_id)
 			if player == null:
 				continue
-			var state: DotFpsState = player.get("controller").state
+			var state: GSFpsState = player.get("controller").state
 			var at := state.position
 			row.append(at)
 			row.append(state.velocity)

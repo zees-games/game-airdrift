@@ -1,6 +1,6 @@
 extends "airdrift_module_commands.gd"
 
-var _shared_names: DotFpsCvars = null
+var _shared_names: GSFpsCvars = null
 
 
 func _module_name() -> String:
@@ -18,10 +18,10 @@ func _module_author() -> String:
 
 ## dot-platform's own module, loaded beside this one.
 ##
-## A PATH, because `DotModuleHost.load_module` takes one and constructs the module
+## A PATH, because `GSModuleHost.load_module` takes one and constructs the module
 ## itself — so a pre-built instance with its hub assigned would be thrown away and a
 ## fresh one made with a null. dot-platform's module falls back to
-## `DotRegistry.get_service(DotPlatformHub.SERVICE)` for exactly this, which is why
+## `GSRegistry.get_service(GSPlatformHub.SERVICE)` for exactly this, which is why
 ## [AirdriftIdentity] registers the hub.
 const PLATFORM_MODULE_PATH := "res://addons/dot_platform/dot_platform_module.gd"
 
@@ -29,13 +29,13 @@ const PLATFORM_MODULE_PATH := "res://addons/dot_platform/dot_platform_module.gd"
 var _loaded_platform := false
 
 
-func _build_identity() -> DotResult:
+func _build_identity() -> GSResult:
 	identity = AirdriftIdentity.new()
 	identity.name = "Identity"
 	identity.report_to_backbone = game.config.report_to_backbone
 	add_child(identity)
 
-	var ready: DotResult = await identity.setup()
+	var ready: GSResult = await identity.setup()
 
 	if not ready.ok:
 		remove_child(identity)
@@ -45,7 +45,7 @@ func _build_identity() -> DotResult:
 
 	if server.modules != null and not server.modules.has_module("platform"):
 		# Awaited: see the same call in FC. A module load is a coroutine.
-		var loaded: DotResult = await server.modules.load_module(
+		var loaded: GSResult = await server.modules.load_module(
 			PLATFORM_MODULE_PATH
 		)
 
@@ -54,16 +54,16 @@ func _build_identity() -> DotResult:
 		if not loaded.ok:
 			return loaded.wrap("The platform module would not load")
 
-	return DotResult.success(identity)
+	return GSResult.success(identity)
 
 
-func _build_services() -> DotResult:
+func _build_services() -> GSResult:
 	services = AirdriftServices.new()
 	services.name = "Services"
 	services.punishments_file = punishments_file
 	add_child(services)
 
-	var ready: DotResult = await services.setup(server, game, bridge.link)
+	var ready: GSResult = await services.setup(server, game, bridge.link)
 
 	if not ready.ok:
 		remove_child(services)
@@ -77,13 +77,13 @@ func _build_services() -> DotResult:
 	# sv_voice_enable and sv_voice_mode: enforced on the router, replicated so a client hides
 	# its key. On this module, so they go when it unloads.
 	if services.voice != null:
-		var _voice_cvars := services.voice.bind_cvars(add_cvar, DotConVar.FLAG_NOTIFY | DotConVar.FLAG_REPLICATED)
+		var _voice_cvars := services.voice.bind_cvars(add_cvar, GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED)
 
 	services.command_entered.connect(_on_chat_command)
 
 	# noclip, slay, bring and the rest. On this module, so they go when it unloads.
 	if services.mod_tools != null:
-		mod_commands = DotModToolCommands.install(self, services.mod_tools, server)
+		mod_commands = GSModToolCommands.install(self, services.mod_tools, server)
 		mod_commands.items_fn = func() -> PackedStringArray:
 			var out := PackedStringArray()
 			if game.combat != null:
@@ -91,10 +91,10 @@ func _build_services() -> DotResult:
 					out.append(String(id))
 			return out
 
-	return DotResult.success(services)
+	return GSResult.success(services)
 
 
-func _build_vote() -> DotResult:
+func _build_vote() -> GSResult:
 	vote = AirdriftVote.new()
 	vote.commands_spec_fn = func() -> Dictionary:
 		return game.rotation_file.commands() if game.rotation_file != null else {}
@@ -111,7 +111,7 @@ func _build_vote() -> DotResult:
 
 	vote.is_admin_fn = func(voter: StringName) -> bool:
 		var session := server.session_by_userid(AirdriftCombat.userid_of(voter))
-		return session != null and session.permissions.has(DotAdminFlags.CHANGEMAP)
+		return session != null and session.permissions.has(GSAdminFlags.CHANGEMAP)
 
 	# The drawn ballot, to each playing session with its own voter id (`u<userid>`, what
 	# dot-vote's commands key a voter by), so the client shell marks the player's own
@@ -120,7 +120,7 @@ func _build_vote() -> DotResult:
 		for session in server.playing_sessions():
 			var data := state.duplicate()
 			data["you"] = "u%d" % session.userid
-			server.send_notice(session, DotNotice.make(
+			server.send_notice(session, GSNotice.make(
 				&"", "", float(state.get("seconds", -1.0)), MAP_BALLOT_TOPIC, data
 			))
 
@@ -154,7 +154,7 @@ func _build_vote() -> DotResult:
 	)
 
 	# The time left, from the clock that ends the map. The HUD drew the map session's,
-	# which on a client is a clock nobody extends; see `DotVoteClockView`.
+	# which on a client is a clock nobody extends; see `GSVoteClockView`.
 	vote.clock_due.connect(
 		func(state: Dictionary) -> void:
 			if bridge != null:
@@ -183,7 +183,7 @@ func _build_vote() -> DotResult:
 	# the one that ends the map.
 	game.clock_fn = vote.clock_state
 
-	return DotResult.success(vote)
+	return GSResult.success(vote)
 
 
 ## The commands that only exist once the optional halves loaded.
@@ -192,7 +192,7 @@ func _add_server_commands() -> void:
 		# dot-vote's own: `rtv`, `nominate`, `vote`, `nextmap`, `timeleft` and the
 		# operator's four, on the one director. See `AirdriftVote.install_commands`.
 		var commanded := vote.install_commands(self)
-		DotLog.result(CHANNEL, "the vote's commands", commanded)
+		GSLog.result(CHANNEL, "the vote's commands", commanded)
 		# The map menu (M), dot-vote's: every map this server has, as the solo list shows them,
 		# changed now through the game's own change (which fetches delivered content first) for
 		# a player holding the owner's `sv_map_menu_flag`, or the only human here while
@@ -204,7 +204,7 @@ func _add_server_commands() -> void:
 		if menu_half is Object:
 			(menu_half as Object).set(&"change_fn", game.change_map)
 			(menu_half as Object).set(&"rows_fn", func(_rows: Array) -> Array: return AirdriftGame.menu_rows(game.map_rows()))
-		add_command("airdrift_vote", _cmd_open_vote, "Open a vote now", DotAdminFlags.VOTE)
+		add_command("airdrift_vote", _cmd_open_vote, "Open a vote now", GSAdminFlags.VOTE)
 	else:
 		# No ballot, so `rtv` is the map session's own tally — the one rock-the-vote this
 		# server has, under the name players type.
@@ -212,11 +212,11 @@ func _add_server_commands() -> void:
 
 	if services != null:
 		add_command("airdrift_services", _cmd_services,
-			"Chat, voice and moderation", DotAdminFlags.GENERIC)
+			"Chat, voice and moderation", GSAdminFlags.GENERIC)
 
 	if identity != null:
 		add_command("airdrift_identity", _cmd_identity,
-			"The platform layer", DotAdminFlags.GENERIC)
+			"The platform layer", GSAdminFlags.GENERIC)
 
 	if game.progress != null:
 		add_command("stats", _cmd_stats, "Your numbers on this server", "").with_chat()
@@ -224,34 +224,34 @@ func _add_server_commands() -> void:
 	if game.hunters != null:
 		add_command("airdrift_hunt", _cmd_hunt,
 			"Show, clear, or place one: airdrift_hunt [clear|spawn <id>]",
-			DotAdminFlags.GENERIC)
+			GSAdminFlags.GENERIC)
 
 	if game.props != null:
 		add_command("airdrift_place", _cmd_place,
-			"Place a block where you are looking", DotAdminFlags.CHANGEMAP)
+			"Place a block where you are looking", GSAdminFlags.CHANGEMAP)
 		add_command("airdrift_place_undo", _cmd_place_undo,
-			"Take the last block back", DotAdminFlags.CHANGEMAP)
+			"Take the last block back", GSAdminFlags.CHANGEMAP)
 		add_command("airdrift_place_clear", _cmd_place_clear,
-			"Clear every placed block", DotAdminFlags.CHANGEMAP)
+			"Clear every placed block", GSAdminFlags.CHANGEMAP)
 		add_command("airdrift_nudge", _cmd_nudge,
 			"Grab the block you are looking at, or drop the one you hold",
-			DotAdminFlags.CHANGEMAP)
+			GSAdminFlags.CHANGEMAP)
 
 
-func _cmd_open_vote(ctx: DotCmdContext) -> void:
-	var opened := vote.director.open_vote(DotVoteClock.REASON_MANUAL)
+func _cmd_open_vote(ctx: GSCmdContext) -> void:
+	var opened := vote.director.open_vote(GSVoteClock.REASON_MANUAL)
 	ctx.reply("Vote opened." if opened.ok else opened.error.message)
 
 
-func _cmd_services(ctx: DotCmdContext) -> void:
+func _cmd_services(ctx: GSCmdContext) -> void:
 	ctx.reply_lines(services.describe_lines())
 
 
-func _cmd_identity(ctx: DotCmdContext) -> void:
+func _cmd_identity(ctx: GSCmdContext) -> void:
 	ctx.reply_lines(identity.describe_lines())
 
 
-func _cmd_stats(ctx: DotCmdContext) -> void:
+func _cmd_stats(ctx: GSCmdContext) -> void:
 	var id := _caller_id(ctx)
 
 	if id == &"":
@@ -278,7 +278,7 @@ func _cmd_stats(ctx: DotCmdContext) -> void:
 	ctx.reply("Achievement points: %d" % game.progress.points_of(id))
 
 
-func _cmd_hunt(ctx: DotCmdContext) -> void:
+func _cmd_hunt(ctx: GSCmdContext) -> void:
 	if not ctx.args.is_empty() and ctx.args[0] == "clear":
 		ctx.reply("Removed %d hunter(s)." % game.hunters.clear())
 		return
@@ -308,7 +308,7 @@ func _cmd_hunt(ctx: DotCmdContext) -> void:
 	ctx.reply_lines(game.hunters.describe_lines())
 
 
-func _cmd_place(ctx: DotCmdContext) -> void:
+func _cmd_place(ctx: GSCmdContext) -> void:
 	var player := _caller(ctx)
 
 	if player == null:
@@ -330,17 +330,17 @@ func _cmd_place(ctx: DotCmdContext) -> void:
 	)
 
 
-func _cmd_place_undo(ctx: DotCmdContext) -> void:
+func _cmd_place_undo(ctx: GSCmdContext) -> void:
 	ctx.reply("Removed." if game.props.undo(_caller_id(ctx)) else "Nothing to remove.")
 
 
-func _cmd_place_clear(ctx: DotCmdContext) -> void:
+func _cmd_place_clear(ctx: GSCmdContext) -> void:
 	ctx.reply("Cleared %d block(s)." % game.props.clear())
 
 
 ## Grabs, or drops. One command for both, because an admin who has to remember which
 ## of two they typed last is an admin holding a block they cannot put down.
-func _cmd_nudge(ctx: DotCmdContext) -> void:
+func _cmd_nudge(ctx: GSCmdContext) -> void:
 	var caller := _caller(ctx)
 
 	if caller == null:
@@ -478,7 +478,7 @@ func _player_named(text: String) -> StringName:
 ## Tells dot-server which map is running, so A2S and DQP print it in their map field (and
 ## the backbone report does too) rather than this game's content id. On every change
 ## through the session's own signal, which every route to a new map ends at.
-func _report_map(map: DotMapDef, _world: Node = null) -> void:
+func _report_map(map: GSMapDef, _world: Node = null) -> void:
 	if map != null:
 		if map_config == null:
 			map_config = AirdriftMapConfig.build(console)
@@ -489,16 +489,16 @@ func _report_map(map: DotMapDef, _world: Node = null) -> void:
 
 
 ## The converted world's PVS (res://worlds/<id>) as the snapshot visibility, cvar net_visibility; none clears it.
-func _attach_visibility(map: DotMapDef) -> void:
-	if net == null or DotAddonApi.build_level("dot_game") < 52:
+func _attach_visibility(map: GSMapDef) -> void:
+	if net == null or GSAddonApi.build_level("dot_game") < 52:
 		return
 	var mesh: Object = null
 	var prefix := AirdriftPaths.rebase("res://worlds").path_join(String(map.id)) if map != null else ""
 	if not prefix.is_empty() and FileAccess.file_exists(prefix + ".json") and FileAccess.file_exists(prefix + ".bin"):
-		var got: DotResult = DotMapBspMesh.load_prefix(prefix)
+		var got: GSResult = GSMapBspMesh.load_prefix(prefix)
 		mesh = got.value if got.ok else null
-	var on: bool = (DotGameNetcode as GDScript).call(&"attach_visibility", net, mesh)
-	DotLog.info(CHANNEL, "snapshot visibility", {"map": String(map.id) if map != null else "", "in_force": on})
+	var on: bool = (GSGameNetcode as GDScript).call(&"attach_visibility", net, mesh)
+	GSLog.info(CHANNEL, "snapshot visibility", {"map": String(map.id) if map != null else "", "in_force": on})
 
 
 func _physics_process(delta: float) -> void:
@@ -524,7 +524,7 @@ func _physics_process(delta: float) -> void:
 var _bot_names_taken: Array = []
 
 
-## Adds or removes bots until there are as many as [DotBotQuota] wants for the people
+## Adds or removes bots until there are as many as [GSBotQuota] wants for the people
 ## playing. Newest first out, so the bot that has been riding longest keeps riding.
 func _keep_bots() -> void:
 	if game == null or game.bots == null or _quota == null:
@@ -541,7 +541,7 @@ func _keep_bots() -> void:
 		_bot_names_taken.clear()
 		for id: StringName in game.players:
 			_bot_names_taken.append((game.players[id] as AirdriftPlayer).display_name)
-		if game.bots.call("add_bot", DotBotNames.pick(_bot_names_taken, game.players.size())) == null:
+		if game.bots.call("add_bot", GSBotNames.pick(_bot_names_taken, game.players.size())) == null:
 			break
 	while ids.size() > wanted:
 		game.bots.call("remove_bot", ids[ids.size() - 1])
@@ -568,8 +568,8 @@ func chat_commands() -> Array:
 		if cmd == null or cmd.permission != "":
 			continue
 
-		var by_chat := cmd.chat_policy == DotConCommand.ChatPolicy.ALLOWED or (
-			cmd.chat_policy == DotConCommand.ChatPolicy.DEFAULT and console.chat_commands_are_open()
+		var by_chat := cmd.chat_policy == GSConCommand.ChatPolicy.ALLOWED or (
+			cmd.chat_policy == GSConCommand.ChatPolicy.DEFAULT and console.chat_commands_are_open()
 		)
 
 		if by_chat:
@@ -585,7 +585,7 @@ func _register_games() -> void:
 		return
 	if server.games.find_game("g2gfast") != null:  # legacy id
 		return
-	var descriptor := DotGameDescriptor.new()
+	var descriptor := GSGameDescriptor.new()
 	descriptor.game_id = "g2gfast"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 	descriptor.display_name = "Zee's Airdrift"
 	descriptor.scene = AirdriftPaths.rebase("res://game/airdrift.tscn")
@@ -623,10 +623,10 @@ func _movement_cvar(cvar_name: String, field: String, description: String) -> vo
 	var text := ("1" if current else "0") if current is bool else str(current)
 
 	var cvar := add_cvar(
-		cvar_name, text, description, DotConVar.FLAG_ARCHIVE | DotConVar.FLAG_NOTIFY
+		cvar_name, text, description, GSConVar.FLAG_ARCHIVE | GSConVar.FLAG_NOTIFY
 	)
 
-	cvar.with_validator(func(proposed: String) -> DotResult:
+	cvar.with_validator(func(proposed: String) -> GSResult:
 		var trial := game.config.clone() as AirdriftConfig
 		trial.set(field, _coerce(trial.get(field), proposed))
 		return trial.validate()
@@ -641,23 +641,23 @@ func _movement_cvar(cvar_name: String, field: String, description: String) -> vo
 	)
 
 
-## Registers the shared movement names that differ from Airdrift's (`sv_runspeed`, `sv_airwishspeed`, `sv_autohop`) over AirdriftConfig, through the same binder dot-game's `bind_movement_cvars` uses (this module is a DotModule, not a DotGameModule). The names spelled alike are Airdrift's own cvars already.
+## Registers the shared movement names that differ from Airdrift's (`sv_runspeed`, `sv_airwishspeed`, `sv_autohop`) over AirdriftConfig, through the same binder dot-game's `bind_movement_cvars` uses (this module is a GSModule, not a GSGameModule). The names spelled alike are Airdrift's own cvars already.
 func _bind_shared_movement_names() -> void:
 	var adapter := AirdriftMovementNames.new(game)
 	adapter.changed_fn = _mirror_to_game_cvar
-	_shared_names = DotFpsCvars.new().add_target(adapter)
-	var _made := _shared_names.bind_cvars(Callable(self, "add_cvar"), DotConVar.FLAG_ARCHIVE | DotConVar.FLAG_NOTIFY)
+	_shared_names = GSFpsCvars.new().add_target(adapter)
+	var _made := _shared_names.bind_cvars(Callable(self, "add_cvar"), GSConVar.FLAG_ARCHIVE | GSConVar.FLAG_NOTIFY)
 
 
 ## The family `stats_report` cvar (off by default); the tracker is registered when first needed, since the progress node may not exist at load.
 func _bind_stats_report() -> void:
-	var _cv := DotGameStatsReport.bind(self,
-		func(on: bool) -> DotResult:
+	var _cv := GSGameStatsReport.bind(self,
+		func(on: bool) -> GSResult:
 			if game.progress == null or game.progress.stats == null:
-				return DotResult.fail(DotError.CODE_STATE, "No progress yet.")
-			if DotRegistry.get_service(DotGameStatsFeed.SERVICE) != game.progress.stats:
-				DotRegistry.register(DotGameStatsFeed.SERVICE, game.progress.stats)
-			return DotGameStatsReport.apply_default(self, on))
+				return GSResult.fail(GSError.CODE_STATE, "No progress yet.")
+			if GSRegistry.get_service(GSGameStatsFeed.SERVICE) != game.progress.stats:
+				GSRegistry.register(GSGameStatsFeed.SERVICE, game.progress.stats)
+			return GSGameStatsReport.apply_default(self, on))
 
 
 ## The config field changed (or a shared-name write was refused): both spellings show what AirdriftConfig holds.
@@ -674,7 +674,7 @@ func _mirror_to_shared_cvar(field: String) -> void:
 
 
 func _set_cvar_text(cvar_name: String, field: String) -> void:
-	var cv: DotConVar = console.find_cvar(cvar_name) if console != null and cvar_name != "" else null
+	var cv: GSConVar = console.find_cvar(cvar_name) if console != null and cvar_name != "" else null
 	if cv == null:
 		return
 	var current: Variant = game.config.get(field)
@@ -698,7 +698,7 @@ static func _coerce(current: Variant, text: String) -> Variant:
 
 # --- Sessions --------------------------------------------------------------
 
-func _on_client_disconnected(session: DotClientSession, _reason: String = "") -> void:
+func _on_client_disconnected(session: GSClientSession, _reason: String = "") -> void:
 	_painters.erase(_player_id(session))
 	if noblock != null:
 		noblock.rules.call(&"forget", session.userid)
@@ -723,13 +723,13 @@ func _on_client_disconnected(session: DotClientSession, _reason: String = "") ->
 		bridge.remove_peer(session.peer_id)
 		_joined.erase(session.userid)
 
-		var loadouts := DotGameAvatarActionRelay.loadouts_of(net)
+		var loadouts := GSGameAvatarActionRelay.loadouts_of(net)
 		if loadouts != null:
 			loadouts.remove_peer(session.peer_id)
 
 
-## The NPC level of detail and sense workers follow the `npc_lod*` cvars (dot-game's DotGameNpcLod; all off by default). This module is a DotModule, so it holds the attachment itself.
-var _npc_lod: DotGameNpcLod = null
+## The NPC level of detail and sense workers follow the `npc_lod*` cvars (dot-game's GSGameNpcLod; all off by default). This module is a GSModule, so it holds the attachment itself.
+var _npc_lod: GSGameNpcLod = null
 
 
 func _follow_npc_lod(spawner: Object, delta: float) -> void:
@@ -738,6 +738,6 @@ func _follow_npc_lod(spawner: Object, delta: float) -> void:
 	if _npc_lod == null or _npc_lod.spawner != spawner:
 		if _npc_lod != null:
 			_npc_lod.release()
-		_npc_lod = DotGameNpcLod.attach(self, console, spawner, server.config if server != null else null)
+		_npc_lod = GSGameNpcLod.attach(self, console, spawner, server.config if server != null else null)
 	if _npc_lod != null:
 		_npc_lod.follow(delta)

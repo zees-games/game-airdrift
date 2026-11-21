@@ -3,19 +3,19 @@ extends RefCounted
 ## Every per-player number a timer server counts, declared in one place.
 ##
 ## [b]The ids are the contract, three ways.[/b] The same strings name a stat in
-## [DotStatsSchema], a requirement in [AirdriftAwards]' achievement rules, and a source in
+## [GSStatsSchema], a requirement in [AirdriftAwards]' achievement rules, and a source in
 ## [AirdriftProgress]. Three subsystems that never import each other agree because they all
 ## read the constants below.
 ##
 ## [b]Everything countable here is already measured by something else, and none of it
-## is measured twice.[/b] `DotFpsStats` counts jumps, perfect jumps, strafes and sync
+## is measured twice.[/b] `GSFpsStats` counts jumps, perfect jumps, strafes and sync
 ## on every controller in the game — the movement addon has done it since it was
 ## written — and dot-timer counts runs and finishes. This file does not re-derive any
 ## of them; [AirdriftProgress] reads them out and files deltas, which is the only way two
 ## counters of one thing cannot disagree.
 ##
 ## [b]A time is a LOWEST stat, and getting that wrong is a personal best of zero.[/b]
-## [constant DotStatsDef.Kind.LOWEST] keeps the smaller of two readings, and dot-stats'
+## [constant GSStatsDef.Kind.LOWEST] keeps the smaller of two readings, and dot-stats'
 ## `merge` takes the incoming value whole when there is nothing held — which is the
 ## distinction between "held zero" and "never seen" that makes a first reading of 12
 ## seconds be 12 rather than min(12, 0).
@@ -68,7 +68,7 @@ const DEATHS := &"g2g.deaths"
 const HUNTERS_KILLED := &"g2g.hunters_killed"
 const PROPS_SPAWNED := &"g2g.props_spawned"
 
-## The published skill figure the site orders by (dot-stats' DotStatsRank).
+## The published skill figure the site orders by (dot-stats' GSStatsRank).
 const RANK_SCORE := &"rank_score"
 
 
@@ -83,18 +83,18 @@ static func ids() -> Array[StringName]:
 	]
 
 
-static func schema() -> DotStatsSchema:
-	var schema := DotStatsSchema.new()
-	var _zones := DotStatsHitzones.declare(schema)
-	DotStatsPenetration.declare_walls(schema)
-	var _shots := DotStatsShots.declare(schema)
+static func schema() -> GSStatsSchema:
+	var schema := GSStatsSchema.new()
+	var _zones := GSStatsHitzones.declare(schema)
+	GSStatsPenetration.declare_walls(schema)
+	var _shots := GSStatsShots.declare(schema)
 
 	_counter(schema, RUNS_STARTED, "Runs started", "runs", true)
 	_counter(schema, RUNS_FINISHED, "Runs finished", "runs", true)
 	_counter(schema, RECORDS_SET, "Personal bests", "records", true)
 	_counter(schema, WORLD_RECORDS, "Server records", "records", true)
 
-	var best := DotStatsDef.make(BEST_TIME, DotStatsDef.Kind.LOWEST, "Best time")
+	var best := GSStatsDef.make(BEST_TIME, GSStatsDef.Kind.LOWEST, "Best time")
 	best.unit = "s"
 	best.decimals = 3
 	best.publish = true
@@ -106,19 +106,19 @@ static func schema() -> DotStatsSchema:
 	_counter(schema, PERFECT_JUMPS, "Perfect jumps", "jumps", true)
 	_counter(schema, STRAFES, "Strafes", "strafes", true)
 
-	var top := DotStatsDef.make(TOP_SPEED, DotStatsDef.Kind.BEST, "Top speed")
+	var top := GSStatsDef.make(TOP_SPEED, GSStatsDef.Kind.BEST, "Top speed")
 	top.unit = "u/s"
 	top.decimals = 0
 	top.publish = true
 	schema.stats.append(top)
 
-	var distance := DotStatsDef.make(DISTANCE, DotStatsDef.Kind.COUNTER, "Distance")
+	var distance := GSStatsDef.make(DISTANCE, GSStatsDef.Kind.COUNTER, "Distance")
 	distance.unit = "m"
 	distance.decimals = 0
 	distance.publish = true
 	schema.stats.append(distance)
 
-	var time := DotStatsDef.make(PLAYTIME_SEC, DotStatsDef.Kind.COUNTER, "Time played")
+	var time := GSStatsDef.make(PLAYTIME_SEC, GSStatsDef.Kind.COUNTER, "Time played")
 	time.unit = "s"
 	time.publish = true
 	schema.stats.append(time)
@@ -131,7 +131,7 @@ static func schema() -> DotStatsSchema:
 	_counter(schema, HUNTERS_KILLED, "Hunters killed", "kills", true)
 	_counter(schema, PROPS_SPAWNED, "Props placed", "props", false)
 
-	var _rank := DotStatsRank.declare(schema, RANK_SCORE, "Rank score")
+	var _rank := GSStatsRank.declare(schema, RANK_SCORE, "Rank score")
 
 	return schema
 
@@ -141,7 +141,7 @@ static func schema() -> DotStatsSchema:
 ## Derived, never stored, for [AirdriftStats]' own reason: a stored quotient is a third
 ## number that can disagree with the two it came from. It is also the one figure a bhop
 ## player actually judges themselves on.
-static func perfect_ratio_of(values: DotStatsValues) -> float:
+static func perfect_ratio_of(values: GSStatsValues) -> float:
 	var jumps := values.get_value(JUMPS, 0.0)
 
 	if jumps <= 0.0:
@@ -151,7 +151,7 @@ static func perfect_ratio_of(values: DotStatsValues) -> float:
 
 
 ## Finish rate: how many started runs were finished.
-static func finish_rate_of(values: DotStatsValues) -> float:
+static func finish_rate_of(values: GSStatsValues) -> float:
 	var started := values.get_value(RUNS_STARTED, 0.0)
 
 	if started <= 0.0:
@@ -161,13 +161,13 @@ static func finish_rate_of(values: DotStatsValues) -> float:
 
 
 static func _counter(
-	schema: DotStatsSchema,
+	schema: GSStatsSchema,
 	id: StringName,
 	display: String,
 	unit: String,
 	publish: bool
 ) -> void:
-	var def := DotStatsDef.make(id, DotStatsDef.Kind.COUNTER, display)
+	var def := GSStatsDef.make(id, GSStatsDef.Kind.COUNTER, display)
 	def.unit = unit
 	def.publish = publish
 	schema.stats.append(def)

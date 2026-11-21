@@ -1,9 +1,9 @@
-extends DotSpectatorHost
+extends GSSpectatorHost
 
 const AirdriftGame := preload("airdrift_game.gd")
 const AirdriftPlayer := preload("airdrift_player.gd")
 
-## Watching somebody run: [DotSpectatorHost] with this game's numbers.
+## Watching somebody run: [GSSpectatorHost] with this game's numbers.
 ##
 ## [b]This is not the same feature it is in a deathmatch.[/b] On a timer server a record is set by somebody, once, and
 ## everybody else wants to watch it being set: `!spec ada`. Two consequences, both settings:
@@ -29,9 +29,9 @@ func _channel() -> String:
 	return CHANNEL
 
 
-func setup() -> DotResult:
+func setup() -> GSResult:
 	if game == null:
-		return DotResult.fail(DotError.CODE_STATE, "AirdriftSpectate needs a game.")
+		return GSResult.fail(GSError.CODE_STATE, "AirdriftSpectate needs a game.")
 
 	authoritative = game.authoritative
 	tick_rate = game.tick_rate
@@ -43,16 +43,16 @@ func setup() -> DotResult:
 
 	if not res.ok:
 		# An ERROR, because the server runs on without `!spec` and nothing else says so.
-		DotLog.error(CHANNEL, "spectating did not start", {"why": res.error.message})
+		GSLog.error(CHANNEL, "spectating did not start", {"why": res.error.message})
 		return res.wrap("Airdrift spectate")
 
 	if not game.player_removed.is_connected(_on_player_removed):
 		game.player_removed.connect(_on_player_removed)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
-func _tune_rules(r: DotSpectatorRules) -> DotSpectatorRules:
+func _tune_rules(r: GSSpectatorRules) -> GSSpectatorRules:
 	# A timer server is one team by definition, so restricting the camera to "your own
 	# side" would restrict it to everybody and mean nothing. It tightens the moment the
 	# deathmatch layer is on, where a living player watching a living one is a
@@ -121,22 +121,22 @@ func tick(_delta: float) -> void:
 
 ## Watch somebody by id. What `!spec <name>` calls. DEBUG-logged either way: "who was
 ## watching whom" is the first thing asked about a spectator complaint.
-func watch(viewer: String, target: String) -> DotResult:
+func watch(viewer: String, target: String) -> GSResult:
 	return _watched(viewer, super.watch(viewer, target))
 
 
-func _watched(viewer: String, res: DotResult) -> DotResult:
+func _watched(viewer: String, res: GSResult) -> GSResult:
 	if res.ok:
-		DotLog.debug(CHANNEL, "spectating", {"viewer": viewer, "target": watching(viewer)})
+		GSLog.debug(CHANNEL, "spectating", {"viewer": viewer, "target": watching(viewer)})
 	else:
-		DotLog.debug(CHANNEL, "a spectate request was refused", {"viewer": viewer, "why": res.error.message})
+		GSLog.debug(CHANNEL, "a spectate request was refused", {"viewer": viewer, "why": res.error.message})
 	return res
 
 
 ## Watch whoever is furthest into a run, which is what a player who typed `!spec` with
 ## no name almost always means. Furthest rather than fastest: "who is nearly finished"
 ## is the question a spectator is asking.
-func watch_best(viewer: StringName) -> DotResult:
+func watch_best(viewer: StringName) -> GSResult:
 	if manager == null:
 		return _unset()
 
@@ -164,19 +164,19 @@ func stop(viewer: String) -> void:
 	var was := is_spectating(viewer)
 	super.stop(viewer)
 	if was:
-		DotLog.debug(CHANNEL, "stopped spectating", {"viewer": viewer})
+		GSLog.debug(CHANNEL, "stopped spectating", {"viewer": viewer})
 
 
-func previous_target(viewer: String) -> DotResult:
+func previous_target(viewer: String) -> GSResult:
 	return _watched(viewer, super.previous_target(viewer))
 
 
-func toggle_roam(viewer: String) -> DotResult:
+func toggle_roam(viewer: String) -> GSResult:
 	var res := super.toggle_roam(viewer)
 	if res.ok:
-		DotLog.debug(CHANNEL, "free roam toggled", {"viewer": viewer, "roaming": is_roaming(viewer)})
+		GSLog.debug(CHANNEL, "free roam toggled", {"viewer": viewer, "roaming": is_roaming(viewer)})
 	else:
-		DotLog.debug(CHANNEL, "free roam was refused", {"viewer": viewer, "why": res.error.message})
+		GSLog.debug(CHANNEL, "free roam was refused", {"viewer": viewer, "why": res.error.message})
 	return res
 
 

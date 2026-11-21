@@ -18,7 +18,7 @@ var game: AirdriftGame = null
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -26,9 +26,9 @@ func _run() -> void:
 	var args := OS.get_cmdline_user_args()
 	var id := StringName(args[0] if args.size() > 0 else "bhop_grove")
 	var why: Array = []
-	var replay: DotTimerReplay = null
+	var replay: GSTimerReplay = null
 	if args.size() > 2:
-		var parsed := DotTimerReplay.load_from(args[2])
+		var parsed := GSTimerReplay.load_from(args[2])
 		if parsed.ok:
 			replay = parsed.value
 		else:

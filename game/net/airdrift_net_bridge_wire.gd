@@ -23,7 +23,7 @@ func broadcast_shot(id: StringName, weapon: StringName, at: Vector3) -> void:
 
 
 ## To everybody: a kill, for the final killcam. Server side.
-func broadcast_kill(entry: DotKillFeed.Entry) -> void:
+func broadcast_kill(entry: GSKillFeed.Entry) -> void:
 	var killer := game.combat.player_id_for(entry.killer_key.to_int()) if entry.killer_key != "" else &""
 	_broadcast(AirdriftEvents.Kind.KILL, AirdriftEvents.write_kill(
 		session_of(killer) if killer != &"" else 0,
@@ -31,7 +31,7 @@ func broadcast_kill(entry: DotKillFeed.Entry) -> void:
 		String(entry.cause), entry.headshot))
 
 
-## To everybody: the deathmatch is over. Server side; from [signal DotMatch.match_ended].
+## To everybody: the deathmatch is over. Server side; from [signal GSMatch.match_ended].
 func broadcast_match_end() -> void:
 	_broadcast(AirdriftEvents.Kind.MATCH_END, AirdriftEvents.write_match_end(
 		game.config.killcam_seconds, game.combat.podium_rows()))
@@ -55,7 +55,7 @@ func _style_id(index: int) -> StringName:
 func _send(peer_id: int, payload: PackedByteArray, delivery: int) -> void:
 	if link == null:
 		return
-	if delivery == DotNetMessage.Delivery.UNRELIABLE:
+	if delivery == GSNetMessage.Delivery.UNRELIABLE:
 		link.send_snapshot(peer_id, payload)
 	elif net.is_server:
 		link.send_event(peer_id, payload)
@@ -100,7 +100,7 @@ func _on_player_added(player: AirdriftPlayer) -> void:
 	var identity := _build_entity(player, 0)
 	var registered := net.registry.register(identity, 0, net.clock.tick, net.config)
 	if not registered.ok:
-		DotLog.warn(CHANNEL, "could not replicate a game-made player", {"error": str(registered.error)})
+		GSLog.warn(CHANNEL, "could not replicate a game-made player", {"error": str(registered.error)})
 		return
 	_broadcast(AirdriftEvents.Kind.JOIN, _join_body(session_id))
 	roster_changed.emit(session_id)
@@ -125,8 +125,8 @@ static func session_of(id: StringName) -> int:
 	return String(id).trim_prefix("u").to_int()
 
 
-func _build_entity(player: AirdriftPlayer, peer_id: int) -> DotNetIdentity:
-	# The behaviour is added BEFORE the identity: DotNetIdentity collects behaviours
+func _build_entity(player: AirdriftPlayer, peer_id: int) -> GSNetIdentity:
+	# The behaviour is added BEFORE the identity: GSNetIdentity collects behaviours
 	# in _ready by walking the subtree, and one added afterwards would never be found.
 	var behaviour := AirdriftPlayerNet.new()
 	behaviour.name = "Net"
@@ -134,12 +134,12 @@ func _build_entity(player: AirdriftPlayer, peer_id: int) -> DotNetIdentity:
 	behaviour.bridge = self
 	player.add_child(behaviour)
 
-	var identity := DotNetIdentity.new()
+	var identity := GSNetIdentity.new()
 	identity.name = "Identity"
 	identity.owner_peer_id = peer_id
 	# SHARED: the server corrects, the owner predicts. SERVER would put a player's
 	# own movement a round trip behind their keys.
-	identity.authority = DotNetIdentity.Authority.SHARED
+	identity.authority = GSNetIdentity.Authority.SHARED
 	identity.always_relevant = true
 	player.add_child(identity)
 
@@ -161,7 +161,7 @@ func _release_entity(session_id: int) -> void:
 
 ## Redresses a player from the server side — dot-platform's wardrobe change — and
 ## tells everybody. The same path a client's own AVATAR request takes.
-func dress(session_id: int, avatar: DotAvatar) -> bool:
+func dress(session_id: int, avatar: GSAvatar) -> bool:
 	var player: AirdriftPlayer = game.players.get(_player_key(session_id)) if game != null else null
 	if player == null or avatar == null:
 		return false
@@ -198,7 +198,7 @@ var _hunter_mirrors: Dictionary = {}
 
 ## The spawner whose signals this is connected to. `sv_hunters` builds and a map change
 ## rebuilds the hunters, so it is checked every tick rather than connected once.
-var _watched_spawner: DotNpcSpawner = null
+var _watched_spawner: GSNpcSpawner = null
 
 var _hunter_world: Node3D = null
 
@@ -250,8 +250,8 @@ func note_attack(player: AirdriftPlayer, attack: bool) -> void:
 	if game == null or game.combat == null or player == null:
 		return
 
-	var command := DotWeaponCommand.new()
-	command.set_button(DotWeaponCommand.BUTTON_ATTACK, attack)
+	var command := GSWeaponCommand.new()
+	command.set_button(GSWeaponCommand.BUTTON_ATTACK, attack)
 	game.combat.set_fire_command(player.player_id, command)
 
 
@@ -300,7 +300,7 @@ func transit_text() -> String:
 	return "Loading %s…" % name
 
 
-func client_tick(tick: int, command: DotFpsCommand) -> void:
+func client_tick(tick: int, command: GSFpsCommand) -> void:
 	if net == null or net.is_server or game == null:
 		return
 
@@ -312,7 +312,7 @@ func client_tick(tick: int, command: DotFpsCommand) -> void:
 	# cannot see where they are going. The view is kept so it does not snap when the
 	# world arrives, and the packet carries the snapshot ack either way.
 	var transit := in_transit()
-	var move := command if command != null else DotFpsCommand.new()
+	var move := command if command != null else GSFpsCommand.new()
 
 	if transit:
 		move = move.duplicate_command()
@@ -343,8 +343,8 @@ func client_tick(tick: int, command: DotFpsCommand) -> void:
 
 	if link != null:
 		var payload := net.encode_ack()
-		var writer := DotNetWriter.new()
-		DotNetInput.write_batch(writer, _input_copies(packet))
+		var writer := GSNetWriter.new()
+		GSNetInput.write_batch(writer, _input_copies(packet))
 		payload.append_array(writer.to_bytes())
 		link.send_input(payload)
 
@@ -377,9 +377,9 @@ func feed_client_timers(tick: int) -> void:
 
 # --- Receiving -------------------------------------------------------------
 
-func receive_snapshot(payload: PackedByteArray) -> DotResult:
+func receive_snapshot(payload: PackedByteArray) -> GSResult:
 	if net == null or net.is_server:
-		return DotResult.fail(DotError.CODE_FORBIDDEN, "Only a client receives these.")
+		return GSResult.fail(GSError.CODE_FORBIDDEN, "Only a client receives these.")
 	if rtt_source.is_valid():
 		net.stats.note_rtt(float(rtt_source.call()))
 	return net.receive_snapshot(payload)
@@ -387,35 +387,35 @@ func receive_snapshot(payload: PackedByteArray) -> DotResult:
 
 ## [param packet] and the commands before it from the local replay history, oldest first,
 ## for one input packet. See [constant INPUT_COPIES].
-func _input_copies(packet: DotNetInput) -> Array:
+func _input_copies(packet: GSNetInput) -> Array:
 	var batch: Array = Array(net.local_inputs().recent(INPUT_COPIES, packet.tick - 1))
 	batch = batch.slice(maxi(0, batch.size() - (INPUT_COPIES - 1)))
 	batch.append(packet)
 	return batch
 
 
-func receive_input(peer_id: int, payload: PackedByteArray) -> DotResult:
+func receive_input(peer_id: int, payload: PackedByteArray) -> GSResult:
 	if net == null or not net.is_server:
-		return DotResult.fail(DotError.CODE_FORBIDDEN, "Only the server takes input.")
+		return GSResult.fail(GSError.CODE_FORBIDDEN, "Only the server takes input.")
 	if not _player_of_peer.has(peer_id):
-		return DotResult.fail(DotError.CODE_FORBIDDEN, "That peer has no player.")
+		return GSResult.fail(GSError.CODE_FORBIDDEN, "That peer has no player.")
 	if payload.size() <= ACK_BYTES:
-		return DotResult.fail(DotError.CODE_PARSE, "Input packet is too short.")
+		return GSResult.fail(GSError.CODE_PARSE, "Input packet is too short.")
 
 	net.receive_ack_payload(peer_id, payload.slice(0, ACK_BYTES))
 
 	# A batch: this tick's command and the ones before it (see [constant INPUT_COPIES]).
 	# Copies of ticks already simulated are skipped rather than pushed, or each would count
 	# as a late input; the packet's own tick is always pushed, so a late one still counts.
-	var batch := DotNetInput.read_batch(
-		DotNetReader.new(payload.slice(ACK_BYTES)),
-		func() -> DotNetInput: return AirdriftNetCommand.new()
+	var batch := GSNetInput.read_batch(
+		GSNetReader.new(payload.slice(ACK_BYTES)),
+		func() -> GSNetInput: return AirdriftNetCommand.new()
 	)
 	if batch.is_empty():
-		return DotResult.fail(DotError.CODE_PARSE, "Input packet carries no command.")
+		return GSResult.fail(GSError.CODE_PARSE, "Input packet carries no command.")
 	var buffer := net.input_buffer_for(peer_id)
 	var newest := batch[batch.size() - 1]
-	var pushed := DotResult.success(false)
+	var pushed := GSResult.success(false)
 	for input in batch:
 		if input != newest and input.tick <= buffer.last_consumed_tick():
 			continue
@@ -423,29 +423,29 @@ func receive_input(peer_id: int, payload: PackedByteArray) -> DotResult:
 	return pushed
 
 
-func receive_event(payload: PackedByteArray) -> DotResult:
+func receive_event(payload: PackedByteArray) -> GSResult:
 	if net == null:
-		return DotResult.fail(DotError.CODE_STATE, "No manager.")
+		return GSResult.fail(GSError.CODE_STATE, "No manager.")
 	return net.receive(payload, 1)
 
 
-func receive_request(peer_id: int, payload: PackedByteArray) -> DotResult:
+func receive_request(peer_id: int, payload: PackedByteArray) -> GSResult:
 	if net == null:
-		return DotResult.fail(DotError.CODE_STATE, "No manager.")
+		return GSResult.fail(GSError.CODE_STATE, "No manager.")
 	return net.receive(payload, peer_id)
 
 
 ## A relayed voice frame arrived. Client side.
 ##
-## [b]Deliberately NOT routed through [DotNetManager].[/b] Its schema hash and payload cap fit
+## [b]Deliberately NOT routed through [GSNetManager].[/b] Its schema hash and payload cap fit
 ## the replication wire; a voice frame is an opaque codec blob, and a message type per codec
 ## would change the hash both ends compare.
-func receive_voice(payload: PackedByteArray) -> DotResult:
+func receive_voice(payload: PackedByteArray) -> GSResult:
 	if not voice_in_fn.is_valid():
-		return DotResult.fail(DotError.CODE_STATE, "Nothing here plays voice.")
+		return GSResult.fail(GSError.CODE_STATE, "Nothing here plays voice.")
 
 	voice_in_fn.call(payload)
-	return DotResult.success(payload.size())
+	return GSResult.success(payload.size())
 
 
 ## A client's captured audio arrived. Server side.
@@ -453,15 +453,15 @@ func receive_voice(payload: PackedByteArray) -> DotResult:
 ## The speaker is [param peer_id], which the transport reported. It is never read out
 ## of the payload: a client that could name its own speaker id could put words in
 ## anybody's mouth.
-func receive_voice_frame(peer_id: int, payload: PackedByteArray) -> DotResult:
+func receive_voice_frame(peer_id: int, payload: PackedByteArray) -> GSResult:
 	if not voice_relay_fn.is_valid():
-		return DotResult.fail(DotError.CODE_STATE, "This end does not relay voice.")
+		return GSResult.fail(GSError.CODE_STATE, "This end does not relay voice.")
 
 	voice_relay_fn.call(peer_id, payload)
-	return DotResult.success(payload.size())
+	return GSResult.success(payload.size())
 # --- Server: what a joining peer is told ------------------------------------
 
-var _watched_spectate: DotSpectatorManager = null
+var _watched_spectate: GSSpectatorManager = null
 
 ## What each player was last told about who is watching them: target key -> names.
 var _sent_spectators: Dictionary = {}
@@ -472,7 +472,7 @@ var _sent_spectators: Dictionary = {}
 func _watch_spectate() -> void:
 	if net == null or not net.is_server or game == null:
 		return
-	var manager: DotSpectatorManager = game.spectate.manager if game.spectate != null else null
+	var manager: GSSpectatorManager = game.spectate.manager if game.spectate != null else null
 	if manager == _watched_spectate:
 		return
 	if _watched_spectate != null and is_instance_valid(_watched_spectate):
@@ -491,8 +491,8 @@ func _on_view_changed(key: String, mode: int, target: String) -> void:
 	# Nobody left to watch is not a camera worth keeping: a spectator parked on an empty
 	# fixed view has a frozen screen and no idea why. They are put back in their own view.
 	# A free camera has no target by design, so it is the one exception.
-	if target == "" and mode != DotSpectatorView.Mode.NONE \
-			and mode != DotSpectatorView.Mode.ROAMING and _watched_spectate != null:
+	if target == "" and mode != GSSpectatorView.Mode.NONE \
+			and mode != GSSpectatorView.Mode.ROAMING and _watched_spectate != null:
 		_watched_spectate.stop(key)
 		return
 	var peer := peer_for_player(session_of(StringName(key)))
@@ -503,7 +503,7 @@ func _on_view_changed(key: String, mode: int, target: String) -> void:
 
 func _on_retargeted(key: String, _from: String, to: String, _reason: StringName) -> void:
 	var v := _watched_spectate.view(key) if _watched_spectate != null else null
-	_on_view_changed(key, int(v.mode) if v != null else DotSpectatorView.Mode.NONE, to)
+	_on_view_changed(key, int(v.mode) if v != null else GSSpectatorView.Mode.NONE, to)
 
 
 func _name_of(key: String) -> String:
@@ -581,7 +581,7 @@ func _watch_hunters() -> void:
 	if net == null or not net.is_server or game == null:
 		return
 
-	var spawner: DotNpcSpawner = game.hunters.spawner if game.hunters != null else null
+	var spawner: GSNpcSpawner = game.hunters.spawner if game.hunters != null else null
 
 	if spawner == _watched_spawner:
 		return
@@ -607,7 +607,7 @@ func _watch_hunters() -> void:
 		_on_hunter_spawned(npc)
 
 
-func _on_hunter_spawned(npc: DotNpcInstance) -> void:
+func _on_hunter_spawned(npc: GSNpcInstance) -> void:
 	var body := npc.node as Node3D
 
 	if body == null or net == null or _hunter_nets.has(npc.instance_id):
@@ -619,10 +619,10 @@ func _on_hunter_spawned(npc: DotNpcInstance) -> void:
 	behaviour.body = body
 	body.add_child(behaviour)
 
-	var identity := DotNetIdentity.new()
+	var identity := GSNetIdentity.new()
 	identity.name = "Identity"
 	identity.owner_peer_id = 0
-	identity.authority = DotNetIdentity.Authority.SERVER
+	identity.authority = GSNetIdentity.Authority.SERVER
 	# Relevant to everybody: a hunter is a threat a runner must see coming, and an interest
 	# radius would announce one and then never move it — FC's first version did exactly
 	# that, a monster drawn frozen where it spawned.
@@ -632,7 +632,7 @@ func _on_hunter_spawned(npc: DotNpcInstance) -> void:
 	var registered := net.registry.register(identity, 0, net.clock.tick, net.config)
 
 	if not registered.ok:
-		DotLog.warn(CHANNEL, "could not replicate a hunter", {"error": str(registered.error)})
+		GSLog.warn(CHANNEL, "could not replicate a hunter", {"error": str(registered.error)})
 		return
 
 	_hunter_nets[npc.instance_id] = behaviour
@@ -640,7 +640,7 @@ func _on_hunter_spawned(npc: DotNpcInstance) -> void:
 	_broadcast(AirdriftEvents.Kind.NPC, AirdriftEvents.write_npc(identity.net_id, npc.def.id, body.global_position))
 
 
-func _on_hunter_removed(npc: DotNpcInstance, _reason: StringName) -> void:
+func _on_hunter_removed(npc: GSNpcInstance, _reason: StringName) -> void:
 	_forget_hunter(npc.instance_id)
 
 
@@ -666,13 +666,13 @@ func _mirror_hunter(info: Dictionary) -> void:
 	var def := AirdriftHunters.catalogue().get_npc(info["kind_id"])
 
 	if def == null:
-		DotLog.debug(CHANNEL, "a hunter this build does not have", {"id": str(info["kind_id"])})
+		GSLog.debug(CHANNEL, "a hunter this build does not have", {"id": str(info["kind_id"])})
 		return
 
 	var scene: Variant = load(def.scene_path) if ResourceLoader.exists(def.scene_path) else null
 
 	if not (scene is PackedScene):
-		DotLog.warn(CHANNEL, "a hunter's scene would not load", {"path": def.scene_path})
+		GSLog.warn(CHANNEL, "a hunter's scene would not load", {"path": def.scene_path})
 		return
 
 	var body := (scene as PackedScene).instantiate() as Node3D
@@ -698,16 +698,16 @@ func _mirror_hunter(info: Dictionary) -> void:
 	behaviour.body = body
 	body.add_child(behaviour)
 
-	var identity := DotNetIdentity.new()
+	var identity := GSNetIdentity.new()
 	identity.name = "Identity"
 	identity.owner_peer_id = 0
-	identity.authority = DotNetIdentity.Authority.SERVER
+	identity.authority = GSNetIdentity.Authority.SERVER
 	body.add_child(identity)
 
 	var registered := net.registry.register(identity, net_id, net.clock.tick, net.config)
 
 	if not registered.ok:
-		DotLog.warn(CHANNEL, "could not mirror a hunter", {"error": str(registered.error)})
+		GSLog.warn(CHANNEL, "could not mirror a hunter", {"error": str(registered.error)})
 		body.queue_free()
 		return
 

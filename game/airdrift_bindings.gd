@@ -10,10 +10,10 @@ extends RefCounted
 ## doc comment, and the sentence had already drifted once — the README said Shift for duck
 ## for as long as the dead `[input]` block did.
 ##
-## [b]dot-menu's `DotMenuBindings` does the work[/b] (2026-10-09): applying a row, the
+## [b]dot-menu's `GSMenuBindings` does the work[/b] (2026-10-09): applying a row, the
 ## fallback to the default, the swap when a key is taken, the reset. This file is the rows.
 ##
-## [b]The movement actions are dot-player-controller's own names.[/b] `DotFpsSampler` polls
+## [b]The movement actions are dot-player-controller's own names.[/b] `GSFpsSampler` polls
 ## `dot_fps_*` and `register_default_actions` only creates what is missing, so a binding
 ## applied here first is the one it reads — there is no second copy of the movement keys.
 ##
@@ -26,7 +26,7 @@ extends RefCounted
 ## drops a stored "Tab" for it so nobody is left with two actions on one key. Escape is in
 ## no row and cannot be bound: it is the menu, and how a browser releases the pointer.
 
-const ACCOUNT := DotSettingsDef.Scope.ACCOUNT
+const ACCOUNT := GSSettingsDef.Scope.ACCOUNT
 
 ## Rows, in the order the menu and the help screen draw them.
 const ROWS: Array[Dictionary] = [
@@ -59,11 +59,11 @@ const ROWS: Array[Dictionary] = [
 
 	{"action": &"airdrift_chat", "setting": &"chat_open_key", "label": "Chat", "default": "Y", "group": "Communication", "scope": ACCOUNT},
 	{"action": &"airdrift_chat_team", "setting": &"chat_team_key", "label": "Team chat", "default": "U", "group": "Communication", "scope": ACCOUNT},
-	# dot-voice's action (DotVoiceManager.TALK_ACTION), so dot-menu's table sees the game has a talk
+	# dot-voice's action (GSVoiceManager.TALK_ACTION), so dot-menu's table sees the game has a talk
 	# key and adds none; the setting stays bind_voice, so nobody's stored key is reset. K, because
 	# V is Go to checkpoint here.
 	{"action": &"dot_voice_talk", "setting": &"bind_voice", "label": "Push to talk", "default": "K", "group": "Communication"},
-	# Look at a player and press (dot-game's DotGameClient): G is the free camera, H help, K talk.
+	# Look at a player and press (dot-game's GSGameClient): G is the free camera, H help, K talk.
 	{"action": &"voice_gag", "setting": &"bind_voice_gag", "label": "Look at a player: stop (or resume) hearing them", "default": "J", "group": "Communication"},
 	{"action": &"voice_mute", "setting": &"bind_voice_mute", "label": "Look at a player: mute (or unmute) their voice and chat", "default": "L", "group": "Communication"},
 
@@ -75,11 +75,11 @@ const ROWS: Array[Dictionary] = [
 
 
 ## The table as dot-menu's, ready to declare, apply and draw.
-static func make() -> DotMenuBindings:
-	var keys := DotMenuBindings.new()
+static func make() -> GSMenuBindings:
+	var keys := GSMenuBindings.new()
 	for row in ROWS:
 		keys.add(row["action"], row["setting"], str(row["label"]), str(row["default"]), str(row["group"]),
-			int(row.get("scope", DotSettingsDef.Scope.DEVICE)))
+			int(row.get("scope", GSSettingsDef.Scope.DEVICE)))
 	# No weapons or items to switch between here, so the wheel jumps (a bhop game wants a tick
 	# per press); two rebindable extra rows on dot_fps_jump, Space stays.
 	var _wheel := keys.add_wheel_jump("Movement")

@@ -16,7 +16,7 @@ const AirdriftReach := preload("airdrift_reach.gd")
 ## crack between a ramp and a pad. Every one of those is found by a player on a live
 ## server, reported as "stuck", and fixed with a `!r`. This asks the geometry instead.
 ##
-## [b]Everything is in genre units[/b], read off the same [DotFpsTunables] the server
+## [b]Everything is in genre units[/b], read off the same [GSFpsTunables] the server
 ## applies: the hull is [code]2 × radius[/code] (32 u, the genre's hull), the headroom a
 ## crouched player (54 u), the step [code]sv_stepsize[/code] (18 u), the slope limit
 ## [code]max_slope[/code] (45.57°), and a jump [AirdriftReach]'s RUN reach and climb limit.
@@ -107,7 +107,7 @@ var headroom := 54.0
 var step := 18.0
 var climb := 51.3
 var cos_limit := 0.7
-var _tunables: DotFpsTunables = null
+var _tunables: GSFpsTunables = null
 var _tick_rate := 128
 
 var _origin := Vector2.ZERO

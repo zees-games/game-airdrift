@@ -14,7 +14,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## is a rule over those. The three answer different questions and this node is the two
 ## that were missing.
 ##
-## [b]Nothing here counts anything twice.[/b] `DotFpsStats` has counted jumps, perfect
+## [b]Nothing here counts anything twice.[/b] `GSFpsStats` has counted jumps, perfect
 ## jumps, strafes and top speed on every controller since dot-player-controller was
 ## written, and dot-timer counts runs and records. This node reads those out and files
 ## the difference — which is the only way two counters of one thing cannot disagree.
@@ -29,7 +29,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 
 const CHANNEL := "g2g.progress"
 
-signal award_unlocked(player_id: StringName, achievement: DotAchievement)
+signal award_unlocked(player_id: StringName, achievement: GSAchievement)
 
 @export_group("Reporting")
 
@@ -42,21 +42,21 @@ signal award_unlocked(player_id: StringName, achievement: DotAchievement)
 ## Where lifetime achievement progress is kept. Empty keeps it in memory.
 @export_dir var progress_dir: String = ""
 
-var stats: DotStatsTracker = null
-var achievements: DotAchievementTracker = null
-var link: DotAchievementStatsLink = null
+var stats: GSStatsTracker = null
+var achievements: GSAchievementTracker = null
+var link: GSAchievementStatsLink = null
 
-## The skill rank (dot-stats' DotStatsRank): weighted lifetime figures, filed as rank_score.
-var rank: DotStatsRank = null
+## The skill rank (dot-stats' GSStatsRank): weighted lifetime figures, filed as rank_score.
+var rank: GSStatsRank = null
 
 var _game: AirdriftGame = null
 
 ## player id -> the movement counters as they were at the last sample.
 ##
-## [b]Held so a DELTA can be filed.[/b] `DotFpsStats` is a running total that is reset
+## [b]Held so a DELTA can be filed.[/b] `GSFpsStats` is a running total that is reset
 ## when a run finishes and is not reset when a player leaves a start zone; filing the
 ## total on every sample would add the whole history on every sample. Same shape as
-## `DotAchievementStatsLink`'s baselines, one layer down, and for the same reason.
+## `GSAchievementStatsLink`'s baselines, one layer down, and for the same reason.
 var _movement_baseline: Dictionary = {}
 
 ## player id -> where they were at the last sample, for the distance counter.
@@ -69,24 +69,24 @@ var _distance_owed: Dictionary = {}
 var _playtime: Dictionary = {}
 
 ## Only the stats report is filed under dot-game's stable key; records, timers and awards keep the record key.
-var stats_feed := DotGameStatsFeed.new()
+var stats_feed := GSGameStatsFeed.new()
 
 ## player id -> [stats key, userid], noted at join by [method note_session].
 var _stats_keys: Dictionary = {}
 
 ## Kills and hits by body zone, through dot-stats' event feed; ids are combat entity ids.
-var feed: DotStatsEventFeed = null
+var feed: GSStatsEventFeed = null
 
 var _attached: bool = false
 
 
-func attach(game: AirdriftGame) -> DotResult:
+func attach(game: AirdriftGame) -> GSResult:
 	if _attached:
-		return DotResult.fail(DotError.CODE_STATE, "Already attached.")
+		return GSResult.fail(GSError.CODE_STATE, "Already attached.")
 
 	if game == null or game.timers == null:
-		return DotResult.fail(
-			DotError.CODE_STATE, "Progress needs a game with a timer manager."
+		return GSResult.fail(
+			GSError.CODE_STATE, "Progress needs a game with a timer manager."
 		)
 
 	_game = game
@@ -103,11 +103,11 @@ func attach(game: AirdriftGame) -> DotResult:
 	game.player_removed.connect(_on_player_removed)
 
 	_attached = true
-	return DotResult.success(self)
+	return GSResult.success(self)
 
 
-func _build() -> DotResult:
-	stats = DotStatsTracker.new()
+func _build() -> GSResult:
+	stats = GSStatsTracker.new()
 	stats.name = "Stats"
 	stats.schema = AirdriftStats.schema()
 	stats.report_to_backbone = report_to_backbone
@@ -115,11 +115,11 @@ func _build() -> DotResult:
 	stats.define_on_start = report_to_backbone
 	add_child(stats)
 
-	feed = DotStatsEventFeed.new(stats)
+	feed = GSStatsEventFeed.new(stats)
 	feed.key_of = func(id: Variant) -> StringName:
 		return _stats_key(_game.combat.player_id_for(int(id))) if _game.combat != null else StringName(str(id))
 
-	rank = DotStatsRank.new()
+	rank = GSStatsRank.new()
 	rank.stat_id = AirdriftStats.RANK_SCORE
 	rank.terms = [
 		{"stat": String(AirdriftStats.RUNS_FINISHED), "weight": 1.0},
@@ -137,19 +137,19 @@ func _build() -> DotResult:
 	if not stats_started.ok:
 		return stats_started.wrap("The Airdrift stats tracker could not start")
 
-	achievements = DotAchievementTracker.new()
+	achievements = GSAchievementTracker.new()
 	achievements.name = "Achievements"
 	achievements.catalogue = AirdriftAwards.catalogue()
 	achievements.report_to_backbone = report_to_backbone
 	achievements.autosave_interval = report_interval
-	achievements.register_as = DotAchievementTracker.SERVICE
+	achievements.register_as = GSAchievementTracker.SERVICE
 
 	if progress_dir != "":
-		var file_store := DotAchievementStoreFile.new()
+		var file_store := GSAchievementStoreFile.new()
 		file_store.directory = progress_dir
 		achievements.store = file_store
 	else:
-		achievements.store = DotAchievementStoreMemory.new()
+		achievements.store = GSAchievementStoreMemory.new()
 
 	add_child(achievements)
 
@@ -159,14 +159,14 @@ func _build() -> DotResult:
 		return awards_started.wrap("The Airdrift achievement tracker could not start")
 
 	achievements.unlocked.connect(
-		func(player: String, achievement: DotAchievement) -> void:
+		func(player: String, achievement: GSAchievement) -> void:
 			award_unlocked.emit(_game.match_id(StringName(player)), achievement)
 	)
 
 	# The differencer between a session total and a lifetime total. See
-	# `DotAchievementStatsLink` — wiring `recorded` straight into `record` adds the
+	# `GSAchievementStatsLink` — wiring `recorded` straight into `record` adds the
 	# running total to the lifetime total on every reading.
-	link = DotAchievementStatsLink.new()
+	link = GSAchievementStatsLink.new()
 	link.name = "StatsLink"
 	link.tracker = achievements
 	link.stats = stats
@@ -177,7 +177,7 @@ func _build() -> DotResult:
 	if not linked.ok:
 		return linked.wrap("The stats-to-achievements link could not start")
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 # --- Players ---------------------------------------------------------------
@@ -189,7 +189,7 @@ func _key(player_id: StringName) -> StringName:
 
 
 ## Notes the stable stats key of a seat before [method begin] runs; a seat never noted files under the record key.
-func note_session(session: DotClientSession) -> void:
+func note_session(session: GSClientSession) -> void:
 	stats_feed.open_sessions = false
 	_stats_keys[StringName("u%d" % session.userid)] = [stats_feed.key_for(session), session.userid]
 
@@ -216,10 +216,10 @@ func begin(player_id: StringName, display_name: String = "") -> void:
 	_playtime[player_id] = 0.0
 	_last_position.erase(player_id)
 
-	var began: DotResult = await achievements.begin(String(_key(player_id)))
+	var began: GSResult = await achievements.begin(String(_key(player_id)))
 
 	if not began.ok:
-		DotLog.warn(CHANNEL, "achievement progress could not be loaded", {
+		GSLog.warn(CHANNEL, "achievement progress could not be loaded", {
 			"player": String(player_id), "why": began.error.message
 		})
 
@@ -249,10 +249,10 @@ func leave(player_id: StringName) -> void:
 	_last_position.erase(player_id)
 	_playtime.erase(player_id)
 
-	var ended: DotResult = await achievements.end(String(_key(player_id)))
+	var ended: GSResult = await achievements.end(String(_key(player_id)))
 
 	if not ended.ok:
-		DotLog.debug(CHANNEL, "achievement progress could not be saved", {
+		GSLog.debug(CHANNEL, "achievement progress could not be saved", {
 			"player": String(player_id), "why": ended.error.message
 		})
 
@@ -280,16 +280,16 @@ func _publish_rank(player_id: StringName) -> void:
 
 
 ## A landed hit, filed by body zone (and wall or body crossed) through the dot-stats hook.
-func report_damage(damage: DotDamage) -> void:
+func report_damage(damage: GSDamage) -> void:
 	if feed != null:
-		var _filed := DotStatsDamage.report(feed, damage)
+		var _filed := GSStatsDamage.report(feed, damage)
 
 
 ## Every wall a resolved shot crossed, for the site's Penetration cost panel, and the shot itself for Accuracy (the shapes are dot-stats').
-func report_shot(shot: DotShot) -> void:
+func report_shot(shot: GSShot) -> void:
 	if feed != null and stats != null:
-		var _walls := DotStatsDamage.report_shot(feed, shot)
-		var _outcome := DotStatsDamage.report_shot_outcome(feed, shot)
+		var _walls := GSStatsDamage.report_shot(feed, shot)
+		var _outcome := GSStatsDamage.report_shot_outcome(feed, shot)
 
 
 ## A player kill for the head-to-head table; world deaths and suicides are refused by the feed.
@@ -298,8 +298,8 @@ func report_kill(killer: int, victim: int, weapon: String) -> void:
 		var _ok := feed.report_kill(killer, victim, weapon)
 
 
-func session_values(player_id: StringName) -> DotStatsValues:
-	return stats.session_values(_stats_key(player_id)) if _attached else DotStatsValues.new()
+func session_values(player_id: StringName) -> GSStatsValues:
+	return stats.session_values(_stats_key(player_id)) if _attached else GSStatsValues.new()
 
 
 func points_of(player_id: StringName) -> int:
@@ -341,7 +341,7 @@ func sample(delta: float) -> void:
 ## a naive "file the total" would file the whole history on every sample and then
 ## start again from nothing. A total that went DOWN is a reset, and the whole new
 ## value is filed rather than a negative one — the same rule
-## `DotAchievementStatsLink` applies one layer up, for the same reason.
+## `GSAchievementStatsLink` applies one layer up, for the same reason.
 func _sample_movement(player_id: StringName, player: AirdriftPlayer) -> void:
 	var counters := player.controller.stats
 	var held: Dictionary = _movement_baseline.get(player_id, {})
@@ -442,11 +442,11 @@ func _flush_playtime(player_id: StringName, all_of_it: bool) -> void:
 
 # --- Events ----------------------------------------------------------------
 
-func _on_started(player_id: StringName, _run: DotTimerRun) -> void:
+func _on_started(player_id: StringName, _run: GSTimerRun) -> void:
 	record(_game.match_id(player_id), AirdriftStats.RUNS_STARTED)
 
 
-func _on_finished(timer_key: StringName, run: DotTimerRun) -> void:
+func _on_finished(timer_key: StringName, run: GSTimerRun) -> void:
 	var player_id := _game.match_id(timer_key)
 	record(player_id, AirdriftStats.RUNS_FINISHED)
 	record(player_id, AirdriftStats.RUN_SECONDS, run.time())
@@ -459,7 +459,7 @@ func _on_finished(timer_key: StringName, run: DotTimerRun) -> void:
 
 ## A record was accepted. Rank 1 is the server record.
 func _on_record(
-	record_row: DotTimerRecord, _previous: DotTimerRecord, place: int
+	record_row: GSTimerRecord, _previous: GSTimerRecord, place: int
 ) -> void:
 	var who := _game.match_id(record_row.player_id)
 	record(who, AirdriftStats.RECORDS_SET)
@@ -473,7 +473,7 @@ func _on_record(
 ## Counted here rather than on join, because "maps played" is about maps rather than
 ## about visits: a player who connects during one map and stays for six has played
 ## six, and one who joins and leaves on the same map has played one.
-func _on_map_ready(_map: DotMapDef) -> void:
+func _on_map_ready(_map: GSMapDef) -> void:
 	for id in _playtime.keys():
 		record(id, AirdriftStats.MAPS_PLAYED)
 

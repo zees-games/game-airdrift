@@ -26,12 +26,12 @@ func _ready() -> void:
 	var loaded := config_binder.load_layers()
 
 	if not loaded.ok:
-		DotLog.error(CHANNEL, "the Airdrift configuration is not usable", {
+		GSLog.error(CHANNEL, "the Airdrift configuration is not usable", {
 			"why": loaded.error.message
 		})
 		# Strict (a dedicated server): a typo in a config file stops the boot.
 		if config_binder.strict:
-			DotGameConfigBinder.fail_boot(get_tree(), loaded)
+			GSGameConfigBinder.fail_boot(get_tree(), loaded)
 			return
 
 	authoritative = config.authoritative
@@ -42,9 +42,9 @@ func _ready() -> void:
 	config.snap_movement()
 	tunables = AirdriftMovement.tunables_for(config)
 
-	DotRegistry.register(DotRegistry.scoped_name(SERVICE, service_scope), self)
+	GSRegistry.register(GSRegistry.scoped_name(SERVICE, service_scope), self)
 
-	DotLog.info(CHANNEL, "Airdrift starting", {
+	GSLog.info(CHANNEL, "Airdrift starting", {
 		"config": config.describe_summary(),
 		"tick_rate": tick_rate,
 		"authoritative": authoritative,
@@ -73,15 +73,15 @@ func _ready() -> void:
 
 	if config.initial_map != &"":
 		_adopt_descriptor_owner()
-		var started: DotResult = await change_map(config.initial_map, true)
-		DotLog.result(CHANNEL, "loading the first map", started)
+		var started: GSResult = await change_map(config.initial_map, true)
+		GSLog.result(CHANNEL, "loading the first map", started)
 
 
 func _build_timers() -> void:
-	timers = DotTimerManager.new()
+	timers = GSTimerManager.new()
 	timers.name = "Timers"
 
-	var timer_config := DotTimerConfig.new()
+	var timer_config := GSTimerConfig.new()
 	timer_config.tick_rate = 0
 	timer_config.default_tick_rate = tick_rate
 	timer_config.authoritative = authoritative
@@ -103,7 +103,7 @@ func _build_timers() -> void:
 	add_child(timers)
 	tick_rate = timers.tick_rate
 
-	var timer_styles := DotTimerStyle.defaults()
+	var timer_styles := GSTimerStyle.defaults()
 	for style in timer_styles:
 		# The community timers' `startinair`, on: a bunny-hopper leaves the start pad mid-hop far
 		# more often than not, and a run that only begins from a grounded exit is
@@ -114,7 +114,7 @@ func _build_timers() -> void:
 
 	var replays_ready := replays.setup(config.records_directory if config.record_replays else "")
 	if not replays_ready.ok:
-		DotLog.warn(CHANNEL, "replays will not persist", {"why": replays_ready.error.message})
+		GSLog.warn(CHANNEL, "replays will not persist", {"why": replays_ready.error.message})
 	timers.record_accepted.connect(_on_record_accepted)
 	timers.record_refused.connect(_on_record_refused)
 	timers.run_filed.connect(_on_timer_filed)
@@ -135,7 +135,7 @@ func _build_timers() -> void:
 	# Restarts only: `!end` asks for the end zone and the command puts the player there
 	# itself. Spawning first would spend a start site's cooldown on a player leaving it.
 	timers.teleport_requested.connect(
-		func(id: StringName, _zone: DotTimerZone, why: StringName) -> void:
+		func(id: StringName, _zone: GSTimerZone, why: StringName) -> void:
 			if why != &"end":
 				spawn_player(match_id(id))
 	)
@@ -146,18 +146,18 @@ func _build_timers() -> void:
 
 
 func _build_maps() -> void:
-	maps = DotMapSession.new()
+	maps = GSMapSession.new()
 	maps.name = "Maps"
-	maps.world_ref = DotNodeRef.of_path(^"../World")
+	maps.world_ref = GSNodeRef.of_path(^"../World")
 	add_child(maps)
 
 	maps.catalogue = _map_catalogue()
 
 	if config.catalogue_path != "":
-		DotLog.result(CHANNEL, "loading the map catalogue",
+		GSLog.result(CHANNEL, "loading the map catalogue",
 			maps.load_catalogue(config.catalogue_path))
 
-	maps.rotation = DotMapRotation.of(maps.catalogue)
+	maps.rotation = GSMapRotation.of(maps.catalogue)
 	maps.rotation.cooldown = 1
 	maps.time_limit.duration = config.map_seconds
 	load_rotation()
@@ -170,7 +170,7 @@ func _build_maps() -> void:
 
 
 func add_player(
-	id: StringName, display_name: String, local: bool = false, avatar: DotAvatar = null,
+	id: StringName, display_name: String, local: bool = false, avatar: GSAvatar = null,
 	bot: bool = false, p_record_key: StringName = &""
 ) -> AirdriftPlayer:
 	if players.has(id):
@@ -195,7 +195,7 @@ func add_player(
 
 	var added := timers.add_player(record_key(id), display_name)
 	if not added.ok:
-		DotLog.warn(CHANNEL, "could not give a player a timer", {
+		GSLog.warn(CHANNEL, "could not give a player a timer", {
 			"player": String(id), "why": added.error.message
 		})
 
@@ -234,13 +234,13 @@ func add_player(
 		avatar_schema, avatar_catalogue
 	)
 	if not dressed.ok:
-		DotLog.warn(CHANNEL, "a player could not be dressed", {
+		GSLog.warn(CHANNEL, "a player could not be dressed", {
 			"player": String(id), "why": dressed.error.message
 		})
 
 	players[id] = player
 	_apply_bodies()
-	_samples[id] = DotTimerSample.new()
+	_samples[id] = GSTimerSample.new()
 	player.set_mechanics(mechanics)
 	player.map_event.connect(_on_map_event.bind(id))
 
@@ -261,7 +261,7 @@ func add_player(
 ## A ghost is a [AirdriftPlayer] with [member AirdriftPlayer.replay] set, so it replicates
 ## through the same bridge as a person: the server drives it, clients interpolate
 ## it, and a browser client that could not decode a replay still sees the run.
-func spawn_ghost(track: int = DotTimerTrack.MAIN, style_id: StringName = &"normal") -> AirdriftPlayer:
+func spawn_ghost(track: int = GSTimerTrack.MAIN, style_id: StringName = &"normal") -> AirdriftPlayer:
 	if not authoritative or not config.show_replay_bot or maps.current == null:
 		return null
 
@@ -272,12 +272,12 @@ func spawn_ghost(track: int = DotTimerTrack.MAIN, style_id: StringName = &"norma
 	remove_player(GHOST_ID)
 
 	var player := add_player(
-		GHOST_ID, "WR %s · %s" % [DotTimerRun.format_time(best.time), best.player_name], false
+		GHOST_ID, "WR %s · %s" % [GSTimerRun.format_time(best.time), best.player_name], false
 	)
 	if player == null:
 		return null
 
-	var replay_player := DotTimerReplayPlayer.new()
+	var replay_player := GSTimerReplayPlayer.new()
 	var loaded := replay_player.load_replay(best)
 	if not loaded.ok:
 		remove_player(GHOST_ID)
@@ -301,7 +301,7 @@ func spawn_player(id: StringName) -> void:
 	if weapon_layer != null:
 		weapon_layer.reset_key(id)
 
-	var track := player.timer.track if player.timer != null else DotTimerTrack.MAIN
+	var track := player.timer.track if player.timer != null else GSTimerTrack.MAIN
 	var map := current_map_node()
 
 	# [b]The director chooses among the map's own starts; the map is the fallback.[/b]
@@ -314,9 +314,9 @@ func spawn_player(id: StringName) -> void:
 		var chosen := player_stack.choose_start(id, track)
 
 		if chosen.ok:
-			var choice := chosen.value as DotSpawnChoice
-			# Degrees out, for the same reason radians went in: `DotFpsState.yaw` is in
-			# degrees and `DotFpsController` converts at exactly this boundary too.
+			var choice := chosen.value as GSSpawnChoice
+			# Degrees out, for the same reason radians went in: `GSFpsState.yaw` is in
+			# degrees and `GSFpsController` converts at exactly this boundary too.
 			player.teleport(
 				choice.transform.origin,
 				rad_to_deg(choice.transform.basis.get_euler().y)
@@ -349,7 +349,7 @@ func set_player_style(id: StringName, style_id: StringName) -> bool:
 	return changed
 
 
-func _on_map_changed(map: DotMapDef, loaded: Node) -> void:
+func _on_map_changed(map: GSMapDef, loaded: Node) -> void:
 	if weapon_layer != null:
 		weapon_layer.clear()
 	var airdrift_map := loaded as AirdriftMap
@@ -361,7 +361,7 @@ func _on_map_changed(map: DotMapDef, loaded: Node) -> void:
 		bsp.global_worlds = config != null and config.global_worlds
 		bsp.build_from(map)
 
-	var zones: DotTimerZoneSet = airdrift_map.timer_zones() if airdrift_map != null else null
+	var zones: GSTimerZoneSet = airdrift_map.timer_zones() if airdrift_map != null else null
 
 	# Zones somebody drew in-game (Z offline, `airdrift_zone_save` on a server) win over the
 	# map's own. They were saved to this path from the day the console could draw a zone
@@ -371,16 +371,16 @@ func _on_map_changed(map: DotMapDef, loaded: Node) -> void:
 	# set the server is not timing.
 	var drawn := user_zones_path(map.id)
 	if authoritative and FileAccess.file_exists(drawn):
-		var loaded_zones := DotTimerZoneSet.load_json(drawn)
+		var loaded_zones := GSTimerZoneSet.load_json(drawn)
 		if loaded_zones.ok:
 			zones = loaded_zones.value
-			DotLog.info(CHANNEL, "zones drawn in-game replace the map's own", {"map": String(map.id), "path": drawn})
+			GSLog.info(CHANNEL, "zones drawn in-game replace the map's own", {"map": String(map.id), "path": drawn})
 		else:
-			DotLog.warn(CHANNEL, "a saved zone file could not be read; the map's own zones are used",
+			GSLog.warn(CHANNEL, "a saved zone file could not be read; the map's own zones are used",
 				{"path": drawn, "why": loaded_zones.error.message})
 
 	if zones == null and maps.zones_json != "":
-		var parsed := DotTimerZoneSet.from_json(maps.zones_json)
+		var parsed := GSTimerZoneSet.from_json(maps.zones_json)
 		if parsed.ok:
 			zones = parsed.value
 
@@ -391,7 +391,7 @@ func _on_map_changed(map: DotMapDef, loaded: Node) -> void:
 	if bsp != null:
 		mechanics.read(bsp.manifest)
 	if not mechanics.is_empty():
-		DotLog.debug(CHANNEL, "the map's brush entities", {
+		GSLog.debug(CHANNEL, "the map's brush entities", {
 			"map": String(map.id), "mechanics": mechanics.describe_lines()[0]})
 	for id in players:
 		(players[id] as AirdriftPlayer).set_mechanics(mechanics)
@@ -403,23 +403,23 @@ func _on_map_changed(map: DotMapDef, loaded: Node) -> void:
 	spawn_ghost()
 
 
-func _on_effect_requested(timer_key: StringName, zone: DotTimerZone) -> void:
+func _on_effect_requested(timer_key: StringName, zone: GSTimerZone) -> void:
 	var player_id := match_id(timer_key)
 	var player: AirdriftPlayer = players.get(player_id)
 	if player == null:
 		return
 
 	match zone.kind:
-		DotTimerZone.Kind.RESPAWN when zone.payload.has(AirdriftBspMap.SENDS_TO):
+		GSTimerZone.Kind.RESPAWN when zone.payload.has(AirdriftBspMap.SENDS_TO):
 			# The map's own pit, sending the player where its trigger_teleport aims: the
 			# start of the section they fell out of, the far side of a gate. The run goes
 			# on, as it does in Source -- a fall costs the time it takes, not the run.
 			# Until 2026-10-08 every pit put the player back at the track's spawn, which
 			# on a staged map restarted the whole run from section one.
 			player.teleport(zone.destination, zone.destination_yaw, true)
-		DotTimerZone.Kind.RESPAWN, DotTimerZone.Kind.SLAY:
+		GSTimerZone.Kind.RESPAWN, GSTimerZone.Kind.SLAY:
 			spawn_player(player_id)
-		DotTimerZone.Kind.TELEPORT:
+		GSTimerZone.Kind.TELEPORT:
 			# A door, and a door keeps the run: this is how a staged map joins one
 			# section to the next. It stopped the run for as long as the importer has
 			# been making doors, so surf_kitsune -- the map `doorways` was written for
@@ -459,7 +459,7 @@ func _predict_respawn(player: AirdriftPlayer) -> void:
 	var map := current_map_node()
 	if map == null:
 		return
-	var track := player.timer.track if player.timer != null else DotTimerTrack.MAIN
+	var track := player.timer.track if player.timer != null else GSTimerTrack.MAIN
 	# Through a Basis like the director's site, so the yaw wraps as the server's does.
 	var yaw := rad_to_deg(Basis(Vector3.UP, deg_to_rad(map.spawn_yaw_for(track))).get_euler().y)
 	player.teleport(map.spawn_for(track), yaw)
@@ -477,15 +477,15 @@ func _predict_respawn(player: AirdriftPlayer) -> void:
 ##
 ## [b]Spectating ends here too.[/b] A player who pressed R wants to run, and leaving them
 ## watching somebody else while their own body was moved is a key that looks broken.
-func restart(id: StringName, mode: int) -> DotResult:
+func restart(id: StringName, mode: int) -> GSResult:
 	if not players.has(id):
-		return DotResult.fail(DotError.CODE_STATE, "No such player.")
+		return GSResult.fail(GSError.CODE_STATE, "No such player.")
 
 	if spectate != null and spectate.is_spectating(id):
 		spectate.stop(id)
 
 	var found := timers.player(record_key(id)) if timers != null else null
-	var track := found.timer.track if found != null else DotTimerTrack.MAIN
+	var track := found.timer.track if found != null else GSTimerTrack.MAIN
 
 	match mode:
 		AirdriftEvents.RESTART_STAGE:
@@ -494,14 +494,14 @@ func restart(id: StringName, mode: int) -> DotResult:
 			if staged and run != null and run.is_running() and run.stage > 1:
 				return restart_stage(id)
 		AirdriftEvents.RESTART_MAIN:
-			if track != DotTimerTrack.MAIN:
-				var _switched := timers.set_player_track(record_key(id), DotTimerTrack.MAIN)
+			if track != GSTimerTrack.MAIN:
+				var _switched := timers.set_player_track(record_key(id), GSTimerTrack.MAIN)
 
 	spawn_player(id)
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
-func _on_record_accepted(record: DotTimerRecord, _previous: DotTimerRecord, rank: int) -> void:
+func _on_record_accepted(record: GSTimerRecord, _previous: GSTimerRecord, rank: int) -> void:
 	var scope := {
 		"map": String(record.map_id), "track": str(record.track), "style": String(record.style_id),
 	}
@@ -520,7 +520,7 @@ func _on_record_accepted(record: DotTimerRecord, _previous: DotTimerRecord, rank
 	# previous best had already added — a total that grew with every retry of the same
 	# map. The real total is the timer store's (re-scored when a record moves, weighted
 	# down a player's list) and is filed in `_on_timer_filed`.
-	var totals := DotStatSet.new()
+	var totals := GSStatSet.new()
 	totals.add(&"completions", 1.0)
 	if ranked:
 		await boards.add_stats(record.player_id, totals)
@@ -537,32 +537,32 @@ func _on_record_accepted(record: DotTimerRecord, _previous: DotTimerRecord, rank
 ## Says what a finish meant, and moves the player's standing and points.
 func _on_timer_filed(result: Dictionary) -> void:
 	var id := match_id(result["player"])
-	var record: DotTimerRecord = result["record"]
-	var previous: DotTimerRecord = result["previous"]
-	var leader: DotTimerRecord = result["previous_record"]
+	var record: GSTimerRecord = result["record"]
+	var previous: GSTimerRecord = result["previous"]
+	var leader: GSTimerRecord = result["previous_record"]
 	var where := "%s%s" % [
-		DotTimerTrack.name_of(record.track),
+		GSTimerTrack.name_of(record.track),
 		"" if record.style_id == &"normal" else " · " + String(record.style_id),
 	]
 
 	if bool(result["world_record"]):
 		var beat := ""
 		if leader != null and leader.player_id != record.player_id:
-			beat = ", beating %s by %s" % [leader.player_name, DotTimerRun.format_time(leader.time - record.time)]
+			beat = ", beating %s by %s" % [leader.player_name, GSTimerRun.format_time(leader.time - record.time)]
 		elif leader != null:
-			beat = ", improving it by %s" % DotTimerRun.format_time(leader.time - record.time)
+			beat = ", improving it by %s" % GSTimerRun.format_time(leader.time - record.time)
 		announced.emit(id, "NEW RECORD: %s %s on %s (%s)%s" % [
 			record.player_name, record.formatted_time(), String(record.map_id), where, beat,
 		], true)
 	elif bool(result["improved"]):
-		var gain := " (-%s)" % DotTimerRun.format_time(previous.time - record.time) if previous != null else ""
+		var gain := " (-%s)" % GSTimerRun.format_time(previous.time - record.time) if previous != null else ""
 		announced.emit(id, "Personal best %s%s — rank %d / %d" % [
 			record.formatted_time(), gain, int(result["rank"]), int(result["total"]),
 		], false)
 	else:
 		announced.emit(id, "%s, %s behind your best — rank %d / %d" % [
 			record.formatted_time(),
-			DotTimerRun.format_time(record.time - previous.time) if previous != null else "",
+			GSTimerRun.format_time(record.time - previous.time) if previous != null else "",
 			int(result["rank"]), int(result["total"]),
 		], false)
 
@@ -652,4 +652,4 @@ func time_left_text() -> String:
 
 
 func _exit_tree() -> void:
-	DotRegistry.unregister_instance(DotRegistry.scoped_name(SERVICE, service_scope), self)
+	GSRegistry.unregister_instance(GSRegistry.scoped_name(SERVICE, service_scope), self)

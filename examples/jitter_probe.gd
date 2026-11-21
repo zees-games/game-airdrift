@@ -21,7 +21,7 @@ extends Node
 ## half alone measures as no better than doing nothing, so either half alone would have
 ## been shipped as a fix and the report would have come back.
 ##
-## The blend is [method DotFpsController.render_state] itself rather than a copy of its
+## The blend is [method GSFpsController.render_state] itself rather than a copy of its
 ## arithmetic — a probe that reimplements what it is checking cannot fail when the real
 ## one breaks.
 
@@ -39,8 +39,8 @@ const SETTLE_FRAMES := 60
 ## that has to be argued about is one nobody trusts.
 const SMOOTH_ENOUGH := 0.05
 
-var _controller: DotFpsController = null
-var _clock: DotNetClock = null
+var _controller: GSFpsController = null
+var _clock: GSNetClock = null
 var _drawn: Array[float] = []
 var _interpolated := false
 var _label := ""
@@ -71,9 +71,9 @@ func _ready() -> void:
 	body.name = "Body"
 	add_child(body)
 
-	_controller = DotFpsController.new()
+	_controller = GSFpsController.new()
 	_controller.name = "Controller"
-	_controller.drive = DotFpsController.Drive.EXTERNAL
+	_controller.drive = GSFpsController.Drive.EXTERNAL
 	_controller.tick_rate = SERVER_TICK_RATE
 	body.add_child(_controller)
 
@@ -106,7 +106,7 @@ func _next() -> void:
 	Engine.physics_ticks_per_second = int(case[1])
 	_interpolated = bool(case[2])
 
-	_clock = DotNetClock.new(SERVER_TICK_RATE, false)
+	_clock = GSNetClock.new(SERVER_TICK_RATE, false)
 	_clock.sync_from_server(0, 0.0)
 	_controller.state.position = Vector3.ZERO
 	_controller._previous_state.copy_from(_controller.state)

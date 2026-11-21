@@ -15,8 +15,8 @@ const PREFIX_MOODS := {
 }
 
 
-static func make_rules() -> DotAmbienceRules:
-	var r := DotAmbienceRules.new()
+static func make_rules() -> GSAmbienceRules:
+	var r := GSAmbienceRules.new()
 	r.prefix = PREFIX
 	r.volume = LEVEL
 	r.frequency = RATE

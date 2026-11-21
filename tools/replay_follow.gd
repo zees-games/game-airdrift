@@ -5,7 +5,7 @@ extends RefCounted
 ## [b]Why not play the replay.[/b] A ghost (AirdriftPlayer.replay) puts each frame's pose
 ## straight into the state: it goes through walls, never lands, and finishes every map
 ## whatever the map's collision is. That shows a run; it proves nothing about the map.
-## This one is the opposite. It has only commands -- the same `DotFpsCommand` a person
+## This one is the opposite. It has only commands -- the same `GSFpsCommand` a person
 ## sends -- and the recording is a line to keep to, so a run it cannot repeat is a place
 ## where the map is not the map the run was made on: a block moved, a brush lost, a lip
 ## a few units too tall, a teleport that lands somewhere else.
@@ -48,7 +48,7 @@ const TURN_DEADBAND := 4.0
 ## Speed (u/s) short or over before it strafes to gain or wishes back to brake.
 const SPEED_DEADBAND := 10.0
 
-var replay: DotTimerReplay = null
+var replay: GSTimerReplay = null
 ## The frames driven: from the first recorded (the run-up included) to the finish.
 var first := 0
 var last := 0
@@ -73,7 +73,7 @@ var _has_buttons := false
 var _rate := 128
 
 
-func _init(p_replay: DotTimerReplay = null) -> void:
+func _init(p_replay: GSTimerReplay = null) -> void:
 	replay = p_replay
 	if replay != null:
 		# From the recording's first frame, not the run's: the pre-roll is the run-up, and
@@ -103,8 +103,8 @@ func progress() -> float:
 ## recording forward for the first frame flagged as a teleport near the new spot.
 func teleported(at: Vector3) -> void:
 	for i in range(index, last + 1):
-		var f: DotTimerReplay.Frame = replay.frames[i]
-		if f.flags & DotTimerReplay.FLAG_TELEPORT and f.position.distance_to(at) < leave_distance * 2.0:
+		var f: GSTimerReplay.Frame = replay.frames[i]
+		if f.flags & GSTimerReplay.FLAG_TELEPORT and f.position.distance_to(at) < leave_distance * 2.0:
 			index = i
 			return
 
@@ -119,7 +119,7 @@ func left_while_off(at: Vector3) -> bool:
 		return true
 	if _off_for <= 0:
 		return false
-	var here: DotTimerReplay.Frame = replay.frames[index]
+	var here: GSTimerReplay.Frame = replay.frames[index]
 	left_at = {
 		"frame": index,
 		"at": AirdriftUnits.vector_to_units(here.position).round(),
@@ -129,13 +129,13 @@ func left_while_off(at: Vector3) -> bool:
 	return true
 
 
-func command(state: DotFpsState, tunables: DotFpsTunables, delta: float) -> DotFpsCommand:
-	var c := DotFpsCommand.new()
+func command(state: GSFpsState, tunables: GSFpsTunables, delta: float) -> GSFpsCommand:
+	var c := GSFpsCommand.new()
 	if not left_at.is_empty():
 		return c
 	var at := state.position
 	index = _nearest(at)
-	var here: DotTimerReplay.Frame = replay.frames[index]
+	var here: GSTimerReplay.Frame = replay.frames[index]
 	var off := at.distance_to(here.position)
 	if off > leave_distance:
 		_off_for += 1
@@ -151,15 +151,15 @@ func command(state: DotFpsState, tunables: DotFpsTunables, delta: float) -> DotF
 		_off_for = 0
 		worst = maxf(worst, AirdriftUnits.to_units(off))
 
-	var next: DotTimerReplay.Frame = replay.frames[mini(index + 1, replay.frames.size() - 1)]
-	var ahead: DotTimerReplay.Frame = replay.frames[mini(index + LEAD_FRAMES, replay.frames.size() - 1)]
+	var next: GSTimerReplay.Frame = replay.frames[mini(index + 1, replay.frames.size() - 1)]
+	var ahead: GSTimerReplay.Frame = replay.frames[mini(index + LEAD_FRAMES, replay.frames.size() - 1)]
 	var line_velocity := (next.position - here.position) * float(_rate)
-	if next.flags & DotTimerReplay.FLAG_TELEPORT:
+	if next.flags & GSTimerReplay.FLAG_TELEPORT:
 		line_velocity = Vector3.ZERO
 
 	var buttons := _buttons(here)
-	c.set_button(DotFpsCommand.BUTTON_JUMP, _wants_jump(state, at))
-	c.set_button(DotFpsCommand.BUTTON_CROUCH, buttons & DotFpsCommand.BUTTON_CROUCH != 0)
+	c.set_button(GSFpsCommand.BUTTON_JUMP, _wants_jump(state, at))
+	c.set_button(GSFpsCommand.BUTTON_CROUCH, buttons & GSFpsCommand.BUTTON_CROUCH != 0)
 	c.pitch = here.pitch
 
 	var flat := Vector3(state.velocity.x, 0.0, state.velocity.z)
@@ -198,8 +198,8 @@ func command(state: DotFpsState, tunables: DotFpsTunables, delta: float) -> DotF
 
 
 ## The air half of [method command]: pure pursuit of the recorded line.
-func _air_command(c: DotFpsCommand, state: DotFpsState, tunables: DotFpsTunables, delta: float,
-		here: DotTimerReplay.Frame, line_velocity: Vector3, flat: Vector3) -> DotFpsCommand:
+func _air_command(c: GSFpsCommand, state: GSFpsState, tunables: GSFpsTunables, delta: float,
+		here: GSTimerReplay.Frame, line_velocity: Vector3, flat: Vector3) -> GSFpsCommand:
 	var at := state.position
 	# Air: pure pursuit. The velocity wanted points at the recorded spot [constant
 	# AIR_LEAD_FRAMES] ahead, at the line's own speed there. A wish only adds speed
@@ -208,7 +208,7 @@ func _air_command(c: DotFpsCommand, state: DotFpsState, tunables: DotFpsTunables
 	# a wish at right angles to the velocity, toward the side wanted, and that is also
 	# how a player strafes. Speed is gained by alternating sides, and shed by wishing
 	# straight back.
-	var aim: DotTimerReplay.Frame = replay.frames[mini(index + AIR_LEAD_FRAMES, last)]
+	var aim: GSTimerReplay.Frame = replay.frames[mini(index + AIR_LEAD_FRAMES, last)]
 	var to_aim := Vector3(aim.position.x - at.x, 0.0, aim.position.z - at.z)
 	var line_speed := Vector2(line_velocity.x, line_velocity.z).length()
 	var want := to_aim.normalized() * line_speed if to_aim.length() > 0.01 else Vector3.ZERO
@@ -266,7 +266,7 @@ func _air_command(c: DotFpsCommand, state: DotFpsState, tunables: DotFpsTunables
 ## The first recorded frame on the ground at or after [param from], or -1.
 func _landing_after(from: int) -> int:
 	for i in range(from, mini(last, from + LAND_LEAD_FRAMES * 4) + 1):
-		if replay.frames[i].flags & DotTimerReplay.FLAG_GROUNDED:
+		if replay.frames[i].flags & GSTimerReplay.FLAG_GROUNDED:
 			return i
 	return -1
 
@@ -275,8 +275,8 @@ func _landing_after(from: int) -> int:
 ## jump is pressed after one where it was not, or -1.
 func _next_jump(from: int) -> int:
 	for i in range(maxi(from, first + 1), last + 1):
-		if _buttons(replay.frames[i]) & DotFpsCommand.BUTTON_JUMP \
-				and not (_buttons(replay.frames[i - 1]) & DotFpsCommand.BUTTON_JUMP):
+		if _buttons(replay.frames[i]) & GSFpsCommand.BUTTON_JUMP \
+				and not (_buttons(replay.frames[i - 1]) & GSFpsCommand.BUTTON_JUMP):
 			return i
 	return -1
 
@@ -286,7 +286,7 @@ func _next_jump(from: int) -> int:
 ## along the line), and holds the key until it is in the air -- a one-tick press made
 ## from a frame the bot was matched to a tick early is a press the motor never sees,
 ## and a jump taken late is a run off the end of a block.
-func _wants_jump(state: DotFpsState, at: Vector3) -> bool:
+func _wants_jump(state: GSFpsState, at: Vector3) -> bool:
 	if _jump_at < 0 or _jump_at < index - SEARCH_BEHIND:
 		_jump_at = _next_jump(index)
 	if _jump_at < 0:
@@ -299,8 +299,8 @@ func _wants_jump(state: DotFpsState, at: Vector3) -> bool:
 		return false
 	# A take-off that went nowhere -- clipped a lip, came straight back down -- leaves
 	# the bot on the ground while the recording is in the air above it. Jump again.
-	var here: DotTimerReplay.Frame = replay.frames[index]
-	if not (here.flags & DotTimerReplay.FLAG_GROUNDED) \
+	var here: GSTimerReplay.Frame = replay.frames[index]
+	if not (here.flags & GSTimerReplay.FLAG_GROUNDED) \
 			and here.position.y - at.y > AirdriftUnits.to_metres(STEP_UNITS):
 		return true
 	var take_off: Vector3 = replay.frames[_jump_at].position
@@ -313,24 +313,24 @@ func _wants_jump(state: DotFpsState, at: Vector3) -> bool:
 	return _jump_held
 
 
-func _buttons(f: DotTimerReplay.Frame) -> int:
+func _buttons(f: GSTimerReplay.Frame) -> int:
 	return f.buttons if _has_buttons else _buttons_from_flags(f)
 
 
 ## Whether the recording carries the buttons held (format 2), rather than only flags.
 func replay_has_buttons() -> bool:
-	for f: DotTimerReplay.Frame in replay.frames:
+	for f: GSTimerReplay.Frame in replay.frames:
 		if f.buttons != 0:
 			return true
 	return false
 
 
-static func _buttons_from_flags(f: DotTimerReplay.Frame) -> int:
+static func _buttons_from_flags(f: GSTimerReplay.Frame) -> int:
 	var b := 0
-	if f.flags & DotTimerReplay.FLAG_JUMPED:
-		b |= DotFpsCommand.BUTTON_JUMP
-	if f.flags & DotTimerReplay.FLAG_DUCKED:
-		b |= DotFpsCommand.BUTTON_CROUCH
+	if f.flags & GSTimerReplay.FLAG_JUMPED:
+		b |= GSFpsCommand.BUTTON_JUMP
+	if f.flags & GSTimerReplay.FLAG_DUCKED:
+		b |= GSFpsCommand.BUTTON_CROUCH
 	return b
 
 
@@ -360,23 +360,23 @@ func describe() -> Dictionary:
 ## the line, or [param seconds] run out. One tick per physics frame, like every bot here.
 ## Returns {"finished": seconds or -1, "put_back": units or null, "left_at": {}, "ticks",
 ## "progress", "worst"}: what the tool prints and the suite asserts.
-static func drive(game: Node, bot: Node, replay: DotTimerReplay, seconds: float) -> Dictionary:
+static func drive(game: Node, bot: Node, replay: GSTimerReplay, seconds: float) -> Dictionary:
 	var follow := new(replay)
 	var tree := game.get_tree()
 	var finished: Array[float] = []
 	var put_back: Array = []
-	var on_effect := func(pid: StringName, zone: DotTimerZone) -> void:
+	var on_effect := func(pid: StringName, zone: GSTimerZone) -> void:
 		if pid != bot.player_id:
 			return
 		match zone.kind:
-			DotTimerZone.Kind.RESPAWN, DotTimerZone.Kind.SLAY:
+			GSTimerZone.Kind.RESPAWN, GSTimerZone.Kind.SLAY:
 				# A pit that ends an excursion already off the line is the line being
 				# left, not the map failing a bot that was on it: report the frame.
 				if put_back.is_empty() and not follow.left_while_off(follow.last_seen):
 					put_back.append(AirdriftUnits.vector_to_units(follow.last_seen).round())
-			DotTimerZone.Kind.TELEPORT:
+			GSTimerZone.Kind.TELEPORT:
 				(func() -> void: follow.teleported(bot.controller.state.position)).call_deferred()
-	var on_finish := func(run: DotTimerRun) -> void:
+	var on_finish := func(run: GSTimerRun) -> void:
 		finished.append(run.time())
 	game.timers.effect_requested.connect(on_effect)
 	bot.timer.run_finished.connect(on_finish)
@@ -387,7 +387,7 @@ static func drive(game: Node, bot: Node, replay: DotTimerReplay, seconds: float)
 	# walked off the start at 30 u/s on whatever that drive last held, and the follow
 	# began a frame late from a different state than the tool's: enough, on bhop_grove,
 	# to meet a door over a pit 6 u lower and take the pit.
-	var still := DotFpsCommand.new()
+	var still := GSFpsCommand.new()
 	still.yaw = follow.start_yaw()
 	bot.controller.apply_command(still)
 	await tree.physics_frame
@@ -400,16 +400,16 @@ static func drive(game: Node, bot: Node, replay: DotTimerReplay, seconds: float)
 	while t < ticks and finished.is_empty() and put_back.is_empty() and follow.left_at.is_empty():
 		var c := follow.command(bot.controller.state, bot.controller.tunables, delta)
 		if log_every > 0 and t % log_every == 0:
-			var s: DotFpsState = bot.controller.state
-			var f: DotTimerReplay.Frame = replay.frames[follow.index]
-			var f2: DotTimerReplay.Frame = replay.frames[mini(follow.index + 1, replay.frames.size() - 1)]
+			var s: GSFpsState = bot.controller.state
+			var f: GSTimerReplay.Frame = replay.frames[follow.index]
+			var f2: GSTimerReplay.Frame = replay.frames[mini(follow.index + 1, replay.frames.size() - 1)]
 			print("[follow]   t %5d  frame %5d  at %s u  line %s u  %4.0f u/s (line %4.0f)  %s  move %s yaw %.0f%s" % [
 				t, follow.index, str(AirdriftUnits.vector_to_units(s.position).round()),
 				str(AirdriftUnits.vector_to_units(f.position).round()),
 				AirdriftUnits.to_units(Vector2(s.velocity.x, s.velocity.z).length()),
 				AirdriftUnits.to_units(Vector2(f2.position.x - f.position.x, f2.position.z - f.position.z).length() * float(replay.tick_rate)),
 				"ground" if s.is_grounded() else "air", str(c.move.snapped(Vector2.ONE * 0.01)), c.yaw,
-				" JUMP" if c.is_pressed(DotFpsCommand.BUTTON_JUMP) else ""])
+				" JUMP" if c.is_pressed(GSFpsCommand.BUTTON_JUMP) else ""])
 		follow.last_seen = bot.controller.state.position
 		bot.controller.apply_command(c)
 		await tree.physics_frame
@@ -445,16 +445,16 @@ static func summary(result: Dictionary) -> String:
 
 
 ## The recording kept for [param id] (`maps/routes/<id>.replay`), or null, with why.
-static func load_for(id: StringName, why: Array = []) -> DotTimerReplay:
+static func load_for(id: StringName, why: Array = []) -> GSTimerReplay:
 	var path := "res://maps/routes/%s.replay" % id
 	if not FileAccess.file_exists(path):
 		why.append("no %s" % path)
 		return null
-	var parsed := DotTimerReplay.load_from(path)
+	var parsed := GSTimerReplay.load_from(path)
 	if not parsed.ok:
 		why.append("%s: %s" % [path, parsed.error.message])
 		return null
-	var replay: DotTimerReplay = parsed.value
+	var replay: GSTimerReplay = parsed.value
 	if replay.frames.size() < 2:
 		why.append("%s has no frames" % path)
 		return null

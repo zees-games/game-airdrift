@@ -37,25 +37,25 @@ var hud: AirdriftHud = null
 var _standing: Dictionary = {}
 ## The last splits comparison the server sent this player, kept for the same reason.
 var _stage_reference: Dictionary = {}
-var net: DotNetManager = null
+var net: GSNetManager = null
 var bridge: AirdriftNetBridge = null
 var link: Node = null
 
 ## Keeps the screen covered, and the local body, the keys and the timer still, until the level,
 ## the local player and its camera are all in. See [method _build_gate].
-var gate: DotLoadGate = null
+var gate: GSLoadGate = null
 
 ## dot-game's client platform: the loading cover (and the server told when it lifts), the link
-## and whether this client is offline. See [DotGameClient].
-var platform: DotGameClient = null
+## and whether this client is offline. See [GSGameClient].
+var platform: GSGameClient = null
 
 ## dot-workbench's tuning window. See [method _build_workbench].
-var workbench: DotGameWorkbench = null
+var workbench: GSGameWorkbench = null
 ## Asks a server whether this player may edit it (sv_workbench_remote); null offline.
-var _workbench_remote: DotGameWorkbenchRemoteClient = null
+var _workbench_remote: GSGameWorkbenchRemoteClient = null
 ## The profile rows the server broadcasts (an admin's edit reaches every client); null offline.
-var _profile_link: DotNetProfileLink = null
-var _profile_runtime: DotProfileRuntime = null
+var _profile_link: GSNetProfileLink = null
+var _profile_runtime: GSProfileRuntime = null
 
 ## The server browser: dot-browser's client half.
 ##
@@ -75,7 +75,7 @@ var flashlight: AirdriftFlashlight = null
 
 ## Every menu this client draws (Escape, H, the map list, "Move HUD elements", the scoreboard), all dot-menu's,
 ## above the HUD and chat and below the console, which an operator must always reach. Pages: [AirdriftMenuPages].
-var menu: DotMenu = null
+var menu: GSMenu = null
 
 ## Every zone drawn as a glowing box. See [AirdriftZoneOutlines].
 var zone_outlines: AirdriftZoneOutlines = null
@@ -85,7 +85,7 @@ var zone_editor: AirdriftZoneEditor = null
 
 ## Where the dead lie: dot-player-char's ragdolls, built from each death (the server's pick)
 ## under [member AirdriftGame.ragdoll_rules]. See [method fall].
-var ragdolls: DotPlayerRagdolls = null
+var ragdolls: GSPlayerRagdolls = null
 
 ## What the server last said about this client's own screen: `sv_flashlight`,
 ## `sv_allow_thirdperson` and the chat commands. See [method _on_rules].
@@ -95,11 +95,11 @@ var rules: Dictionary = {"flashlight": true, "thirdperson": true, "commands": []
 @export var force_offline: bool = false
 
 ## What this client wears, if a launcher chose one. Published on hello.
-@export var avatar: DotAvatar = null
+@export var avatar: GSAvatar = null
 
 var _offline := true
 var _style_index := 0
-var _sampler: DotFpsSampler = null
+var _sampler: GSFpsSampler = null
 ## The phone's stick and buttons (dot-mobile); hidden on a desktop. Built with the HUD.
 var touch: AirdriftTouch = null
 var _transit_text := ""
@@ -136,7 +136,7 @@ var roaming: bool = false
 
 ## The pose the free camera holds between frames; seeded from the camera as it was the frame
 ## the roam began, so the spectator starts where they were looking.
-var _free_cam: DotSpectatorFreeCam = null
+var _free_cam: GSSpectatorFreeCam = null
 var _roam_seeded := false
 var _roam_look := Vector2.ZERO
 
@@ -258,7 +258,7 @@ func _offer_solo_maps() -> void:
 func _watch_map_drops() -> void:
 	if not _offline or not is_inside_tree() or not AirdriftMapCatalogue.can_drop():
 		return
-	if game != null and game.map_drop == null and DotAddonApi.build_level("dot_map") >= AirdriftMapDrop.NEEDS_LEVEL:
+	if game != null and game.map_drop == null and GSAddonApi.build_level("dot_map") >= AirdriftMapDrop.NEEDS_LEVEL:
 		game.map_drop = AirdriftMapDrop.make()
 		if game.map_drop != null:
 			add_child(game.map_drop)
@@ -291,7 +291,7 @@ func _say_drop(text: String) -> void:
 func _offer_collection() -> void:
 	if AirdriftSoloMaps.session() == null or game == null:
 		return
-	var _offered: DotResult = await game.offer_collection("%s/%s" % [AirdriftSoloMaps.OWNER, AirdriftSoloMaps.COLLECTION], AirdriftSoloMaps.IDS)
+	var _offered: GSResult = await game.offer_collection("%s/%s" % [AirdriftSoloMaps.OWNER, AirdriftSoloMaps.COLLECTION], AirdriftSoloMaps.IDS)
 
 
 func _leave() -> void:
@@ -309,7 +309,7 @@ func _leave() -> void:
 
 ## The sampler that turns this client's keys into commands: the player's own offline, the
 ## netcode's online.
-func _active_sampler() -> DotFpsSampler:
+func _active_sampler() -> GSFpsSampler:
 	return player.sampler if _offline and player != null else _sampler
 
 
@@ -320,13 +320,13 @@ func _input_busy() -> bool:
 
 
 ## Movement stops while anything is taking the keyboard: the chat box, the console, the
-## menu or the help screen. `DotFpsSampler` POLLS the keys, so swallowing events is not
+## menu or the help screen. `GSFpsSampler` POLLS the keys, so swallowing events is not
 ## enough — see [method _wire_chat_window] for what that costs on a timer server.
 func _refresh_suspended() -> void:
 	var busy := _input_busy() or (platform != null and platform.is_input_blocked())
 	for sampler in [_sampler, player.sampler if player != null else null]:
 		if sampler != null:
-			(sampler as DotFpsSampler).suspended = busy
+			(sampler as GSFpsSampler).suspended = busy
 
 
 # Flashlight and the others
@@ -379,7 +379,7 @@ func _watched_from_inside() -> StringName:
 			or not game.spectate.is_spectating(player.player_id):
 		return &""
 	var view := game.spectate.manager.view(String(player.player_id))
-	if view.mode != DotSpectatorView.Mode.FIRST_PERSON:
+	if view.mode != GSSpectatorView.Mode.FIRST_PERSON:
 		return &""
 	return StringName(view.target)
 
@@ -409,7 +409,7 @@ func apply_client_settings() -> void:
 
 
 ## The mouse, onto whichever tunables the sampler is reading. Neither field is in the
-## movement fingerprint (`DotFpsTunables` leaves every `mouse_` key and `invert_look_y`
+## movement fingerprint (`GSFpsTunables` leaves every `mouse_` key and `invert_look_y`
 ## out of it), so a client changing them can never disagree with the server.
 func _apply_look() -> void:
 	if presentation == null or presentation.settings == null:
@@ -480,7 +480,7 @@ func menu_leave_label() -> String:
 	if solo != null and solo.has_method(&"leave"):
 		return "Back to menu"
 	# A browser tab cannot be closed by the page in it, and a quit there is a frozen canvas.
-	return "" if DotPlatform.is_web() else "Quit game"
+	return "" if GSPlatform.is_web() else "Quit game"
 
 
 func menu_styles() -> Array:
@@ -559,7 +559,7 @@ func _look_position(row: Dictionary) -> Variant:
 	return null
 
 
-func _hud_layout(st: DotSettingsManager) -> Dictionary:
+func _hud_layout(st: GSSettingsManager) -> Dictionary:
 	## Overridden by the client script.
 	return {}
 

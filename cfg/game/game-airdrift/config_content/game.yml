@@ -36,7 +36,7 @@
 # records_table_prefix: "dot_timer_"
 # Seconds a cached board read is served. Another server's new record is at most this old on this server's HUD... [0.0..600.0]
 # records_cache_seconds: 10.0
-# How records are scored: curve, tiered or placement. See DotTimerPoints. `timer_points_formula`.
+# How records are scored: curve, tiered or placement. See GSTimerPoints. `timer_points_formula`.
 # points_formula: "curve"
 # Decay down a player's list of records when totalling them. 1 = a plain sum. [0.5..1.0]
 # points_weighting: 0.975

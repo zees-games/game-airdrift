@@ -101,7 +101,7 @@ screenshots/
 
 # One-off debug scenes a session leaves at the root.
 /_scratch_*
-# Maps a player copies in by hand (dot-map DotMapLocalMaps); no leading slash, because hv reads `/addons/<name>` lines as links.
+# Maps a player copies in by hand (dot-map GSMapLocalMaps); no leading slash, because hv reads `/addons/<name>` lines as links.
 addons/maps/
 /addons/dot_sql
 

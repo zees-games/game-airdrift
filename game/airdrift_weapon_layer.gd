@@ -8,15 +8,15 @@ const AirdriftGame := preload("airdrift_game.gd")
 const AirdriftPlayer := preload("airdrift_player.gd")
 
 ## The server owner's cvars; they outlive a map change, so the game owns them, not the layer.
-var rules: DotWeaponDropRules = DotWeaponDropRules.new()
-var drops: DotWeaponDrops = null
+var rules: GSWeaponDropRules = GSWeaponDropRules.new()
+var drops: GSWeaponDrops = null
 var game: AirdriftGame = null
-## Server: whether each player's use key is down (set by the ask), and one [DotWeaponUseKey] per player.
+## Server: whether each player's use key is down (set by the ask), and one [GSWeaponUseKey] per player.
 var use_down: Dictionary = {}
 var _keys: Dictionary = {}
 ## Client: the key over the weapon looked at, and the panel.
-var _client_key: DotWeaponUseKey = DotWeaponUseKey.new()
-var _view: DotWeaponPickupView = null
+var _client_key: GSWeaponUseKey = GSWeaponUseKey.new()
+var _view: GSWeaponPickupView = null
 
 
 ## Names itself and joins [param owner_game], on either side.
@@ -24,7 +24,7 @@ func setup(owner_game: AirdriftGame) -> void:
 	game = owner_game
 	name = "WeaponLayer"
 	game.add_child(self)
-	drops = DotWeaponDrops.new()
+	drops = GSWeaponDrops.new()
 	drops.name = "WeaponDrops"
 	rules.auto_pickup = true
 	drops.rules = rules
@@ -38,7 +38,7 @@ func setup(owner_game: AirdriftGame) -> void:
 
 
 ## One drop key per player (server): it holds the key state for `sv_weapon_drop_key_hold`.
-var _drop_keys: Dictionary[StringName, DotWeaponDropKey] = {}
+var _drop_keys: Dictionary[StringName, GSWeaponDropKey] = {}
 ## Players whose drop key is down now, stepped every tick for the hold.
 var _down: Dictionary[StringName, bool] = {}
 
@@ -64,7 +64,7 @@ func set_key(player_id: StringName, down: bool) -> int:
 
 ## Forgets a player's hold: call on death, respawn and disconnect (a weapon switch resets itself).
 func reset_key(player_id: StringName) -> void:
-	var key: DotWeaponDropKey = _drop_keys.get(player_id)
+	var key: GSWeaponDropKey = _drop_keys.get(player_id)
 	if key != null:
 		key.reset()
 	_drop_keys.erase(player_id)
@@ -77,9 +77,9 @@ func _step_key(player_id: StringName, pressed: bool, delta: float) -> int:
 	if drops == null or player == null or arsenal == null or not game.combat.health_of(player_id).alive:
 		reset_key(player_id)
 		return 0
-	var key: DotWeaponDropKey = _drop_keys.get(player_id)
+	var key: GSWeaponDropKey = _drop_keys.get(player_id)
 	if key == null:
-		key = DotWeaponDropKey.new()
+		key = GSWeaponDropKey.new()
 		_drop_keys[player_id] = key
 	return key.step(drops, arsenal, player.eye_position(), player.aim_direction(),
 		game.combat.entity_for(player_id), pressed, delta, null, player.controller.state.velocity)
@@ -103,11 +103,11 @@ func tick(delta: float) -> void:
 				game.combat.entity_for(player_id))
 
 
-## The use key over a dropped weapon, the shared rules of [DotWeaponUseKey]. Server side; true while the key is busy with a drop.
-func use_step(player_id: StringName, arsenal: DotWeaponArsenal, player: AirdriftPlayer, pressed: bool, delta: float) -> bool:
-	var key: DotWeaponUseKey = _keys.get(player_id)
+## The use key over a dropped weapon, the shared rules of [GSWeaponUseKey]. Server side; true while the key is busy with a drop.
+func use_step(player_id: StringName, arsenal: GSWeaponArsenal, player: AirdriftPlayer, pressed: bool, delta: float) -> bool:
+	var key: GSWeaponUseKey = _keys.get(player_id)
 	if key == null:
-		key = DotWeaponUseKey.new()
+		key = GSWeaponUseKey.new()
 		_keys[player_id] = key
 	return key.step(drops, arsenal, player.eye_position(), player.aim_direction(), game.combat.entity_for(player_id),
 		pressed, delta, null, 0)
@@ -123,7 +123,7 @@ func update_prompt(player: AirdriftPlayer, arsenal: Object, pressed: bool, delta
 	if drops == null or player == null:
 		return 0.0
 	if _view == null:
-		_view = DotWeaponPickupView.new()
+		_view = GSWeaponPickupView.new()
 		_view.name = "PickupView"
 		_view.visible = false
 		game.add_child(_view)
@@ -161,7 +161,7 @@ func describe() -> Dictionary:
 	return {"drops": drops.count() if drops != null else 0, "authority": drops != null and drops.is_authority}
 
 
-func _arsenal(player_id: StringName) -> DotWeaponArsenal:
+func _arsenal(player_id: StringName) -> GSWeaponArsenal:
 	return game.combat.arsenal_of(player_id) if game.combat != null else null
 
 

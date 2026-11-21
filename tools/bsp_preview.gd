@@ -23,7 +23,7 @@ func _ready() -> void:
 	var def := catalogue.get_map(StringName(id))
 	if def == null:
 		push_error("no map '%s'. Known: %s" % [id, ", ".join(
-			catalogue.maps.map(func(m: DotMapDef) -> String: return String(m.id)))])
+			catalogue.maps.map(func(m: GSMapDef) -> String: return String(m.id)))])
 		get_tree().quit(1)
 		return
 	var packed: PackedScene = load(def.scene_path)

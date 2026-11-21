@@ -8,7 +8,7 @@ const AirdriftPresentation := preload("../game/airdrift_presentation.gd")
 ## silent.[/b] The catalogue was complete and argued over, and every path in it named an
 ## `.ogg` nobody had produced. `examples/headless_presentation.tscn` checks the catalogue
 ## and the limits, and it cannot check any of this: a headless run has no audio device, so
-## [DotAudioManager] correctly builds a [DotAudioSinkNull] and the one question worth
+## [GSAudioManager] correctly builds a [GSAudioSinkNull] and the one question worth
 ## asking here never comes up.
 ##
 ## So this is the audio half of what `tools/screenshot*.sh` is for the interface — the only
@@ -16,7 +16,7 @@ const AirdriftPresentation := preload("../game/airdrift_presentation.gd")
 ## of sounds".
 ##
 ## [b]It asks `is_playing`, not "did I get a handle".[/b] A handle says the pool had room;
-## only [method DotAudioSink.is_playing] says a speaker is moving. The first version of
+## only [method GSAudioSink.is_playing] says a speaker is moving. The first version of
 ## this probe, in game-fatal-contact, reported four sounds on a run in which the engine refused
 ## playback four times — a probe that can be satisfied by the bug it is looking for.
 ##
@@ -36,7 +36,7 @@ var _failed := 0
 
 
 func _initialize() -> void:
-	DotLog.set_level(DotLog.Level.WARN)
+	GSLog.set_level(GSLog.Level.WARN)
 	print("driver:  %s" % AudioServer.get_driver_name())
 
 
@@ -46,7 +46,7 @@ func _process(_delta: float) -> bool:
 	if _frame < SETTLE:
 		return false
 
-	if not DotAudioSink.device_present():
+	if not GSAudioSink.device_present():
 		print("")
 		print("No audio device. Run this through tools/audio_probe.sh, which uses xvfb-run;")
 		print("--headless gives a Dummy driver and this probe cannot say anything.")
@@ -64,7 +64,7 @@ func _build() -> bool:
 	p.name = "AudioProbe"
 	root.add_child(p)
 
-	var ready: DotResult = p.setup()
+	var ready: GSResult = p.setup()
 
 	if not ready.ok:
 		print("the presentation did not set up: %s" % ready.error.message)
@@ -73,7 +73,7 @@ func _build() -> bool:
 
 	_presentation = p
 
-	var sink := p.audio.sink as DotAudioSinkGodot
+	var sink := p.audio.sink as GSAudioSinkGodot
 	print("sink:    %s" % p.audio.sink.sink_name())
 
 	if sink == null:
@@ -96,7 +96,7 @@ func _build() -> bool:
 
 func _sound() -> bool:
 	var p := _presentation
-	var sink := p.audio.sink as DotAudioSinkGodot
+	var sink := p.audio.sink as GSAudioSinkGodot
 
 	for id in PROBES:
 		# Through the MANAGER, not the sink: the limits, the culling and the mixer are the

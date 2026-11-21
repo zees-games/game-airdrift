@@ -7,10 +7,10 @@ const AirdriftPlayer := preload("airdrift_player.gd")
 const AirdriftArsenal := preload("airdrift_arsenal.gd")
 const AirdriftWeaponIcons := preload("airdrift_weapon_icons.gd")
 
-var timer_hud: DotTimerHud = null
+var timer_hud: GSTimerHud = null
 ## The per-section sidebar on a staged map: left edge, vertically centred, so it shares
 ## nothing with the clock's block (bottom centre by default) or the notice line.
-var splits_panel: DotTimerSplitsPanel = null
+var splits_panel: GSTimerSplitsPanel = null
 ## The `show_stage_splits` setting. Separate from `show_splits`, which is the clock block's
 ## one split line.
 var _show_stage_splits: bool = true
@@ -25,17 +25,17 @@ var _spectating: Label = null
 var _spectators: PanelContainer = null
 var _spectators_label: Label = null
 var _notice: Label = null
-var _crosshair: DotCrosshair = null
+var _crosshair: GSCrosshair = null
 ## Four ticks round the crosshair on a hit the server confirmed (combat maps only).
-var hit_marker: DotHitMarker = null
+var hit_marker: GSHitMarker = null
 ## The weapon in hand under deathmatch, bottom right: its name alone, because both weapons
 ## have no magazine and an endless reserve (`AirdriftArsenal`), and "∞ | ∞" is a count that never
 ## moves. Nothing at all on a pure timer server.
-var ammo: DotAmmoCounter = null
+var ammo: GSAmmoCounter = null
 ## The held weapon's sprite over [member ammo] (`cl_weapon_icons`); hidden when it has none.
 var weapon_icon: TextureRect = null
 ## The confirmed hits' numbers, on the bodies they landed on.
-var damage_numbers: DotDamageNumbers = null
+var damage_numbers: GSDamageNumbers = null
 var _notice_until: float = 0.0
 
 var game: AirdriftGame = null
@@ -49,14 +49,14 @@ var followed_id: StringName = &""
 ## The pieces a player can move, in the order the layout editor offers them.
 const ELEMENTS: Array[StringName] = [&"timer", &"keys", &"status", &"spectators"]
 
-## [code]timer_position[/code]'s values, onto `DotTimerHud`'s own placements.
+## [code]timer_position[/code]'s values, onto `GSTimerHud`'s own placements.
 const PLACEMENTS := {
-	&"bottom_centre": DotTimerHud.Placement.BOTTOM_CENTRE,
-	&"bottom_left": DotTimerHud.Placement.BOTTOM_LEFT,
-	&"bottom_right": DotTimerHud.Placement.BOTTOM_RIGHT,
-	&"top_left": DotTimerHud.Placement.TOP_LEFT,
-	&"top_centre": DotTimerHud.Placement.TOP_CENTRE,
-	&"top_right": DotTimerHud.Placement.TOP_RIGHT,
+	&"bottom_centre": GSTimerHud.Placement.BOTTOM_CENTRE,
+	&"bottom_left": GSTimerHud.Placement.BOTTOM_LEFT,
+	&"bottom_right": GSTimerHud.Placement.BOTTOM_RIGHT,
+	&"top_left": GSTimerHud.Placement.TOP_LEFT,
+	&"top_centre": GSTimerHud.Placement.TOP_CENTRE,
+	&"top_right": GSTimerHud.Placement.TOP_RIGHT,
 }
 
 ## The timer block's margin from the edge in a corner placement. The bottom one is the
@@ -77,7 +77,7 @@ var _spectator_names := PackedStringArray()
 ## The map's time left as the server's vote last described it; null when nothing has told this HUD.
 ## A client's own session clock ignores what the server decides (an extend, `rtv_only`), so it is
 ## wrong there and only right offline.
-var clock_view: DotVoteClockView = null
+var clock_view: GSVoteClockView = null
 
 ## How far up from the bottom the notice line starts, in pixels: the clock block (92 up, about
 ## 90 tall) plus a gap, in one place so moving the clock moves this.

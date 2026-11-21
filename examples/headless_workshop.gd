@@ -1,11 +1,11 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 const AirdriftMapCatalogue := preload("../game/airdrift_map_catalogue.gd")
 const AirdriftVoteMapSource := preload("../game/airdrift_vote_map_source.gd")
 
-## What a subscribed map pack does to this game, against a fixture [DotContentIndex]
+## What a subscribed map pack does to this game, against a fixture [GSContentIndex]
 ## registered as the process's shared one for the length of the run.
 ##
 ## [codeblock]
@@ -25,33 +25,33 @@ const PREFIX := "res://examples/workshop_fixture/"
 
 var _entered := 0
 var _completed := 0
-var _index: DotContentIndex = null
+var _index: GSContentIndex = null
 var _game: AirdriftGame = null
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	print("Airdrift — Workshop maps")
-	_index = _make_index(DotContentIndex.SESSION_SOLO)
-	DotRegistry.register(DotContentIndex.SERVICE, _index)
+	_index = _make_index(GSContentIndex.SESSION_SOLO)
+	GSRegistry.register(GSContentIndex.SERVICE, _index)
 	_test_accepts()
 	_test_catalogue()
 	await _test_game()
 	await _test_load()
 	_test_online()
-	DotRegistry.unregister(DotContentIndex.SERVICE)
+	GSRegistry.unregister(GSContentIndex.SERVICE)
 
 	_report_sections(_entered, _completed, SECTIONS, CHECKS)
 
 
 ## A pack with a surf map, a sandbox map the game does not accept, and a map that claims the
 ## id of one of the game's own.
-func _make_index(session: StringName) -> DotContentIndex:
-	var index := DotContentIndex.new()
+func _make_index(session: StringName) -> GSContentIndex:
+	var index := GSContentIndex.new()
 	index.set_session(session)
 	var added := index.add_pack({
 		"content_id": "fixture/hills", "version": "1.0.0", "prefix": PREFIX,
@@ -76,7 +76,7 @@ func _names(rows: Array) -> PackedStringArray:
 	return out
 
 
-func _ballot_labels(catalogue: DotMapCatalogue) -> PackedStringArray:
+func _ballot_labels(catalogue: GSMapCatalogue) -> PackedStringArray:
 	var out := PackedStringArray()
 	var source := AirdriftVoteMapSource.new()
 	source.catalogue = catalogue
@@ -157,15 +157,15 @@ func _test_load() -> void:
 	print("choosing a pack map")
 	var player := _game.add_player(&"p1", "Tester", true)
 	_check(player != null, "a player joins")
-	var changed: DotResult = await _game.change_map(MAP)
+	var changed: GSResult = await _game.change_map(MAP)
 	_check(changed.ok, "change_map succeeds", "" if changed.ok else changed.error.message)
 	_check(_game.maps.current != null and _game.maps.current.id == MAP, "the map is current")
 	var world := _game.maps.world
 	_check(world != null and world.get_node_or_null("Floor") != null, "the pack's scene is the world")
-	_check(_game.timers.zones != null and _game.timers.zones.first_of_kind(DotTimerZone.Kind.START, 0) != null
-		and _game.timers.zones.first_of_kind(DotTimerZone.Kind.END, 0) != null,
+	_check(_game.timers.zones != null and _game.timers.zones.first_of_kind(GSTimerZone.Kind.START, 0) != null
+		and _game.timers.zones.first_of_kind(GSTimerZone.Kind.END, 0) != null,
 		"the timer holds the pack's zones file (start and end)")
-	var spawn := _game.timers.zones.first_of_kind(DotTimerZone.Kind.SPAWN, 0) if _game.timers.zones != null else null
+	var spawn := _game.timers.zones.first_of_kind(GSTimerZone.Kind.SPAWN, 0) if _game.timers.zones != null else null
 	_check(spawn != null, "the zones file's spawn zone is there")
 	var at: Vector3 = player.controller.state.position
 	_check(spawn != null and at.distance_to(spawn.destination) < 0.01,
@@ -185,11 +185,11 @@ func _test_online() -> void:
 	print("online")
 	var catalogue := AirdriftMapCatalogue.discover(PackedStringArray(), _index)
 	_check(catalogue.get_map(MAP) != null, "listed while the index is solo")
-	_index.set_session(DotContentIndex.SESSION_ONLINE)
+	_index.set_session(GSContentIndex.SESSION_ONLINE)
 	_check(catalogue.get_map(MAP) == null, "gone from the same catalogue when the session turns online")
 	_check(not _ballot_labels(catalogue).has("Fixture Hill [Fixture Pack]"), "gone from the ballot")
-	var late := _make_index(DotContentIndex.SESSION_SOLO)
-	late.set_session(DotContentIndex.SESSION_ONLINE)
+	var late := _make_index(GSContentIndex.SESSION_SOLO)
+	late.set_session(GSContentIndex.SESSION_ONLINE)
 	_check(AirdriftMapCatalogue.discover(PackedStringArray(), late).get_map(MAP) == null,
 		"a catalogue built online never lists it")
 	_completed += 1

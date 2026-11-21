@@ -33,9 +33,9 @@ const AirdriftZoneOutlines := preload("airdrift_zone_outlines.gd")
 signal changed()
 
 const KINDS := [
-	["start", DotTimerZone.Kind.START], ["end", DotTimerZone.Kind.END],
-	["stage", DotTimerZone.Kind.STAGE], ["checkpoint", DotTimerZone.Kind.CHECKPOINT],
-	["stop", DotTimerZone.Kind.STOP], ["respawn", DotTimerZone.Kind.RESPAWN],
+	["start", GSTimerZone.Kind.START], ["end", GSTimerZone.Kind.END],
+	["stage", GSTimerZone.Kind.STAGE], ["checkpoint", GSTimerZone.Kind.CHECKPOINT],
+	["stop", GSTimerZone.Kind.STOP], ["respawn", GSTimerZone.Kind.RESPAWN],
 ]
 
 ## The grid an aim point snaps to, in genre units.
@@ -57,7 +57,7 @@ var offline: bool = true
 var send_line: Callable = Callable()
 
 var kind_index: int = 0
-var track: int = DotTimerTrack.MAIN
+var track: int = GSTimerTrack.MAIN
 var number: int = 1
 var height_units: float = 128.0
 
@@ -70,7 +70,7 @@ var _text: Label = null
 var _layer: CanvasLayer = null
 
 ## What the panel is drawn with. The client hands over the menu's; the default theme otherwise.
-var kit: DotMenuKit = DotMenuKit.new()
+var kit: GSMenuKit = GSMenuKit.new()
 
 
 func _ready() -> void:
@@ -128,7 +128,7 @@ func close() -> void:
 	set_process(false)
 
 
-func kind() -> DotTimerZone.Kind:
+func kind() -> GSTimerZone.Kind:
 	return KINDS[kind_index][1]
 
 
@@ -146,7 +146,7 @@ func handle_key(event: InputEventKey) -> bool:
 		kind_index = code - KEY_1
 		_first = null
 	elif code == KEY_T:
-		track = maxi(DotTimerTrack.MAIN, track + (-1 if event.shift_pressed else 1))
+		track = maxi(GSTimerTrack.MAIN, track + (-1 if event.shift_pressed else 1))
 	elif code == KEY_BRACKETLEFT:
 		number = maxi(1, number - 1)
 	elif code == KEY_BRACKETRIGHT:
@@ -229,21 +229,21 @@ func place() -> void:
 
 
 ## Adds the zone between two corners: to the game offline, to the server online.
-func commit(a: Vector3, b: Vector3) -> DotResult:
+func commit(a: Vector3, b: Vector3) -> GSResult:
 	var box := box_between(a, b)
 	if box.size.x < AirdriftUnits.to_metres(8.0) or box.size.z < AirdriftUnits.to_metres(8.0):
 		_say("Too small: drag the corners apart.")
-		return DotResult.fail(DotError.CODE_INVALID, "too small")
-	var numbered := kind() in [DotTimerZone.Kind.STAGE, DotTimerZone.Kind.CHECKPOINT]
+		return GSResult.fail(GSError.CODE_INVALID, "too small")
+	var numbered := kind() in [GSTimerZone.Kind.STAGE, GSTimerZone.Kind.CHECKPOINT]
 	if offline:
-		var zones: DotTimerZoneSet = game.timers.zones
+		var zones: GSTimerZoneSet = game.timers.zones
 		if zones == null:
-			zones = DotTimerZoneSet.new()
+			zones = GSTimerZoneSet.new()
 			zones.map_id = game.maps.current.id if game.maps.current != null else &"map"
-		var zone := DotTimerZone.make(kind(), track)
+		var zone := GSTimerZone.make(kind(), track)
 		zone.set_box(box.position, box.end)
 		zone.number = float(number) if numbered else 0.0
-		if kind() in [DotTimerZone.Kind.STAGE, DotTimerZone.Kind.START]:
+		if kind() in [GSTimerZone.Kind.STAGE, GSTimerZone.Kind.START]:
 			# Where `!s<n>` and a restart put you: the middle of the floor, facing as you are.
 			zone.destination = Vector3(box.get_center().x, box.position.y + AirdriftUnits.to_metres(8.0), box.get_center().z)
 			zone.destination_yaw = _yaw()
@@ -255,9 +255,9 @@ func commit(a: Vector3, b: Vector3) -> DotResult:
 		game.timers.set_zones(zones)
 		if numbered:
 			number += 1
-		_say("Drew %s on %s." % [kind_name(), DotTimerTrack.name_of(track)])
+		_say("Drew %s on %s." % [kind_name(), GSTimerTrack.name_of(track)])
 		changed.emit()
-		return DotResult.success(zone)
+		return GSResult.success(zone)
 	var u_a := AirdriftUnits.vector_to_units(box.position)
 	var u_b := AirdriftUnits.vector_to_units(Vector3(box.end.x, box.position.y, box.end.z))
 	_send((OLD_COMMAND_PREFIX + "zone %s %d %d") % [kind_name(), track, number if numbered else 0])
@@ -265,15 +265,15 @@ func commit(a: Vector3, b: Vector3) -> DotResult:
 	_send((OLD_COMMAND_PREFIX + "zone_mark %.0f %.0f %.0f %.0f") % [u_b.x, u_b.y, u_b.z, height_units])
 	if numbered:
 		number += 1
-	_say("Sent %s on %s to the server." % [kind_name(), DotTimerTrack.name_of(track)])
-	return DotResult.success(null)
+	_say("Sent %s on %s to the server." % [kind_name(), GSTimerTrack.name_of(track)])
+	return GSResult.success(null)
 
 
 func undo() -> void:
 	if not offline:
 		_send(OLD_COMMAND_PREFIX + "zone_undo")
 		return
-	var zones: DotTimerZoneSet = game.timers.zones
+	var zones: GSTimerZoneSet = game.timers.zones
 	if zones == null or zones.zones.is_empty():
 		_say("Nothing to undo.")
 		return
@@ -281,14 +281,14 @@ func undo() -> void:
 	zones.remove_id(last.id)
 	game.timers.set_zones(zones)
 	changed.emit()
-	_say("Took back a %s." % DotTimerZone.Kind.keys()[last.kind].to_lower())
+	_say("Took back a %s." % GSTimerZone.Kind.keys()[last.kind].to_lower())
 
 
 func save() -> void:
 	if not offline:
 		_send(OLD_COMMAND_PREFIX + "zone_save")
 		return
-	var zones: DotTimerZoneSet = game.timers.zones
+	var zones: GSTimerZoneSet = game.timers.zones
 	if zones == null:
 		_say("No zones to save.")
 		return
@@ -301,7 +301,7 @@ func save() -> void:
 	var wrote := zones.save_json(path)
 	_say("Saved %s." % path if wrote.ok else wrote.error.message)
 	if wrote.ok:
-		DotWeb.sync_filesystem()
+		GSWeb.sync_filesystem()
 
 
 func _send(line: String) -> void:
@@ -338,7 +338,7 @@ func _grow(by: float) -> void:
 
 
 func _refuse(message: String) -> void:
-	DotLog.warn("g2g.zone_editor", message)
+	GSLog.warn("g2g.zone_editor", message)
 	_say(message)
 
 
@@ -383,7 +383,7 @@ func _update_text() -> void:
 	for i in KINDS.size():
 		lines.append("%s %d  %s" % ["▶" if i == kind_index else "  ", i + 1, KINDS[i][0]])
 	lines.append("")
-	lines.append("T  track: %s" % DotTimerTrack.name_of(track))
+	lines.append("T  track: %s" % GSTimerTrack.name_of(track))
 	lines.append("[ ]  number: %d" % number)
 	lines.append("PgUp/PgDn  height: %d units" % int(height_units))
 	lines.append("")

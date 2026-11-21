@@ -1,6 +1,6 @@
 # Touch controls
 
-On a phone or tablet (`DotPlatform.has_touch()`), the client shows dot-mobile's overlay over the HUD: a stick planted where the left thumb lands, drag-to-look on the right half, and four drawn buttons (jump, duck, FIRE, R). On a desktop nothing shows and nothing changes.
+On a phone or tablet (`GSPlatform.has_touch()`), the client shows dot-mobile's overlay over the HUD: a stick planted where the left thumb lands, drag-to-look on the right half, and four drawn buttons (jump, duck, FIRE, R). On a desktop nothing shows and nothing changes.
 
 ## What a thumb does
 
@@ -11,11 +11,11 @@ On a phone or tablet (`DotPlatform.has_touch()`), the client shows dot-mobile's 
 | R | restarts the run | the same call as the restart key |
 | MENU (top right) | opens the menu | the same call as Escape |
 
-`AirdriftTouch` (`game/airdrift_touch.gd`) builds the overlay and declares this layout. It drives the client's own `DotFpsTouchSampler`, so a run sees a thumb exactly as it sees the keyboard: the simulation, the timer and the replays do not know the difference.
+`AirdriftTouch` (`game/airdrift_touch.gd`) builds the overlay and declares this layout. It drives the client's own `GSFpsTouchSampler`, so a run sees a thumb exactly as it sees the keyboard: the simulation, the timer and the replays do not know the difference.
 
 ## Two samplers
 
-Offline the player's own sampler takes the keys; online the netcode's does. Both are `DotFpsTouchSampler` on a touch device. `AirdriftTouch.sync()` runs every frame and hands the overlay whichever sampler is active, and dot-mobile lifts the fingers and bits on the one it leaves.
+Offline the player's own sampler takes the keys; online the netcode's does. Both are `GSFpsTouchSampler` on a touch device. `AirdriftTouch.sync()` runs every frame and hands the overlay whichever sampler is active, and dot-mobile lifts the fingers and bits on the one it leaves.
 
 ## While something else has the screen
 

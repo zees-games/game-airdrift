@@ -8,7 +8,7 @@ const KillPovView := preload("airdrift_kill_pov_view.gd")
 ## The client half of the shared kill view (dot-replay): the killer's view replayed to the victim.
 ## Kept out of AirdriftClient, which is at its size baseline.
 
-var view: DotKillViewClient = null
+var view: GSKillViewClient = null
 var _client: Node = null
 var _game: Node = null
 var _solo: AirdriftKillView = null
@@ -27,7 +27,7 @@ static func solo(client: Node, game: Node) -> void:
 func attach(client: Node, bridge: Node, game: Node) -> void:
 	_client = client
 	_game = game
-	view = DotKillViewClient.new()
+	view = GSKillViewClient.new()
 	view.name = "KillView"
 	add_child(view)
 	view.setup(game.killview_rules)
@@ -42,7 +42,7 @@ func attach(client: Node, bridge: Node, game: Node) -> void:
 		return
 	view.respawn_requested.connect(func() -> void: bridge.ask_respawn())
 	bridge.killview_received.connect(_on_clip)
-	var link: Object = DotRegistry.get_service(&"dot_client_link")
+	var link: Object = GSRegistry.get_service(&"dot_client_link")
 	if link != null:
 		var _following: bool = game.killview_rules.follow_cvars(link)
 
@@ -82,6 +82,6 @@ func _on_clip(clip: Dictionary, info: Dictionary) -> void:
 	if key != &"":
 		staged = clip.merged({"killer": bodies.id_for(_game, key)}, true)
 	var weapon := String(info.get("weapon", ""))
-	var def: DotWeaponDef = AirdriftArsenal.weapon_catalogue().get_def(StringName(weapon)) if weapon != "" else null
+	var def: GSWeaponDef = AirdriftArsenal.weapon_catalogue().get_def(StringName(weapon)) if weapon != "" else null
 	shown["weapon"] = def.display_name if def != null and def.display_name != "" else weapon.capitalize()
 	var _started := view.play(staged, shown)

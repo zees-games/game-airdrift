@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
@@ -57,7 +57,7 @@ class SlowBootGame extends AirdriftGame:
 	var boot_id: StringName = &"bhop_g2g_intro"
 	var boot_waiting := false
 
-	func ensure_map_content(id: StringName) -> DotResult:
+	func ensure_map_content(id: StringName) -> GSResult:
 		if id == boot_id:
 			boot_waiting = true
 			await get_tree().create_timer(0.5).timeout
@@ -70,7 +70,7 @@ var game: AirdriftGame = null
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -121,7 +121,7 @@ func _test_discovery() -> void:
 	# A tier read from a list beside the map is a tier that can disagree with it.
 	_check(surf != null and surf.tier == 3, "a map's tier comes from its own sidecar",
 		"tier %d" % (surf.tier if surf else -1))
-	_check(surf != null and surf.kind == DotMapDef.KIND_SURF, "and its kind")
+	_check(surf != null and surf.kind == GSMapDef.KIND_SURF, "and its kind")
 	_check(surf != null and surf.scene_path == "res://maps/surf_g2g_intro.tscn",
 		"and its scene path")
 
@@ -132,7 +132,7 @@ func _test_discovery() -> void:
 	# Zero is legitimate: maps/imported/ is optional content.
 	_check(imported >= 0, "imported maps are counted separately", "%d imported" % imported)
 	if imported > 0:
-		var one: DotMapDef = null
+		var one: GSMapDef = null
 		for map in catalogue.maps:
 			if bool(map.meta.get("imported", false)):
 				one = map
@@ -243,11 +243,11 @@ func _test_scan_order() -> void:
 
 func _test_derivations() -> void:
 	_section("derivations")
-	_check(AirdriftMapCatalogue.kind_of(&"surf_kitsune") == DotMapDef.KIND_SURF,
+	_check(AirdriftMapCatalogue.kind_of(&"surf_kitsune") == GSMapDef.KIND_SURF,
 		"a surf_ prefix means surf")
-	_check(AirdriftMapCatalogue.kind_of(&"bhop_g2g_stages") == DotMapDef.KIND_BHOP,
+	_check(AirdriftMapCatalogue.kind_of(&"bhop_g2g_stages") == GSMapDef.KIND_BHOP,
 		"a bhop_ prefix means bhop")
-	# The fallback has to be a real kind, not the empty StringName: DotMapDef.kind
+	# The fallback has to be a real kind, not the empty StringName: GSMapDef.kind
 	# feeds the rotation's filter, and a map of kind "" is a map nothing selects.
 	_check(AirdriftMapCatalogue.kind_of(&"something_else") != &"",
 		"and an unprefixed id still gets a kind")
@@ -287,10 +287,10 @@ func _test_rescan() -> void:
 	_check((change["added"] as Array).has(victim), "and reports it as added")
 
 	# Drop one IN that is not on disk. A rescan must take it away.
-	var ghost := DotMapDef.new()
+	var ghost := GSMapDef.new()
 	ghost.id = &"surf_not_on_disk"
 	ghost.scene_path = "res://maps/surf_not_on_disk.tscn"
-	ghost.kind = DotMapDef.KIND_SURF
+	ghost.kind = GSMapDef.KIND_SURF
 	game.maps.catalogue.add(ghost)
 	_check(game.maps.catalogue.has(&"surf_not_on_disk"), "a map with no files can be added")
 	change = game.rescan_maps()
@@ -323,7 +323,7 @@ func _test_boot_race() -> void:
 		if slow.boot_waiting:
 			break
 	_check(slow.boot_waiting, "the boot map is still being fetched")
-	var asked: DotResult = await slow.change_map(&"surf_g2g_intro")
+	var asked: GSResult = await slow.change_map(&"surf_g2g_intro")
 	_check(asked.ok, "the host's map loads meanwhile", "" if asked.ok else asked.error.message)
 	await get_tree().create_timer(1.0).timeout
 	var now := "" if slow.maps == null or slow.maps.current == null else String(slow.maps.current.id)
@@ -339,7 +339,7 @@ func _test_rotation_file() -> void:
 	_section("rotation file")
 	# Applied to a game: listed in, unlisted out, nothing removed.
 	var all_before := game.maps.catalogue.size()
-	var parsed := DotMapRotationFile.from_trees([{"defaults": {"maps": ["bhop_g2g_intro"]}}], "game-airdrift")
+	var parsed := GSMapRotationFile.from_trees([{"defaults": {"maps": ["bhop_g2g_intro"]}}], "game-airdrift")
 	game.rotation_file = parsed.value
 	game.apply_rotation()
 	var pool := game.maps.rotation.pool()
@@ -354,11 +354,11 @@ func _test_rotation_file() -> void:
 		"and the map list shows every map, the unlisted ones marked", "%d rows, %d out" % [rows.size(), out_count])
 
 	# No file: everything rotates except a combat map.
-	var arena := DotMapDef.new()
+	var arena := GSMapDef.new()
 	arena.id = &"surf_combat_test"
-	arena.kind = DotMapDef.KIND_ARENA
+	arena.kind = GSMapDef.KIND_ARENA
 	game.maps.catalogue.add(arena)
-	var empty := DotMapRotationFile.from_trees([{"defaults": {"maps": ["no_such_map_*"]}}], "game-airdrift")
+	var empty := GSMapRotationFile.from_trees([{"defaults": {"maps": ["no_such_map_*"]}}], "game-airdrift")
 	game.rotation_file = empty.value
 	game.apply_rotation()
 	_check(not game.in_rotation(&"surf_combat_test") and game.in_rotation(&"bhop_g2g_intro"),
@@ -376,7 +376,7 @@ func _test_client_config() -> void:
 	_section("client configuration")
 	# A client that built a bare AirdriftConfig would read no layer and could not be
 	# configured. This asserts the layering runs at
-	# all; which layer wins is DotConfig's own contract and is tested there.
+	# all; which layer wins is GSConfig's own contract and is tested there.
 	var config := AirdriftConfig.new()
 	var before := config.initial_map
 	var layered := config.load_layered()
@@ -427,10 +427,10 @@ func _test_zones_have_floor() -> void:
 
 		var floating := PackedStringArray()
 
-		for zone: DotTimerZone in map.timer_zones().zones:
-			if zone.kind != DotTimerZone.Kind.START \
-					and zone.kind != DotTimerZone.Kind.END \
-					and zone.kind != DotTimerZone.Kind.STAGE:
+		for zone: GSTimerZone in map.timer_zones().zones:
+			if zone.kind != GSTimerZone.Kind.START \
+					and zone.kind != GSTimerZone.Kind.END \
+					and zone.kind != GSTimerZone.Kind.STAGE:
 				continue
 
 			var centre := zone.centre()
@@ -444,7 +444,7 @@ func _test_zones_have_floor() -> void:
 
 			if not space.intersect_ray(query):
 				floating.append("%s %d" % [
-					DotTimerZone.kind_name(zone.kind), zone.track
+					GSTimerZone.kind_name(zone.kind), zone.track
 				])
 
 		_check(floating.is_empty(),
@@ -452,8 +452,8 @@ func _test_zones_have_floor() -> void:
 
 		# dot-core's audit: drawn geometry with no shape near it, which a player walks through.
 		# Lenient (`anywhere`), as the drawing and the solids may sit in different subtrees.
-		var audit := DotCollisionAudit.audit(map, true)
-		var report: DotCollisionAudit = audit.value if audit.ok else null
+		var audit := GSCollisionAudit.audit(map, true)
+		var report: GSCollisionAudit = audit.value if audit.ok else null
 		if report != null and report.count() > 0:
 			for line in report.describe_lines().slice(0, 12):
 				print("    %s" % line)
@@ -488,10 +488,10 @@ func _test_maps_are_surveyed() -> void:
 		var map: Node3D = script.new()
 		map.call("_build")
 
-		var zones: DotTimerZoneSet = script.build_zones()
+		var zones: GSTimerZoneSet = script.build_zones()
 		var starts: Array[Vector3] = []
 		for zone in zones.zones:
-			if zone.kind == DotTimerZone.Kind.SPAWN or zone.kind == DotTimerZone.Kind.STAGE:
+			if zone.kind == GSTimerZone.Kind.SPAWN or zone.kind == GSTimerZone.Kind.STAGE:
 				starts.append(AirdriftUnits.vector_to_units(zone.destination))
 
 		var declared := _survey_declared(id)
@@ -611,7 +611,7 @@ func _stages_declared() -> Array:
 ## platform 300 units up, a cellar a player drops into and cannot climb out of, a start
 ## over nothing, a start over a 60° face that slides off it into a pit, and a 45° slab a
 ## player can stand on.
-func _the_survey_sees_what_it_looks_for(t: DotFpsTunables, tick_rate: int) -> void:
+func _the_survey_sees_what_it_looks_for(t: GSFpsTunables, tick_rate: int) -> void:
 	var tilt := func(degrees: float) -> Basis: return Basis(Vector3.FORWARD, deg_to_rad(degrees))
 	var solids: Array[AirdriftMapSurvey.Solid] = [
 		AirdriftMapSurvey.solid(Vector3(0.0, -16.0, 0.0), Vector3(1024.0, 32.0, 1024.0)),
@@ -639,8 +639,8 @@ func _the_survey_sees_what_it_looks_for(t: DotFpsTunables, tick_rate: int) -> vo
 
 	var spawn := Vector3(0.0, 8.0, 0.0)
 	var starts: Array[Vector3] = [spawn, Vector3(0.0, 100.0, 5000.0), Vector3(3000.0, 400.0, 0.0)]
-	var pits := DotTimerZoneSet.new()
-	var under_ramp := DotTimerZone.make(DotTimerZone.Kind.RESPAWN)
+	var pits := GSTimerZoneSet.new()
+	var under_ramp := GSTimerZone.make(GSTimerZone.Kind.RESPAWN)
 	under_ramp.set_box(AirdriftUnits.vector_to_metres(Vector3(2000.0, -2000.0, -1000.0)),
 		AirdriftUnits.vector_to_metres(Vector3(4000.0, -600.0, 1000.0)))
 	pits.add(under_ramp)
@@ -667,8 +667,8 @@ func _the_survey_sees_what_it_looks_for(t: DotFpsTunables, tick_rate: int) -> vo
 	# Declared, the platform is not reported; a reset in the cellar is a way out of it.
 	var declared: Array = walls.duplicate()
 	declared.append({"box": AABB(Vector3(-400.0, 290.0, 200.0), Vector3(200.0, 30.0, 200.0)), "why": "fixture"})
-	var reset := DotTimerZoneSet.new()
-	var pit := DotTimerZone.make(DotTimerZone.Kind.RESPAWN)
+	var reset := GSTimerZoneSet.new()
+	var pit := GSTimerZone.make(GSTimerZone.Kind.RESPAWN)
 	pit.set_box(AirdriftUnits.vector_to_metres(Vector3(520.0, -200.0, -190.0)),
 		AirdriftUnits.vector_to_metres(Vector3(890.0, 0.0, 190.0)))
 	reset.add(pit)

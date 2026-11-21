@@ -1,4 +1,4 @@
-extends DotNetBehaviour
+extends GSNetBehaviour
 
 const AirdriftNetBridge := preload("airdrift_net_bridge.gd")
 const AirdriftNetCommand := preload("airdrift_net_command.gd")
@@ -8,10 +8,10 @@ const AirdriftArsenal := preload("../airdrift_arsenal.gd")
 ## What a networked Airdrift player replicates: the movement state, and an
 ## administrator's two marks on the player — `blind` and `beacon`.
 ##
-## The timer is not replicated per tick. A client runs its own [DotTimer] over its own
+## The timer is not replicated per tick. A client runs its own [GSTimer] over its own
 ## copy of the zones and reaches the same answer a tick earlier than any packet could,
 ## which is the whole reason the timer is deterministic; the server sends run
-## identities and finishes as reliable events instead. See [DotTimerNet].
+## identities and finishes as reliable events instead. See [GSTimerNet].
 
 var player: AirdriftPlayer = null
 var bridge: AirdriftNetBridge = null
@@ -40,7 +40,7 @@ var net_weapon: int = 0
 
 ## Retained, not cleared: a player whose packet was lost keeps moving in a straight
 ## line rather than stopping dead. The controller says the same of its own command.
-var last_move: DotFpsCommand = DotFpsCommand.new()
+var last_move: GSFpsCommand = GSFpsCommand.new()
 
 ## Whether the trigger was down on the last input applied.
 ##
@@ -54,8 +54,8 @@ var last_state_tick: int = -1
 
 
 func _register_net_vars() -> void:
-	for spec in DotFpsNetSync.state_specs():
-		var declaration := replicate(spec["property"], DotNetVar.Type[spec["type"]])
+	for spec in GSFpsNetSync.state_specs():
+		var declaration := replicate(spec["property"], GSNetVar.Type[spec["type"]])
 		if int(spec["bits"]) > 0:
 			declaration.bits(int(spec["bits"]))
 		if bool(spec["interpolated"]):
@@ -64,10 +64,10 @@ func _register_net_vars() -> void:
 			declaration.range_of(0.0, 1.0)
 
 	# Owner-only jump timers, appended after the movement specs (declaration order is wire order).
-	# Guarded: a shell without API 10 has no DotFpsNetSync.rewind_specs().
-	if DotAddonApi.build_level("dot_player_controller") >= 10:
-		for spec in DotFpsNetSync.rewind_specs():
-			var _timers := replicate(spec["property"], DotNetVar.Type[spec["type"]]).bits(int(spec["bits"])).to_owner_only()
+	# Guarded: a shell without API 10 has no GSFpsNetSync.rewind_specs().
+	if GSAddonApi.build_level("dot_player_controller") >= 10:
+		for spec in GSFpsNetSync.rewind_specs():
+			var _timers := replicate(spec["property"], GSNetVar.Type[spec["type"]]).bits(int(spec["bits"])).to_owner_only()
 
 	# [b]Per-player state rather than an event, and that is what makes both of these
 	# survive what an event does not.[/b] A client that joins after the admin typed
@@ -80,18 +80,18 @@ func _register_net_vars() -> void:
 	# its deathmatch layer is the moment to go and find them.
 	#
 	# Appended after the movement specs, never among them: the order of declaration is
-	# the order on the wire, and the movement's is DotFpsNetSync's to keep.
-	replicate(&"net_blind", DotNetVar.Type.BOOL).to_owner_only()
-	replicate(&"net_beacon", DotNetVar.Type.BOOL)
+	# the order on the wire, and the movement's is GSFpsNetSync's to keep.
+	replicate(&"net_blind", GSNetVar.Type.BOOL).to_owner_only()
+	replicate(&"net_beacon", GSNetVar.Type.BOOL)
 
 	# The weapon in hand, for the owner's ammunition counter. A client has no combat layer
 	# to ask, and state rather than an event for the reason the blind is: a lost snapshot or
 	# a late join is corrected by the next one. Owner only, because nobody else's screen
 	# shows it; four bits, and nothing on a tick it did not change.
-	replicate(&"net_weapon", DotNetVar.Type.UINT).bits(4).to_owner_only()
+	replicate(&"net_weapon", GSNetVar.Type.UINT).bits(4).to_owner_only()
 
 
-func _net_apply_input(input: DotNetInput, _tick: int) -> void:
+func _net_apply_input(input: GSNetInput, _tick: int) -> void:
 	var command := input as AirdriftNetCommand
 	if command != null:
 		last_move = command.move
@@ -130,7 +130,7 @@ func _net_simulate(tick: int, delta: float) -> void:
 
 func pull() -> void:
 	if player != null:
-		DotFpsNetSync.pull(player.controller.state, self)
+		GSFpsNetSync.pull(player.controller.state, self)
 		net_blind = player.blinded
 		net_beacon = player.beacon
 		net_weapon = AirdriftArsenal.wire_of(player.held_weapon)
@@ -148,7 +148,7 @@ func _net_state_applied(tick: int) -> void:
 	if player == null:
 		return
 	last_state_tick = tick
-	DotFpsNetSync.push(self, player.controller.state)
+	GSFpsNetSync.push(self, player.controller.state)
 	player.blinded = net_blind
 	player.beacon = net_beacon
 	player.held_weapon = AirdriftArsenal.id_from_wire(net_weapon)
@@ -165,5 +165,5 @@ func _net_state_applied(tick: int) -> void:
 func _net_interpolated(_tick: int) -> void:
 	if player == null:
 		return
-	DotFpsNetSync.push(self, player.controller.state)
+	GSFpsNetSync.push(self, player.controller.state)
 	player.global_position = player.controller.state.position

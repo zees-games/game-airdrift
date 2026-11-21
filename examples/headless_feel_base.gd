@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 const AirdriftTestPorts := preload("test_ports.gd")
 
 ## Constants, the stand-in client and server, and the sampling harness of headless_feel.
@@ -22,7 +22,7 @@ const Relay := preload("res://addons/dot_net/testing/dot_net_udp_relay.gd")
 ##
 ## Every other suite here asserts a simulated value, and `jitter_probe` measures a render
 ## path with a hand-made clock that never drifts. This one stands up a dual-stack
-## `DotServer` running `AirdriftModule`, connects the real `AirdriftClient` to it -- over ENet through
+## `GSServer` running `AirdriftModule`, connects the real `AirdriftClient` to it -- over ENet through
 ## dot-net's UDP relay (delay, jitter, loss), or with `--ws` over WebSocket through
 ## [TcpDelay] (delay, and retransmit stalls that hold the whole stream) -- holds a key and
 ## moves the mouse the way a player does, and samples what each rendered frame shows: the
@@ -78,13 +78,13 @@ var _entered := 0
 var _completed := 0
 
 var _server_side: Node = null
-var _server: DotServer = null
+var _server: GSServer = null
 var _game: AirdriftGame = null
 var _relay = null
 var _tcp: TcpDelay = null
 var _ws := false
 var _client_side: Node = null
-var _link: DotClientLink = null
+var _link: GSClientLink = null
 var _client: AirdriftClient = null
 var _bot: AirdriftPlayer = null
 
@@ -171,7 +171,7 @@ func _boot() -> bool:
 	add_child(_server_side)
 	get_tree().set_multiplayer(MultiplayerAPI.create_default_interface(), _server_side.get_path())
 
-	var config := DotServerConfig.new()
+	var config := GSServerConfig.new()
 	config.hostname = "Airdrift feel"
 	config.port = PORT
 	config.bind_address = "127.0.0.1"
@@ -191,14 +191,14 @@ func _boot() -> bool:
 	# a server left on it would measure a different game.
 	config.tickrate = 128
 
-	_server = DotServer.new()
+	_server = GSServer.new()
 	_server.name = "Server"
 	_server.config = config
 	_server.config_file = ""
 	_server.auto_boot = false
 	_server_side.add_child(_server)
 
-	var booted: DotResult = await _server.boot()
+	var booted: GSResult = await _server.boot()
 	if not _check(booted.ok, "the server boots", str(booted.error)):
 		_done()
 		return false
@@ -214,19 +214,19 @@ func _boot() -> bool:
 	await _until(func() -> bool: return _game.maps != null and _game.maps.current != null, 10.0)
 
 	(load("res://game/airdrift_module.gd") as GDScript).set("punishments_file", "%s/punishments.json" % DATA)
-	var loaded: DotResult = await _server.modules.load_module("res://game/airdrift_module.gd")
+	var loaded: GSResult = await _server.modules.load_module("res://game/airdrift_module.gd")
 	if not _check(loaded.ok, "the Airdrift module loads on %s" % MAP, str(loaded.error)):
 		_done()
 		return false
 
 	var bridge: Object = _module().get("bridge")
-	var added: DotResult = bridge.call("add_player", 0, BOT_SESSION, "Runner B")
+	var added: GSResult = bridge.call("add_player", 0, BOT_SESSION, "Runner B")
 	_check(added.ok, "the server seats a runner for the client to watch", str(added.error))
 	_bot = added.value as AirdriftPlayer if added.ok else null
 
 	_relay = Relay.new()
 	_relay.seed = 20261010
-	var relayed: DotResult = _relay.start(0, "127.0.0.1", config.effective_enet_port())
+	var relayed: GSResult = _relay.start(0, "127.0.0.1", config.effective_enet_port())
 	_check(relayed.ok, "the relay listens in front of UDP %d" % config.effective_enet_port(), str(relayed.error))
 	if _ws:
 		_tcp = TcpDelay.new()
@@ -245,7 +245,7 @@ func _connect() -> bool:
 	add_child(_client_side)
 	get_tree().set_multiplayer(MultiplayerAPI.create_default_interface(), _client_side.get_path())
 
-	_link = DotClientLink.new()
+	_link = GSClientLink.new()
 	_link.name = "Server"
 	_link.player_name = "Runner A"
 	_link.transport_preference = "ws" if _ws else "udp"
@@ -264,7 +264,7 @@ func _connect() -> bool:
 	_client = (load("res://game/airdrift.tscn") as PackedScene).instantiate() as AirdriftClient
 	_client_side.add_child(_client)
 	_client.mouse_capture_override = true
-	_client.presentation.settings.local_store = DotSettingsStoreMemory.new()
+	_client.presentation.settings.local_store = GSSettingsStoreMemory.new()
 	_client.presentation.settings.load_now()
 	_client.presentation.apply_all()
 
@@ -316,7 +316,7 @@ func _teardown() -> void:
 		_server.shutdown("done") if _server.has_method("shutdown") else null
 	for _i in range(10):
 		await get_tree().process_frame
-	DotPaths.remove_tree(DATA)
+	GSPaths.remove_tree(DATA)
 
 
 # --- The drivers --------------------------------------------------------------
@@ -335,7 +335,7 @@ func _early_physics() -> void:
 	if not _driving:
 		return
 	if _bot != null:
-		var move := DotFpsCommand.new()
+		var move := GSFpsCommand.new()
 		move.move = Vector2(0.0, 1.0)
 		move.yaw = wrapf(float(_game.current_tick()) * BOT_TURN, -180.0, 180.0)
 		_bot.controller.apply_command(move)
@@ -392,7 +392,7 @@ func _note_corrections() -> void:
 	_w["seen_snaps"] = snaps
 	if first:
 		return
-	var identity: DotNetIdentity = _client.bridge.behaviour_for(_session()).identity
+	var identity: GSNetIdentity = _client.bridge.behaviour_for(_session()).identity
 	var offset := predictor.visual_offset(identity.net_id).length()
 	_w["correction_sizes"].append(offset)
 	if _verbose:
@@ -400,8 +400,8 @@ func _note_corrections() -> void:
 			offset, _client.player.controller.state.position, _client.net.clock.tick, snaps])
 
 
-func _server_buffer() -> DotNetInput.Buffer:
-	var server_net: DotNetManager = _module().get("net")
+func _server_buffer() -> GSNetInput.Buffer:
+	var server_net: GSNetManager = _module().get("net")
 	return server_net.input_buffer_for(_link.multiplayer.get_unique_id())
 
 
@@ -414,7 +414,7 @@ func _early_process(delta: float) -> void:
 	if not _driving or not _turning:
 		return
 	var motion := InputEventMouseMotion.new()
-	var tunables: DotFpsTunables = _client.player.controller.tunables if _client.player != null else null
+	var tunables: GSFpsTunables = _client.player.controller.tunables if _client.player != null else null
 	var per_count := tunables.mouse_sensitivity * tunables.mouse_sensitivity_x if tunables != null else 0.022
 	motion.relative = Vector2(TURN_RATE * delta / maxf(per_count, 1e-6), 0.0)
 	_client._unhandled_input(motion)
@@ -470,12 +470,12 @@ func _late_process(delta: float) -> void:
 
 
 ## The runner as this client draws it, against where the server had it at that render
-## time. The same arithmetic as `DotNetManager.interpolate_frame`.
+## time. The same arithmetic as `GSNetManager.interpolate_frame`.
 func _sample_remote() -> void:
 	var seen := _remote_bot()
 	if seen == null:
 		return
-	var net: DotNetManager = _client.net
+	var net: GSNetManager = _client.net
 	# What `interpolate_frame` draws at: the clock's render alpha (the engine's fraction
 	# plus what is left of a slip) and the receive timeline's re-anchoring not followed
 	# yet. Recomputed with the engine's fraction alone, this measured the drawing against
@@ -515,16 +515,16 @@ class TcpDelay extends RefCounted:
 	var _running := false
 	var _rng := RandomNumberGenerator.new()
 
-	func start(listen_port: int, target_port: int) -> DotResult:
+	func start(listen_port: int, target_port: int) -> GSResult:
 		_rng.seed = 20261010
 		_target = target_port
 		var err := _server.listen(listen_port, "127.0.0.1")
 		if err != OK:
-			return DotResult.fail(DotError.CODE_IO, "The proxy could not listen.", error_string(err))
+			return GSResult.fail(GSError.CODE_IO, "The proxy could not listen.", error_string(err))
 		_running = true
 		_thread = Thread.new()
 		_thread.start(_loop)
-		return DotResult.success(listen_port)
+		return GSResult.success(listen_port)
 
 	func stop() -> void:
 		_running = false

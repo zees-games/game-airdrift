@@ -9,10 +9,10 @@ extends RigidBody3D
 ## it was put rather than to roll away.
 ##
 ## So the interesting default here is the opposite of a sandbox's: a prop is spawned
-## FROZEN. `DotPhysGun.set_frozen` is what unfreezes one, which is the same call a
+## FROZEN. `GSPhysGun.set_frozen` is what unfreezes one, which is the same call a
 ## sandbox uses to freeze one, from the other side.
 ##
-## The mass is not set here. [method DotPropSpawner.spawn] puts the catalogue's mass on
+## The mass is not set here. [method GSPropSpawner.spawn] puts the catalogue's mass on
 ## the body before it enters the tree, and a value written in the scene would be the
 ## second copy of a number this family has already shipped a bug about.
 

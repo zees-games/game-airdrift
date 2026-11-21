@@ -17,9 +17,9 @@ const SECTIONS := 26
 
 
 func _ready() -> void:
-	DotLog.set_level(
-		DotLog.Level.DEBUG if "--verbose" in OS.get_cmdline_user_args()
-		else DotLog.Level.ERROR
+	GSLog.set_level(
+		GSLog.Level.DEBUG if "--verbose" in OS.get_cmdline_user_args()
+		else GSLog.Level.ERROR
 	)
 	_run.call_deferred()
 
@@ -79,7 +79,7 @@ func _test_a_runner_is_not_shaken() -> void:
 	_check(float(s.find(&"sfx_volume").default_value) < 1.0, "effect sounds default below full volume")
 	_check(s.find(&"ambience_volume") != null and is_zero_approx(float(s.find(&"ambience_volume").default_value)),
 		"the wind and birdsong bed is off by default, and still a setting")
-	_check(DotMenuStock.audio_page().sections.any(func(sec) -> bool: return sec.rows.any(func(r) -> bool: return r.key == &"ambience_volume")),
+	_check(GSMenuStock.audio_page().sections.any(func(sec) -> bool: return sec.rows.any(func(r) -> bool: return r.key == &"ambience_volume")),
 		"and the Audio page has its slider")
 	_check(s.find(&"snd_wind_min") != null and s.find(&"snd_wind_max") != null
 		and s.find(&"snd_wind_full_speed") != null, "the wind curve is three settings")
@@ -138,7 +138,7 @@ func _test_the_ambience_director() -> void:
 
 	var p := _make()
 	var a := p.ambient
-	_check(a != null, "the presentation builds a DotAmbienceDirector")
+	_check(a != null, "the presentation builds a GSAmbienceDirector")
 	_check(a != null and a.has_moods(), "and the stock mood set loaded")
 	if a == null or not a.has_moods():
 		p.queue_free()
@@ -164,8 +164,8 @@ func _test_the_sounds_follow_the_timer() -> void:
 	_section("The timer's own signals are what make the timer's sounds")
 
 	var p := _make()
-	var sink := p.audio.sink as DotAudioSinkNull
-	var timers := DotTimerManager.new()
+	var sink := p.audio.sink as GSAudioSinkNull
+	var timers := GSTimerManager.new()
 
 	p.follow_runs(timers, &"me")
 	# Twice, as a client does when it is told who it is and then who it is again. A
@@ -173,23 +173,23 @@ func _test_the_sounds_follow_the_timer() -> void:
 	p.follow_runs(timers, &"me")
 	sink.forget()
 
-	timers.player_started.emit(&"me", DotTimerRun.new())
+	timers.player_started.emit(&"me", GSTimerRun.new())
 	_check(sink.count_of(&"timer_start") == 1, "crossing the start line makes the start sound, once")
 
-	timers.player_started.emit(&"someone_else", DotTimerRun.new())
+	timers.player_started.emit(&"someone_else", GSTimerRun.new())
 	_check(sink.count_of(&"timer_start") == 1, "and somebody else's start does not")
 
 	timers.player_staged.emit(&"me", 2, 12.5)
 	_check(sink.count_of(&"timer_split") == 1, "a stage line makes the split sound")
 
-	timers.player_finished.emit(&"me", DotTimerRun.new())
+	timers.player_finished.emit(&"me", GSTimerRun.new())
 	_check(sink.count_of(&"timer_finish") == 1, "the end zone makes the finish sound")
 	_check(sink.count_of(&"personal_best") == 0, "and not the fanfare, which waits for the record")
 
-	var mine := DotTimerRecord.new()
+	var mine := GSTimerRecord.new()
 	mine.player_id = &"me"
 	mine.time = 30.0
-	var better := DotTimerRecord.new()
+	var better := GSTimerRecord.new()
 	better.player_id = &"me"
 	better.time = 20.0
 
@@ -201,7 +201,7 @@ func _test_the_sounds_follow_the_timer() -> void:
 
 	p.follow_runs(null, &"")
 	sink.forget()
-	timers.player_started.emit(&"me", DotTimerRun.new())
+	timers.player_started.emit(&"me", GSTimerRun.new())
 	_check(sink.count_of(&"timer_start") == 0, "and following nothing hears nothing")
 
 	timers.free()
@@ -251,14 +251,14 @@ func _test_a_run_is_drawn() -> void:
 	p.fx.spawned.connect(func(id: StringName, node: Node, reason: StringName) -> void:
 		drawn[id] = node if node != null else reason
 	)
-	var timers := DotTimerManager.new()
+	var timers := GSTimerManager.new()
 	p.follow_runs(timers, &"me")
 
 	# Where the client says the feet are, a tick before the line is crossed.
 	var feet := Vector3(4.0, 2.0, -7.0)
 	p.present(0.016, feet + Vector3(0.0, 1.2, 3.0), Vector3.FORWARD)
 	p.watch_movement(true, 400.0, feet)
-	timers.player_started.emit(&"me", DotTimerRun.new())
+	timers.player_started.emit(&"me", GSTimerRun.new())
 
 	var start: Variant = drawn.get(&"start_gate")
 	_check(
@@ -275,13 +275,13 @@ func _test_a_run_is_drawn() -> void:
 	)
 
 	drawn.clear()
-	timers.player_finished.emit(&"someone_else", DotTimerRun.new())
+	timers.player_finished.emit(&"someone_else", GSTimerRun.new())
 	_check(drawn.is_empty(), "somebody else's finish draws nothing on this screen (%s)" % str(drawn))
 
 	var end := feet + Vector3(-30.0, -5.0, 12.0)
 	p.present(0.016, end + Vector3(0.0, 1.2, 3.0), Vector3.FORWARD)
 	p.watch_movement(true, 900.0, end)
-	timers.player_finished.emit(&"me", DotTimerRun.new())
+	timers.player_finished.emit(&"me", GSTimerRun.new())
 	var finish: Variant = drawn.get(&"finish_gate")
 	_check(
 		finish is Node3D and (finish as Node3D).global_position.distance_to(end) < 0.01,
@@ -334,7 +334,7 @@ func _test_the_sounds_are_the_run() -> void:
 				"and it outranks everything, because it IS the game (%s)" % id
 			)
 
-	var sink := p.audio.sink as DotAudioSinkNull
+	var sink := p.audio.sink as GSAudioSinkNull
 	sink.forget()
 	p.on_run_finished(Vector3.ZERO, false)
 	_check(sink.count_of(&"timer_finish") == 1, "finishing makes a noise")
@@ -362,7 +362,7 @@ func _test_the_landing_is_a_speedometer() -> void:
 	_section("A landing sounds like how fast you were going")
 
 	var p := _make()
-	var sink := p.audio.sink as DotAudioSinkNull
+	var sink := p.audio.sink as GSAudioSinkNull
 	p.audio.listener_position = Vector3.ZERO
 
 	sink.forget()
@@ -408,13 +408,13 @@ func _test_the_weapons_are_heard() -> void:
 	_section("The deagle and the knife play dot-audio's stock recordings")
 
 	var p := _make()
-	var sink := p.audio.sink as DotAudioSinkNull
+	var sink := p.audio.sink as GSAudioSinkNull
 	p.audio.listener_position = Vector3.ZERO
 
-	_check(p.audio.catalogue.has(&"weapon_magnum_fire"), "the game's catalogue carries the weapon stock (DotAudioStock.add_to)")
-	var stock_problems := DotWeaponSound.check_stock()
+	_check(p.audio.catalogue.has(&"weapon_magnum_fire"), "the game's catalogue carries the weapon stock (GSAudioStock.add_to)")
+	var stock_problems := GSWeaponSound.check_stock()
 	_check(stock_problems.is_empty(), "every weapon class resolves a non-silent, unclipped stock voice (%s)" % ", ".join(stock_problems))
-	var def: DotAudioDef = p.audio.catalogue.find(&"weapon_magnum_fire")
+	var def: GSAudioDef = p.audio.catalogue.find(&"weapon_magnum_fire")
 	_check(def != null and def.variants.size() >= 4 and ResourceLoader.exists(def.variants[0]), "and its deagle report has real variant files")
 
 	sink.forget()
@@ -469,7 +469,7 @@ func _test_console_is_prefixed() -> void:
 		"a console line writes the document"
 	)
 	_check(
-		p.settings.schema.find(&"sensitivity").scope == DotSettingsDef.Scope.ACCOUNT,
+		p.settings.schema.find(&"sensitivity").scope == GSSettingsDef.Scope.ACCOUNT,
 		"and a runner's sensitivity follows them, because it is months of muscle memory"
 	)
 
@@ -494,7 +494,7 @@ func _test_console_is_prefixed() -> void:
 
 	# A server in this process: its console is reached as `server <line>` and nothing else.
 	var fake := FakeServer.new()
-	DotRegistry.register(&"dot_server", fake)
+	GSRegistry.register(&"dot_server", fake)
 	var q := _make()
 	var _unknown := q.console.submit("s3")
 	_check(fake.console.ran.is_empty(),
@@ -502,7 +502,7 @@ func _test_console_is_prefixed() -> void:
 	var _ran := q.console.submit("server s3")
 	_check(fake.console.ran == PackedStringArray(["s3"]),
 		"and `server s3` does, without the prefix", str(fake.console.ran))
-	DotRegistry.unregister(&"dot_server")
+	GSRegistry.unregister(&"dot_server")
 	q.queue_free()
 	_done()
 
@@ -517,7 +517,7 @@ func _test_every_key_is_the_players() -> void:
 		# Jump also has the wheel's two extra rows (Space stays the first).
 		var events := 3 if row["action"] == &"dot_fps_jump" else 1
 		if InputMap.action_get_events(row["action"]).size() == events \
-				and DotInputBinding.describe_action(row["action"]).begins_with(str(row["default"])):
+				and GSInputBinding.describe_action(row["action"]).begins_with(str(row["default"])):
 			bound += 1
 	_check(bound == AirdriftBindings.ROWS.size(),
 		"every action is on its default and on one key only (%d of %d)" % [bound, AirdriftBindings.ROWS.size()])
@@ -525,7 +525,7 @@ func _test_every_key_is_the_players() -> void:
 	var declared := 0
 	for row in AirdriftBindings.ROWS:
 		var def := p.settings.schema.find(row["setting"])
-		if def != null and def.kind == DotSettingsDef.Kind.BINDING:
+		if def != null and def.kind == GSSettingsDef.Kind.BINDING:
 			declared += 1
 	_check(declared == AirdriftBindings.ROWS.size(), "and every one is a binding in the settings document")
 
@@ -536,16 +536,16 @@ func _test_every_key_is_the_players() -> void:
 			clash = "%s and %s" % [row["label"], other["label"]]
 	_check(clash == "", "no two defaults share a key", clash)
 
-	_check(DotInputBinding.describe_action(&"dot_fps_crouch") == "Ctrl",
+	_check(GSInputBinding.describe_action(&"dot_fps_crouch") == "Ctrl",
 		"Duck is Ctrl, the genre's, and the text form of it round-trips")
 
 	p.settings.set_value(&"bind_flashlight", "G")
-	_check(DotInputBinding.describe_action(&"airdrift_flashlight") == "G"
+	_check(GSInputBinding.describe_action(&"airdrift_flashlight") == "G"
 		and InputMap.action_get_events(&"airdrift_flashlight").size() == 1,
 		"rebinding moves the action, and leaves one key rather than two")
 
 	p.settings.set_value(&"bind_flashlight", "Qwerty")
-	_check(DotInputBinding.describe_action(&"airdrift_flashlight") == "F",
+	_check(GSInputBinding.describe_action(&"airdrift_flashlight") == "F",
 		"a binding that names no key falls back to the default rather than unbinding")
 
 	var escape := false
@@ -553,8 +553,8 @@ func _test_every_key_is_the_players() -> void:
 		if str(row["default"]) == "Escape":
 			escape = true
 	_check(not escape, "and nothing is on Escape, which is the menu and the browser's own")
-	_check(DotInputBinding.describe_action(&"airdrift_scoreboard") == "Tab"
-		and DotInputBinding.describe_action(&"airdrift_style_next") == "N",
+	_check(GSInputBinding.describe_action(&"airdrift_scoreboard") == "Tab"
+		and GSInputBinding.describe_action(&"airdrift_style_next") == "N",
 		"Tab holds the scoreboard, as in every game here, and the next style is N")
 
 	# A document from before stores "Tab" for the next style, because a document stores

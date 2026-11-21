@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 const AirdriftAvatars := preload("../game/airdrift_avatars.gd")
 const AirdriftCamera := preload("../game/airdrift_camera.gd")
@@ -52,12 +52,12 @@ func _near(value: float, expected: float, epsilon: float, what: String) -> void:
 ## the 30 u/s air cap for ever. Those games do exactly the same — their jump check runs
 ## before `WalkMove` — which is why every bhop run begins with a prestrafe.
 func _prestrafe(id: StringName, ticks: int = 80) -> void:
-	var walk := DotFpsCommand.new()
+	var walk := GSFpsCommand.new()
 	walk.move = Vector2(0.0, 1.0)
 	await _drive(id, walk, ticks)
 
 
-func _drive(id: StringName, command: DotFpsCommand, ticks: int) -> void:
+func _drive(id: StringName, command: GSFpsCommand, ticks: int) -> void:
 	var player: AirdriftPlayer = game.players[id]
 	for _i in range(ticks):
 		player.controller.apply_command(command.duplicate_command())
@@ -126,9 +126,9 @@ func _test_spectating() -> void:
 	)
 
 	# The wrapper is the shared host with this game's numbers.
-	_check(game.spectate is DotSpectatorHost and game.spectate.manager.rules.chase_distance == 4.0
+	_check(game.spectate is GSSpectatorHost and game.spectate.manager.rules.chase_distance == 4.0
 		and game.spectate.manager.rules.history_ticks == 4 * game.tick_rate,
-		"spectating is a DotSpectatorHost carrying this game's chase and history numbers")
+		"spectating is a GSSpectatorHost carrying this game's chase and history numbers")
 	var _watch_again := game.spectate.watch(&"watcher", &"bot")
 	var stepped := game.spectate.previous_target(&"watcher")
 	_check(stepped.ok and game.spectate.target_of(&"watcher") != &"", "stepping back keeps a target", str(stepped.error))
@@ -155,7 +155,7 @@ func _check_free_roam() -> void:
 	_check(roam.ok and game.spectate.is_roaming(&"watcher"), "the free-roam key enters a roam", str(roam.error))
 	_check(game.spectate.manager.view("watcher").free_position.distance_to(before.origin) < 0.01,
 		"seeded from the camera it left")
-	var free := DotSpectatorFreeCam.new()
+	var free := GSSpectatorFreeCam.new()
 	free.rules = rules
 	free.seed_from(before)
 	var moved := free.step(Vector3(0.0, 0.0, 1.0), false, false, 0.5)
@@ -242,7 +242,7 @@ func _test_effects_and_the_run() -> void:
 	hunted.effects.remove(AirdriftEffects.MAULED, &"run")
 
 	# Now in a run. The whole point of the layer.
-	runner.timer.run.status = DotTimerRun.Status.RUNNING
+	runner.timer.run.status = GSTimerRun.Status.RUNNING
 	var refused := hunted.effects.apply(AirdriftEffects.MAULED, &"run")
 	_check(
 		not refused.ok,
@@ -250,7 +250,7 @@ func _test_effects_and_the_run() -> void:
 		+ "not set"
 	)
 	_check(
-		refused.code() == DotError.CODE_FORBIDDEN,
+		refused.code() == GSError.CODE_FORBIDDEN,
 		"with a forbidden code rather than a silent no-op",
 		refused.code()
 	)
@@ -259,7 +259,7 @@ func _test_effects_and_the_run() -> void:
 	# the split: being chased still has to hurt.
 	var bled := hunted.effects.apply(AirdriftEffects.BLEEDING, &"run")
 	_check(
-		bled.ok or bled.code() != DotError.CODE_FORBIDDEN,
+		bled.ok or bled.code() != GSError.CODE_FORBIDDEN,
 		"while a bleed lands during a run, because it cannot change a time",
 		str(bled.error)
 	)
@@ -298,7 +298,7 @@ func _test_source_fov() -> void:
 	_near(vertical, 73.74, 0.01, "fov_desired 90 is 73.74° vertical")
 
 	# On a 16:9 screen that vertical angle widens to what those games show.
-	var horizontal_16_9 := DotCameraFov.to_horizontal(vertical, 16.0 / 9.0)
+	var horizontal_16_9 := GSCameraFov.to_horizontal(vertical, 16.0 / 9.0)
 	_near(horizontal_16_9, 106.26, 0.05, "which is 106.26° horizontal at 16:9, exactly the genre's")
 
 	# The obvious mistake, named so it stays a mistake.
@@ -350,20 +350,20 @@ func _test_movement_from_config() -> void:
 class _RecordingCloud extends RefCounted:
 	var asked: Array[String] = []
 
-	func ensure(id: StringName, version: String = "") -> DotResult:
+	func ensure(id: StringName, version: String = "") -> GSResult:
 		asked.append(String(id) if version == "" else "%s@%s" % [id, version])
-		return DotResult.fail(DotError.CODE_HTTP, "Not on this origin.")
+		return GSResult.fail(GSError.CODE_HTTP, "Not on this origin.")
 
 
 ## Stands in for dot-server's game manager while it is loading a game's scene.
 class _LoadingGames extends RefCounted:
-	var loading: DotGameDescriptor = null
-	var running: DotGameDescriptor = null
+	var loading: GSGameDescriptor = null
+	var running: GSGameDescriptor = null
 
-	func pending() -> DotGameDescriptor:
+	func pending() -> GSGameDescriptor:
 		return loading
 
-	func current() -> DotGameDescriptor:
+	func current() -> GSGameDescriptor:
 		return running
 
 
@@ -381,23 +381,23 @@ func _test_boot_map_owner() -> void:
 
 	var cloud := _RecordingCloud.new()
 	var games := _LoadingGames.new()
-	games.loading = DotGameDescriptor.new()
+	games.loading = GSGameDescriptor.new()
 	games.loading.cvars = {AirdriftConfig.MAP_CONTENT_OWNER_CVAR: "someone"}
-	DotRegistry.register(CLOUD, cloud)
-	DotRegistry.register(GAMES, games)
+	GSRegistry.register(CLOUD, cloud)
+	GSRegistry.register(GAMES, games)
 
 	# Third: dot-server putting the previous game back after the pending one's scene was
 	# missing. pending() is the game that failed; current() is the one being restored.
-	var failed := DotGameDescriptor.new()
+	var failed := GSGameDescriptor.new()
 	failed.scene = "res://not_this_game/missing.tscn"
 	failed.cvars = {AirdriftConfig.MAP_CONTENT_OWNER_CVAR: "the_failed_game"}
-	var restored := DotGameDescriptor.new()
+	var restored := GSGameDescriptor.new()
 	restored.scene = "res://airdrift_restored_by_headless_run.tscn"
 	restored.cvars = {AirdriftConfig.MAP_CONTENT_OWNER_CVAR: "restored"}
 
-	# Fourth: a descriptor that names its maps (DotGameDescriptor.maps), pinned by the
+	# Fourth: a descriptor that names its maps (GSGameDescriptor.maps), pinned by the
 	# installer. The pinned pack and version win over the owner cvar.
-	var pinned := DotGameDescriptor.new()
+	var pinned := GSGameDescriptor.new()
 	pinned.cvars = {AirdriftConfig.MAP_CONTENT_OWNER_CVAR: "someone"}
 	if "maps" in pinned:
 		pinned.set("maps", PackedStringArray(["pinner/%s@0.0.0-abc123" % MISSING]))
@@ -422,18 +422,18 @@ func _test_boot_map_owner() -> void:
 	for g in booted:
 		remove_child(g)
 		g.queue_free()
-	DotRegistry.unregister_instance(CLOUD, cloud)
-	DotRegistry.unregister_instance(GAMES, games)
+	GSRegistry.unregister_instance(CLOUD, cloud)
+	GSRegistry.unregister_instance(GAMES, games)
 	_done()
 
 
 func _boot_owner_cases(games: _LoadingGames, cloud_service: StringName, games_service: StringName,
-			missing: StringName, failed: DotGameDescriptor, restored: DotGameDescriptor,
-			pinned: DotGameDescriptor) -> Array[AirdriftGame]:
+			missing: StringName, failed: GSGameDescriptor, restored: GSGameDescriptor,
+			pinned: GSGameDescriptor) -> Array[AirdriftGame]:
 	# Every case fails its fetch on purpose; the engine's error stream would read as a broken run.
 	var booted: Array[AirdriftGame] = []
-	var mirrored := DotLog.mirror_to_engine
-	DotLog.mirror_to_engine = false
+	var mirrored := GSLog.mirror_to_engine
+	GSLog.mirror_to_engine = false
 
 	for case in ["descriptor", "none", "restore", "pinned"]:
 		var with_descriptor: bool = case != "none"
@@ -458,7 +458,7 @@ func _boot_owner_cases(games: _LoadingGames, cloud_service: StringName, games_se
 		for _i in range(5):
 			await get_tree().process_frame
 
-	DotLog.mirror_to_engine = mirrored
+	GSLog.mirror_to_engine = mirrored
 	return booted
 
 
@@ -530,19 +530,19 @@ func _test_avatars() -> void:
 	# A member's site avatar, translated into this game's schema. The site's document is the
 	# Kenney skins spelt `skin-c`; without a translation every member is stock here.
 	var site_avatars = preload("res://game/airdrift_avatars.gd")
-	var site_doc := DotAvatar.make(&"builtin")
+	var site_doc := GSAvatar.make(&"builtin")
 	site_doc.set_part(&"top", &"top.skin-c")
 	site_doc.set_part(&"face", &"face.skin-k")
-	var as_ours: DotAvatar = site_avatars.from_site(site_doc)
+	var as_ours: GSAvatar = site_avatars.from_site(site_doc)
 	_check(
 		as_ours != null and site_avatars.schema().validate(as_ours).ok and as_ours.part_in(&"body") == &"body_kenney_c" and as_ours.part_in(&"head") == &"head_kenney_k",
 		"a member's site avatar becomes this game's, and its schema accepts it",
 		str(as_ours.to_dict()) if as_ours != null else "null"
 	)
-	var unknown_skin := DotAvatar.make(&"builtin")
+	var unknown_skin := GSAvatar.make(&"builtin")
 	unknown_skin.set_part(&"top", &"top.skin-z")
 	unknown_skin.set_part(&"face", &"face.skin-z")
-	var not_site := DotAvatar.make(&"elsewhere")
+	var not_site := GSAvatar.make(&"elsewhere")
 	not_site.set_part(&"top", &"skin-c")
 	_check(
 		site_avatars.from_site(unknown_skin) == null and site_avatars.from_site(not_site) == null,
@@ -558,7 +558,7 @@ func _test_avatars() -> void:
 	_check(schema.validate(a).ok, "and conforms to the schema")
 
 	# A player's own document over the same schema dresses the same rig.
-	var own := DotAvatar.make(AirdriftAvatars.SCHEMA_ID)
+	var own := GSAvatar.make(AirdriftAvatars.SCHEMA_ID)
 	own.set_part(AirdriftAvatars.SLOT_BODY, &"body_slim")
 	own.set_part(AirdriftAvatars.SLOT_HEAD, &"head_box")
 	own.set_part(AirdriftAvatars.SLOT_HAT, &"hat_cone")
@@ -570,7 +570,7 @@ func _test_avatars() -> void:
 
 	# One from a newer client with a part this build does not have is conformed,
 	# never refused: a player is never invisible because their hat is from the future.
-	var future := DotAvatar.make(AirdriftAvatars.SCHEMA_ID)
+	var future := GSAvatar.make(AirdriftAvatars.SCHEMA_ID)
 	future.set_part(AirdriftAvatars.SLOT_BODY, &"body_stock")
 	future.set_part(AirdriftAvatars.SLOT_HEAD, &"head_stock")
 	future.set_part(AirdriftAvatars.SLOT_HAT, &"hat_from_2031")
@@ -627,9 +627,9 @@ func _test_auto_bhop_gate() -> void:
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
 
-	var hold := DotFpsCommand.new()
+	var hold := GSFpsCommand.new()
 	hold.move = Vector2(0.0, 1.0)
-	hold.set_button(DotFpsCommand.BUTTON_JUMP, true)
+	hold.set_button(GSFpsCommand.BUTTON_JUMP, true)
 
 	await _prestrafe(&"bot")
 	bot.controller.stats.reset()
@@ -657,7 +657,7 @@ func _test_auto_bhop_gate() -> void:
 	game.apply_movement()
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
-	var forward := DotFpsCommand.new()
+	var forward := GSFpsCommand.new()
 	forward.move = Vector2(0.0, 1.0)
 	# The start pad is 512 units long and the spawn is 400 units in; at 250 u/s the
 	# line is two seconds away.
@@ -683,9 +683,9 @@ func _test_zone_files_match() -> void:
 	# which is the file this loop exists to check the output of and which stopped
 	# carrying a list for exactly this reason.
 	for id in _hand_written_map_ids():
-		var loaded := DotTimerZoneSet.load_json("res://maps/%s.zones.json" % id)
-		var built: DotTimerZoneSet = (load("res://maps/%s.gd" % id) as GDScript).build_zones()
-		_check(loaded.ok and (loaded.value as DotTimerZoneSet).fingerprint() == built.fingerprint(),
+		var loaded := GSTimerZoneSet.load_json("res://maps/%s.zones.json" % id)
+		var built: GSTimerZoneSet = (load("res://maps/%s.gd" % id) as GDScript).build_zones()
+		_check(loaded.ok and (loaded.value as GSTimerZoneSet).fingerprint() == built.fingerprint(),
 			"%s's file matches what the map builds" % id)
 		# `[track-zone-1]`: every route on every map, not whichever map a section
 		# happens to have loaded. The respawn-on-bonuses check below was only ever asked
@@ -703,12 +703,12 @@ func _test_zone_files_match() -> void:
 ## Stage zones whose `!s` yaw faces away from where the route goes next: the next stage
 ## line on the same track, or its finish. `[stage-yaw-1]`: three maps' main routes
 ## faced a restarted player back up the course, and nothing asked.
-static func _stage_facing_problems(zones: DotTimerZoneSet) -> PackedStringArray:
+static func _stage_facing_problems(zones: GSTimerZoneSet) -> PackedStringArray:
 	var out := PackedStringArray()
-	for zone: DotTimerZone in zones.of_kind(DotTimerZone.Kind.STAGE):
+	for zone: GSTimerZone in zones.of_kind(GSTimerZone.Kind.STAGE):
 		var next := zones.stage_zone(zone.track, int(zone.number) + 1)
 		if next == null:
-			next = zones.first_of_kind(DotTimerZone.Kind.END, zone.track)
+			next = zones.first_of_kind(GSTimerZone.Kind.END, zone.track)
 		if next == null:
 			continue
 		var ahead := next.centre() - zone.destination
@@ -717,7 +717,7 @@ static func _stage_facing_problems(zones: DotTimerZoneSet) -> PackedStringArray:
 		var facing := Vector3(-sin(yaw), 0.0, -cos(yaw))
 		if facing.dot(ahead.normalized()) <= 0.0:
 			out.append("%s stage %d (yaw %.0f)" % [
-				DotTimerTrack.name_of(zone.track), int(zone.number), zone.destination_yaw])
+				GSTimerTrack.name_of(zone.track), int(zone.number), zone.destination_yaw])
 	return out
 
 

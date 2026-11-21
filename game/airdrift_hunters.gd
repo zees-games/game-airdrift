@@ -20,10 +20,10 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ##
 ## [b]There is no navigation graph, and that is the design rather than a shortcut.[/b]
 ## A timer map is a critical path — start pad, stage lines, end zone — and
-## [DotNpcDirectorFlow] is exactly "the map's own critical path" as a thing you can
+## [GSNpcDirectorFlow] is exactly "the map's own critical path" as a thing you can
 ## sample. So the flow is built from the map's zones, the director spawns ahead along
 ## it, and hunters patrol it; the pathfinding a graph would give is spent on a map
-## whose route is already known. [method DotNpcBrain.steer_toward] falls back to
+## whose route is already known. [method GSNpcBrain.steer_toward] falls back to
 ## steering straight at a goal when there is no path, and dot-npc documents that as a
 ## decision rather than an oversight.
 ##
@@ -52,7 +52,7 @@ const FACTION := &"hunter"
 static var BRAIN_PATH := AirdriftPaths.rebase("res://game/airdrift_hunter_brain.gd")
 
 ## A hunter died. Carries the player id that killed it, or empty.
-signal hunter_killed(npc: DotNpcInstance, killer: StringName)
+signal hunter_killed(npc: GSNpcInstance, killer: StringName)
 
 signal wave_spawned(at: Vector3, count: int)
 
@@ -63,21 +63,21 @@ signal wave_spawned(at: Vector3, count: int)
 
 var game: AirdriftGame = null
 
-var spawner: DotNpcSpawner = null
+var spawner: GSNpcSpawner = null
 
 ## The hunters' squad and what they can hear. On the spawner as metadata, so dot-npc-ai's
 ## brain finds both; see [method note_fire] for what makes the noise.
-var squads: DotNpcAiSquads = DotNpcAiSquads.new()
-var sounds: DotNpcAiSounds = DotNpcAiSounds.new()
+var squads: GSNpcAiSquads = GSNpcAiSquads.new()
+var sounds: GSNpcAiSounds = GSNpcAiSounds.new()
 
 ## How far a shot is heard by a hunter of alertness 1, in metres. Two stages of a course:
 ## a deathmatch gunfight brings the hunters nearby and not the whole map.
 const GUNFIRE_RADIUS := 28.0
-var director: DotNpcDirector = null
-var senses: DotNpcSenses = null
+var director: GSNpcDirector = null
+var senses: GSNpcSenses = null
 
 ## The map's route, as something a position can be measured along.
-var flow: DotNpcDirectorFlow = null
+var flow: GSNpcDirectorFlow = null
 
 var _world: Node3D = null
 var _candidates: Array = []
@@ -86,19 +86,19 @@ var _registered: bool = false
 
 func _exit_tree() -> void:
 	if _registered:
-		DotRegistry.unregister_instance(SERVICE, self)
+		GSRegistry.unregister_instance(SERVICE, self)
 		_registered = false
 
 
-func setup() -> DotResult:
+func setup() -> GSResult:
 	if game == null:
-		return DotResult.fail(DotError.CODE_STATE, "Hunters need a game.")
+		return GSResult.fail(GSError.CODE_STATE, "Hunters need a game.")
 
 	_world = Node3D.new()
 	_world.name = "Hunters"
 	add_child(_world)
 
-	senses = DotNpcSenses.new()
+	senses = GSNpcSenses.new()
 	senses.switch_ratio = 0.55
 	senses.commitment_grace = 4.0
 	# On. This game's world IS a physics space — its players collide against one — so
@@ -107,13 +107,13 @@ func setup() -> DotResult:
 	# to somebody two stages away through a wall.
 	senses.line_of_sight_enabled = true
 
-	spawner = DotNpcSpawner.new()
+	spawner = GSNpcSpawner.new()
 	spawner.name = "Npcs"
 	spawner.catalogue = catalogue()
 	spawner.limits = limits()
 	spawner.authoritative = game.authoritative
-	spawner.world_ref = DotNodeRef.of_path(NodePath("../Hunters"))
-	# Before add_child: `DotNpcSpawner._ready` makes its own senses when it finds
+	spawner.world_ref = GSNodeRef.of_path(NodePath("../Hunters"))
+	# Before add_child: `GSNpcSpawner._ready` makes its own senses when it finds
 	# none, so assigning afterwards leaves this one built, configured and read by
 	# nobody — with the spawner running on defaults that look identical until a hunter
 	# refuses to give up on somebody behind a wall.
@@ -127,7 +127,7 @@ func setup() -> DotResult:
 
 	spawner.died.connect(_on_died)
 
-	director = DotNpcDirector.new()
+	director = GSNpcDirector.new()
 	director.name = "Director"
 	director.spawner = spawner
 	director.rules = _rules()
@@ -144,10 +144,10 @@ func setup() -> DotResult:
 	if game.maps != null and game.maps.current != null:
 		_on_map_ready(game.maps.current)
 
-	DotRegistry.register(SERVICE, self)
+	GSRegistry.register(SERVICE, self)
 	_registered = true
 
-	return DotResult.success(self)
+	return GSResult.success(self)
 
 
 ## Builds the route and the spawn points from the map's own zones.
@@ -163,35 +163,35 @@ func rebuild_route() -> int:
 	var zones := game.timers.zones
 	var points := PackedVector3Array()
 
-	var start := zones.first_of_kind(DotTimerZone.Kind.START, DotTimerTrack.MAIN)
+	var start := zones.first_of_kind(GSTimerZone.Kind.START, GSTimerTrack.MAIN)
 
 	if start != null:
 		points.append(start.centre())
 
-	for number in range(1, zones.stage_count(DotTimerTrack.MAIN) + 1):
-		var stage := zones.stage_zone(DotTimerTrack.MAIN, number)
+	for number in range(1, zones.stage_count(GSTimerTrack.MAIN) + 1):
+		var stage := zones.stage_zone(GSTimerTrack.MAIN, number)
 
 		if stage != null:
 			points.append(stage.centre())
 
-	var end := zones.first_of_kind(DotTimerZone.Kind.END, DotTimerTrack.MAIN)
+	var end := zones.first_of_kind(GSTimerZone.Kind.END, GSTimerTrack.MAIN)
 
 	if end != null:
 		points.append(end.centre())
 
 	if points.size() < 2:
-		DotLog.info(CHANNEL, "this map has no route to hunt along", {
+		GSLog.info(CHANNEL, "this map has no route to hunt along", {
 			"points": points.size()
 		})
 		return 0
 
-	flow = DotNpcDirectorFlow.new()
+	flow = GSNpcDirectorFlow.new()
 	flow.set_route(points)
 
 	director.flow = flow
 	director.spawn_points = points
 
-	DotLog.info(CHANNEL, "the hunt route was built from the map's zones", {
+	GSLog.info(CHANNEL, "the hunt route was built from the map's zones", {
 		"points": points.size(), "length": "%.0f m" % flow.length()
 	})
 
@@ -200,7 +200,7 @@ func rebuild_route() -> int:
 
 ## A point along the course, for a hunter with nothing to chase.
 ##
-## Called by the brain through [DotRegistry], never by name — a brain loaded from a
+## Called by the brain through [GSRegistry], never by name — a brain loaded from a
 ## path cannot be handed a reference.
 func patrol_point(fraction: float) -> Vector3:
 	if flow == null or not flow.has_route():
@@ -209,28 +209,28 @@ func patrol_point(fraction: float) -> Vector3:
 	return flow.position_at(clampf(fraction, 0.0, 1.0))
 
 
-static func catalogue() -> DotNpcCatalogue:
-	var out := DotNpcCatalogue.new()
+static func catalogue() -> GSNpcCatalogue:
+	var out := GSNpcCatalogue.new()
 	out.meta = {"game": "g2gfast"}  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
 	for def in [_stalker(), _sprinter()]:
 		var added := out.add(def)
 
 		if not added.ok:
-			DotLog.warn(CHANNEL, "a hunter could not be catalogued", {
+			GSLog.warn(CHANNEL, "a hunter could not be catalogued", {
 				"npc": String(def.id), "why": added.error.message
 			})
 
 	return out
 
 
-static func _stalker() -> DotNpcDef:
-	var def := DotNpcDef.make(STALKER, AirdriftPaths.rebase("res://npcs/airdrift_stalker.tscn"))
+static func _stalker() -> GSNpcDef:
+	var def := GSNpcDef.make(STALKER, AirdriftPaths.rebase("res://npcs/airdrift_stalker.tscn"))
 	def.display_name = "Stalker"
 	def.category = &"hunter"
 	def.faction = FACTION
 	def.brain_script_path = BRAIN_PATH
-	def.weight = DotNpcDef.Weight.NORMAL
+	def.weight = GSNpcDef.Weight.NORMAL
 	def.cost = 1
 	def.max_health = 120.0
 	def.move_speed = 5.0
@@ -242,13 +242,13 @@ static func _stalker() -> DotNpcDef:
 	return def
 
 
-static func _sprinter() -> DotNpcDef:
-	var def := DotNpcDef.make(SPRINTER, AirdriftPaths.rebase("res://npcs/airdrift_sprinter.tscn"))
+static func _sprinter() -> GSNpcDef:
+	var def := GSNpcDef.make(SPRINTER, AirdriftPaths.rebase("res://npcs/airdrift_sprinter.tscn"))
 	def.display_name = "Sprinter"
 	def.category = &"hunter"
 	def.faction = FACTION
 	def.brain_script_path = BRAIN_PATH
-	def.weight = DotNpcDef.Weight.LIGHT
+	def.weight = GSNpcDef.Weight.LIGHT
 	def.cost = 2
 	def.max_health = 60.0
 	# Fast for a hunter and slow for a runner. The fastest thing here does 8 m/s; a
@@ -262,8 +262,8 @@ static func _sprinter() -> DotNpcDef:
 	return def
 
 
-static func limits() -> DotNpcLimits:
-	var out := DotNpcLimits.new()
+static func limits() -> GSNpcLimits:
+	var out := GSNpcLimits.new()
 
 	# Few. A course is narrow and a wall of hunters is a wall, which is a different
 	# game and a worse one — the interesting number is "enough that stopping is
@@ -290,8 +290,8 @@ static func limits() -> DotNpcLimits:
 	return out
 
 
-func _rules() -> DotNpcDirectorRules:
-	var rules := DotNpcDirectorRules.new()
+func _rules() -> GSNpcDirectorRules:
+	var rules := GSNpcDirectorRules.new()
 
 	rules.peak_per_player = 4.0
 	rules.build_up_per_player = 2.0
@@ -365,7 +365,7 @@ func _health_of(player_id: StringName) -> float:
 	if game.combat == null:
 		return 1.0
 
-	var health: DotHealth = game.combat.health_of(player_id)
+	var health: GSHealth = game.combat.health_of(player_id)
 
 	if health == null:
 		return 1.0
@@ -380,7 +380,7 @@ func note_fire(player_id: Variant, origin: Vector3) -> void:
 		return
 
 	sounds.emit(
-		DotNpcAiSounds.Kind.COMBAT, origin, GUNFIRE_RADIUS, spawner.now(), 0.5,
+		GSNpcAiSounds.Kind.COMBAT, origin, GUNFIRE_RADIUS, spawner.now(), 0.5,
 		StringName(str(player_id))
 	)
 
@@ -405,29 +405,29 @@ func _rebuild_candidates() -> void:
 		var speed := AirdriftUnits.to_units(state.horizontal_speed())
 		var loudness := clampf(speed / 250.0, 0.0, 6.0) * 12.0
 
-		_candidates.append(DotNpcSenses.Candidate.new(
+		_candidates.append(GSNpcSenses.Candidate.new(
 			id, state.position + Vector3(0.0, 0.9, 0.0), &"player", loudness
 		))
 
 
 # --- Combat ----------------------------------------------------------------
 
-## A hunter hitting a runner. Called by the brain through [DotRegistry].
+## A hunter hitting a runner. Called by the brain through [GSRegistry].
 ##
 ## [b]Through dot-combat when there is one, and nowhere otherwise.[/b] A timer server
 ## with deathmatch off has no health on anybody, and a hunter that could hurt a player
 ## the server is not tracking would be doing damage nothing could heal, display or
 ## respawn away.
-func hunter_attack(npc: DotNpcInstance, victim: StringName, amount: float) -> void:
+func hunter_attack(npc: GSNpcInstance, victim: StringName, amount: float) -> void:
 	if game == null or game.combat == null or npc == null or not npc.is_alive():
 		return
 
-	var health: DotHealth = game.combat.health_of(victim)
+	var health: GSHealth = game.combat.health_of(victim)
 
 	if health == null or not health.alive:
 		return
 
-	var type: DotDamageType = game.combat.manager.damage_type(AirdriftArsenal.DAMAGE_WORLD)
+	var type: GSDamageType = game.combat.manager.damage_type(AirdriftArsenal.DAMAGE_WORLD)
 
 	if type == null:
 		return
@@ -439,9 +439,9 @@ func hunter_attack(npc: DotNpcInstance, victim: StringName, amount: float) -> vo
 	# number until entity ids stopped being derived from player ids; a swipe that
 	# computed one would now be damaging an entity that does not exist, silently,
 	# because dot-combat has nothing registered under it and simply does nothing.
-	var damage := DotDamage.make(0, game.combat.entity_for(victim), amount, type)
+	var damage := GSDamage.make(0, game.combat.entity_for(victim), amount, type)
 	damage.weapon_id = npc.def.id if npc.def != null else &"hunter"
-	# [b]The tick, or the swipe is refused for ever after a respawn.[/b] DotHealth compares it
+	# [b]The tick, or the swipe is refused for ever after a respawn.[/b] GSHealth compares it
 	# with the spawn protection's last tick, and a damage left on tick 0 is inside every
 	# window: a runner who had died once (or been placed at a round start) could not be hurt
 	# by a hunter again. The effects layer and the admin's slay always stamped it.
@@ -463,12 +463,12 @@ func hunter_attack(npc: DotNpcInstance, victim: StringName, amount: float) -> vo
 		var slowed := game.effects.apply(AirdriftEffects.MAULED, victim, &"")
 
 		if not slowed.ok:
-			DotLog.debug(CHANNEL, "the swipe did not slow", {
+			GSLog.debug(CHANNEL, "the swipe did not slow", {
 				"player": String(victim), "why": slowed.error.message
 			})
 
 
-func _on_died(npc: DotNpcInstance, by: StringName) -> void:
+func _on_died(npc: GSNpcInstance, by: StringName) -> void:
 	var killer := StringName("")
 
 	if game != null and game.combat != null:
@@ -480,32 +480,32 @@ func _on_died(npc: DotNpcInstance, by: StringName) -> void:
 		game.progress.record(killer, AirdriftStats.HUNTERS_KILLED)
 
 
-func _on_map_ready(_map: DotMapDef) -> void:
+func _on_map_ready(_map: GSMapDef) -> void:
 	# Every hunter belonged to the map that was just replaced. Their nodes are
 	# children of this node rather than of the world, so nothing freed them — and a
 	# hunter standing where a wall now is, patrolling a route that no longer exists,
 	# is worse than no hunters at all.
 	if spawner != null:
-		spawner.clear_all(DotNpcSpawner.REASON_CLEANUP)
+		spawner.clear_all(GSNpcSpawner.REASON_CLEANUP)
 
 	var points := rebuild_route()
 
 	if points <= 0 and enabled:
-		DotLog.info(CHANNEL, "the hunt is off on this map", {
+		GSLog.info(CHANNEL, "the hunt is off on this map", {
 			"why": "it has no route to hunt along"
 		})
 
 
 # --- Admin -----------------------------------------------------------------
 
-func spawn_one(npc_id: StringName, at: Vector3) -> DotNpcInstance:
+func spawn_one(npc_id: StringName, at: Vector3) -> GSNpcInstance:
 	return spawner.spawn(npc_id, at) if spawner != null else null
 
 
 ## Hunters stop seeing through a cloud of [param radius] for [param seconds] (hearing passes); dot-npc API 6.
 ## No Airdrift item makes smoke yet: this is the hook a smoke source calls.
 func block_sight(at: Vector3, radius: float, seconds: float) -> int:
-	if senses == null or DotAddonApi.build_level("dot_npc") < 6:
+	if senses == null or GSAddonApi.build_level("dot_npc") < 6:
 		return 0
 
 	return senses.add_sight_blocker(at + Vector3.UP, radius, seconds)
@@ -513,7 +513,7 @@ func block_sight(at: Vector3, radius: float, seconds: float) -> int:
 
 ## Blinds every hunter within [param radius] of a flash at [param at] that has line of sight to it; returns how many.
 func flash(at: Vector3, radius: float, seconds: float) -> int:
-	if spawner == null or senses == null or DotAddonApi.build_level("dot_npc") < 6:
+	if spawner == null or senses == null or GSAddonApi.build_level("dot_npc") < 6:
 		return 0
 
 	var space := _world.get_world_3d().direct_space_state if _world != null and _world.is_inside_tree() else null
@@ -538,7 +538,7 @@ func flash(at: Vector3, radius: float, seconds: float) -> int:
 
 
 func clear() -> int:
-	return spawner.clear_all(DotNpcSpawner.REASON_ADMIN) if spawner != null else 0
+	return spawner.clear_all(GSNpcSpawner.REASON_ADMIN) if spawner != null else 0
 
 
 func count() -> int:

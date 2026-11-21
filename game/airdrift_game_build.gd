@@ -1,9 +1,9 @@
 extends "airdrift_game_state.gd"
 
 ## `sv_falldamage*` (dot-combat), explicitly off: a run is made of long drops and a landing must
-## never cost the run or a life. No DotFallDamage is built, so only an edit here turns it on.
-var fall_rules: DotFallDamageRules = make_fall_rules()
-## Solo: dot-map's DotMapDropIntake (AirdriftMapDrop, API 26) every drop goes through, set by the client. Null on a server
+## never cost the run or a life. No GSFallDamage is built, so only an edit here turns it on.
+var fall_rules: GSFallDamageRules = make_fall_rules()
+## Solo: dot-map's GSMapDropIntake (AirdriftMapDrop, API 26) every drop goes through, set by the client. Null on a server
 ## and on older dot-map, where [method add_dropped_maps] copies through [method AirdriftMapCatalogue.accept_dropped].
 var map_drop: Node = null
 
@@ -15,7 +15,7 @@ var map_drop: Node = null
 ## place it ranks a stranger's time as a runner who can never be reached again and lets a
 ## new seat that draws the same number inherit it. So the rows are written to
 ## `legacy_records.jsonl` (in [member AirdriftConfig.records_directory], else `user://`) and
-## then removed with [method DotTimerManager.wipe_player], which re-scores every board
+## then removed with [method GSTimerManager.wipe_player], which re-scores every board
 ## and total they touched. Nothing is lost silently and nothing is deleted before it is
 ## written; the store needs no migration of its own, because the test is the key's shape
 ## and a store of any kind answers [code]records_on_map[/code].
@@ -25,17 +25,17 @@ func retire_legacy_records() -> int:
 	if not authoritative or timers == null or timers.store == null:
 		return 0
 	var store := timers.store
-	var listed: DotResult = await store.maps()
+	var listed: GSResult = await store.maps()
 	if not listed.ok:
 		return 0
 	var legacy := {}
 	for row in (listed.value as Array):
-		var on_map: DotResult = await store.records_on_map(StringName(str((row as Dictionary).get("map", ""))))
+		var on_map: GSResult = await store.records_on_map(StringName(str((row as Dictionary).get("map", ""))))
 		if not on_map.ok:
 			continue
 		for record in (on_map.value as Array):
-			if is_legacy_key((record as DotTimerRecord).player_id):
-				legacy[(record as DotTimerRecord).player_id] = true
+			if is_legacy_key((record as GSTimerRecord).player_id):
+				legacy[(record as GSTimerRecord).player_id] = true
 	if legacy.is_empty():
 		return 0
 
@@ -44,7 +44,7 @@ func retire_legacy_records() -> int:
 	DirAccess.make_dir_recursive_absolute(path.get_base_dir())
 	var out := FileAccess.open(path, FileAccess.READ_WRITE if FileAccess.file_exists(path) else FileAccess.WRITE)
 	if out == null:
-		DotLog.error(CHANNEL, "legacy records could not be archived; they stay where they are", {
+		GSLog.error(CHANNEL, "legacy records could not be archived; they stay where they are", {
 			"path": path, "why": error_string(FileAccess.get_open_error()),
 		})
 		return 0
@@ -52,17 +52,17 @@ func retire_legacy_records() -> int:
 
 	var moved := 0
 	for key in legacy:
-		var theirs: DotResult = await store.records_of(key, {"stage": -1})
+		var theirs: GSResult = await store.records_of(key, {"stage": -1})
 		if not theirs.ok:
 			continue
 		for record in (theirs.value as Array):
-			out.store_line(JSON.stringify((record as DotTimerRecord).to_dictionary()))
+			out.store_line(JSON.stringify((record as GSTimerRecord).to_dictionary()))
 		out.flush()
-		var wiped: DotResult = await timers.wipe_player(key)
+		var wiped: GSResult = await timers.wipe_player(key)
 		if wiped.ok:
 			moved += int(wiped.value)
 	out.close()
-	DotLog.info(CHANNEL, "records keyed by a session number were moved aside", {
+	GSLog.info(CHANNEL, "records keyed by a session number were moved aside", {
 		"players": legacy.size(), "records": moved, "archive": path,
 	})
 	return moved
@@ -73,26 +73,26 @@ func retire_legacy_records() -> int:
 ##
 ## Two layers, weakest first: the game's own shipped `res://maps.yml` and the server's
 ## [member AirdriftConfig.map_rotation_file]. The merge, the wildcards and the rules for what a
-## rotation does are dot-map's [DotMapRotationFile]; this game only supplies the paths.
+## rotation does are dot-map's [GSMapRotationFile]; this game only supplies the paths.
 ##
 ## A file that is present and unreadable is an ERROR and changes nothing: rotating every
 ## map is a better failure than rotating none.
-func load_rotation() -> DotResult:
+func load_rotation() -> GSResult:
 	var paths := PackedStringArray()
 	var stem := config.map_rotation_file if config != null else ""
-	var dir := DotMapRotationFile.config_dir_arg()
-	var found := DotMapRotationFile.find(stem, dir)
+	var dir := GSMapRotationFile.config_dir_arg()
+	var found := GSMapRotationFile.find(stem, dir)
 	if found == "" and stem != "" and (dir != "" or stem != AirdriftConfig.new().map_rotation_file):
 		# The default name being absent is an install with no maps.yml; a name or a directory
 		# somebody chose that finds nothing is a typo they would otherwise never hear about.
-		DotLog.warn(CHANNEL, "the map rotation file was not found; every map rotates",
+		GSLog.warn(CHANNEL, "the map rotation file was not found; every map rotates",
 			{"file": stem, "config_dir": dir})
 	for candidate in ["res://maps.yml", found]:
 		if candidate != "" and not paths.has(candidate):
 			paths.append(candidate)
-	var read := DotMapRotationFile.load_files(paths, "game-airdrift")
+	var read := GSMapRotationFile.load_files(paths, "game-airdrift")
 	if not read.ok:
-		DotLog.error(CHANNEL, "the map rotation file could not be read; every map rotates",
+		GSLog.error(CHANNEL, "the map rotation file could not be read; every map rotates",
 			{"why": read.error.message})
 		rotation_file = null
 		rotation_source = ""
@@ -101,14 +101,14 @@ func load_rotation() -> DotResult:
 	rotation_file = read.value
 	rotation_source = ", ".join(rotation_file.sources)
 	if rotation_file.has_rotations():
-		DotLog.info(CHANNEL, "the map rotation file", {"paths": rotation_source, "active": rotation_file.active_name()})
+		GSLog.info(CHANNEL, "the map rotation file", {"paths": rotation_source, "active": rotation_file.active_name()})
 	apply_rotation()
 	return read
 
 
 ## Whether [param id] is in rotation. A map the catalogue does not hold is not.
 func in_rotation(id: StringName) -> bool:
-	var map: DotMapDef = maps.catalogue.get_map(id) if maps != null and maps.catalogue != null else null
+	var map: GSMapDef = maps.catalogue.get_map(id) if maps != null and maps.catalogue != null else null
 	return map != null and map.in_rotation and map.enabled
 
 
@@ -146,8 +146,8 @@ func map_rows() -> Array:
 	if maps == null or maps.catalogue == null:
 		return out
 	var current: StringName = maps.current.id if maps.current != null else &""
-	var list: Array[DotMapDef] = maps.catalogue.maps.duplicate()
-	list.sort_custom(func(a: DotMapDef, b: DotMapDef) -> bool: return String(a.id) < String(b.id))
+	var list: Array[GSMapDef] = maps.catalogue.maps.duplicate()
+	list.sort_custom(func(a: GSMapDef, b: GSMapDef) -> bool: return String(a.id) < String(b.id))
 	for map in list:
 		out.append({
 			"id": String(map.id), "name": map.label(), "tier": map.tier,
@@ -166,7 +166,7 @@ func map_rows() -> Array:
 
 
 ## Every map on disk. See [AirdriftMapCatalogue] — there is no list here on purpose.
-func _map_catalogue() -> DotMapCatalogue:
+func _map_catalogue() -> GSMapCatalogue:
 	return AirdriftMapCatalogue.discover(_map_roots())
 
 
@@ -197,10 +197,10 @@ func rescan_maps() -> Dictionary:
 	var _rotation := load_rotation()
 
 	if playing != &"" and not maps.catalogue.has(playing):
-		DotLog.warn(CHANNEL, "the map being played is no longer on disk",
+		GSLog.warn(CHANNEL, "the map being played is no longer on disk",
 			{"map": String(playing)})
 
-	DotLog.info(CHANNEL, "map catalogue rescanned", {
+	GSLog.info(CHANNEL, "map catalogue rescanned", {
 		"added": change["added"].size(),
 		"removed": change["removed"].size(),
 		"total": change["total"],
@@ -210,7 +210,7 @@ func rescan_maps() -> Dictionary:
 
 
 ## Offline: copies the dropped [param paths] into `user://maps` and rescans, so each map joins M as "<title> (local)" at
-## once. With [member map_drop] (dot-map's DotMapDropIntake, API 26) set, every path goes through it, [param source] says
+## once. With [member map_drop] (dot-map's GSMapDropIntake, API 26) set, every path goes through it, [param source] says
 ## where it came from ("window", "command line") and a path holding no map is refused with what the game takes;
 ## otherwise [method AirdriftMapCatalogue.accept_dropped]. Returns the line to show: the maps added, and each path that is not
 ## a map with its reason. A server never lists local maps, so a drop there adds nothing to its rotation.
@@ -254,16 +254,16 @@ func apply_movement() -> void:
 			continue
 
 		if player.timer != null:
-			player.timer.stop(DotTimer.REASON_RESET)
+			player.timer.stop(GSTimer.REASON_RESET)
 
 		var applied := player.set_movement(tunables)
 
 		if not applied.ok:
-			DotLog.warn(CHANNEL, "a player could not take the new movement", {
+			GSLog.warn(CHANNEL, "a player could not take the new movement", {
 				"player": String(id), "why": applied.error.message
 			})
 
-	DotLog.info(CHANNEL, "movement applied", {
+	GSLog.info(CHANNEL, "movement applied", {
 		"autobhop": config.auto_bhop,
 		"airaccel": config.air_accelerate,
 		"gravity": config.gravity,
@@ -314,7 +314,7 @@ func _claim_record_key(id: StringName, key: StringName) -> void:
 		# The same account twice at once would share one timer, and the second seat's
 		# runs would be filed under the first's. It keeps its match id as its key: a
 		# legacy-shaped key, which is never ranked.
-		DotLog.warn(CHANNEL, "an account is already playing; this seat has no records", {
+		GSLog.warn(CHANNEL, "an account is already playing; this seat has no records", {
 			"player": String(id), "key": String(key),
 		})
 		return
@@ -329,8 +329,8 @@ func _release_record_key(id: StringName) -> void:
 		_match_ids.erase(key)
 
 
-static func make_fall_rules() -> DotFallDamageRules:
-	var rules := DotFallDamageRules.new()
+static func make_fall_rules() -> GSFallDamageRules:
+	var rules := GSFallDamageRules.new()
 	rules.enabled = false
 	return rules
 
@@ -361,12 +361,12 @@ func remove_player(id: StringName) -> void:
 
 
 ## The spawn zone of [param track] in the zones the timer holds, or of the main run, or null.
-func _zone_spawn(track: int) -> DotTimerZone:
+func _zone_spawn(track: int) -> GSTimerZone:
 	if timers == null or timers.zones == null:
 		return null
-	var spawn := timers.zones.first_of_kind(DotTimerZone.Kind.SPAWN, track)
-	if spawn == null and track != DotTimerTrack.MAIN:
-		spawn = timers.zones.first_of_kind(DotTimerZone.Kind.SPAWN, DotTimerTrack.MAIN)
+	var spawn := timers.zones.first_of_kind(GSTimerZone.Kind.SPAWN, track)
+	if spawn == null and track != GSTimerTrack.MAIN:
+		spawn = timers.zones.first_of_kind(GSTimerZone.Kind.SPAWN, GSTimerTrack.MAIN)
 	return spawn
 
 
@@ -489,7 +489,7 @@ func _feed_timers() -> void:
 		var player: AirdriftPlayer = players[id]
 		if player.timer == null or player.replay != null:
 			continue
-		var sample: DotTimerSample = _samples[id]
+		var sample: GSTimerSample = _samples[id]
 		player.fill_sample(sample)
 		timers.tick_player(
 			record_key(id), sample.position, sample.velocity, sample.grounded, sample.alive,
@@ -507,11 +507,11 @@ var _map_requests := 0
 ## [param boot]: the game's own first map. A host may ask for a map while the boot fetch is
 ## still downloading; whoever asked second must win, so a boot change that finds another
 ## request made after it began steps aside instead of switching the server back.
-func change_map(id: StringName, boot := false) -> DotResult:
+func change_map(id: StringName, boot := false) -> GSResult:
 	if not boot:
 		_map_requests += 1
 	var seen_requests := _map_requests
-	# [b]Before the change, not after it.[/b] `DotMapSession.change_to` refuses an id the
+	# [b]Before the change, not after it.[/b] `GSMapSession.change_to` refuses an id the
 	# catalogue does not hold, and on a browser client the catalogue holds nothing until
 	# the pack is mounted -- so without this line a client joining a server whose map it
 	# has never seen is told "no such map" about a map that is sitting on the CDN.
@@ -521,41 +521,41 @@ func change_map(id: StringName, boot := false) -> DotResult:
 		return content
 
 	if boot and _map_requests != seen_requests:
-		return DotResult.fail(DotError.CODE_CONFLICT,
+		return GSResult.fail(GSError.CODE_CONFLICT,
 			"A map was asked for while the first map was loading; keeping that one.")
 
 	# [b]Through the protocol on a server with clients, and only there.[/b] The session's
 	# own `change_to` swaps this process's world and nothing else; it is what the ad-hoc
 	# version called, and then broadcast the map id to clients that had not been asked
 	# whether they could load it. A client never takes this branch: its map changes when
-	# the host tells it to, through `DotMapSyncClient`, which calls the session directly.
+	# the host tells it to, through `GSMapSyncClient`, which calls the session directly.
 	if map_sync != null and authoritative:
 		return await map_sync.change_to(id)
 
 	return await maps.change_to(id)
 
 
-func _on_map_changing(_from: DotMapDef, _to: DotMapDef) -> void:
+func _on_map_changing(_from: GSMapDef, _to: GSMapDef) -> void:
 	remove_player(GHOST_ID)
 	for id in players:
 		var player: AirdriftPlayer = players[id]
 		player.forget_probes()
 		if player.timer != null:
-			player.timer.stop(DotTimer.REASON_RESET)
+			player.timer.stop(GSTimer.REASON_RESET)
 
 
-func _on_map_over(_map: DotMapDef, reason: StringName) -> void:
+func _on_map_over(_map: GSMapDef, reason: StringName) -> void:
 	if not rotation_ends_maps:
-		DotLog.debug(CHANNEL, "the map clock ran out; the vote decides", {"reason": String(reason)})
+		GSLog.debug(CHANNEL, "the map clock ran out; the vote decides", {"reason": String(reason)})
 		return
 
 	var next := maps.rotation.choose(players.size())
 	if next == null:
 		return
 
-	DotLog.info(CHANNEL, "changing map", {"reason": String(reason), "to": String(next.id)})
+	GSLog.info(CHANNEL, "changing map", {"reason": String(reason), "to": String(next.id)})
 
-	var changed: DotResult = await change_map(next.id)
+	var changed: GSResult = await change_map(next.id)
 	if not changed.ok:
 		maps.time_limit.extend(120.0)
 
@@ -566,12 +566,12 @@ func rock_the_vote(player_id: StringName) -> bool:
 
 # --- Timer events ----------------------------------------------------------
 
-## `!s <n>` and `!rs` land here: [method DotTimerManager.request_stage] has already
+## `!s <n>` and `!rs` land here: [method GSTimerManager.request_stage] has already
 ## stopped the run and handed over the stage zone, and moving the player is the game's
 ## half. [b]Nothing listened until 2026-09-28[/b], so every stage destination on every
 ## map -- authored, imported, and checked for standability by `headless_imported` -- was
 ## a spot no command ever sent anybody to.
-func _on_stage_requested(timer_key: StringName, _number: int, zone: DotTimerZone) -> void:
+func _on_stage_requested(timer_key: StringName, _number: int, zone: GSTimerZone) -> void:
 	var player_id := match_id(timer_key)
 	var player: AirdriftPlayer = players.get(player_id)
 	if player == null:
@@ -585,10 +585,10 @@ func _on_stage_requested(timer_key: StringName, _number: int, zone: DotTimerZone
 ## Refused, with the run untouched, for a stage that has nowhere to stand: see
 ## [constant AirdriftBspMap.NO_RESTART]. The refusal comes first because the timer's own
 ## `request_stage` stops the run before the game is asked to move anybody.
-func request_stage(id: StringName, number: int) -> DotResult:
+func request_stage(id: StringName, number: int) -> GSResult:
 	var why: Variant = _no_restart_reason(id, number)
 	if why != null:
-		return DotResult.fail(DotError.CODE_UNSUPPORTED,
+		return GSResult.fail(GSError.CODE_UNSUPPORTED,
 			"Stage %d has no start to send you to: %s" % [number, why])
 	return timers.request_stage(record_key(id), number)
 
@@ -596,7 +596,7 @@ func request_stage(id: StringName, number: int) -> DotResult:
 ## Sends a player back to the start of the stage they are in (stage 1 before the first
 ## line). Shavit's `!rs`. In a stage with no restart, the start of the nearest stage
 ## before it that has one -- the section that stage line splits.
-func restart_stage(id: StringName) -> DotResult:
+func restart_stage(id: StringName) -> GSResult:
 	var found := timers.player(record_key(id))
 	if found == null:
 		return timers.restart_stage(record_key(id))
@@ -617,7 +617,7 @@ func _no_restart_reason(id: StringName, number: int) -> Variant:
 	return str(zone.payload[AirdriftBspMap.NO_RESTART])
 
 
-func _on_player_finished(timer_key: StringName, run: DotTimerRun) -> void:
+func _on_player_finished(timer_key: StringName, run: GSTimerRun) -> void:
 	var player: AirdriftPlayer = players.get(match_id(timer_key))
 	if player == null:
 		return
@@ -633,7 +633,7 @@ func _on_player_finished(timer_key: StringName, run: DotTimerRun) -> void:
 	player.finished.emit(run)
 
 
-func _on_record_refused(timer_key: StringName, run: DotTimerRun, reason: String) -> void:
+func _on_record_refused(timer_key: StringName, run: GSTimerRun, reason: String) -> void:
 	run_filed.emit(match_id(timer_key), run, 0, reason)
 
 
@@ -646,15 +646,15 @@ func _on_points_changed(player_ids: Array) -> void:
 		return
 	for raw in player_ids:
 		var id := StringName(str(raw))
-		var standing: DotResult = await timers.store.player_rank(id)
-		var info: DotResult = await timers.store.player_info(id)
+		var standing: GSResult = await timers.store.player_rank(id)
+		var info: GSResult = await timers.store.player_info(id)
 		if not standing.ok:
 			continue
 		var name := str((info.value as Dictionary).get("name", raw)) if info.ok and info.value is Dictionary else str(raw)
 		await boards.replace_async(&"points", {}, id, name, float(standing.value["points"]))
 
 
-func _on_practice_finished(timer_key: StringName, run: DotTimerRun, would: int, total: int, reason: String) -> void:
+func _on_practice_finished(timer_key: StringName, run: GSTimerRun, would: int, total: int, reason: String) -> void:
 	var id := match_id(timer_key)
 	if would > 0:
 		announced.emit(id, "%s — not recorded (%s). It would have placed %d / %d." % [
@@ -674,15 +674,15 @@ func refresh_standing(id: StringName) -> void:
 	var style: StringName = player.timer.run.style_id
 	var store := timers.store
 	var key := record_key(id)
-	var best: DotResult = await store.best_for(map_id, track, style, key)
-	var top: DotResult = await store.top(map_id, track, style, 1)
-	var rank: DotResult = await store.rank_of(map_id, track, style, key)
-	var total: DotResult = await store.count_on(map_id, track, style)
+	var best: GSResult = await store.best_for(map_id, track, style, key)
+	var top: GSResult = await store.top(map_id, track, style, 1)
+	var rank: GSResult = await store.rank_of(map_id, track, style, key)
+	var total: GSResult = await store.count_on(map_id, track, style)
 	if not players.has(id):
 		return
 	var standing := {
-		"pb": (best.value as DotTimerRecord).time if best.ok and best.value is DotTimerRecord else 0.0,
-		"wr": (top.value[0] as DotTimerRecord).time if top.ok and not (top.value as Array).is_empty() else 0.0,
+		"pb": (best.value as GSTimerRecord).time if best.ok and best.value is GSTimerRecord else 0.0,
+		"wr": (top.value[0] as GSTimerRecord).time if top.ok and not (top.value as Array).is_empty() else 0.0,
 		"rank": int(rank.value) if rank.ok else 0,
 		"total": int(total.value) if total.ok else 0,
 	}
@@ -723,7 +723,7 @@ func refresh_stage_reference(id: StringName) -> void:
 ## waits), or empty with no store, no player or no stages:
 ## [code]{map, track, style, stages, pb: {splits, total}, wr: {splits, total}, bests}[/code].
 ## [code]splits[/code] are cumulative times by stage number (as
-## [member DotTimerRecord.splits]), [code]total[/code] the same record's finish time and
+## [member GSTimerRecord.splits]), [code]total[/code] the same record's finish time and
 ## [code]bests[/code] the player's best time by section number, 1..stages + 1.
 func stage_reference(id: StringName) -> Dictionary:
 	if timers == null or timers.store == null or maps == null or maps.current == null:
@@ -746,8 +746,8 @@ func stage_reference(id: StringName) -> Dictionary:
 	var bests := {}
 	for section in range(1, stages + 2):
 		var found: Variant = store.peek_best(map_id, track, style, key, section)
-		if found is DotTimerRecord and (found as DotTimerRecord).time > 0.0:
-			bests[section] = (found as DotTimerRecord).time
+		if found is GSTimerRecord and (found as GSTimerRecord).time > 0.0:
+			bests[section] = (found as GSTimerRecord).time
 	return {
 		"map": map_id, "track": track, "style": style, "stages": stages,
 		"pb": _reference_of(store.peek_best(map_id, track, style, key)),
@@ -760,6 +760,6 @@ func stage_reference(id: StringName) -> Dictionary:
 ## a record's splits are a Dictionary, and handing out the stored reference is the aliasing
 ## bug this family has had before.
 static func _reference_of(record: Variant) -> Dictionary:
-	if not (record is DotTimerRecord):
+	if not (record is GSTimerRecord):
 		return {"splits": {}, "total": 0.0}
-	return {"splits": (record as DotTimerRecord).splits.duplicate(true), "total": (record as DotTimerRecord).time}
+	return {"splits": (record as GSTimerRecord).splits.duplicate(true), "total": (record as GSTimerRecord).time}

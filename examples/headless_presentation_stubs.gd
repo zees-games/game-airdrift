@@ -1,8 +1,8 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 ## The stand-ins headless_presentation builds on: a rendezvous server and a menu host.
 
-## A stand-in rendezvous: the four routes `DotP2PSignallerHttp` speaks, on a real socket,
+## A stand-in rendezvous: the four routes `GSP2PSignallerHttp` speaks, on a real socket,
 ## answering each request [member delay] frames after it arrives. The delay is the point: a
 ## coroutine that never suspends passes against an answer inside the call even without `await`.
 class RendezvousStub:

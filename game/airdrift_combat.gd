@@ -9,12 +9,12 @@ extends "airdrift_combat_state.gd"
 ## hitboxes, health, an arsenal and a scoreboard, and takes nothing away — a player who
 ## never presses fire plays exactly the game they played before.
 ##
-## [b]Entity ids come from [DotEntityTable] and are not derived from anything[/b]: a derived
+## [b]Entity ids come from [GSEntityTable] and are not derived from anything[/b]: a derived
 ## id is a formula with an inverse, and the two ends of a serialisation can disagree. The game
 ## opens an entity keyed on the player id and asks the table both ways ([method player_id_for]).
 ##
 ## [b]The `u` still comes off for the userid[/b] ([method userid_of]): a loadout's storage key and
-## `DotServer.session_by_userid` want the account number, not a runtime handle.
+## `GSServer.session_by_userid` want the account number, not a runtime handle.
 ##
 ## The ghost is deliberately excluded: it is a replay, it cannot be hurt, and
 ## registering it would put a bot on the scoreboard that never dies and never leaves.
@@ -32,7 +32,7 @@ const CHANNEL := "g2g.combat"
 ## A player was killed. After the scoreboard has seen it, and after the server has picked how
 ## their body falls ([member AirdriftPlayer.death]). A hunter's kill comes through here too: it
 ## is world damage through the same manager.
-signal player_killed(entry: DotKillFeed.Entry)
+signal player_killed(entry: GSKillFeed.Entry)
 
 ## A dead player is alive again, back at a start. A client shows the figure it hid.
 signal player_respawned(player_id: StringName)
@@ -63,9 +63,9 @@ signal hit_landed(by: StringName, victim: int, amount: float, point: Vector3, ki
 var _started: bool = false
 
 
-func setup() -> DotResult:
+func setup() -> GSResult:
 	if game == null:
-		return DotResult.fail(DotError.CODE_STATE, "Combat needs a game.")
+		return GSResult.fail(GSError.CODE_STATE, "Combat needs a game.")
 
 	var built := _build_combat()
 
@@ -90,24 +90,24 @@ func setup() -> DotResult:
 		_arm(game.players[id])
 
 	_started = true
-	return DotResult.success(self)
+	return GSResult.success(self)
 
 
-func _build_combat() -> DotResult:
-	manager = DotCombatManager.new()
+func _build_combat() -> GSResult:
+	manager = GSCombatManager.new()
 	manager.name = "Combat"
 	manager.is_authority = game.authoritative
 	manager.register_service = false
 
 	# Physics, not analytic. This game's players collide against Godot's physics —
-	# `AirdriftPlayer` uses the stock `DotFpsController`, whose `_make_body` is a physics
+	# `AirdriftPlayer` uses the stock `GSFpsController`, whose `_make_body` is a physics
 	# body — so a shot traced against anything else would be traced against a world
 	# the movement does not agree with. game-fatal-contact is the other way round and says so
 	# for the same reason.
-	var trace := DotTracePhysics.new()
+	var trace := GSTracePhysics.new()
 	manager.trace = trace
 
-	var rules := DotDamageRules.new()
+	var rules := GSDamageRules.new()
 	rules.friendly_fire = game.config.friendly_fire
 	# Off. Rocket jumping is what self damage is for and there is nothing here that
 	# rockets; what self damage would actually do on a surf map is kill people who
@@ -118,7 +118,7 @@ func _build_combat() -> DotResult:
 	rules.maximum = 400.0
 	manager.rules = rules
 
-	var config := DotCombatConfig.new()
+	var config := GSCombatConfig.new()
 	config.tick_rate = game.tick_rate
 	config.lag_compensation = true
 	config.max_origin_error = 3.0
@@ -126,14 +126,14 @@ func _build_combat() -> DotResult:
 
 	add_child(manager)
 
-	# AFTER add_child: `DotCombatManager.setup` runs from `_ready` and that is what builds
+	# AFTER add_child: `GSCombatManager.setup` runs from `_ready` and that is what builds
 	# the resolver, so assigning the hook beforehand writes to nothing. game-fatal-contact's
 	# combat build carries the same warning for the same reason.
 	#
 	# [b]The spawn window, asked at the one point every hit goes through.[/b] `health`
 	# already refuses inside its own window, and this is the gate that makes dot-spawn's
 	# ledger mean something: it is granted per respawn in `_on_respawn_due`, drained by
-	# `DotSpawnProtection.advance` every tick, and until this line nothing ever asked it a
+	# `GSSpawnProtection.advance` every tick, and until this line nothing ever asked it a
 	# question. A veto applied at the damage sites instead would be one applied at the
 	# sites somebody remembered.
 	manager.resolver.adjust = _adjust_damage
@@ -145,17 +145,17 @@ func _build_combat() -> DotResult:
 	manager.damage_applied.connect(_on_damage_applied)
 	manager.shot_resolved.connect(_on_shot_resolved)
 
-	return DotResult.success(manager)
+	return GSResult.success(manager)
 
 
 ## Files the walls a player's round crossed (authority only), for the site's Penetration cost panel.
-func _on_shot_resolved(shot: DotShot) -> void:
+func _on_shot_resolved(shot: GSShot) -> void:
 	if game.authoritative and game.progress != null and shot.attacker != 0:
 		game.progress.report_shot(shot)
 
 
 ## Turns dot-combat's applied damage into [signal hit_landed] for the player who fired.
-func _on_damage_applied(damage: DotDamage) -> void:
+func _on_damage_applied(damage: GSDamage) -> void:
 	if not game.authoritative or damage.refused or damage.health_lost <= 0.0 \
 			or damage.attacker == 0 or damage.attacker == damage.victim:
 		return
@@ -169,15 +169,15 @@ func _on_damage_applied(damage: DotDamage) -> void:
 		game.progress.report_damage(damage)
 
 	hit_landed.emit(by, damage.victim, damage.health_lost, damage.point, damage.lethal,
-		damage.hit_group == DotHitGroup.HEAD)
+		damage.hit_group == GSHitGroup.HEAD)
 
 
 ## Refuses a hit on somebody inside their spawn window.
 ##
 ## Self damage and world damage are not blocked, and neither decision is made here:
-## [DotSpawnProtection.blocks] answers about the pair precisely so that a protected
+## [GSSpawnProtection.blocks] answers about the pair precisely so that a protected
 ## player who rocket-jumps or falls into a pit still takes it.
-func _adjust_damage(damage: DotDamage) -> void:
+func _adjust_damage(damage: GSDamage) -> void:
 	if damage == null or game.player_stack == null:
 		return
 
@@ -187,14 +187,14 @@ func _adjust_damage(damage: DotDamage) -> void:
 		damage.refuse("spawn protection")
 
 
-func _build_match() -> DotResult:
-	match_node = DotMatch.new()
+func _build_match() -> GSResult:
+	match_node = GSMatch.new()
 	match_node.name = "Match"
 	match_node.rules = AirdriftArsenal.match_rules(score_limit, game.config.respawn_delay, game.config.spawn_protection)
 	apply_killcam_wait()
 	match_node.register_service = false
 
-	var config := DotMatchConfig.new()
+	var config := GSMatchConfig.new()
 	config.tick_rate = game.tick_rate
 	config.auto_start = false
 	config.balance_between_rounds = false
@@ -210,7 +210,7 @@ func _build_match() -> DotResult:
 	match_node.respawn_due.connect(_on_respawn_due)
 	match_node.round_preparing.connect(func(_round: int) -> void: game.weapon_layer.clear())
 
-	return DotResult.success(match_node)
+	return GSResult.success(match_node)
 
 
 ## The final killcam plays inside the match's end, so the end waits that much longer.
@@ -225,7 +225,7 @@ func podium_rows() -> Array:
 	var rows: Array = []
 	if match_node == null or match_node.scoreboard == null:
 		return rows
-	for row: DotPlayerScore in match_node.scoreboard.ranked().slice(0, 3):
+	for row: GSPlayerScore in match_node.scoreboard.ranked().slice(0, 3):
 		rows.append({"name": row.display_name, "kills": row.kills, "deaths": row.deaths})
 	return rows
 
@@ -234,7 +234,7 @@ func podium_rows() -> Array:
 ##
 ## [b]This is the entire dot-loadout seam, and without it the manager was a manager of
 ## nothing.[/b] dot-loadout has never heard of a weapon and dot-weapon has never heard
-## of a `DotItem`; the catalogue's ids and the item ids are the same strings here, and
+## of a `GSItem`; the catalogue's ids and the item ids are the same strings here, and
 ## this loop is the whole of the join. The manager was built, configured with a
 ## schema and a store, and asked for nothing until the family's own detector found
 ## `weapon_table()` occurring once.
@@ -246,11 +246,11 @@ func _apply_loadout(player_id: StringName) -> void:
 	if kit.is_empty():
 		return
 
-	var arsenal: DotWeaponArsenal = kit["arsenal"]
-	var res: DotResult = await loadouts.active_for(_loadout_key(player_id))
+	var arsenal: GSWeaponArsenal = kit["arsenal"]
+	var res: GSResult = await loadouts.active_for(_loadout_key(player_id))
 
 	if not res.ok:
-		DotLog.debug(CHANNEL, "loadout unavailable, using the default", {
+		GSLog.debug(CHANNEL, "loadout unavailable, using the default", {
 			"player": String(player_id), "why": res.error.message
 		})
 		return
@@ -265,7 +265,7 @@ func _apply_loadout(player_id: StringName) -> void:
 	var lowest := 0
 
 	for entry in entries:
-		var item: DotItem = entry["item"]
+		var item: GSItem = entry["item"]
 
 		if not arsenal.catalogue.has(item.id):
 			continue
@@ -289,7 +289,7 @@ func _apply_loadout(player_id: StringName) -> void:
 
 ## A storage key that is usable as a filename.
 ##
-## `DotLoadoutKey.is_usable` has a minimum length, so a bare `u7` is refused before any
+## `GSLoadoutKey.is_usable` has a minimum length, so a bare `u7` is refused before any
 ## store sees it — and the check exists so a malformed key can never reach a filesystem
 ## path. Padding is right; loosening the check is not.
 ##
@@ -302,19 +302,19 @@ static func _loadout_key(player_id: StringName) -> String:
 
 
 func _build_loadouts() -> void:
-	loadouts = DotLoadoutManager.new()
+	loadouts = GSLoadoutManager.new()
 	loadouts.name = "Loadouts"
 	loadouts.schema = AirdriftArsenal.loadout_schema()
 	loadouts.register_service = false
 
-	var config := DotLoadoutConfig.new()
+	var config := GSLoadoutConfig.new()
 	config.backend = "memory"
 	config.allow_default_loadout = true
 	config.conform_on_load = true
 	loadouts.config = config
-	loadouts.store = DotLoadoutStoreMemory.new()
+	loadouts.store = GSLoadoutStoreMemory.new()
 	# Adds what the site store says the player owns (no-op without a backbone client).
-	DotGameStoreEntitlements.attach(loadouts)
+	GSGameStoreEntitlements.attach(loadouts)
 
 	add_child(loadouts)
 
@@ -326,7 +326,7 @@ func _build_loadouts() -> void:
 ## player killed mid-run is put back where a `!r` would put them, and that is the right
 ## answer on a server where the run is the point.
 ##
-## [b]The old points are freed here and forgotten by `DotMatch.clear_spawn_points()`.[/b]
+## [b]The old points are freed here and forgotten by `GSMatch.clear_spawn_points()`.[/b]
 ## This once called a `remove_spawn_point` that did not exist yet: the first map has no
 ## points to remove, so it only ran on the SECOND map change with the combat layer built —
 ## a script error that aborted this function before it added the new map's points, leaving
@@ -335,7 +335,7 @@ func _build_loadouts() -> void:
 ## then cleared the array `spawn_points()` hands back, by reference, which worked only
 ## because that is the match's own list; dot-match has had `clear_spawn_points` and
 ## `remove_spawn_point` since 2026-09-25, and the list is now the match's to empty.
-func _on_map_ready(_map: DotMapDef) -> void:
+func _on_map_ready(_map: GSMapDef) -> void:
 	for point in match_node.spawn_points():
 		point.queue_free()
 	match_node.clear_spawn_points()
@@ -345,12 +345,12 @@ func _on_map_ready(_map: DotMapDef) -> void:
 	if world == null:
 		return
 
-	# The main track and the first bonus. `DotTimerTrack` numbers bonuses from
+	# The main track and the first bonus. `GSTimerTrack` numbers bonuses from
 	# BONUS_FIRST, and two spawn points is enough for the selector to have a choice —
 	# which is all a deathmatch on a course needs, because the course is the map.
-	for track in [DotTimerTrack.MAIN, DotTimerTrack.BONUS_FIRST]:
+	for track in [GSTimerTrack.MAIN, GSTimerTrack.BONUS_FIRST]:
 		var at := world.spawn_for(track)
-		var point := DotSpawnPoint.new()
+		var point := GSSpawnPoint.new()
 		point.name = "Spawn%d" % track
 		point.position = at
 		point.cooldown_ticks = int(2.0 * float(game.tick_rate))
@@ -384,7 +384,7 @@ func _arm(player: AirdriftPlayer) -> void:
 		return
 
 	var opened := game.entities.open(
-		DotEntity.KIND_PLAYER,
+		GSEntity.KIND_PLAYER,
 		player,
 		&"",
 		player.player_id,
@@ -393,17 +393,17 @@ func _arm(player: AirdriftPlayer) -> void:
 
 	if not opened.ok:
 		# Always a bug (already armed, or already an entity); arming anyway doubles the health.
-		DotLog.error(CHANNEL, "could not open an entity for a player", {
+		GSLog.error(CHANNEL, "could not open an entity for a player", {
 			"player": String(player.player_id),
 			"why": opened.error.message,
 		})
 		return
 
-	var entity: int = (opened.value as DotEntityHandle).id
+	var entity: int = (opened.value as GSEntityHandle).id
 
 	var health := _make_health(player)
 
-	var hitboxes := DotHitboxSet.new()
+	var hitboxes := GSHitboxSet.new()
 	hitboxes.name = "Hitboxes"
 	hitboxes.bounds_offset = Vector3(0.0, 0.9, 0.0)
 	hitboxes.bounds_radius = 1.6
@@ -411,7 +411,7 @@ func _arm(player: AirdriftPlayer) -> void:
 	player.add_child(hitboxes)
 	hitboxes.refresh()
 
-	var arsenal := DotWeaponArsenal.new()
+	var arsenal := GSWeaponArsenal.new()
 	arsenal.name = "Arsenal"
 	arsenal.tick_rate = game.tick_rate
 	arsenal.max_slots = 2
@@ -448,14 +448,14 @@ func _arm(player: AirdriftPlayer) -> void:
 
 	match_node.add_player(str(entity), player.display_name, game.current_tick())
 
-	if enabled and match_node.state == DotMatch.State.IDLE:
+	if enabled and match_node.state == GSMatch.State.IDLE:
 		match_node.start(game.current_tick())
 
 
 ## A player's arsenal, or null when they are not armed. For the admin tools' give and
 ## strip; [method health_of] and [method entity_for] already answer the rest.
-func _make_health(player: AirdriftPlayer) -> DotHealth:
-	var health := DotHealth.new()
+func _make_health(player: AirdriftPlayer) -> GSHealth:
+	var health := GSHealth.new()
 	health.name = "Health"
 	health.max_health = 100.0
 	health.max_armour = 100.0
@@ -465,8 +465,8 @@ func _make_health(player: AirdriftPlayer) -> DotHealth:
 	return health
 
 
-func arsenal_of(player_id: StringName) -> DotWeaponArsenal:
-	return (_kit.get(player_id, {}) as Dictionary).get("arsenal") as DotWeaponArsenal
+func arsenal_of(player_id: StringName) -> GSWeaponArsenal:
+	return (_kit.get(player_id, {}) as Dictionary).get("arsenal") as GSWeaponArsenal
 
 
 func _disarm(player_id: StringName) -> void:
@@ -488,7 +488,7 @@ func _disarm(player_id: StringName) -> void:
 	# After the two forgets, not before: both are keyed on the entity id, and closing
 	# first would leave this reading the id out of the kit anyway while the table had
 	# already stopped agreeing that it meant anything.
-	game.entities.close(int(kit["entity"]), DotEntityTable.REASON_DESPAWN)
+	game.entities.close(int(kit["entity"]), GSEntityTable.REASON_DESPAWN)
 
 	_kit.erase(player_id)
 
@@ -511,17 +511,17 @@ func tick(delta: float) -> void:
 	if not enabled:
 		return
 
-	var shots: Array[DotShot] = []
+	var shots: Array[GSShot] = []
 
 	for id in _kit.keys():
 		var player: AirdriftPlayer = game.players.get(id)
 		var kit: Dictionary = _kit[id]
-		var health: DotHealth = kit["health"]
+		var health: GSHealth = kit["health"]
 
 		if player == null or not health.alive:
 			continue
 
-		var arsenal: DotWeaponArsenal = kit["arsenal"]
+		var arsenal: GSWeaponArsenal = kit["arsenal"]
 		var state := player.controller.state
 
 		health.tick(game.current_tick(), delta)
@@ -532,7 +532,7 @@ func tick(delta: float) -> void:
 		if not player.has_meta("airdrift_fire"):
 			continue
 
-		var command: DotWeaponCommand = player.get_meta("airdrift_fire")
+		var command: GSWeaponCommand = player.get_meta("airdrift_fire")
 		player.remove_meta("airdrift_fire")
 
 		if command == null:
@@ -542,7 +542,7 @@ func tick(delta: float) -> void:
 		command.pitch = state.pitch
 
 		# From the simulated state, never a rendered one: interpolation differs per end.
-		var ctx := DotWeaponContext.make(
+		var ctx := GSWeaponContext.make(
 			int(kit["entity"]),
 			game.current_tick(),
 			player.eye_position(),
@@ -553,7 +553,7 @@ func tick(delta: float) -> void:
 		ctx.crouched = state.is_crouched()
 		ctx.authority = game.authoritative
 
-		var previous: DotWeaponCommand = player.get_meta("airdrift_fire_previous") \
+		var previous: GSWeaponCommand = player.get_meta("airdrift_fire_previous") \
 			if player.has_meta("airdrift_fire_previous") else null
 		var outcome := arsenal.simulate_tick(command, ctx, previous)
 		player.set_meta("airdrift_fire_previous", command.duplicate_command())
@@ -586,7 +586,7 @@ func _note_held() -> void:
 		var player: AirdriftPlayer = game.players.get(id)
 		if player == null:
 			continue
-		var def := (_kit[id]["arsenal"] as DotWeaponArsenal).current_def() if enabled else null
+		var def := (_kit[id]["arsenal"] as GSWeaponArsenal).current_def() if enabled else null
 		player.held_weapon = def.id if def != null else &""
 
 
@@ -600,7 +600,7 @@ func _note_held() -> void:
 ## [b]One tick's input.[/b] [method tick] consumes it, so a caller sets it every tick —
 ## which the bridge does, from `_net_apply_input` — and a tick nobody set it for fires
 ## nothing.
-func set_fire_command(player_id: StringName, command: DotWeaponCommand) -> void:
+func set_fire_command(player_id: StringName, command: GSWeaponCommand) -> void:
 	var player: AirdriftPlayer = game.players.get(player_id)
 
 	if player != null:
@@ -609,7 +609,7 @@ func set_fire_command(player_id: StringName, command: DotWeaponCommand) -> void:
 
 # --- Events ----------------------------------------------------------------
 
-func _on_entity_killed(entity_id: int, damage: DotDamage) -> void:
+func _on_entity_killed(entity_id: int, damage: GSDamage) -> void:
 	var kit := _kit_for_entity(entity_id)
 
 	if kit.is_empty():
@@ -619,9 +619,9 @@ func _on_entity_killed(entity_id: int, damage: DotDamage) -> void:
 
 	if game.weapon_layer != null:
 		game.weapon_layer.drop_dead(player_id_for(entity_id))
-	(kit["health"] as DotHealth).alive = false
-	(kit["hitboxes"] as DotHitboxSet).enabled = false
-	(kit["arsenal"] as DotWeaponArsenal).disabled = true
+	(kit["health"] as GSHealth).alive = false
+	(kit["hitboxes"] as GSHitboxSet).enabled = false
+	(kit["arsenal"] as GSWeaponArsenal).disabled = true
 
 	# An attacker of 0 is world damage, and dot-match reads an empty killer key as
 	# exactly that. Passing "0" would create a scoreboard record for a player who does
@@ -659,16 +659,16 @@ func _on_entity_killed(entity_id: int, damage: DotDamage) -> void:
 
 
 ## Respawns [param entity_id] now if it is waiting in the queue.
-func respawn_now(entity_id: int) -> DotResult:
+func respawn_now(entity_id: int) -> GSResult:
 	var key := str(entity_id)
 	if match_node == null or not match_node.respawns.is_waiting(key):
-		return DotResult.fail(DotError.CODE_INVALID, "Entity %d is not waiting to respawn." % entity_id)
+		return GSResult.fail(GSError.CODE_INVALID, "Entity %d is not waiting to respawn." % entity_id)
 	match_node.respawns.cancel(key)
 	_on_respawn_due(key, match_node.choose_spawn(key, game.current_tick()), game.current_tick())
-	return DotResult.success(entity_id)
+	return GSResult.success(entity_id)
 
 
-func _on_respawn_due(key: String, spawn: DotSpawnPoint, tick: int) -> void:
+func _on_respawn_due(key: String, spawn: GSSpawnPoint, tick: int) -> void:
 	var kit := _kit_for_entity(key.to_int())
 
 	if kit.is_empty():
@@ -680,10 +680,10 @@ func _on_respawn_due(key: String, spawn: DotSpawnPoint, tick: int) -> void:
 	if player == null:
 		return
 
-	(kit["hitboxes"] as DotHitboxSet).enabled = true
-	(kit["arsenal"] as DotWeaponArsenal).disabled = false
+	(kit["hitboxes"] as GSHitboxSet).enabled = true
+	(kit["arsenal"] as GSWeaponArsenal).disabled = false
 
-	var health: DotHealth = kit["health"]
+	var health: GSHealth = kit["health"]
 	health.spawn_protection_ticks = match_node.spawn_protection_ticks()
 
 	# Class numbers before the reset: `reset` sets health to `max_health`.
@@ -698,15 +698,15 @@ func _on_respawn_due(key: String, spawn: DotSpawnPoint, tick: int) -> void:
 	if spawn != null:
 		# The director among the same starts, dot-match's point as the fallback: a better choice
 		# among one set. The only call that grants the protection window (`choose` runs
-		# `DotSpawnProtection.grant`).
+		# `GSSpawnProtection.grant`).
 		var at := spawn.spawn_transform().origin
 
 		if game.player_stack != null:
-			var track := player.timer.track if player.timer != null else DotTimerTrack.MAIN
+			var track := player.timer.track if player.timer != null else GSTimerTrack.MAIN
 			var chosen := game.player_stack.choose_start(player_id, track)
 
 			if chosen.ok:
-				at = (chosen.value as DotSpawnChoice).transform.origin
+				at = (chosen.value as GSSpawnChoice).transform.origin
 
 		player.teleport(at)
 	else:
@@ -719,7 +719,7 @@ func _on_respawn_due(key: String, spawn: DotSpawnPoint, tick: int) -> void:
 ## `sv_ragdoll_reactions`, seeded from the victim and the tick, with the killing weapon's def.
 ## The push goes the way the shot went, or away from the killer when the damage carries no
 ## direction (a hunter's swipe sets one; see [method AirdriftHunters.hunter_attack]).
-func decide_death(player: AirdriftPlayer, damage: DotDamage) -> DotPlayerDeath:
+func decide_death(player: AirdriftPlayer, damage: GSDamage) -> GSPlayerDeath:
 	if _weapon_defs.is_empty():
 		_weapon_defs = AirdriftArsenal.weapon_table()
 	var direction := damage.direction
@@ -728,9 +728,9 @@ func decide_death(player: AirdriftPlayer, damage: DotDamage) -> DotPlayerDeath:
 		if attacker != null and attacker != player:
 			direction = player.controller.state.position - attacker.controller.state.position
 	direction.y = 0.0
-	return DotPlayerDeath.decide(
+	return GSPlayerDeath.decide(
 		game.ragdoll_rules.reactions(), damage.is_headshot(), damage.amount, direction,
-		DotPlayerDeath.seed_of(entity_for(player.player_id), game.current_tick()),
+		GSPlayerDeath.seed_of(entity_for(player.player_id), game.current_tick()),
 		_weapon_defs.get(damage.weapon_id)
 	)
 

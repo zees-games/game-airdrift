@@ -5,7 +5,7 @@ const AirdriftClient := preload("../game/airdrift_client.gd")
 ## The real offline client's map menu (M) with a Workshop map in it, to
 ## `screenshots/workshop_maplist_<page>.png`.
 ##
-## The map is a fixture in a [DotContentIndex] this script registers as the shared one before
+## The map is a fixture in a [GSContentIndex] this script registers as the shared one before
 ## the client is built, so the rows are the ones `AirdriftGame.map_rows` makes from a catalogue
 ## that followed it; nothing is drawn by hand. The fixture is `examples/workshop_fixture`.
 ## Run: `xvfb-run -a godot --path . --resolution 1600x900 --script tools/screenshot_workshop.gd`.
@@ -22,14 +22,14 @@ var _step := 0
 
 
 func _initialize() -> void:
-	DotLog.set_level(DotLog.Level.WARN)
+	GSLog.set_level(GSLog.Level.WARN)
 	DirAccess.make_dir_recursive_absolute(OUT_DIR)
-	var index := DotContentIndex.new()
-	index.set_session(DotContentIndex.SESSION_SOLO)
+	var index := GSContentIndex.new()
+	index.set_session(GSContentIndex.SESSION_SOLO)
 	var _added := index.add_pack({
 		"content_id": "fixture/hills", "version": "1.0.0",
 		"prefix": "res://examples/workshop_fixture/",
-		"session": DotContentIndex.SESSION_SOLO, "source": &"subscription",
+		"session": GSContentIndex.SESSION_SOLO, "source": &"subscription",
 		"provides": {"schema": 1, "title": "Hilltop Pack", "kinds": ["map"], "entries": [
 			{"kind": "map", "id": "fixture_hill", "name": "Fixture Hill", "scene": "map.tscn",
 				"zones": "zones.json", "map_kind": "surf"},
@@ -37,15 +37,15 @@ func _initialize() -> void:
 				"map_kind": "sandbox"},
 		]},
 	})
-	DotRegistry.register(DotContentIndex.SERVICE, index)
+	GSRegistry.register(GSContentIndex.SERVICE, index)
 	OS.set_environment("AIRDRIFT_INITIAL_MAP", "bhop_g2g_intro")
 	_client = (load("res://game/airdrift.tscn") as PackedScene).instantiate() as AirdriftClient
 	_client.force_offline = true
 	root.add_child(_client)
 
 
-## Frame sequence after each still (GS_SHOT_FRAMES, set by the .sh); see DotShotSeq. The state machine holds still while it records, and `_seq_end` defers the quit until it is done.
-var _seq := DotShotSeq.new()
+## Frame sequence after each still (GS_SHOT_FRAMES, set by the .sh); see GSShotSeq. The state machine holds still while it records, and `_seq_end` defers the quit until it is done.
+var _seq := GSShotSeq.new()
 var _seq_active := false
 var _seq_end := false
 
@@ -73,7 +73,7 @@ func _process(_delta: float) -> bool:
 		return false
 	match _step:
 		0:
-			_client.presentation.settings.local_store = DotSettingsStoreMemory.new()
+			_client.presentation.settings.local_store = GSSettingsStoreMemory.new()
 			_client.presentation.settings.load_now()
 			_client.presentation.apply_all()
 			_client.open_map_list()

@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 ## A map gets its shipped movement settings and the next map restores them, on the server's cvars and on a client's config.
 ## Run: godot --headless --path . res://examples/headless_mapcfg.tscn
@@ -15,18 +15,18 @@ var _completed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	print("game-airdrift: per-map settings from cfg/game/game-airdrift/dot_map/map")
 	_section("map files change the cvars")
-	var console := DotConsole.new()
+	var console := GSConsole.new()
 	add_child(console)
-	console.cvar("sv_airaccelerate", "1000", "", DotConVar.FLAG_ARCHIVE)
-	console.cvar("sv_gravity", "800", "", DotConVar.FLAG_ARCHIVE)
-	console.cvar("sv_replay_bot", "1", "", DotConVar.FLAG_ARCHIVE)
+	console.cvar("sv_airaccelerate", "1000", "", GSConVar.FLAG_ARCHIVE)
+	console.cvar("sv_gravity", "800", "", GSConVar.FLAG_ARCHIVE)
+	console.cvar("sv_replay_bot", "1", "", GSConVar.FLAG_ARCHIVE)
 	var cfg := AirdriftMapConfig.build(console)
 	var air := console.find_cvar("sv_airaccelerate")
 
@@ -77,7 +77,7 @@ func _run() -> void:
 	_section("the client follows the map")
 	var game := AirdriftGame.new()
 	game.config = AirdriftConfig.new()
-	var client := DotGameClient.new()
+	var client := GSGameClient.new()
 	AirdriftMapConfig.wire_client(client, game)
 	client.map_changed("surf_beginner")
 	_check(game.config.air_accelerate == 1000.0, "the client's config keeps 1000 on a surf map with no file")

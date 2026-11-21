@@ -16,9 +16,9 @@ const AirdriftServices := preload("airdrift_services.gd")
 ## keys, and none of this is about any of that.
 ##
 ## [b]There is no map-sync client here, and game-fatal-contact has one.[/b] The difference is
-## real rather than an omission: `AirdriftGame` drives a [DotMapSession] on every instance
+## real rather than an omission: `AirdriftGame` drives a [GSMapSession] on every instance
 ## including a mirroring client, and the bridge already sends a map change as a game
-## event that the client's own session loads. Adding [DotMapSyncClient] on top would be
+## event that the client's own session loads. Adding [GSMapSyncClient] on top would be
 ## a second thing loading the same map — which is two owners of one world, and the
 ## symptom is the world being freed while something still holds it.
 ##
@@ -37,7 +37,7 @@ const CHANNEL := "g2g.client.extras"
 ## with a colon is a signal a window has to take back apart.
 signal said(speaker: String, text: String, kind: String)
 
-## What is carrying this conversation changed. See [code]DotChatManager.chat_state[/code].
+## What is carrying this conversation changed. See [code]GSChatManager.chat_state[/code].
 signal chat_relay_changed(relayed: bool)
 
 ## A chat line arrived and should be drawn.
@@ -57,15 +57,15 @@ signal line_received(text: String)
 var bridge: AirdriftNetBridge = null
 var game: AirdriftGame = null
 
-var chat: DotChatClient = null
-var voice: DotVoiceManager = null
+var chat: GSChatClient = null
+var voice: GSVoiceManager = null
 
 var _talking: bool = false
 
 
-func attach(p_bridge: AirdriftNetBridge, p_game: AirdriftGame) -> DotResult:
+func attach(p_bridge: AirdriftNetBridge, p_game: AirdriftGame) -> GSResult:
 	if p_bridge == null:
-		return DotResult.fail(DotError.CODE_STATE, "No bridge to attach to.")
+		return GSResult.fail(GSError.CODE_STATE, "No bridge to attach to.")
 
 	bridge = p_bridge
 	game = p_game
@@ -80,7 +80,7 @@ func attach(p_bridge: AirdriftNetBridge, p_game: AirdriftGame) -> DotResult:
 	add_child(killview)
 	killview.attach(get_parent(), bridge, game)
 
-	return DotResult.success(self)
+	return GSResult.success(self)
 
 
 # --- Chat ------------------------------------------------------------------
@@ -92,17 +92,17 @@ func attach(p_bridge: AirdriftNetBridge, p_game: AirdriftGame) -> DotResult:
 ## channel — and detects a gap in the sequence, which is how a client tells "I missed
 ## something" from "nobody spoke".
 func _build_chat() -> void:
-	chat = DotChatClient.new()
+	chat = GSChatClient.new()
 	chat.name = "Chat"
-	chat.rules = DotChatRules.new()
+	chat.rules = GSChatRules.new()
 	chat.history_limit = 300
-	chat.register_as = DotChatClient.SERVICE
+	chat.register_as = GSChatClient.SERVICE
 	add_child(chat)
 
 	var started := chat.start()
 
 	if not started.ok:
-		DotLog.warn(CHANNEL, "the chat client did not start", {
+		GSLog.warn(CHANNEL, "the chat client did not start", {
 			"why": started.error.message
 		})
 		return
@@ -111,12 +111,12 @@ func _build_chat() -> void:
 		AirdriftServices.CH_ALL, AirdriftServices.CH_RUNNING,
 		AirdriftServices.CH_TEAM, AirdriftServices.CH_WHISPER
 	]:
-		var channel := DotChatChannel.everyone()
+		var channel := GSChatChannel.everyone()
 		channel.id = id
 		chat.add_channel(channel)
 
 	chat.message_received.connect(
-		func(message: DotChatMessage, _channel: StringName) -> void:
+		func(message: GSChatMessage, _channel: StringName) -> void:
 			# A dot-chat line's kind is "say" on every channel; the channel is what makes
 			# it a team line, and "team" is what the chat box colours.
 			var kind := "team" if message.channel in [AirdriftServices.CH_TEAM, AirdriftServices.CH_RUNNING] else message.kind_name()
@@ -126,7 +126,7 @@ func _build_chat() -> void:
 
 	chat.gap_detected.connect(
 		func(expected: int, received: int) -> void:
-			DotLog.info(CHANNEL, "a chat line was missed", {
+			GSLog.info(CHANNEL, "a chat line was missed", {
 				"expected": expected, "received": received
 			})
 	)
@@ -136,8 +136,8 @@ func _build_chat() -> void:
 ##
 ## [b]This is the entry point, and nothing called it.[/b] dot-chat's router decides who
 ## hears a line and then hands it to dot-server's chat manager to put on the wire — so
-## on the client it arrives on `DotClientLink.chat_received`, not through anything
-## dot-chat owns. A `DotChatClient` that nothing feeds is a history that stays empty
+## on the client it arrives on `GSClientLink.chat_received`, not through anything
+## dot-chat owns. A `GSChatClient` that nothing feeds is a history that stays empty
 ## and an unread count that stays zero, while chat works perfectly on screen.
 ##
 ## Found by the family's own detector: a public method whose name occurs once in its
@@ -158,12 +158,12 @@ func receive_wire(payload: Dictionary) -> void:
 			# been emitted. Returning is what stops it being drawn twice.
 			return
 
-	# Not a shape `DotChatClient` knows. dot-server's own chat manager sends a simpler
+	# Not a shape `GSChatClient` knows. dot-server's own chat manager sends a simpler
 	# payload than dot-chat's wire, and a server running WITHOUT dot-chat sends only
 	# that — so this is the other deployment rather than a failure path.
 	#
 	# [b]It used to be unreachable, and that is what made every line in this game blank.[/b]
-	# `DotChatMessage.from_dictionary` gave every key a default, so dot-server's payload
+	# `GSChatMessage.from_dictionary` gave every key a default, so dot-server's payload
 	# parsed as a valid message with no text, no sender and no channel — `receive` returned
 	# ok and this never ran. dot-chat refuses a dictionary with no `m` now.
 	var speaker := str(payload.get("name", ""))
@@ -179,31 +179,31 @@ func receive_wire(payload: Dictionary) -> void:
 ## It carries the player's name as its sender and no text at all (dot-chat's `_presence`),
 ## so drawing it as `sender: text` put a bare "Guest 435:" in the chat box on every join,
 ## which read as a chat command echoed with its text stripped. It is drawn as a plain line,
-## worded by [method DotChatMessage.describe]. Only those two kinds: an ADMIN line's sender
+## worded by [method GSChatMessage.describe]. Only those two kinds: an ADMIN line's sender
 ## is the admin, and `describe()` would drop the name.
-static func speaker_of(message: DotChatMessage) -> String:
+static func speaker_of(message: GSChatMessage) -> String:
 	return "" if is_presence(message) else message.sender_name
 
 
 ## The text a dot-chat line is drawn with. See [method speaker_of].
-static func text_of(message: DotChatMessage) -> String:
+static func text_of(message: GSChatMessage) -> String:
 	return message.describe() if is_presence(message) else message.text
 
 
 ## A join or leave notice: a name and no text.
-static func is_presence(message: DotChatMessage) -> bool:
-	return message.kind in [DotChatMessage.Kind.JOIN, DotChatMessage.Kind.LEAVE]
+static func is_presence(message: GSChatMessage) -> bool:
+	return message.kind in [GSChatMessage.Kind.JOIN, GSChatMessage.Kind.LEAVE]
 
 
 # --- Voice -----------------------------------------------------------------
 
 func _build_voice() -> void:
-	var config := DotVoiceConfig.new()
+	var config := GSVoiceConfig.new()
 	config.capture_enabled = false
 	config.push_to_talk = push_to_talk
 	config.jitter_ms = 60.0
 
-	voice = DotVoiceManager.new()
+	voice = GSVoiceManager.new()
 	voice.name = "Voice"
 	voice.config = config
 	voice.config_file = ""
@@ -213,7 +213,7 @@ func _build_voice() -> void:
 	# from a direction would put most of the room behind the listener. game-fatal-contact is
 	# the other way round and says so.
 	voice.positional_playback = false
-	voice.playback_root_ref = DotNodeRef.of_self()
+	voice.playback_root_ref = GSNodeRef.of_self()
 	add_child(voice)
 
 	# One frame out, one call. Without it a client captured, encoded and counted every frame
@@ -228,7 +228,7 @@ func _build_voice() -> void:
 
 	# The menu's voice rows bind to this, and the server's sv_voice_enable reaches it.
 	voice.publish_as_client()
-	var _following := voice.follow_cvars(DotRegistry.get_service(&"dot_client_link"))
+	var _following := voice.follow_cvars(GSRegistry.get_service(&"dot_client_link"))
 
 
 ## Holds or releases the talk key.
@@ -245,7 +245,7 @@ func set_talking(pressed: bool) -> void:
 		# Reported at all because [AudioServer] claims a working sound card when there is
 		# none: 44100 Hz, a "Default" input device and zero latency, with only
 		# `get_driver_name()` saying "Dummy".
-		DotLog.info(CHANNEL, "voice capture is not available", {"why": started.error.message})
+		GSLog.info(CHANNEL, "voice capture is not available", {"why": started.error.message})
 		return
 
 	_talking = pressed and voice.server_enabled

@@ -4,8 +4,8 @@ const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 
 ## Bot soak on the real timer game: N bots ride one map for M simulated minutes through dot-bot's
-## DotBotSoak, fed by dot-spawn's DotSpawnWatch. Bots here are the course riders of airdrift_bots.gd.
-## Run: ./game.sh soak [map] [minutes] (--trace, plus DotBotSoakConfig flags); writes .godot/test-logs/soak-<map>.json, prints SOAK, exits 1 on failure. No combat: the kill check is off.
+## GSBotSoak, fed by dot-spawn's GSSpawnWatch. Bots here are the course riders of airdrift_bots.gd.
+## Run: ./game.sh soak [map] [minutes] (--trace, plus GSBotSoakConfig flags); writes .godot/test-logs/soak-<map>.json, prints SOAK, exits 1 on failure. No combat: the kill check is off.
 
 const DEFAULT_MAP := &"bhop_g2g_intro"
 const DEFAULT_MINUTES := 1.0
@@ -22,7 +22,7 @@ var _trace := false
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.INFO if OS.get_cmdline_user_args().has("--why") else DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.INFO if OS.get_cmdline_user_args().has("--why") else GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -37,7 +37,7 @@ func _arg(name: String, fallback: String) -> String:
 func _run() -> void:
 	_trace = OS.get_cmdline_user_args().has("--trace")
 	var map_id := StringName(_arg("map", String(DEFAULT_MAP)))
-	var cfg := DotBotSoakConfig.new()
+	var cfg := GSBotSoakConfig.new()
 	cfg.minutes = DEFAULT_MINUTES
 	cfg.bots = DEFAULT_BOTS
 	cfg.apply_cli()
@@ -47,7 +47,7 @@ func _run() -> void:
 	if not await _boot(map_id) or not await _spawn_bots(cfg):
 		return
 
-	var watch := DotSpawnWatch.new()
+	var watch := GSSpawnWatch.new()
 	watch.rules.enabled = true
 	var course: Object = _game.bots.get("course")
 	if (course == null) != NO_FINISH.has(String(map_id)):
@@ -56,7 +56,7 @@ func _run() -> void:
 		return
 	watch.rules.kill_y = (course.get("start") as Vector3).y - 400.0 if course != null else -5000.0
 
-	var soak := DotBotSoak.new(cfg)
+	var soak := GSBotSoak.new(cfg)
 	soak.watch = watch
 	soak.movers_fn = _movers
 	soak.object_count_fn = func() -> int: return int(Performance.get_monitor(Performance.OBJECT_COUNT))
@@ -74,8 +74,8 @@ func _run() -> void:
 	report["bot_mode"] = String(_game.bots.get("mode"))
 	report["rides"] = _game.bots.call("describe")["bots"].map(func(b: Dictionary) -> Dictionary:
 		return {"rides": b.get("rides", 0), "arrived": b.get("arrived", 0), "stuck": b.get("stuck", 0), "fell": b.get("fell", 0)})
-	print(DotBotSoak.summary(report))
-	print(DotBotSoak.report_line(report))
+	print(GSBotSoak.summary(report))
+	print(GSBotSoak.report_line(report))
 	var path := ProjectSettings.globalize_path("res://.godot/test-logs/soak-%s.json" % map_id)
 	DirAccess.make_dir_recursive_absolute(path.get_base_dir())
 	if soak.write_report(report, path) != OK:
@@ -102,7 +102,7 @@ func _boot(map_id: StringName) -> bool:
 		_fail("the game never loaded a map")
 		return false
 	if map_id != _game.maps.current.id:
-		var changed: DotResult = await _game.change_map(map_id)
+		var changed: GSResult = await _game.change_map(map_id)
 		if not changed.ok:
 			_fail("map %s: %s" % [map_id, changed.error.message])
 			return false
@@ -110,7 +110,7 @@ func _boot(map_id: StringName) -> bool:
 
 
 ## Adds the bots and ticks until the route plan is done. False once a failure is reported.
-func _spawn_bots(cfg: DotBotSoakConfig) -> bool:
+func _spawn_bots(cfg: GSBotSoakConfig) -> bool:
 	for i in range(cfg.bots):
 		if _game.bots.call("add_bot", "bot%d" % (i + 1)) == null:
 			_fail("bot %d refused" % (i + 1))
@@ -148,7 +148,7 @@ func _print_trace() -> void:
 	if ids.is_empty():
 		return
 	var player = _game.players.get(ids[0])
-	var st: DotFpsState = player.controller.state
+	var st: GSFpsState = player.controller.state
 	var info: Dictionary = _game.bots.call("describe")["bots"][0]
 	var route: Dictionary = info.get("route", {})
 	print("TRACE t=%d pos=%s speed=%.1f ground=%s ride_tick=%d rides=%d idx=%s/%s target=%s" % [

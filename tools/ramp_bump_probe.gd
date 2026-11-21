@@ -23,8 +23,8 @@ const BUMP_UNITS := 1.0       ## a position step off its smooth line by more tha
 
 var strafe := false
 var entry := 900.0
-var tunables: DotFpsTunables
-var motor: DotFpsMotor
+var tunables: GSFpsTunables
+var motor: GSFpsMotor
 var ticks_on_ramp := 0
 var bumps := 0
 var by_cause := {}
@@ -55,7 +55,7 @@ func _ready() -> void:
 	await get_tree().physics_frame
 
 	tunables = AirdriftMovement.tunables_for(AirdriftConfig.new())
-	motor = DotFpsMotor.new(tunables, DotFpsPhysicsBody.for_node(self))
+	motor = GSFpsMotor.new(tunables, GSFpsPhysicsBody.for_node(self))
 	var samples := _ramp_samples(map)
 	samples.resize(mini(runs, samples.size()))
 
@@ -69,7 +69,7 @@ func _ready() -> void:
 
 func _ride(sample: Array) -> void:
 	var step := 1.0 / 128.0
-	var state := DotFpsState.new()
+	var state := GSFpsState.new()
 	var n: Vector3 = sample[1]
 	state.position = sample[0] + n * AirdriftUnits.to_metres(8.0)
 	var along := (Vector3.DOWN - n * n.dot(Vector3.DOWN))
@@ -79,7 +79,7 @@ func _ride(sample: Array) -> void:
 	# Across the slope, the way a rider meets it.
 	var across := Vector3(-along.z, 0.0, along.x).normalized()
 	state.velocity = across * AirdriftUnits.to_metres(entry)
-	var command := DotFpsCommand.new()
+	var command := GSFpsCommand.new()
 	var prev := state.position
 	var prev_step := Vector3.ZERO
 	var h0 := motor._height(state)
@@ -120,7 +120,7 @@ func _ride(sample: Array) -> void:
 		prev = state.position
 
 
-func _trace_tick(t: int, state: DotFpsState, n: Vector3, pre, dep: int, dup: int) -> void:
+func _trace_tick(t: int, state: GSFpsState, n: Vector3, pre, dep: int, dup: int) -> void:
 	var sp := get_world_3d().direct_space_state
 	var foot := state.position + Vector3.UP * 0.3
 	var q := PhysicsRayQueryParameters3D.create(foot + n * 2.0, foot - n * 4.0)
@@ -136,7 +136,7 @@ func _trace_tick(t: int, state: DotFpsState, n: Vector3, pre, dep: int, dup: int
 
 ## Returns whether this ride has now gone deeper than a unit into something.
 func _count_depenetration(pre, pre_kind: String, n: Vector3, t: int, prev: Vector3,
-		state: DotFpsState, ride_deep: bool) -> bool:
+		state: GSFpsState, ride_deep: bool) -> bool:
 	var push := minf(pre.depth + tunables.skin_width, maxf(tunables.step_height, tunables.skin_width * 2.0))
 	var key := "%s depth<%s normal_vs_face=%s" % [pre_kind,
 		_bucket(AirdriftUnits.to_units(pre.depth), [0.1, 1.0, 5.0, 17.0]),
@@ -157,7 +157,7 @@ func _count_depenetration(pre, pre_kind: String, n: Vector3, t: int, prev: Vecto
 	return true
 
 
-func _count_bump(jerk: float, state: DotFpsState, sample: Array, dep: int, stuck: int, dup: int) -> void:
+func _count_bump(jerk: float, state: GSFpsState, sample: Array, dep: int, stuck: int, dup: int) -> void:
 	bumps += 1
 	var cause := "other"
 	if motor.depenetrated_ticks > dep:
@@ -199,7 +199,7 @@ func _report(id: String, sample_count: int) -> void:
 
 
 ## Near a face steeper than a floor: within a few units of it along the sample's normal.
-func _touching(_motor: DotFpsMotor, state: DotFpsState, _n: Vector3) -> bool:
+func _touching(_motor: GSFpsMotor, state: GSFpsState, _n: Vector3) -> bool:
 	var space := get_world_3d().direct_space_state
 	var from := state.position + Vector3.UP * 0.5
 	for dir: Vector3 in [Vector3.DOWN, -_n]:
@@ -246,7 +246,7 @@ func _bucket(v: float, edges: Array) -> String:
 
 
 ## What the last rest query touched: a convex hull (a brush) or loose triangles (terrain).
-func _shape_kind(motor: DotFpsMotor) -> String:
+func _shape_kind(motor: GSFpsMotor) -> String:
 	var info: Dictionary = get_world_3d().direct_space_state.get_rest_info(motor.body._shape_params)
 	if info.is_empty():
 		return "none"

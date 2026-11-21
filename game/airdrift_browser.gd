@@ -15,7 +15,7 @@ extends Node
 ## correctly and consumed by nobody" with the ends swapped.
 ##
 ## [b]There is no screen here, and game-fatal-contact has one.[/b] That game has a
-## [DotScreenStack]; this client has a HUD and a keyboard, and the genre's answer to
+## [GSScreenStack]; this client has a HUD and a keyboard, and the genre's answer to
 ## "show me the servers" is a chat command — `!servers` — because that is what a bhop
 ## player's fingers already do. The list model, the sources, the filters and the
 ## favourites are the same addon doing the same work; what differs is where it is
@@ -48,17 +48,17 @@ signal listing_changed()
 
 @export var favourites_path: String = "user://g2gfast/servers.json"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
-var browser: DotBrowser = null
-var filter: DotBrowserFilter = null
+var browser: GSBrowser = null
+var filter: GSBrowserFilter = null
 
 var _started: bool = false
 
 
-func setup() -> DotResult:
+func setup() -> GSResult:
 	if _started:
-		return DotResult.success(self)
+		return GSResult.success(self)
 
-	browser = DotBrowser.new()
+	browser = GSBrowser.new()
 	browser.name = "Browser"
 	browser.concurrency = concurrency
 	browser.timeout_ms = timeout_ms
@@ -70,7 +70,7 @@ func setup() -> DotResult:
 	browser.sections = PackedStringArray(["info", "players", "game"])
 	browser.conditional = true
 	browser.favourites_path = favourites_path
-	browser.register_as = DotBrowser.SERVICE
+	browser.register_as = GSBrowser.SERVICE
 	add_child(browser)
 
 	var started := browser.start()
@@ -78,11 +78,11 @@ func setup() -> DotResult:
 	if not started.ok:
 		return started.wrap("The server browser could not start")
 
-	filter = DotBrowserFilter.new()
+	filter = GSBrowserFilter.new()
 	filter.online_only = true
 	# Players, and nothing hidden. On a timer server an empty server is often exactly
 	# what you want: you cannot set a record in a queue, and the map is the point.
-	filter.sort = DotBrowserFilter.Sort.PLAYERS
+	filter.sort = GSBrowserFilter.Sort.PLAYERS
 	filter.hide_empty = false
 	filter.favourites_first = true
 	browser.filter = filter
@@ -92,25 +92,25 @@ func setup() -> DotResult:
 	)
 
 	var loaded := browser.load_favourites()
-	DotLog.info(CHANNEL, "the server browser is up", {"favourites": loaded})
+	GSLog.info(CHANNEL, "the server browser is up", {"favourites": loaded})
 
 	_started = true
-	return DotResult.success(self)
+	return GSResult.success(self)
 
 
 ## Adds a server. The query port is a separate argument, never a third part of the
-## string: `DotBrowserTarget.parse` takes `host:port`, and a three-part address parses
+## string: `GSBrowserTarget.parse` takes `host:port`, and a three-part address parses
 ## as a malformed IPv6 one and fails several layers down at `connect_to_host`.
-func add(address: String, query_port: int = 0) -> DotResult:
+func add(address: String, query_port: int = 0) -> GSResult:
 	if browser == null:
-		return DotResult.fail(DotError.CODE_STATE, "The browser is not up.")
+		return GSResult.fail(GSError.CODE_STATE, "The browser is not up.")
 
-	var parsed := DotBrowserTarget.parse(address, 27015)
+	var parsed := GSBrowserTarget.parse(address, 27015)
 
 	if not parsed.ok:
 		return parsed
 
-	var target := parsed.value as DotBrowserTarget
+	var target := parsed.value as GSBrowserTarget
 
 	if query_port > 0:
 		target.query_port = query_port
@@ -118,18 +118,18 @@ func add(address: String, query_port: int = 0) -> DotResult:
 	var entry := browser.add_target(target)
 	listing_changed.emit()
 
-	return DotResult.success(entry)
+	return GSResult.success(entry)
 
 
-func refresh() -> DotResult:
+func refresh() -> GSResult:
 	if browser == null:
-		return DotResult.fail(DotError.CODE_STATE, "The browser is not up.")
+		return GSResult.fail(GSError.CODE_STATE, "The browser is not up.")
 
-	var res: DotResult = await browser.refresh()
+	var res: GSResult = await browser.refresh()
 	return res
 
 
-func listing() -> Array[DotBrowserEntry]:
+func listing() -> Array[GSBrowserEntry]:
 	return browser.filtered() if browser != null else []
 
 
@@ -138,7 +138,7 @@ func listing() -> Array[DotBrowserEntry]:
 ## Not `entry.map`. See the note in [method setup] — the two mean different things and
 ## the one a player wants is the game's.
 static func game_field(
-	entry: DotBrowserEntry, key: String, fallback: String = ""
+	entry: GSBrowserEntry, key: String, fallback: String = ""
 ) -> String:
 	if entry == null:
 		return fallback
@@ -184,7 +184,7 @@ func lines() -> PackedStringArray:
 ## `str(100)` fails. A reader that guesses the type of a field is a reader that gets
 ## it wrong once, and this is the once.
 static func game_number(
-	entry: DotBrowserEntry, key: String, fallback: float = 0.0
+	entry: GSBrowserEntry, key: String, fallback: float = 0.0
 ) -> float:
 	if entry == null:
 		return fallback
@@ -205,7 +205,7 @@ static func game_number(
 ## `{"time": float, "by": String}` — a time and who set it — and `game_field` would
 ## `str()` the whole dictionary onto the end of a browser row. A field whose type a
 ## reader guesses is a field a reader gets wrong once.
-static func record_line(entry: DotBrowserEntry) -> String:
+static func record_line(entry: GSBrowserEntry) -> String:
 	if entry == null:
 		return ""
 
@@ -222,7 +222,7 @@ static func record_line(entry: DotBrowserEntry) -> String:
 	var row: Dictionary = wr
 
 	return "  WR %s by %s" % [
-		DotTimerRun.format_time(float(row.get("time", 0.0))),
+		GSTimerRun.format_time(float(row.get("time", 0.0))),
 		str(row.get("by", "?")),
 	]
 

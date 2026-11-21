@@ -19,7 +19,7 @@ func _ready() -> void:
 	# config file says.
 	var layered := config.load_layered()
 	if not layered.ok:
-		DotLog.warn("g2g.client", "the configuration did not load cleanly",
+		GSLog.warn("g2g.client", "the configuration did not load cleanly",
 			{"why": layered.error.message})
 
 	# Alone, nobody is waiting for the next map: no clock, unless one was configured.
@@ -50,7 +50,7 @@ func _ready() -> void:
 	presentation.name = "Presentation"
 	presentation.client = self
 	add_child(presentation)
-	DotLog.result("g2g.client", "the presentation layer", presentation.setup())
+	GSLog.result("g2g.client", "the presentation layer", presentation.setup())
 	_wire_chat_window()
 	_build_overlays()
 	if _offline:
@@ -58,9 +58,9 @@ func _ready() -> void:
 
 	# Every effect drawn is somewhere on the map that just went away, and the landing
 	# watcher would otherwise read the first frame on the new one as a fall.
-	game.map_ready.connect(func(map: DotMapDef) -> void: presentation.on_map_changed(map.id if map != null else &""))
+	game.map_ready.connect(func(map: GSMapDef) -> void: presentation.on_map_changed(map.id if map != null else &""))
 	AirdriftMapConfig.wire_client(platform, game)
-	game.map_ready.connect(func(map: DotMapDef) -> void:
+	game.map_ready.connect(func(map: GSMapDef) -> void:
 		if map != null:
 			platform.map_changed(String(map.id)))
 
@@ -78,7 +78,7 @@ func _ready() -> void:
 		_watch(&"local")
 	else:
 		var netted := _build_netcode()
-		DotLog.result("g2g.client", "netcode", netted)
+		GSLog.result("g2g.client", "netcode", netted)
 		if netted.ok and link != null:
 			_start_remote_workbench()
 
@@ -90,10 +90,10 @@ func _ready() -> void:
 	add_child(servers)
 
 	var listed := servers.setup()
-	DotLog.result("g2g.client", "the server browser", listed)
+	GSLog.result("g2g.client", "the server browser", listed)
 
 	# The starter set: the equipped list needs a credential the client does not hold (the server reads it).
-	DotLog.result("g2g.client", "avatar actions", platform.add_avatar_actions(net, _avatar_figure))
+	GSLog.result("g2g.client", "avatar actions", platform.add_avatar_actions(net, _avatar_figure))
 
 	_grab_mouse()
 	set_process(true)
@@ -104,7 +104,7 @@ func _build_zone_tools() -> void:
 	zone_outlines = AirdriftZoneOutlines.new()
 	zone_outlines.name = "ZoneOutlines"
 	add_child(zone_outlines)
-	game.map_ready.connect(func(_map: DotMapDef) -> void: zone_outlines.refresh(game.timers.zones))
+	game.map_ready.connect(func(_map: GSMapDef) -> void: zone_outlines.refresh(game.timers.zones))
 	# The first map may already be up: an offline game loads it inside its own _ready.
 	if game.maps != null and game.maps.current != null:
 		zone_outlines.refresh(game.timers.zones)

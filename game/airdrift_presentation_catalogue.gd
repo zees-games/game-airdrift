@@ -20,35 +20,35 @@ static var FX_DIR := AirdriftPaths.rebase("res://scenes/fx")
 ## and `land` is an impact, not a thud with a tail that would smear the rhythm.
 static func sound_recipes() -> Dictionary:
 	return {
-		&"land": DotAudioSynth.Voice.IMPACT,
-		&"jump": DotAudioSynth.Voice.STEP,
-		&"timer_start": DotAudioSynth.Voice.BLIP,
-		&"timer_split": DotAudioSynth.Voice.CLICK,
-		&"timer_finish": DotAudioSynth.Voice.PICKUP,
-		&"personal_best": DotAudioSynth.Voice.SPAWN,
-		&"teleport": DotAudioSynth.Voice.DENY,
+		&"land": GSAudioSynth.Voice.IMPACT,
+		&"jump": GSAudioSynth.Voice.STEP,
+		&"timer_start": GSAudioSynth.Voice.BLIP,
+		&"timer_split": GSAudioSynth.Voice.CLICK,
+		&"timer_finish": GSAudioSynth.Voice.PICKUP,
+		&"personal_best": GSAudioSynth.Voice.SPAWN,
+		&"teleport": GSAudioSynth.Voice.DENY,
 		# The one voice the run also uses: BLIP is the only pure tone, and a beacon is located by ear.
 		# Positional on the SFX bus, where the start is flat on UI.
-		BEACON_SOUND: DotAudioSynth.Voice.BLIP,
+		BEACON_SOUND: GSAudioSynth.Voice.BLIP,
 		# A switch, which is what a click is; the pitch keeps it from reading as a split.
-		FLASHLIGHT_SOUND: DotAudioSynth.Voice.CLICK,
+		FLASHLIGHT_SOUND: GSAudioSynth.Voice.CLICK,
 		# Only voices the run does not use, so a ballot never sounds like a split or a jump.
-		AirdriftVote.CUE_START: DotAudioSynth.Voice.SHOT_TIGHT,
-		AirdriftVote.CUE_END: DotAudioSynth.Voice.DIE,
-		AirdriftVote.CUE_WARNING: DotAudioSynth.Voice.BOOM,
-		AirdriftVote.CUE_COUNT: DotAudioSynth.Voice.SHOT,
+		AirdriftVote.CUE_START: GSAudioSynth.Voice.SHOT_TIGHT,
+		AirdriftVote.CUE_END: GSAudioSynth.Voice.DIE,
+		AirdriftVote.CUE_WARNING: GSAudioSynth.Voice.BOOM,
+		AirdriftVote.CUE_COUNT: GSAudioSynth.Voice.SHOT,
 		# Stand-ins only for a build without dot-player-char's files.
-		DotPlayerDeathReactions.SOUND_THUD: DotAudioSynth.Voice.IMPACT,
-		DotPlayerDeathReactions.SOUND_FACE_PLANT: DotAudioSynth.Voice.IMPACT,
-		DotPlayerDeathReactions.SOUND_SLUMP: DotAudioSynth.Voice.STEP,
-		DotPlayerDeathReactions.SOUND_WHOOSH: DotAudioSynth.Voice.SPAWN,
+		GSPlayerDeathReactions.SOUND_THUD: GSAudioSynth.Voice.IMPACT,
+		GSPlayerDeathReactions.SOUND_FACE_PLANT: GSAudioSynth.Voice.IMPACT,
+		GSPlayerDeathReactions.SOUND_SLUMP: GSAudioSynth.Voice.STEP,
+		GSPlayerDeathReactions.SOUND_WHOOSH: GSAudioSynth.Voice.SPAWN,
 	}
 
 
-static func fx_catalogue() -> DotFxCatalogue:
-	var c := DotFxCatalogue.new()
+static func fx_catalogue() -> GSFxCatalogue:
+	var c := GSFxCatalogue.new()
 
-	var start := DotFxDef.new()
+	var start := GSFxDef.new()
 	start.id = &"start_gate"
 	start.scene_path = "%s/start_gate.tscn" % FX_DIR
 	start.lifetime_ms = 600
@@ -57,7 +57,7 @@ static func fx_catalogue() -> DotFxCatalogue:
 	start.max_distance = 0.0
 	c.add(start)
 
-	var finish := DotFxDef.new()
+	var finish := GSFxDef.new()
 	finish.id = &"finish_gate"
 	finish.scene_path = "%s/finish_gate.tscn" % FX_DIR
 	finish.lifetime_ms = 1200
@@ -67,17 +67,17 @@ static func fx_catalogue() -> DotFxCatalogue:
 	c.add(finish)
 
 	# A tint on a personal best, off by default like everything else.
-	var best := DotFxDef.new()
+	var best := GSFxDef.new()
 	best.id = &"personal_best"
-	best.kind = DotFxDef.Kind.SCREEN
+	best.kind = GSFxDef.Kind.SCREEN
 	best.flash_peak = 0.18
 	best.flash_colour = Color(0.45, 1.0, 0.55)
 	best.flash_decay_ms = 500
 	c.add(best)
 
-	var land := DotFxDef.new()
+	var land := GSFxDef.new()
 	land.id = &"land_shake"
-	land.kind = DotFxDef.Kind.SHAKE
+	land.kind = GSFxDef.Kind.SHAKE
 	land.shake_trauma = 0.18
 	c.add(land)
 

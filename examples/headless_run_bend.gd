@@ -17,7 +17,7 @@ func _test_stages_descent() -> void:
 	print("  ..    main: not ridden (a CHAIN needs a strafe no scripted bot has); the finish is %.0f u under the start, %.0f u down in stage 4's drops and %.0f u up in stage 3's climb, every unit of it between blocks, in the air" % [
 		BhopStages.FLOOR_Y - y, down, up])
 
-	var on_stages: DotResult = await game.change_map(&"bhop_g2g_stages")
+	var on_stages: GSResult = await game.change_map(&"bhop_g2g_stages")
 	_check(on_stages.ok, "the stages map is loaded for its bonus")
 	if not on_stages.ok:
 		_done()
@@ -29,22 +29,22 @@ func _test_stages_descent() -> void:
 		game.config.set(field, fresh.get(field))
 	game.apply_movement()
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	var surf := DotTimerTrack.of_bonus(1)
+	var surf := GSTimerTrack.of_bonus(1)
 	_check(game.timers.set_player_track(&"bot", surf), "a player can switch to the surf bonus")
 	game.spawn_player(&"bot")
 	# A command of nothing for the tick after the spawn. Without it the controller repeats the
 	# last command it was given (a starved tick does), which is the previous section's: in the
 	# full run the bot began the ride turned to -81.6 degrees and already moving, so where it
 	# went depended on which sections ran before this one and how they ended.
-	bot.controller.apply_command(DotFpsCommand.new())
+	bot.controller.apply_command(GSFpsCommand.new())
 	await get_tree().physics_frame
 
 	var reset: Array[bool] = [false]
 	var finished: Array[bool] = [false]
-	var on_effect := func(id: StringName, zone: DotTimerZone) -> void:
-		if id == &"bot" and zone.kind == DotTimerZone.Kind.RESPAWN:
+	var on_effect := func(id: StringName, zone: GSTimerZone) -> void:
+		if id == &"bot" and zone.kind == GSTimerZone.Kind.RESPAWN:
 			reset[0] = true
-	var on_finished := func(_run: DotTimerRun) -> void: finished[0] = true
+	var on_finished := func(_run: GSTimerRun) -> void: finished[0] = true
 	game.timers.effect_requested.connect(on_effect)
 	bot.timer.run_finished.connect(on_finished)
 
@@ -62,7 +62,7 @@ func _test_stages_descent() -> void:
 	var hold_line := BhopStages.BONUS_X - 520.0
 	for i in range(2400):
 		var at := AirdriftUnits.vector_to_units(bot.global_position)
-		var c := DotFpsCommand.new()
+		var c := GSFpsCommand.new()
 		c.yaw = 0.0
 		if at.y > 900.0:
 			# On the pad: across to the west slab's side, then off its FRONT edge (its side
@@ -94,7 +94,7 @@ func _test_stages_descent() -> void:
 	_check(finished[0] and not reset[0], "the surf bonus is surfed: a bot holding into the face rides it to the finish",
 		"%.0f u of %.0f, %s" % [entry.z - deepest, entry.z - finish_z, "put back by the pit" if reset[0] else "not finished"])
 
-	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
+	game.timers.set_player_track(&"bot", GSTimerTrack.MAIN)
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
 	_done()
@@ -125,11 +125,11 @@ func _hairpin_piece(blocks: Array, current: int, at: Vector2) -> int:
 func _test_weave_bonus() -> void:
 	_section("the weave, run end to end")
 
-	var changed: DotResult = await game.change_map(&"bhop_g2g_stages")
+	var changed: GSResult = await game.change_map(&"bhop_g2g_stages")
 	_check(changed.ok, "the stages map loads")
 
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	var weave := DotTimerTrack.of_bonus(3)
+	var weave := GSTimerTrack.of_bonus(3)
 	var zones := game.timers.zones
 	_check(zones != null and zones.stage_count(weave) == 2,
 		"with a third bonus that has two stages",
@@ -157,7 +157,7 @@ func _test_weave_bonus() -> void:
 
 	var watch := _watch_run(bot)
 	var splits: Array[int] = watch["splits"]
-	var finished: Array[DotTimerRun] = watch["finished"]
+	var finished: Array[GSTimerRun] = watch["finished"]
 	var reset: Array[bool] = watch["reset"]
 
 	var resets := 0
@@ -190,10 +190,10 @@ func _test_weave_bonus() -> void:
 			target = Vector2(next.x + inward * (half.x - 32.0), next.z + half.y - 48.0)
 		var aim := target - at
 		var to_lip := _rect_exit(rect, at, aim.normalized()) if grounded and rect.has_point(at) else -1.0
-		var c := DotFpsCommand.new()
+		var c := GSFpsCommand.new()
 		c.move = Vector2(0.0, 1.0)
 		c.yaw = rad_to_deg(atan2(-aim.x, -aim.y))
-		c.set_button(DotFpsCommand.BUTTON_JUMP, to_lip >= 0.0 and to_lip <= 20.0)
+		c.set_button(GSFpsCommand.BUTTON_JUMP, to_lip >= 0.0 and to_lip <= 20.0)
 		bot.controller.apply_command(c)
 		await get_tree().physics_frame
 
@@ -238,11 +238,11 @@ func _test_weave_bonus() -> void:
 func _test_bend_bonus() -> void:
 	_section("the bend, run end to end")
 
-	var changed: DotResult = await game.change_map(&"bhop_g2g_stages")
+	var changed: GSResult = await game.change_map(&"bhop_g2g_stages")
 	_check(changed.ok, "the stages map loads")
 
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	var bend := DotTimerTrack.of_bonus(4)
+	var bend := GSTimerTrack.of_bonus(4)
 	var zones := game.timers.zones
 	_check(zones != null and zones.stage_count(bend) == 2,
 		"with a fourth bonus that has two stages",
@@ -275,7 +275,7 @@ func _test_bend_bonus() -> void:
 
 	var watch := _watch_run(bot)
 	var splits: Array[int] = watch["splits"]
-	var finished: Array[DotTimerRun] = watch["finished"]
+	var finished: Array[GSTimerRun] = watch["finished"]
 	var reset: Array[bool] = watch["reset"]
 
 	var resets := 0
@@ -310,10 +310,10 @@ func _test_bend_bonus() -> void:
 			var local := _bend_local(on, at)
 			var direction := aim.normalized().rotated(deg_to_rad(float(on["yaw"])))
 			to_lip = _rect_exit(local, Vector2.ZERO, direction)
-		var c := DotFpsCommand.new()
+		var c := GSFpsCommand.new()
 		c.move = Vector2(0.0, 1.0)
 		c.yaw = rad_to_deg(atan2(-aim.x, -aim.y))
-		c.set_button(DotFpsCommand.BUTTON_JUMP, to_lip >= 0.0 and to_lip <= 20.0 and goal < pieces.size())
+		c.set_button(GSFpsCommand.BUTTON_JUMP, to_lip >= 0.0 and to_lip <= 20.0 and goal < pieces.size())
 		bot.controller.apply_command(c)
 		await get_tree().physics_frame
 
@@ -350,15 +350,15 @@ func _test_bend_bonus() -> void:
 ## The reset flag is an array because a lambda captures a local by value.
 func _watch_run(bot: AirdriftPlayer) -> Dictionary:
 	var splits: Array[int] = []
-	var finished: Array[DotTimerRun] = []
+	var finished: Array[GSTimerRun] = []
 	var reset: Array[bool] = [false]
 	var on_split := func(id: StringName, number: int, _split: float) -> void:
 		if id == &"bot":
 			splits.append(number)
-	var on_effect := func(id: StringName, zone: DotTimerZone) -> void:
-		if id == &"bot" and zone.kind == DotTimerZone.Kind.RESPAWN:
+	var on_effect := func(id: StringName, zone: GSTimerZone) -> void:
+		if id == &"bot" and zone.kind == GSTimerZone.Kind.RESPAWN:
 			reset[0] = true
-	var on_finished := func(run: DotTimerRun) -> void: finished.append(run)
+	var on_finished := func(run: GSTimerRun) -> void: finished.append(run)
 	game.timers.player_staged.connect(on_split)
 	game.timers.effect_requested.connect(on_effect)
 	bot.timer.run_finished.connect(on_finished)
@@ -374,7 +374,7 @@ func _unwatch_run(watch: Dictionary, bot: AirdriftPlayer) -> void:
 
 ## The checks both bonus routes end on.
 func _check_bonus_end(bot: AirdriftPlayer, splits: Array[int], resets: int, resets_detail: String,
-		finished: Array[DotTimerRun], track: int, pace: float, run_speed: float) -> void:
+		finished: Array[GSTimerRun], track: int, pace: float, run_speed: float) -> void:
 	_check(splits == [1, 2], "crossing both of its stage lines, in order", str(splits))
 	_check(resets == 0, "without ever being put back", resets_detail)
 	_check(finished.size() == 1 and finished[0].track == track,
@@ -385,7 +385,7 @@ func _check_bonus_end(bot: AirdriftPlayer, splits: Array[int], resets: int, rese
 
 
 func _back_to_main(bot: AirdriftPlayer) -> void:
-	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
+	game.timers.set_player_track(&"bot", GSTimerTrack.MAIN)
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
 	_done()
@@ -432,7 +432,7 @@ func _hairpin_route_length(blocks: Array, pad: Vector3) -> float:
 
 
 ## The command that steers the bot from `at` on `piece` of the hairpin.
-func _hairpin_command(blocks: Array, pad: Vector3, piece: int, at: Vector2) -> DotFpsCommand:
+func _hairpin_command(blocks: Array, pad: Vector3, piece: int, at: Vector2) -> GSFpsCommand:
 	var exit := Vector2(BhopIntro.HAIRPIN_X, BhopIntro.START_Z)
 	var heading := Vector2(0.0, -1.0)
 	if piece >= 0:
@@ -448,16 +448,16 @@ func _hairpin_command(blocks: Array, pad: Vector3, piece: int, at: Vector2) -> D
 	if to_lip < 0.0:
 		aim = ((blocks[piece + 1]["exit"] as Vector2) if piece + 1 < blocks.size()
 			else Vector2(pad.x, pad.z)) - at
-	var c := DotFpsCommand.new()
+	var c := GSFpsCommand.new()
 	c.move = Vector2(0.0, 1.0)
 	c.yaw = rad_to_deg(atan2(-aim.x, -aim.y))
-	c.set_button(DotFpsCommand.BUTTON_JUMP, to_lip >= 0.0 and to_lip <= 20.0)
+	c.set_button(GSFpsCommand.BUTTON_JUMP, to_lip >= 0.0 and to_lip <= 20.0)
 	return c
 
 
 ## What the hairpin run must have done.
 func _check_hairpin_run(started: bool, furthest: int, block_count: int, highest: float,
-		splits: Array[int], resets: int, finished: Array[DotTimerRun]) -> void:
+		splits: Array[int], resets: int, finished: Array[GSTimerRun]) -> void:
 	_check(started, "leaving its pad starts a run on the hairpin's own track")
 	_check(furthest == block_count - 1, "the bot reaches the last block, both corners behind it",
 		"block %d of %d" % [furthest + 1, block_count])
@@ -465,14 +465,14 @@ func _check_hairpin_run(started: bool, furthest: int, block_count: int, highest:
 	_check(splits == [1, 2], "crossing both of its stage lines, in order", str(splits))
 	_check(resets == 0, "without ever being put back", "%d resets" % resets)
 	_check(
-		finished.size() == 1 and finished[0].track == DotTimerTrack.of_bonus(3),
+		finished.size() == 1 and finished[0].track == GSTimerTrack.of_bonus(3),
 		"and the finish line ends the run, on the bonus's own track",
 		"%d finished, ended at %s u" % [finished.size(), str(AirdriftUnits.vector_to_units((game.players[&"bot"] as AirdriftPlayer).global_position).round())]
 	)
 
 
 func _print_hairpin(covered: float, route_length: float, top: float, highest: float, furthest: int,
-		block_count: int, resets: int, finished: Array[DotTimerRun]) -> void:
+		block_count: int, resets: int, finished: Array[GSTimerRun]) -> void:
 	print("  ..    hairpin: covered %.0f u of a %.0f u route, top %.0f u/s, highest %.0f u, block %d of %d, %d resets, %s" % [
 		covered, route_length, top, highest, furthest + 1, block_count, resets,
 		"finished in %.2f s" % finished[0].time() if not finished.is_empty() else "not finished"
@@ -492,11 +492,11 @@ func _print_hairpin(covered: float, route_length: float, top: float, highest: fl
 func _test_hairpin_bonus() -> void:
 	_section("the hairpin, run end to end")
 
-	var changed: DotResult = await game.change_map(&"bhop_g2g_intro")
+	var changed: GSResult = await game.change_map(&"bhop_g2g_intro")
 	_check(changed.ok, "the intro map loads")
 
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	var hairpin := DotTimerTrack.of_bonus(3)
+	var hairpin := GSTimerTrack.of_bonus(3)
 	var zones := game.timers.zones
 	_check(zones != null and zones.stage_count(hairpin) == 2,
 		"with a third bonus that has two stages",
@@ -513,7 +513,7 @@ func _test_hairpin_bonus() -> void:
 	var route_length := _hairpin_route_length(blocks, pad)
 
 	var splits: Array[int] = []
-	var finished: Array[DotTimerRun] = []
+	var finished: Array[GSTimerRun] = []
 	# An array, not a bool: a lambda captures a local by value, so `reset = true` inside
 	# one never reached this function and "without ever being put back" could not fail.
 	var reset: Array[bool] = [false]
@@ -522,11 +522,11 @@ func _test_hairpin_bonus() -> void:
 		if id == &"bot":
 			splits.append(number)
 
-	var on_effect := func(id: StringName, zone: DotTimerZone) -> void:
-		if id == &"bot" and zone.kind == DotTimerZone.Kind.RESPAWN:
+	var on_effect := func(id: StringName, zone: GSTimerZone) -> void:
+		if id == &"bot" and zone.kind == GSTimerZone.Kind.RESPAWN:
 			reset[0] = true
 
-	var on_finished := func(run: DotTimerRun) -> void: finished.append(run)
+	var on_finished := func(run: GSTimerRun) -> void: finished.append(run)
 	game.timers.player_staged.connect(on_split)
 	game.timers.effect_requested.connect(on_effect)
 	bot.timer.run_finished.connect(on_finished)
@@ -572,7 +572,7 @@ func _test_hairpin_bonus() -> void:
 
 	_check_hairpin_run(started, furthest, blocks.size(), highest, splits, resets, finished)
 
-	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
+	game.timers.set_player_track(&"bot", GSTimerTrack.MAIN)
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
 	_done()
@@ -591,11 +591,11 @@ func _test_hairpin_bonus() -> void:
 func _test_stutter_bonus() -> void:
 	_section("the stutter, run end to end")
 
-	var changed: DotResult = await game.change_map(&"bhop_g2g_intro")
+	var changed: GSResult = await game.change_map(&"bhop_g2g_intro")
 	_check(changed.ok, "the intro map loads")
 
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	var stutter := DotTimerTrack.of_bonus(4)
+	var stutter := GSTimerTrack.of_bonus(4)
 	var zones := game.timers.zones
 	_check(zones != null and zones.stage_count(stutter) == 2,
 		"with a fourth bonus that has two stages",
@@ -612,7 +612,7 @@ func _test_stutter_bonus() -> void:
 	var route_length := BhopIntro.START_Z - (pad.z - BhopIntro.STUTTER_FINISH_LENGTH * 0.5)
 
 	var splits: Array[int] = []
-	var finished: Array[DotTimerRun] = []
+	var finished: Array[GSTimerRun] = []
 	# An array, not a bool: a lambda captures a local by value.
 	var reset: Array[bool] = [false]
 
@@ -620,11 +620,11 @@ func _test_stutter_bonus() -> void:
 		if id == &"bot":
 			splits.append(number)
 
-	var on_effect := func(id: StringName, zone: DotTimerZone) -> void:
-		if id == &"bot" and zone.kind == DotTimerZone.Kind.RESPAWN:
+	var on_effect := func(id: StringName, zone: GSTimerZone) -> void:
+		if id == &"bot" and zone.kind == GSTimerZone.Kind.RESPAWN:
 			reset[0] = true
 
-	var on_finished := func(run: DotTimerRun) -> void: finished.append(run)
+	var on_finished := func(run: GSTimerRun) -> void: finished.append(run)
 
 	game.timers.player_staged.connect(on_split)
 	game.timers.effect_requested.connect(on_effect)
@@ -653,10 +653,10 @@ func _test_stutter_bonus() -> void:
 		# Straight down -Z, aimed at the route's centre line so a drift is corrected.
 		var to_lip := at.y - exit.y
 		var aim := Vector2(BhopIntro.STUTTER_X, at.y - 256.0) - at
-		var c := DotFpsCommand.new()
+		var c := GSFpsCommand.new()
 		c.move = Vector2(0.0, 1.0)
 		c.yaw = rad_to_deg(atan2(-aim.x, -aim.y))
-		c.set_button(DotFpsCommand.BUTTON_JUMP, to_lip >= 0.0 and to_lip <= 20.0)
+		c.set_button(GSFpsCommand.BUTTON_JUMP, to_lip >= 0.0 and to_lip <= 20.0)
 		bot.controller.apply_command(c)
 		await get_tree().physics_frame
 
@@ -713,7 +713,7 @@ func _test_stutter_bonus() -> void:
 	_check(pace >= run_speed * 0.8, "at no less than 80% of run speed: every stone is left on the move",
 		"%.0f u/s against %.0f" % [pace, run_speed])
 
-	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
+	game.timers.set_player_track(&"bot", GSTimerTrack.MAIN)
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
 	_done()

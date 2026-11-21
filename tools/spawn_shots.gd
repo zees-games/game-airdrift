@@ -18,8 +18,8 @@ var _game: AirdriftGame = null
 
 
 func _initialize() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
-	DotFpsSampler.register_default_actions()
+	GSLog.set_level(GSLog.Level.ERROR)
+	GSFpsSampler.register_default_actions()
 	var config := AirdriftConfig.new()
 	config.auto_bhop = true
 	config.initial_map = &""
@@ -48,7 +48,7 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(OUT_DIR)
 	var failed := 0
 	for id in _maps():
-		var started: DotResult = await _game.change_map(StringName(id))
+		var started: GSResult = await _game.change_map(StringName(id))
 		if not started.ok:
 			print("FAIL  %s: map did not load" % id)
 			failed += 1

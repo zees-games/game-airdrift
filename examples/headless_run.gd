@@ -18,7 +18,7 @@ const CHECKS := 262
 const SECTIONS := 27
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -123,14 +123,14 @@ func _progression_stats(progress: AirdriftProgress) -> void:
 	var schema := AirdriftStats.schema()
 	for id: StringName in [AirdriftStats.RUNS_STARTED, AirdriftStats.STRAFES]:
 		var published := false
-		for d: DotStatsDef in schema.stats:
+		for d: GSStatsDef in schema.stats:
 			if d.id == id:
 				published = d.publish
 		_check(published, "%s is published to the site" % id)
-	var held := DotStatsValues.new()
+	var held := GSStatsValues.new()
 	held.values = {String(AirdriftStats.RUNS_FINISHED): 10.0}
 	progress.rank.seed_baseline(&"bot", held)
-	var life: float = progress.rank.publish_lifetime(&"bot", DotStatsValues.new(), progress.stats.schema)
+	var life: float = progress.rank.publish_lifetime(&"bot", GSStatsValues.new(), progress.stats.schema)
 	_check(schema.has(AirdriftStats.RANK_SCORE) and life == 10.0,
 		"rank_score is declared and ranks on a stored lifetime baseline", "%.1f" % life)
 	progress.rank.forget(&"bot")

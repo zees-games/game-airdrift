@@ -12,7 +12,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## watch.
 ##
 ## [b]What a bot rides.[/b] On a map with a surf cache (`maps/routes/<id>.surf.json`, written
-## by `tools/surf_plan.tscn`) it rides the cache's first stage with dot-bot's [DotBotSurfPilot],
+## by `tools/surf_plan.tscn`) it rides the cache's first stage with dot-bot's [GSBotSurfPilot],
 ## planned and vetoed on a copy of its own motor ([method AirdriftSurfCourse.simulator_for]). On any
 ## other map it is the rule-based route bot ([code]airdrift_route_bot.gd[/code]) on the whole run,
 ## spawn to finish, along the map's route file when there is one: on a surf ramp that bot looks
@@ -31,7 +31,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## after them would be one tick late on every tick, which on a ramp the pilot planned to the
 ## tick is a different ride.
 ##
-## How many there are is dot-server's [DotBotQuota] (`bot_quota`, default 0 here, so a timer
+## How many there are is dot-server's [GSBotQuota] (`bot_quota`, default 0 here, so a timer
 ## server has no bots until its operator asks), kept in step by `AirdriftModule`.
 
 const CHANNEL := "g2g.bots"
@@ -39,7 +39,7 @@ const CHANNEL := "g2g.bots"
 ## Session ids from here up, clear of a person's and of the ghost's (u900000001).
 const FIRST_SESSION := 900000101
 
-## How far ahead a bot's pilot checks its own ride ([member DotBotSurfPilot.horizon]), in ticks;
+## How far ahead a bot's pilot checks its own ride ([member GSBotSurfPilot.horizon]), in ticks;
 ## 0 rides the cache alone.
 ##
 ## [b]0 on a live server, deliberately.[/b] A bot is always put back at the stage's exact start,
@@ -80,23 +80,23 @@ var game: AirdriftGame = null
 ## Bot player ids, oldest first.
 var ids: Array[StringName] = []
 
-## Per bot: `{"pilot": DotBotSurfPilot or null, "route": AirdriftRouteBot or null, "ticks": int,
+## Per bot: `{"pilot": GSBotSurfPilot or null, "route": AirdriftRouteBot or null, "ticks": int,
 ## "rides": int, "arrived": int, "fell": int, "stuck": int, "usec": int, "driven": int,
 ## "best": float}`.
 var _riders: Dictionary = {}
 
 ## The stage every bot rides on this map, or null when the map has none a course can be read
 ## from (it then stands at the spawn).
-var course: DotBotSurfCourse = null
+var course: GSBotSurfCourse = null
 ## Which kind of ride the map gives: `&"pilot"` (a surf cache), `&"route"` (the rule-based
 ## route bot), or `&""` before a map or with no course.
 var mode: StringName = &""
 var stage := 0
 var _course_map: StringName = &""
 ## The cache's lookup, loaded once a map and shared by every bot's pilot.
-var _cache: DotBotSurfPilot = null
+var _cache: GSBotSurfPilot = null
 var _route_points: Array[Dictionary] = []
-## dot-sim's `DotSimRouteBots` for this map (every route bot of a tick in one native call), or null.
+## dot-sim's `GSSimRouteBots` for this map (every route bot of a tick in one native call), or null.
 var _native_routes: Object = null
 ## The route points [member _native_route_id] was written from.
 var _native_points: Array[Dictionary] = []
@@ -104,7 +104,7 @@ var _native_route_id := -1
 ## Route bots waiting for this tick's one native call: `[player, rider, route]` each.
 var _batch: Array = []
 var _batch_space: PhysicsDirectSpaceState3D = null
-var _batch_tunables: DotFpsTunables = null
+var _batch_tunables: GSFpsTunables = null
 ## The planner for this map, or null (off, no dot-npc-ai, or the map has a route file).
 var nav: RefCounted = null
 ## Whether the route is still being planned; the bots stand until it is.
@@ -151,29 +151,29 @@ func drive(step: float) -> void:
 		if player == null or rider.is_empty():
 			continue
 		if course == null:
-			player.controller.apply_command(DotFpsCommand.new())
+			player.controller.apply_command(GSFpsCommand.new())
 			continue
 		var event := course.event_at(player.controller.state)
 		var limit := int(RIDE_SECONDS * float(game.tick_rate))
 		var wedged := _wedged(player.controller.state.position, rider)
-		if event != DotBotSurfCourse.EVENT_NONE or int(rider["ticks"]) >= limit or wedged:
-			if event == DotBotSurfCourse.EVENT_GOAL:
+		if event != GSBotSurfCourse.EVENT_NONE or int(rider["ticks"]) >= limit or wedged:
+			if event == GSBotSurfCourse.EVENT_GOAL:
 				rider["arrived"] = int(rider["arrived"]) + 1
 				var took := float(rider["ticks"]) / float(maxi(game.tick_rate, 1))
 				rider["best"] = took if float(rider["best"]) <= 0.0 else minf(float(rider["best"]), took)
-			elif event == DotBotSurfCourse.EVENT_NONE:
+			elif event == GSBotSurfCourse.EVENT_NONE:
 				rider["stuck"] = int(rider["stuck"]) + 1
 			else:
 				rider["fell"] = int(rider["fell"]) + 1
 			_flush_routes(step)  # the rays queued so far see the world before this teleport, as the script's did
 			_put_back(player, rider)
 
-		var pilot: DotBotSurfPilot = rider["pilot"]
+		var pilot: GSBotSurfPilot = rider["pilot"]
 		var route: AirdriftRouteBot = rider["route"]
 		if pilot == null and route != null and route.native != null and route.native == _native_routes \
 				and AirdriftRouteBot.native_route:
 			var space := player.get_world_3d().direct_space_state
-			var tunables: DotFpsTunables = player.controller.tunables
+			var tunables: GSFpsTunables = player.controller.tunables
 			if space != _batch_space or tunables != _batch_tunables:
 				_flush_routes(step)
 				_batch_space = space
@@ -181,7 +181,7 @@ func drive(step: float) -> void:
 			_batch.append([player, rider, route])
 			continue
 		var began := Time.get_ticks_usec()
-		var command: DotFpsCommand = null
+		var command: GSFpsCommand = null
 		if pilot != null:
 			command = pilot.command(player.controller.state)
 		elif route != null:
@@ -189,7 +189,7 @@ func drive(step: float) -> void:
 			command = route.command(player.controller.state, player.get_world_3d().direct_space_state,
 				player.controller.tunables, step)
 		else:
-			command = DotFpsCommand.new()
+			command = GSFpsCommand.new()
 		var spent := Time.get_ticks_usec() - began
 		if route != null and pilot == null:
 			route._push()  # the script drove it (native_route off): its twin follows
@@ -198,7 +198,7 @@ func drive(step: float) -> void:
 
 
 ## The bookkeeping after a bot's command, and the command applied.
-func _finish(player: AirdriftPlayer, rider: Dictionary, command: DotFpsCommand, spent: int) -> void:
+func _finish(player: AirdriftPlayer, rider: Dictionary, command: GSFpsCommand, spent: int) -> void:
 	rider["usec"] = int(rider["usec"]) + spent
 	rider["worst_usec"] = maxi(int(rider["worst_usec"]), spent)
 	rider["driven"] = int(rider["driven"]) + 1
@@ -252,7 +252,7 @@ func _flush_routes(step: float) -> void:
 		var rider: Dictionary = _batch[i][1]
 		var route: AirdriftRouteBot = _batch[i][2]
 		var spent := each
-		var command := DotFpsCommand.new()
+		var command := GSFpsCommand.new()
 		if ok:
 			command.yaw = out[i * 4]
 			command.move = Vector2(out[i * 4 + 1], out[i * 4 + 2])
@@ -315,7 +315,7 @@ func _ensure_course() -> void:
 	if not data.is_empty():
 		course = AirdriftSurfCourse.for_stage(game, stage, why)
 		if course != null:
-			_cache = DotBotSurfPilot.new()
+			_cache = GSBotSurfPilot.new()
 			_cache.load_stage(data, AirdriftUnits.METRES_PER_UNIT)
 			mode = &"pilot"
 	if course == null:
@@ -327,11 +327,11 @@ func _ensure_course() -> void:
 			if _route_points.is_empty():
 				_begin_nav()
 	if course == null:
-		DotLog.info(CHANNEL, "no stage for the bots on this map; they stand at the spawn", {
+		GSLog.info(CHANNEL, "no stage for the bots on this map; they stand at the spawn", {
 			"map": String(id), "why": "; ".join(PackedStringArray(why.map(func(w: Variant) -> String: return str(w))))
 		})
 	else:
-		DotLog.debug(CHANNEL, "bots ride", {"map": String(id), "mode": String(mode), "stage": stage})
+		GSLog.debug(CHANNEL, "bots ride", {"map": String(id), "mode": String(mode), "stage": stage})
 
 	for bot_id: StringName in ids:
 		var player: AirdriftPlayer = game.players.get(bot_id)
@@ -350,11 +350,11 @@ func _start_nav() -> void:
 	var path := AirdriftPaths.rebase("res://game/airdrift_bot_nav.gd")
 	var have := false
 	for entry: Dictionary in ProjectSettings.get_global_class_list():
-		if entry["class"] == &"DotNpcAiNavAnnotator":
+		if entry["class"] == &"GSNpcAiNavAnnotator":
 			have = true
 			break
 	if not have:
-		DotLog.info(CHANNEL, "dot-npc-ai is not in this project; bots go straight at the finish")
+		GSLog.info(CHANNEL, "dot-npc-ai is not in this project; bots go straight at the finish")
 		_planning = false
 		return
 	var script := load(path) as GDScript
@@ -370,10 +370,10 @@ func _start_nav() -> void:
 
 ## Whether a bot at [param at] would be put back by the course: in a pit, or under the floor.
 func _in_a_pit(at: Vector3) -> bool:
-	var probe := DotFpsState.new()
+	var probe := GSFpsState.new()
 	probe.position = at
 	var event := course.event_at(probe)
-	return event == DotBotSurfCourse.EVENT_PIT or event == DotBotSurfCourse.EVENT_BELOW
+	return event == GSBotSurfCourse.EVENT_PIT or event == GSBotSurfCourse.EVENT_BELOW
 
 
 ## Steps the planner inside its share of the tick, and adopts the route when it has one.
@@ -437,13 +437,13 @@ func _put_back(player: AirdriftPlayer, rider: Dictionary) -> void:
 		rider["route"] = null
 		return
 	player.teleport(course.start, course.start_yaw)
-	player.controller.apply_command(DotFpsCommand.new())
+	player.controller.apply_command(GSFpsCommand.new())
 	if mode == &"pilot":
-		var pilot: DotBotSurfPilot = rider["pilot"]
+		var pilot: GSBotSurfPilot = rider["pilot"]
 		# A pilot of its own per bot (the forecast is one ride's), over the one shared lookup;
 		# its simulator is a copy of THIS bot's motor, rebuilt after a map change.
 		if pilot == null or pilot.sim == null or rider.get("map") != _course_map:
-			pilot = DotBotSurfPilot.new().share_cache(_cache)
+			pilot = GSBotSurfPilot.new().share_cache(_cache)
 			pilot.sim = (course as AirdriftSurfCourse).simulator_for(player.controller, game.mechanics)
 			pilot.score = course.score
 			pilot.horizon = veto_horizon
@@ -461,10 +461,10 @@ func _put_back(player: AirdriftPlayer, rider: Dictionary) -> void:
 ## Gives [param route] a slot in this map's native route bots, writing the route there first when
 ## it is new (dot-sim's `route` module; without it, or with `native_route` off, the script drives).
 func _bind_native(route: AirdriftRouteBot) -> void:
-	if not AirdriftRouteBot.native_route or not DotSim.has(&"route"):
+	if not AirdriftRouteBot.native_route or not GSSim.has(&"route"):
 		return
 	if _native_routes == null:
-		_native_routes = ClassDB.instantiate(&"DotSimRouteBots")
+		_native_routes = ClassDB.instantiate(&"GSSimRouteBots")
 		_native_route_id = -1
 	if _native_route_id < 0 or not is_same(_native_points, _route_points):
 		var at := PackedVector3Array()
@@ -489,7 +489,7 @@ func describe() -> Dictionary:
 	var bots: Array = []
 	for id: StringName in ids:
 		var r: Dictionary = _riders.get(id, {})
-		var pilot: DotBotSurfPilot = r.get("pilot")
+		var pilot: GSBotSurfPilot = r.get("pilot")
 		var entry := {
 			"id": String(id),
 			"rides": r.get("rides", 0), "arrived": r.get("arrived", 0), "fell": r.get("fell", 0),

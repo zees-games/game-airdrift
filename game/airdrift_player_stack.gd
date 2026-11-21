@@ -39,12 +39,12 @@ const SERVICE := &"airdrift_player_stack"
 
 var game: AirdriftGame = null
 
-var physics: DotPhysicsWorld = null
-var roster: DotPlayerRoster = null
-var teams: DotTeamRoster = null
-var classes: DotPlayerClassManager = null
-var spawns: DotSpawnDirector = null
-var spectate: DotTeamSpectate = null
+var physics: GSPhysicsWorld = null
+var roster: GSPlayerRoster = null
+var teams: GSTeamRoster = null
+var classes: GSPlayerClassManager = null
+var spawns: GSSpawnDirector = null
+var spectate: GSTeamSpectate = null
 
 var _registered: bool = false
 
@@ -52,9 +52,9 @@ var _registered: bool = false
 var _sites_from: StringName = &""
 
 
-func setup(p_game: AirdriftGame) -> DotResult:
+func setup(p_game: AirdriftGame) -> GSResult:
 	if p_game == null:
-		return DotResult.fail(DotError.CODE_INVALID, "No game to bind to.")
+		return GSResult.fail(GSError.CODE_INVALID, "No game to bind to.")
 
 	game = p_game
 
@@ -74,19 +74,19 @@ func setup(p_game: AirdriftGame) -> DotResult:
 	game.map_ready.connect(_on_map_ready)
 
 	if register_service:
-		DotRegistry.register(
-			DotRegistry.scoped_name(SERVICE, game.service_scope), self
+		GSRegistry.register(
+			GSRegistry.scoped_name(SERVICE, game.service_scope), self
 		)
 		_registered = true
 
-	DotLog.info(CHANNEL, "player stack up", {"tick_rate": game.tick_rate})
-	return DotResult.success(null)
+	GSLog.info(CHANNEL, "player stack up", {"tick_rate": game.tick_rate})
+	return GSResult.success(null)
 
 
 func _exit_tree() -> void:
 	if _registered:
-		DotRegistry.unregister_instance(
-			DotRegistry.scoped_name(SERVICE, game.service_scope), self
+		GSRegistry.unregister_instance(
+			GSRegistry.scoped_name(SERVICE, game.service_scope), self
 		)
 
 
@@ -103,10 +103,10 @@ func _exit_tree() -> void:
 ##
 ## What `apply_physics` still gates is `setup()`, which writes ProjectSettings: the tick
 ## rate, gravity and damping. Those are the server's to decide.
-func _build_physics() -> DotResult:
-	physics = DotPhysicsWorld.new()
+func _build_physics() -> GSResult:
+	physics = GSPhysicsWorld.new()
 	physics.name = "Physics"
-	physics.profile = DotPhysicsProfile.arcade_shooter()
+	physics.profile = GSPhysicsProfile.arcade_shooter()
 
 	# [b]The game's rate, not the preset's.[/b] Airdrift counts in 128ths of a second
 	# and a run set at one rate is not comparable with one set at another — dot-timer's
@@ -115,8 +115,8 @@ func _build_physics() -> DotResult:
 	physics.profile.tick_rate = game.tick_rate
 	physics.profile.gravity_3d = game.tunables.gravity if game.tunables != null else 20.0
 
-	physics.layout = DotPhysicsLayout.shooter_3d()
-	physics.surfaces = DotPhysicsSurfaceSet.standard()
+	physics.layout = GSPhysicsLayout.shooter_3d()
+	physics.surfaces = GSPhysicsSurfaceSet.standard()
 	physics.register_service = false
 	physics.write_layer_names = false
 	add_child(physics)
@@ -128,18 +128,18 @@ func _build_physics() -> DotResult:
 		return built.wrap("The collision layout")
 
 	if not apply_physics:
-		return DotResult.success(null)
+		return GSResult.success(null)
 
 	return physics.setup().wrap("Airdrift's physics profile")
 
 
 func _build_roster() -> void:
-	roster = DotPlayerRoster.new()
+	roster = GSPlayerRoster.new()
 	roster.name = "Roster"
 	roster.authoritative = game.authoritative
 	roster.register_service = false
 
-	var config := DotPlayerConfig.new()
+	var config := GSPlayerConfig.new()
 	config.tick_rate = game.tick_rate
 	config.max_players = game.config.max_players
 	# Five minutes. A run takes minutes and a player who drops mid-run and comes
@@ -150,12 +150,12 @@ func _build_roster() -> void:
 
 
 func _build_teams() -> void:
-	teams = DotTeamRoster.new()
+	teams = GSTeamRoster.new()
 	teams.name = "Teams"
 	teams.authoritative = game.authoritative
 	teams.register_service = false
-	teams.teams = DotTeamSet.free_for_all()
-	teams.policy = DotTeamPolicy.free_for_all()
+	teams.teams = GSTeamSet.free_for_all()
+	teams.policy = GSTeamPolicy.free_for_all()
 	teams.policy.tick_rate = game.tick_rate
 	teams.alive_fn = _alive_of_key
 	add_child(teams)
@@ -163,11 +163,11 @@ func _build_teams() -> void:
 	var res := teams.setup()
 
 	if not res.ok:
-		DotLog.error(CHANNEL, "team roster", {"why": res.error.message})
+		GSLog.error(CHANNEL, "team roster", {"why": res.error.message})
 
 
 func _build_classes() -> void:
-	classes = DotPlayerClassManager.new()
+	classes = GSPlayerClassManager.new()
 	classes.name = "Classes"
 	classes.authoritative = game.authoritative
 	classes.register_service = false
@@ -176,8 +176,8 @@ func _build_classes() -> void:
 	# here is a dot-timer concept — it changes what a run is worth and what the leader
 	# board compares it against — and modelling it as a player class would put the
 	# ranking rules in a layer that knows nothing about ranking.
-	classes.catalogue = DotPlayerClassCatalogue.single(100.0)
-	classes.rules = DotPlayerClassRules.instant()
+	classes.catalogue = GSPlayerClassCatalogue.single(100.0)
+	classes.rules = GSPlayerClassRules.instant()
 	classes.team_fn = func(key: String) -> StringName: return teams.team_of(key)
 	classes.alive_fn = _alive_of_key
 	add_child(classes)
@@ -185,20 +185,20 @@ func _build_classes() -> void:
 	var res := classes.setup()
 
 	if not res.ok:
-		DotLog.error(CHANNEL, "class manager", {"why": res.error.message})
+		GSLog.error(CHANNEL, "class manager", {"why": res.error.message})
 
 
 func _build_spawns() -> void:
-	spawns = DotSpawnDirector.new()
+	spawns = GSSpawnDirector.new()
 	spawns.name = "Spawns"
 	spawns.tick_rate = game.tick_rate
 	spawns.register_service = false
-	spawns.rules = DotSpawnRules.single_start()
+	spawns.rules = GSSpawnRules.single_start()
 	# The site whose track is the one the request asked for. Every start on a course is a
 	# site and they are not interchangeable: the main run begins in one place and each
 	# bonus begins in its own, so without this the director would hand a player who
 	# pressed T for the bonus the main start and be right by its own rules.
-	spawns.conditions = [DotSpawnConditions.MetaMatchesRequest.new("track")]
+	spawns.conditions = [GSSpawnConditions.MetaMatchesRequest.new("track")]
 	add_child(spawns)
 
 	refresh_spawn_rules()
@@ -228,7 +228,7 @@ func refresh_spawns() -> void:
 	# Every track the map has a zone on, plus the main run (a map with no zones still
 	# answers its fallback spawn for it). Any track number, however many bonuses; a
 	# track with no spawn answers the origin, which is the skip below.
-	var tracks := PackedInt32Array([DotTimerTrack.MAIN])
+	var tracks := PackedInt32Array([GSTimerTrack.MAIN])
 	var zones := map.timer_zones()
 	if zones != null:
 		for used in zones.used_tracks():
@@ -241,28 +241,28 @@ func refresh_spawns() -> void:
 			continue
 
 		# [b]Radians in, because that is what a site holds.[/b] `spawn_yaw_for` answers
-		# in degrees — it reads `DotTimerZone.destination_yaw`, which the zone painter
-		# writes with `rad_to_deg` — and `DotSpawnSite.sample` builds
+		# in degrees — it reads `GSTimerZone.destination_yaw`, which the zone painter
+		# writes with `rad_to_deg` — and `GSSpawnSite.sample` builds
 		# `Basis(Vector3.UP, yaw)`, which is radians. Storing one as the other put a
 		# number 57 times too large into the field and nothing said so, because nothing
 		# had ever called `sample()`: the site's own yaw had never been read.
-		var site := DotSpawnSite.point(
+		var site := GSSpawnSite.point(
 			StringName("start_%d" % track), at, deg_to_rad(map.spawn_yaw_for(track))
 		)
 		site.meta = {"track": track}
-		site.priority = 10 if track == DotTimerTrack.MAIN else 0
-		site.id = StringName(DotTimerTrack.short_name_of(track))
+		site.priority = 10 if track == GSTimerTrack.MAIN else 0
+		site.id = StringName(GSTimerTrack.short_name_of(track))
 		spawns.add_site(site)
 
-	DotLog.debug(CHANNEL, "start sites", {"count": spawns.sites().size()})
+	GSLog.debug(CHANNEL, "start sites", {"count": spawns.sites().size()})
 
 
 func _build_spectate() -> void:
-	spectate = DotTeamSpectate.new()
+	spectate = GSTeamSpectate.new()
 	spectate.name = "Spectate"
 	spectate.teams = teams
 	spectate.register_service = false
-	spectate.rules = DotTeamSpectateRules.open()
+	spectate.rules = GSTeamSpectateRules.open()
 	spectate.alive_fn = _alive_of_key
 	spectate.pose_fn = _pose_of_key
 	# No rounds on a timer server, so nothing is ever "mid-round" and the end-of-round
@@ -271,7 +271,7 @@ func _build_spectate() -> void:
 	spectate.round_live_fn = func() -> bool: return false
 
 	# [b]The manager this game already has, rather than a second one.[/b] AirdriftSpectate
-	# wraps a DotSpectatorManager with Airdrift's own rules and its own pose lookup;
+	# wraps a GSSpectatorManager with Airdrift's own rules and its own pose lookup;
 	# building another would give the server two spectator systems disagreeing about
 	# who is watching whom.
 	if game.spectate != null and game.spectate.manager != null:
@@ -282,7 +282,7 @@ func _build_spectate() -> void:
 	var res := spectate.setup()
 
 	if not res.ok:
-		DotLog.error(CHANNEL, "team spectate", {"why": res.error.message})
+		GSLog.error(CHANNEL, "team spectate", {"why": res.error.message})
 
 
 # --- Keeping in step --------------------------------------------------------
@@ -295,7 +295,7 @@ func _on_player_added(player: AirdriftPlayer) -> void:
 	var res := roster.join(key, player.display_name, 0, 0)
 
 	if not res.ok:
-		DotLog.warn(CHANNEL, "player not added to the roster", {
+		GSLog.warn(CHANNEL, "player not added to the roster", {
 			"key": key, "why": res.error.message
 		})
 		return
@@ -319,7 +319,7 @@ func _on_player_removed(id: StringName) -> void:
 	var _held := roster.note_disconnected(key, 0)
 
 
-func _on_map_ready(_map: DotMapDef) -> void:
+func _on_map_ready(_map: GSMapDef) -> void:
 	# [b]The level onto the layout's `world` layer.[/b] Built geometry arrives as
 	# `StaticBody3D`s on Godot's default layer 1 masking layer 1 — so a projectile or a
 	# prop could not hit the map, and the layer names dot-physics writes into the
@@ -327,7 +327,7 @@ func _on_map_ready(_map: DotMapDef) -> void:
 	var classified := classify_tree(game.current_map_node(), &"world")
 
 	if classified > 0:
-		DotLog.debug(CHANNEL, "level classified", {"bodies": classified})
+		GSLog.debug(CHANNEL, "level classified", {"bodies": classified})
 
 	# `sv_deathmatch` can be moved under a live server, and a map change is the coarsest
 	# thing that reliably follows it. A window that opened once at boot would be the
@@ -354,7 +354,7 @@ func tick(current_tick: int) -> void:
 ## nothing guarantees this node's handler runs before the respawn does. When it did not,
 ## the director still held the PREVIOUS map's starts, answered confidently with a
 ## coordinate from a map nobody was standing in, and put the player there. Every number
-## was valid: a site, a transform, a successful `DotResult`.
+## was valid: a site, a transform, a successful `GSResult`.
 ##
 ## What made it survive a whole suite is that the fallback below reads the map live, so
 ## the path that had never been used was the correct one and the path that replaced it
@@ -374,16 +374,16 @@ func _ensure_sites_current() -> void:
 ## server. `spawn_player` goes through here now and falls back to the map's own start,
 ## so the sites are still the map's — what the director adds is the choice among them and
 ## the per-site cooldown, and what it adds on a deathmatch layer is the protection window
-## [DotSpawnProtection] only ever grants from inside [method DotSpawnDirector.choose].
+## [GSSpawnProtection] only ever grants from inside [method GSSpawnDirector.choose].
 ##
 ## [param track] is carried in the request rather than filtered here: a course's tracks
 ## each start somewhere else, and `MetaMatchesRequest` is what makes one director able to
 ## answer a question whose answer differs per player.
-func choose_start(id: StringName, track: int = DotTimerTrack.MAIN) -> DotResult:
+func choose_start(id: StringName, track: int = GSTimerTrack.MAIN) -> GSResult:
 	_ensure_sites_current()
 
 	var key := String(id)
-	return spawns.choose(DotSpawnRequest.make(
+	return spawns.choose(GSSpawnRequest.make(
 		key, teams.team_of(key), classes.class_of(key), game.current_tick(),
 		{"track": track}
 	))
@@ -434,7 +434,7 @@ func refresh_spawn_rules() -> void:
 ## [code]int[/code] and treats 0 as no team at all — two entities with no team are never
 ## team-mates, so a free-for-all cannot accidentally become a truce. The playing sides
 ## are numbered from 1 in the order the set declares them, which is the same rule
-## `DotTeamRoster._match_team_id` uses to push an assignment down into dot-match.
+## `GSTeamRoster._match_team_id` uses to push an assignment down into dot-match.
 ##
 ## Somebody unassigned, spectating, or not in the roster at all gets 0. That is the part
 ## a hardcoded `return 1` got wrong: a spectator read as a team-mate of everybody.
@@ -457,9 +457,9 @@ func team_index_of(key: String) -> int:
 ## layer names were written into ProjectSettings for the inspector to show — and every
 ## body in this game stayed on Godot's default layer 1 with mask 1, so the inspector
 ## labelled layers nothing followed. Naming a layer is only half of a layout.
-func classify(node: Node, layer_id: StringName) -> DotResult:
+func classify(node: Node, layer_id: StringName) -> GSResult:
 	if physics == null or physics.layout == null:
-		return DotResult.fail(DotError.CODE_STATE, "No collision layout.")
+		return GSResult.fail(GSError.CODE_STATE, "No collision layout.")
 
 	return physics.classify(node, layer_id)
 
@@ -487,7 +487,7 @@ func classify_tree(root: Node, layer_id: StringName) -> int:
 
 ## The mask a player's movement sweeps against, out of the layout.
 ##
-## [b]`DotFpsTunables.collision_mask` defaults to 1 and no game here had ever set it.[/b]
+## [b]`GSFpsTunables.collision_mask` defaults to 1 and no game here had ever set it.[/b]
 ## One is correct only while everything is on bit 0, which is the state a layout exists to
 ## end — so the moment props moved to their own layer, a mask of 1 was a player who walks
 ## through every crate in the map, and nothing would have said so: a sweep that hits
@@ -502,7 +502,7 @@ func player_collision_mask() -> int:
 
 ## Writes a player's class numbers onto their health and their movement.
 ##
-## [b]The class document reached nothing at all before this.[/b] `DotPlayerClassDef`
+## [b]The class document reached nothing at all before this.[/b] `GSPlayerClassDef`
 ## carries `max_health`, `max_armour`, regeneration, a move-speed scale, a jump scale and
 ## a mass; the manager decided who was what and every one of those numbers was read by
 ## nobody. A catalogue a server can validate is only half of a class system — the other
@@ -511,7 +511,7 @@ func player_collision_mask() -> int:
 ## [b]Idempotent, because the scales multiply.[/b] Applying one to tunables that already
 ## carry it compounds: 0.8 twice is 0.64, and a player who respawned four times would be
 ## at 0.41 of the speed with every number looking deliberate. The base handed to
-## `DotPlayerClassApply.to_movement` is the untouched one, which makes a respawn safe.
+## `GSPlayerClassApply.to_movement` is the untouched one, which makes a respawn safe.
 ##
 ## This game ships one class, so today it changes nothing visible — which is exactly when
 ## a mechanism is worth wiring, because a mode that swaps the catalogue is then a
@@ -527,8 +527,8 @@ func apply_class_numbers(key: String, health: Object, tunables: Object, base: Ob
 
 	# Not reset to full: the caller's own spawn path resets health, and two resets on one
 	# spawn is one of them undoing the other's protection window.
-	var _h := DotPlayerClassApply.to_health(def, health)
-	var _m := DotPlayerClassApply.to_movement(def, tunables, base)
+	var _h := GSPlayerClassApply.to_health(def, health)
+	var _m := GSPlayerClassApply.to_movement(def, tunables, base)
 
 
 func describe_lines() -> PackedStringArray:

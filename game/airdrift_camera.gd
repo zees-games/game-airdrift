@@ -7,7 +7,7 @@ const AirdriftRig := preload("airdrift_rig.gd")
 ## [b]Two cameras, one active, and the switch is a cull mask.[/b] The first-person
 ## camera sits at the eye and culls the local rig's layer so the player does not see
 ## the inside of their own head; the third-person camera sits on a dot-core
-## [DotCameraBoom] (it was a SpringArm3D, which cast a ray and snapped to its hit; the boom
+## [GSCameraBoom] (it was a SpringArm3D, which cast a ray and snapped to its hit; the boom
 ## sweeps a sphere and eases in ahead of a wall) behind and above and draws everything. Both are always present, so switching is a
 ## `current` flip and not a rebuild — which matters because a player toggles it
 ## mid-run and a rebuilt camera would drop a frame at the worst moment.
@@ -52,7 +52,7 @@ var mode: Mode = Mode.FIRST_PERSON
 
 var first: Camera3D = null
 var third: Camera3D = null
-var arm: DotCameraBoom = null
+var arm: GSCameraBoom = null
 
 ## The familiar fov_desired. Applied to both cameras through the conversion.
 var fov_desired: float = 90.0:
@@ -70,12 +70,12 @@ func _ready() -> void:
 	# Everything except the local rig's layer.
 	first.cull_mask = ~(1 << (AirdriftRig.LAYER_LOCAL_BODY - 1)) & 0xFFFFF
 	add_child(first)
-	var near_fade := DotCameraFade.new()
+	var near_fade := GSCameraFade.new()
 	near_fade.name = "Fade"
 	near_fade.bodies_fn = _others
 	first.add_child(near_fade)
 
-	arm = DotCameraBoom.new()
+	arm = GSCameraBoom.new()
 	arm.name = "Arm"
 	arm.spring_length = third_person_distance
 	arm.margin = 0.15
@@ -89,7 +89,7 @@ func _ready() -> void:
 	third.name = "ThirdPerson"
 	third.cull_mask = 0xFFFFF
 	arm.add_child(third)
-	var line_fade := DotCameraFade.new()
+	var line_fade := GSCameraFade.new()
 	line_fade.name = "Fade"
 	line_fade.bodies_fn = _others
 	line_fade.focus = self
@@ -111,9 +111,9 @@ func _ready() -> void:
 ##
 ## Setting Godot's fov to 90 directly — the obvious thing — gives a vertical 90, a
 ## horizontal 121° on 16:9, and a player who feels seasick and cannot say why.
-## The 4:3 frame is [DotCameraFov]'s `to_vertical` at aspect 4/3; the clamp is the range a player may set.
+## The 4:3 frame is [GSCameraFov]'s `to_vertical` at aspect 4/3; the clamp is the range a player may set.
 static func vertical_for(fov_desired: float) -> float:
-	return DotCameraFov.to_vertical(clampf(fov_desired, 30.0, 150.0), 4.0 / 3.0)
+	return GSCameraFov.to_vertical(clampf(fov_desired, 30.0, 150.0), 4.0 / 3.0)
 
 
 func _apply_fov() -> void:
@@ -149,9 +149,9 @@ func _others() -> Array:
 	return others_fn.call() if others_fn.is_valid() else []
 
 
-## Takes the server's `mp_forceview` ([DotPlayerViewRules]): which views are allowed, and
+## Takes the server's `mp_forceview` ([GSPlayerViewRules]): which views are allowed, and
 ## the one the camera has to be in now.
-func follow_view_rules(rules: DotPlayerViewRules) -> void:
+func follow_view_rules(rules: GSPlayerViewRules) -> void:
 	if rules == null:
 		return
 	allow_third_person = rules.allows_third()
@@ -193,7 +193,7 @@ func look(pitch: float, delta: float) -> void:
 		arm.rotation = Vector3(deg_to_rad(pitch), 0.0, 0.0)
 		# Eased toward the configured length, so a camera pushed in by a wall comes
 		# back out rather than snapping. Frame-rate independent by construction.
-		arm.spring_length = DotCameraSmoothing.damp(
+		arm.spring_length = GSCameraSmoothing.damp(
 			arm.spring_length, third_person_distance, ARM_RETURN_HALF_LIFE, delta
 		)
 

@@ -11,7 +11,7 @@ extends Node
 ## the player count -- every snapshot carries every player, to every player -- is
 ## invisible to all of them, and "can it hold a full server" had no number at all.
 ##
-## This is the real server half: [AirdriftGame] on an imported map, a [DotNetManager] and a
+## This is the real server half: [AirdriftGame] on an imported map, a [GSNetManager] and a
 ## [AirdriftNetBridge], with the socket replaced by a counter. Each player is admitted the way
 ## a real peer is (`add_player`, then `_admit`) and holds a command every tick, running
 ## and turning, so the motor, the zones and the replication all do the work they would.
@@ -39,7 +39,7 @@ var _watched_peer := 2
 var _hashing := false             ## LOAD_HASH=1: print a hash of every state, every tick
 var _hash: int = 0
 var _acking := false              ## LOAD_ACKS=1
-var _net: DotNetManager           ## the row's server, for the acks
+var _net: GSNetManager           ## the row's server, for the acks
 var _sent_ticks: Dictionary = {}  ## peer -> ticks of snapshots sent and not yet acked
 
 
@@ -106,7 +106,7 @@ func _measure(map_id: StringName, players: int) -> void:
 		_drive(bridge, commands)
 		if t == WARMUP_TICKS:
 			_bytes = {}
-		# The bridge's server_tick with DotNetManager.server_tick's phases taken apart,
+		# The bridge's server_tick with GSNetManager.server_tick's phases taken apart,
 		# so a row says where its cost is: simulating the entities (the motor, the
 		# zones, the timers -- the game) or building and sending snapshots.
 		var stamps := _tick_once(bridge, net, tick)
@@ -132,10 +132,10 @@ func _measure(map_id: StringName, players: int) -> void:
 
 
 ## One held command per player, spread round the compass.
-func _make_commands(players: int) -> Array[DotFpsCommand]:
-	var commands: Array[DotFpsCommand] = []
+func _make_commands(players: int) -> Array[GSFpsCommand]:
+	var commands: Array[GSFpsCommand] = []
 	for i in range(players):
-		var c := DotFpsCommand.new()
+		var c := GSFpsCommand.new()
 		c.move = Vector2(0.0, 1.0)
 		c.yaw = TAU * float(i) / float(maxi(1, players))
 		commands.append(c)
@@ -143,7 +143,7 @@ func _make_commands(players: int) -> Array[DotFpsCommand]:
 
 
 ## Gives every player the next command of its turn.
-func _drive(bridge: AirdriftNetBridge, commands: Array[DotFpsCommand]) -> void:
+func _drive(bridge: AirdriftNetBridge, commands: Array[GSFpsCommand]) -> void:
 	var k := 0
 	for session_id in bridge._behaviours:
 		var behaviour = bridge._behaviours[session_id]
@@ -158,7 +158,7 @@ func _drive(bridge: AirdriftNetBridge, commands: Array[DotFpsCommand]) -> void:
 ## Determinism gate: every player's exact float bits.
 func _hash_states(bridge: AirdriftNetBridge) -> void:
 	for session_id in bridge._behaviours:
-		var st: DotFpsState = bridge._behaviours[session_id].player.controller.state
+		var st: GSFpsState = bridge._behaviours[session_id].player.controller.state
 		_hash = hash([_hash, st.position, st.velocity, st.mode, st.ground_normal])
 
 
@@ -187,7 +187,7 @@ func _start_game(map_id: StringName, players: int, side: Node) -> AirdriftGame:
 func _admit_players(bridge: AirdriftNetBridge, players: int) -> void:
 	for i in range(players):
 		var peer := i + 2
-		var added: DotResult = bridge.add_player(peer, peer, "load%d" % i)
+		var added: GSResult = bridge.add_player(peer, peer, "load%d" % i)
 		if not added.ok:
 			push_error("player %d refused: %s" % [i, added.error])
 			continue
@@ -196,7 +196,7 @@ func _admit_players(bridge: AirdriftNetBridge, players: int) -> void:
 
 ## One server tick with the phases taken apart; returns the microsecond stamps
 ## [started, mid (the game is done), ended (snapshots are sent)].
-func _tick_once(bridge: AirdriftNetBridge, net: DotNetManager, tick: int) -> PackedInt64Array:
+func _tick_once(bridge: AirdriftNetBridge, net: GSNetManager, tick: int) -> PackedInt64Array:
 	var started := Time.get_ticks_usec()
 	bridge._tick = tick
 	bridge._game_ticked_for = -1
@@ -212,7 +212,7 @@ func _tick_once(bridge: AirdriftNetBridge, net: DotNetManager, tick: int) -> Pac
 	var mid := Time.get_ticks_usec()
 	var period := net.config.ticks_per_snapshot()
 	if net.config.stagger_snapshots and period > 1:
-		# What DotNetManager.server_tick does when staggered: some peers every tick.
+		# What GSNetManager.server_tick does when staggered: some peers every tick.
 		net.history.record(identities, tick)
 		net._send_snapshots(tick, identities, posmod(tick, period), period)
 	net._ticks_since_snapshot += 1
@@ -232,21 +232,21 @@ func _tick_once(bridge: AirdriftNetBridge, net: DotNetManager, tick: int) -> Pac
 
 
 ## The server-side net manager for one row, added under [param side].
-func _build_net(game: AirdriftGame, side: Node) -> DotNetManager:
-	var net := DotNetManager.new()
+func _build_net(game: AirdriftGame, side: Node) -> GSNetManager:
+	var net := GSNetManager.new()
 	net.name = "Server"
 	net.is_server = true
 	net.local_peer_id = 1
 	net.service_scope = game.service_scope
 	net.auto_tick = false
 	net.config_file = ""
-	var nc := DotNetConfig.new()
+	var nc := GSNetConfig.new()
 	nc.tick_rate = game.tick_rate
 	nc.snapshot_rate = SNAPSHOT_RATE
 	nc.enable_lag_compensation = false
 	nc.enable_prediction = true
 	nc.world_extent = 512.0
-	# Set LOAD_STAGGER=1 to spread snapshots over the ticks between them (DotNetConfig.stagger_snapshots),
+	# Set LOAD_STAGGER=1 to spread snapshots over the ticks between them (GSNetConfig.stagger_snapshots),
 	# so a row can be compared both ways.
 	nc.stagger_snapshots = OS.get_environment("LOAD_STAGGER") == "1"
 	# For GS_NET_SNAPSHOT_WORKERS=n: the config is built here, so the layered environment is not read.
@@ -257,7 +257,7 @@ func _build_net(game: AirdriftGame, side: Node) -> DotNetManager:
 	return net
 
 
-func _report_row(players: int, game: AirdriftGame, net: DotNetManager, times: PackedFloat64Array, net_ms: float, game_ms: float) -> void:
+func _report_row(players: int, game: AirdriftGame, net: GSNetManager, times: PackedFloat64Array, net_ms: float, game_ms: float) -> void:
 	var sorted := Array(times)
 	sorted.sort()
 	var mean := 0.0
@@ -297,9 +297,9 @@ func _report_row(players: int, game: AirdriftGame, net: DotNetManager, times: Pa
 		phase = {}
 
 
-## DotNetManager._send_snapshots, step by step, timed. A copy on purpose and only behind
+## GSNetManager._send_snapshots, step by step, timed. A copy on purpose and only behind
 ## LOAD_PHASES: it is how a row is broken down, not how the probe measures one.
-func _send_snapshots_timed(net: DotNetManager, tick: int, identities: Array[DotNetIdentity]) -> void:
+func _send_snapshots_timed(net: GSNetManager, tick: int, identities: Array[GSNetIdentity]) -> void:
 	var context := {"tick": tick, "config": net.config}
 	var t := Time.get_ticks_usec()
 	net.interest._prepare(identities, context)
@@ -330,8 +330,8 @@ func _send_snapshots_timed(net: DotNetManager, tick: int, identities: Array[DotN
 ## Calls the manager's own `_send_to_peer` and times it as one lap. This used to be a hand
 ## copy of it, which went stale twice (snapshot parts, the unchanged list); dot-net has no
 ## timing hook, so the per-phase split inside a peer's send is gone rather than wrong.
-func _send_to_peer_timed(net: DotNetManager, peer_id: int, tick: int,
-		relevant: Array[DotNetIdentity], t: int) -> int:
+func _send_to_peer_timed(net: GSNetManager, peer_id: int, tick: int,
+		relevant: Array[GSNetIdentity], t: int) -> int:
 	net._send_to_peer(peer_id, tick, relevant)
 	return _lap("  _send_to_peer", t)
 
@@ -353,13 +353,13 @@ func _on_send(method: StringName, peer_id: int, payload: PackedByteArray) -> voi
 ## `receive_snapshot` does, and hand the server the payload `encode_ack` would have
 ## built, through the entry point the bridge calls on a real server.
 func _ack_later(peer_id: int, payload: PackedByteArray) -> void:
-	var tick := DotNetReader.new(payload).read_uint(32)
+	var tick := GSNetReader.new(payload).read_uint(32)
 	var list: Array = _sent_ticks.get(peer_id, [])
 	list.append(tick)
 	_sent_ticks[peer_id] = list
 	if list.size() <= ACK_LAG:
 		return
-	var ack := DotNetWriter.new()
+	var ack := GSNetWriter.new()
 	ack.write_uint(int(list.pop_front()), 32)
 	var taken := _net.receive_ack_payload(peer_id, ack.to_bytes())
 	if not taken.ok:

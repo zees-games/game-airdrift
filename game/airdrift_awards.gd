@@ -30,15 +30,15 @@ const CAT_SERVER := &"server"
 const CAT_COMBAT := &"combat"
 
 
-static func catalogue() -> DotAchievementCatalogue:
-	var out: Array[DotAchievement] = []
+static func catalogue() -> GSAchievementCatalogue:
+	var out: Array[GSAchievement] = []
 	_add_timer(out)
 	_add_movement(out)
 	_add_server_and_combat(out)
-	return DotAchievementCatalogue.of(out)
+	return GSAchievementCatalogue.of(out)
 
 
-static func _add_timer(out: Array[DotAchievement]) -> void:
+static func _add_timer(out: Array[GSAchievement]) -> void:
 	out.append(_sum(
 		&"g2g.first_finish", "Made It", AirdriftStats.RUNS_FINISHED, 1,
 		"Finish a course.", CAT_TIMER, 5, &"g2g.finisher", 1
@@ -68,21 +68,21 @@ static func _add_timer(out: Array[DotAchievement]) -> void:
 
 	# A LOWEST stat with AT_MOST is met by a never-recorded player (missing reads as
 	# zero); the second rule makes it mean what it says. See the class note.
-	var quick: Array[DotAchievementRule] = [
-		DotAchievementRule.make(
+	var quick: Array[GSAchievementRule] = [
+		GSAchievementRule.make(
 			AirdriftStats.BEST_TIME, 30.0,
-			DotAchievementRule.Op.AT_MOST, DotAchievementRule.Merge.LOWEST
+			GSAchievementRule.Op.AT_MOST, GSAchievementRule.Merge.LOWEST
 		),
-		DotAchievementRule.make(AirdriftStats.RUNS_FINISHED, 1.0),
+		GSAchievementRule.make(AirdriftStats.RUNS_FINISHED, 1.0),
 	]
-	var sub_thirty := DotAchievement.make(&"g2g.sub_thirty", "Under Thirty", quick)
+	var sub_thirty := GSAchievement.make(&"g2g.sub_thirty", "Under Thirty", quick)
 	sub_thirty.description = "Finish a course in under thirty seconds."
 	sub_thirty.category = CAT_TIMER
 	sub_thirty.points = 30
 	out.append(sub_thirty)
 
 
-static func _add_movement(out: Array[DotAchievement]) -> void:
+static func _add_movement(out: Array[GSAchievement]) -> void:
 	out.append(_sum(
 		&"g2g.ten_thousand_jumps", "Springs", AirdriftStats.JUMPS, 10000,
 		"Ten thousand jumps.", CAT_MOVEMENT, 25
@@ -109,7 +109,7 @@ static func _add_movement(out: Array[DotAchievement]) -> void:
 	))
 
 
-static func _add_server_and_combat(out: Array[DotAchievement]) -> void:
+static func _add_server_and_combat(out: Array[GSAchievement]) -> void:
 	out.append(_sum(
 		&"g2g.tourist", "Tourist", AirdriftStats.MAPS_PLAYED, 25,
 		"Play twenty-five maps.", CAT_SERVER, 20
@@ -133,9 +133,9 @@ static func _sum(
 	id: StringName, display: String, stat: StringName, threshold: float,
 	description: String, category: StringName, points: int,
 	series: StringName = &"", tier: int = 0
-) -> DotAchievement:
+) -> GSAchievement:
 	return _entry(
-		id, display, stat, threshold, DotAchievementRule.Merge.SUM,
+		id, display, stat, threshold, GSAchievementRule.Merge.SUM,
 		description, category, points, series, tier
 	)
 
@@ -144,22 +144,22 @@ static func _best(
 	id: StringName, display: String, stat: StringName, threshold: float,
 	description: String, category: StringName, points: int,
 	series: StringName = &"", tier: int = 0
-) -> DotAchievement:
+) -> GSAchievement:
 	return _entry(
-		id, display, stat, threshold, DotAchievementRule.Merge.HIGHEST,
+		id, display, stat, threshold, GSAchievementRule.Merge.HIGHEST,
 		description, category, points, series, tier
 	)
 
 
 static func _entry(
 	id: StringName, display: String, stat: StringName, threshold: float,
-	merge: DotAchievementRule.Merge, description: String, category: StringName,
+	merge: GSAchievementRule.Merge, description: String, category: StringName,
 	points: int, series: StringName, tier: int
-) -> DotAchievement:
-	var rules: Array[DotAchievementRule] = [
-		DotAchievementRule.make(stat, threshold, DotAchievementRule.Op.AT_LEAST, merge)
+) -> GSAchievement:
+	var rules: Array[GSAchievementRule] = [
+		GSAchievementRule.make(stat, threshold, GSAchievementRule.Op.AT_LEAST, merge)
 	]
-	var out := DotAchievement.make(id, display, rules)
+	var out := GSAchievement.make(id, display, rules)
 	out.description = description
 	out.category = category
 	out.points = points

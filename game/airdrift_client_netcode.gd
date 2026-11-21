@@ -1,14 +1,14 @@
 extends "airdrift_client_boot.gd"
 
-func _build_netcode() -> DotResult:
-	net = DotNetManager.new()
+func _build_netcode() -> GSResult:
+	net = GSNetManager.new()
 	net.name = "Net"
 	net.is_server = false
 	net.local_peer_id = multiplayer.get_unique_id() if multiplayer != null else 2
 	net.auto_tick = false
 	net.config_file = ""
 
-	var config := DotNetConfig.new()
+	var config := GSNetConfig.new()
 	config.tick_rate = game.tick_rate
 	config.snapshot_rate = AirdriftGame.snapshot_rate_for(game.tick_rate)
 	config.enable_prediction = true
@@ -31,11 +31,11 @@ func _build_netcode() -> DotResult:
 		return attached
 
 	# Before the seal and in the server's order (after the bridge), or the actions stay local.
-	DotLog.result("g2g.client", "avatar action message", DotGameAvatarActionMessage.register(net))
+	GSLog.result("g2g.client", "avatar action message", GSGameAvatarActionMessage.register(net))
 	# The server's order again: the remote workbench's frame and the profile rows.
-	_workbench_remote = DotGameWorkbenchRemoteClient.attach(net)
-	_profile_runtime = DotProfileRuntime.new()
-	_profile_link = DotNetProfileLink.attach(net, _profile_runtime)
+	_workbench_remote = GSGameWorkbenchRemoteClient.attach(net)
+	_profile_runtime = GSProfileRuntime.new()
+	_profile_link = GSNetProfileLink.attach(net, _profile_runtime)
 	net.messages.seal()
 
 	# The client halves. Built here rather than in `_ready` because both need the
@@ -45,7 +45,7 @@ func _build_netcode() -> DotResult:
 	add_child(extras)
 
 	var extra := extras.attach(bridge, game)
-	DotLog.result("g2g.client", "the client's chat and voice", extra)
+	GSLog.result("g2g.client", "the client's chat and voice", extra)
 	platform.look_voice = extras.voice
 	platform.look_chat = extras.chat
 	platform.look_position_fn = _look_position
@@ -62,8 +62,8 @@ func _build_netcode() -> DotResult:
 
 	# [b]Where chat actually arrives.[/b] `AirdriftServices` routes a line through dot-chat
 	# and then hands it to dot-server's manager to put on the wire, so on this end it
-	# lands on `DotClientLink.chat_received` — not on anything dot-chat owns. Without
-	# this connection the client's `DotChatClient` is a history nothing feeds.
+	# lands on `GSClientLink.chat_received` — not on anything dot-chat owns. Without
+	# this connection the client's `GSChatClient` is a history nothing feeds.
 	if link != null and link.has_signal("chat_received"):
 		link.connect("chat_received", extras.receive_wire)
 
@@ -71,8 +71,8 @@ func _build_netcode() -> DotResult:
 	_wire_bridge_world()
 
 	# A touch sampler on a phone or tablet: the same keys, plus the stick and drag-look AirdriftTouch forwards.
-	_sampler = DotFpsTouchSampler.new(game.tunables) if DotPlatform.has_touch() else DotFpsSampler.new(game.tunables)
-	DotFpsSampler.register_default_actions(_sampler)
+	_sampler = GSFpsTouchSampler.new(game.tunables) if GSPlatform.has_touch() else GSFpsSampler.new(game.tunables)
+	GSFpsSampler.register_default_actions(_sampler)
 
 	if link.has_method("is_playing") and bool(link.call("is_playing")):
 		_say_ready()
@@ -103,7 +103,7 @@ func _wire_bridge_feedback() -> void:
 	bridge.map_refused.connect(_on_map_refused)
 	bridge.finish_received.connect(func(pid: int, time: float, rank: int) -> void:
 		if hud != null and pid == bridge.local_player_id:
-			hud.notice("%s%s" % [DotTimerRun.format_time(time), " — rank %d" % rank if rank > 0 else ""])
+			hud.notice("%s%s" % [GSTimerRun.format_time(time), " — rank %d" % rank if rank > 0 else ""])
 	)
 	bridge.notice_received.connect(func(_pid: int, text: String) -> void:
 		if hud != null:
@@ -208,7 +208,7 @@ func _process(delta: float) -> void:
 		# nothing catches. What a player perceives is their own feet touching the ground.
 		if player != null and player.controller != null:
 			var st := player.controller.state
-			# `is_grounded()`, not `grounded`: [DotFpsState] has no such property and
+			# `is_grounded()`, not `grounded`: [GSFpsState] has no such property and
 			# never did. This threw once a frame, so `watch_movement` never ran and the
 			# client had no landing effect and no footsteps at all -- in a `_process`,
 			# where a script error aborts the call and the game keeps running.
@@ -258,7 +258,7 @@ func _drive_spectator_camera() -> void:
 	_roam_seeded = false
 
 	# The chase camera pulled out of the walls by dot-spectate, given the level.
-	var manager: DotSpectatorManager = game.spectate.manager
+	var manager: GSSpectatorManager = game.spectate.manager
 	if manager != null and manager.camera_world == null:
 		manager.camera_world = camera.get_world_3d()
 		manager.camera_mask = 1
@@ -273,13 +273,13 @@ func _drive_spectator_camera() -> void:
 
 ## The free camera, once a frame: WASD along the view, Space and Ctrl up and down, Shift fast,
 ## Alt slow, the mouse to look. The player's body is never touched (its sampler is suspended
-## while spectating); only the camera's transform is set, from [DotSpectatorFreeCam].
+## while spectating); only the camera's transform is set, from [GSSpectatorFreeCam].
 ##
 ## [b]The speed is the server's[/b] (`mp_freeroam_speed`, through the mirror's rules), so a
 ## client cannot fly faster than it was told to. The server holds only the mode.
 func _drive_free_camera(camera: Camera3D) -> void:
 	if _free_cam == null:
-		_free_cam = DotSpectatorFreeCam.new()
+		_free_cam = GSSpectatorFreeCam.new()
 	_free_cam.rules = game.spectate.manager.rules
 	if not _roam_seeded:
 		# The camera still holds last frame's pose: where this spectator was looking.
@@ -330,7 +330,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# Push to talk, before the "is a press" filter: a talk key needs its release too, or the
 	# microphone never closes. K by default, because V is the second checkpoint key.
-	if event.is_action(DotVoiceManager.TALK_ACTION) and not event.is_echo():
+	if event.is_action(GSVoiceManager.TALK_ACTION) and not event.is_echo():
 		if extras != null:
 			extras.set_talking(event.is_pressed())
 
@@ -473,7 +473,7 @@ func _press_action(event: InputEvent) -> void:
 				player.controller.state.pitch = cp.pitch
 
 
-func apply_theme(palette: DotMenuPalette) -> void:
+func apply_theme(palette: GSMenuPalette) -> void:
 	if hud != null:
 		hud.apply_theme(palette)
 	if zone_editor != null and menu != null:
@@ -491,7 +491,7 @@ func open_hud_editor() -> void:
 
 ## The HUD's layout settings as one dictionary, the shape [method AirdriftHud.apply_layout]
 ## takes.
-func _hud_layout(st: DotSettingsManager) -> Dictionary:
+func _hud_layout(st: GSSettingsManager) -> Dictionary:
 	return {
 		"show_time": st.get_bool(&"timer_show_time", true),
 		"show_track": st.get_bool(&"timer_show_track", true),
@@ -568,11 +568,11 @@ const HUD_PIECES := {
 
 ## The menus: dot-menu's, with this game's pages, keys and scoreboard. See [AirdriftMenuPages].
 func _build_overlays() -> void:
-	menu = DotMenu.new()
+	menu = GSMenu.new()
 	menu.name = "Menu"
 	menu.settings = presentation.settings if presentation != null else null
 	menu.bindings = presentation.bindings if presentation != null else AirdriftBindings.make()
-	var config := DotMenuConfig.new()
+	var config := GSMenuConfig.new()
 	config.brand_mark = "air"
 	config.brand_name = "drift"
 	config.leave_text = "Quit game"
@@ -589,7 +589,7 @@ func _build_overlays() -> void:
 	var _set := menu.setup()
 	AirdriftMenuPages.install(menu, self)
 	_follow_hud()
-	# The console after the menu, so DotConsoleKit registers it as one of the menu's
+	# The console after the menu, so GSConsoleKit registers it as one of the menu's
 	# overlays: opening it then stops the runner through `overlays_changed` below.
 	if presentation != null:
 		presentation.build_console(menu)
@@ -614,7 +614,7 @@ func _build_overlays() -> void:
 		if presentation != null and presentation.settings != null:
 			var _saved := presentation.settings.set_value(&"hud_positions", text)
 	)
-	menu.theme_changed.connect(func(palette: DotMenuPalette) -> void:
+	menu.theme_changed.connect(func(palette: GSMenuPalette) -> void:
 		apply_theme(palette)
 		if hud != null:
 			hud.notice("Theme: %s" % palette.display_name)
@@ -654,15 +654,15 @@ func _wire_scoreboard() -> void:
 		{"key": &"style", "title": "Style", "width": 1.4},
 		{"key": &"best", "title": "Best", "width": 1.3, "align": HORIZONTAL_ALIGNMENT_RIGHT,
 			"format": func(v: Variant, _row: Dictionary) -> String:
-				return DotTimerRun.format_time(float(v)) if v != null and float(v) > 0.0 else "—"},
+				return GSTimerRun.format_time(float(v)) if v != null and float(v) > 0.0 else "—"},
 		{"key": &"rank", "title": "Rank", "align": HORIZONTAL_ALIGNMENT_RIGHT,
 			"format": func(v: Variant, row: Dictionary) -> String:
 				if v == null or int(v) <= 0:
 					return "—"
 				return "%d / %d" % [int(v), int(row.get("of", 0))] if int(row.get("of", 0)) > 0 else str(int(v))},
 		# Seconds connected, not a run: titled "Time" next to Best and Rank it read as the run timer.
-		{"key": &"seconds", "title": "Played", "kind": DotMenuScoreboard.KIND_DURATION},
-		{"key": &"ping", "title": "Ping", "kind": DotMenuScoreboard.KIND_PING},
+		{"key": &"seconds", "title": "Played", "kind": GSMenuScoreboard.KIND_DURATION},
+		{"key": &"ping", "title": "Ping", "kind": GSMenuScoreboard.KIND_PING},
 	]
 	# Fastest first; nobody with a time after everybody with one.
 	board.sort_with = func(a: Dictionary, b: Dictionary) -> bool:
@@ -713,9 +713,9 @@ func open_map_list() -> void:
 ## Solo: [param id] now, fetched first when it is delivered content. Connected a client never
 ## changes its own world (the server would correct it back every tick); the server's map menu
 ## decides there.
-func change_from_menu(id: StringName) -> DotResult:
+func change_from_menu(id: StringName) -> GSResult:
 	if not _offline:
-		return DotResult.fail(DotError.CODE_STATE, "The server changes the map.")
+		return GSResult.fail(GSError.CODE_STATE, "The server changes the map.")
 	return await game.change_map(id)
 
 

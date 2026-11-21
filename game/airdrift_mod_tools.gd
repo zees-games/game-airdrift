@@ -18,7 +18,7 @@ const AirdriftPlayer := preload("airdrift_player.gd")
 ## Blind and beacon are the two that are about a SCREEN rather than a body, and each is one
 ## flag on [AirdriftPlayer] that `AirdriftPlayerNet` replicates — the blind to its owner alone, the
 ## beacon to everybody — and that the client draws: `AirdriftHud` blacks the owner's screen out,
-## `DotFxBeacon` rings the runner on every screen and pings. Neither taints a run: a blind
+## `GSFxBeacon` rings the runner on every screen and pings. Neither taints a run: a blind
 ## can only cost a runner time, like a freeze, and a beacon changes nothing they can feel.
 ## Both outlive a respawn without anything re-applying them, because a respawn here is a
 ## teleport of the same player rather than a new body.
@@ -30,71 +30,71 @@ static func key_of(id: StringName) -> StringName:
 
 static func handlers(game: AirdriftGame) -> Dictionary:
 	return {
-		DotModTools.ACTION_NOCLIP: func(id: StringName, args: Dictionary) -> DotResult:
+		GSModTools.ACTION_NOCLIP: func(id: StringName, args: Dictionary) -> GSResult:
 			var p := _player(game, id)
 			if p == null:
 				return _absent(id)
 			var on := bool(args["on"])
 			if on and p.timer != null:
 				p.timer.stop(&"noclip")
-			return DotFpsAdminModifiers.set_noclip(p.controller, on),
+			return GSFpsAdminModifiers.set_noclip(p.controller, on),
 
-		DotModTools.ACTION_FREEZE: func(id: StringName, args: Dictionary) -> DotResult:
+		GSModTools.ACTION_FREEZE: func(id: StringName, args: Dictionary) -> GSResult:
 			var p := _player(game, id)
-			return _absent(id) if p == null else DotFpsAdminModifiers.set_frozen(p.controller, bool(args["on"])),
+			return _absent(id) if p == null else GSFpsAdminModifiers.set_frozen(p.controller, bool(args["on"])),
 
-		DotModTools.ACTION_SPEED: func(id: StringName, args: Dictionary) -> DotResult:
+		GSModTools.ACTION_SPEED: func(id: StringName, args: Dictionary) -> GSResult:
 			var p := _player(game, id)
-			return _absent(id) if p == null else DotFpsAdminModifiers.set_speed(p.controller, float(args["scale"])),
+			return _absent(id) if p == null else GSFpsAdminModifiers.set_speed(p.controller, float(args["scale"])),
 
-		DotModTools.ACTION_GRAVITY: func(id: StringName, args: Dictionary) -> DotResult:
+		GSModTools.ACTION_GRAVITY: func(id: StringName, args: Dictionary) -> GSResult:
 			var p := _player(game, id)
-			return _absent(id) if p == null else DotFpsAdminModifiers.set_gravity(p.controller, float(args["scale"])),
+			return _absent(id) if p == null else GSFpsAdminModifiers.set_gravity(p.controller, float(args["scale"])),
 
-		DotModTools.ACTION_RESPAWN: func(id: StringName, _args: Dictionary) -> DotResult:
+		GSModTools.ACTION_RESPAWN: func(id: StringName, _args: Dictionary) -> GSResult:
 			if _player(game, id) == null:
 				return _absent(id)
 			game.spawn_player(key_of(id))
-			return DotResult.success(null),
+			return GSResult.success(null),
 
-		DotModTools.ACTION_RENAME: func(id: StringName, args: Dictionary) -> DotResult:
+		GSModTools.ACTION_RENAME: func(id: StringName, args: Dictionary) -> GSResult:
 			var p := _player(game, id)
 			if p == null:
 				return _absent(id)
 			p.display_name = str(args["name"]).strip_edges().substr(0, 32)
-			return DotResult.success(p.display_name),
+			return GSResult.success(p.display_name),
 
-		DotModTools.ACTION_GOD: func(id: StringName, args: Dictionary) -> DotResult:
+		GSModTools.ACTION_GOD: func(id: StringName, args: Dictionary) -> GSResult:
 			var health := _health(game, id)
 			if health == null:
 				return _no_health()
 			health.invulnerable = bool(args["on"])
-			return DotResult.success(health.invulnerable),
+			return GSResult.success(health.invulnerable),
 
-		DotModTools.ACTION_BUDDHA: func(id: StringName, args: Dictionary) -> DotResult:
+		GSModTools.ACTION_BUDDHA: func(id: StringName, args: Dictionary) -> GSResult:
 			var health := _health(game, id)
 			if health == null:
 				return _no_health()
 			health.cannot_die = bool(args["on"])
-			return DotResult.success(health.cannot_die),
+			return GSResult.success(health.cannot_die),
 
-		DotModTools.ACTION_HEALTH: func(id: StringName, args: Dictionary) -> DotResult:
+		GSModTools.ACTION_HEALTH: func(id: StringName, args: Dictionary) -> GSResult:
 			var health := _health(game, id)
 			if health == null:
 				return _no_health()
 			if not health.alive:
-				return DotResult.fail(DotError.CODE_STATE, "They are dead.")
+				return GSResult.fail(GSError.CODE_STATE, "They are dead.")
 			health.health = minf(float(args["value"]), 2000.0)
-			return DotResult.success(health.health),
+			return GSResult.success(health.health),
 
-		DotModTools.ACTION_SLAY: func(id: StringName, _args: Dictionary) -> DotResult:
+		GSModTools.ACTION_SLAY: func(id: StringName, _args: Dictionary) -> GSResult:
 			return _hurt(game, id, -1.0),
 
-		DotModTools.ACTION_SLAP: func(id: StringName, args: Dictionary) -> DotResult:
+		GSModTools.ACTION_SLAP: func(id: StringName, args: Dictionary) -> GSResult:
 			return _hurt(game, id, float(args.get("damage", 0.0))),
 
-		DotModTools.ACTION_GIVE: func(id: StringName, args: Dictionary) -> DotResult:
-			var arsenal: DotWeaponArsenal = game.combat.arsenal_of(key_of(id)) if game.combat != null else null
+		GSModTools.ACTION_GIVE: func(id: StringName, args: Dictionary) -> GSResult:
+			var arsenal: GSWeaponArsenal = game.combat.arsenal_of(key_of(id)) if game.combat != null else null
 			if arsenal == null:
 				return _no_health()
 			# A weapon an admin handed over can shove its holder (a rocket, a knockback
@@ -104,14 +104,14 @@ static func handlers(game: AirdriftGame) -> Dictionary:
 				runner.timer.taint()
 			return arsenal.give(StringName(str(args["item"]).strip_edges().to_lower())),
 
-		DotModTools.ACTION_STRIP: func(id: StringName, _args: Dictionary) -> DotResult:
-			var arsenal: DotWeaponArsenal = game.combat.arsenal_of(key_of(id)) if game.combat != null else null
+		GSModTools.ACTION_STRIP: func(id: StringName, _args: Dictionary) -> GSResult:
+			var arsenal: GSWeaponArsenal = game.combat.arsenal_of(key_of(id)) if game.combat != null else null
 			if arsenal == null:
 				return _no_health()
 			arsenal.clear()
-			return DotResult.success(null),
+			return GSResult.success(null),
 
-		DotModTools.ACTION_BLIND: func(id: StringName, args: Dictionary) -> DotResult:
+		GSModTools.ACTION_BLIND: func(id: StringName, args: Dictionary) -> GSResult:
 			var p := _player(game, id)
 			if p == null:
 				return _absent(id)
@@ -119,20 +119,20 @@ static func handlers(game: AirdriftGame) -> Dictionary:
 			# still counts; an admin who wants them to stop as well has freeze, and one
 			# verb that did both would be a verb nobody could use for only the first.
 			p.blinded = bool(args["on"])
-			return DotResult.success(p.blinded),
+			return GSResult.success(p.blinded),
 
-		DotModTools.ACTION_BEACON: func(id: StringName, args: Dictionary) -> DotResult:
+		GSModTools.ACTION_BEACON: func(id: StringName, args: Dictionary) -> GSResult:
 			var p := _player(game, id)
 			if p == null:
 				return _absent(id)
 			p.beacon = bool(args["on"])
-			return DotResult.success(p.beacon),
+			return GSResult.success(p.beacon),
 	}
 
 
 static func unsupported() -> Dictionary:
 	return {
-		DotModTools.ACTION_BURN: "there is no fire on a course",
+		GSModTools.ACTION_BURN: "there is no fire on a course",
 	}
 
 
@@ -153,11 +153,11 @@ static func _player(game: AirdriftGame, id: StringName) -> AirdriftPlayer:
 	return game.players.get(key_of(id)) if game != null else null
 
 
-static func _health(game: AirdriftGame, id: StringName) -> DotHealth:
+static func _health(game: AirdriftGame, id: StringName) -> GSHealth:
 	return game.combat.health_of(key_of(id)) if game != null and game.combat != null else null
 
 
-static func _hurt(game: AirdriftGame, id: StringName, amount: float) -> DotResult:
+static func _hurt(game: AirdriftGame, id: StringName, amount: float) -> GSResult:
 	var p := _player(game, id)
 
 	if p == null:
@@ -167,14 +167,14 @@ static func _hurt(game: AirdriftGame, id: StringName, amount: float) -> DotResul
 	# is movement and every server has that.
 	if amount >= 0.0:
 		p.controller.state.velocity += Vector3(3.0, 5.0, 3.0)
-		p.controller.state.mode = DotFpsState.Mode.AIR
+		p.controller.state.mode = GSFpsState.Mode.AIR
 		# A shove is speed nobody earned, in a direction the slapper knows: an admin's
 		# help, which a record must not carry. `slap @me` was the cheapest boost there is.
 		if p.timer != null:
 			p.timer.taint()
 
 	if amount == 0.0:
-		return DotResult.success(null)
+		return GSResult.success(null)
 
 	var health := _health(game, id)
 
@@ -182,7 +182,7 @@ static func _hurt(game: AirdriftGame, id: StringName, amount: float) -> DotResul
 		return _no_health()
 
 	if not health.alive:
-		return DotResult.fail(DotError.CODE_STATE, "They are already dead.")
+		return GSResult.fail(GSError.CODE_STATE, "They are already dead.")
 
 	var was_god := health.invulnerable
 	var was_buddha := health.cannot_die
@@ -192,7 +192,7 @@ static func _hurt(game: AirdriftGame, id: StringName, amount: float) -> DotResul
 		health.cannot_die = false
 		health.invulnerable_until_tick = -1
 
-	var damage := DotDamage.make(
+	var damage := GSDamage.make(
 		0, game.combat.entity_for(key_of(id)),
 		health.health + 1000.0 if amount < 0.0 else amount, null
 	)
@@ -204,18 +204,18 @@ static func _hurt(game: AirdriftGame, id: StringName, amount: float) -> DotResul
 	health.cannot_die = was_buddha
 
 	if amount < 0.0 and not damage.lethal:
-		return DotResult.fail(DotError.CODE_STATE, "The slay was refused: %s" % damage.refusal)
+		return GSResult.fail(GSError.CODE_STATE, "The slay was refused: %s" % damage.refusal)
 
-	return DotResult.success(null)
-
-
-static func _absent(id: StringName) -> DotResult:
-	return DotResult.fail(DotError.CODE_STATE, "Player %s is not on the map." % String(id))
+	return GSResult.success(null)
 
 
-static func _no_health() -> DotResult:
-	return DotResult.fail(
-		DotError.CODE_UNSUPPORTED,
+static func _absent(id: StringName) -> GSResult:
+	return GSResult.fail(GSError.CODE_STATE, "Player %s is not on the map." % String(id))
+
+
+static func _no_health() -> GSResult:
+	return GSResult.fail(
+		GSError.CODE_UNSUPPORTED,
 		"This server is not running its deathmatch, so nobody has health or weapons.",
 		"sv_deathmatch 1"
 	)

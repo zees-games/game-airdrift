@@ -1,9 +1,9 @@
-extends DotGameNetchaosServer
+extends GSGameNetchaosServer
 
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 
-## Airdrift's side of `tools/netchaos.sh` (dot-game's DotGameNetchaosServer): a timer server, no bots.
+## Airdrift's side of `tools/netchaos.sh` (dot-game's GSGameNetchaosServer): a timer server, no bots.
 
 var _game: AirdriftGame = null
 
@@ -32,18 +32,18 @@ func _boot_world() -> void:
 	var deadline := Time.get_ticks_msec() + 15000
 	while (_game.maps == null or _game.maps.current == null) and Time.get_ticks_msec() < deadline:
 		await get_tree().process_frame
-	var loaded: DotResult = await server.modules.load_module("res://game/airdrift_module.gd")
+	var loaded: GSResult = await server.modules.load_module("res://game/airdrift_module.gd")
 	if not loaded.ok:
 		printerr("netchaos server: ", loaded.error)
 		return
 	module = server.modules.get_module("g2gfast")
 	if solid != "":
-		var cv: DotConVar = server.console.find_cvar("mp_solidplayers")
+		var cv: GSConVar = server.console.find_cvar("mp_solidplayers")
 		if cv != null:
 			cv.force_set(solid)
 	var eb := OS.get_environment("NC_ENEMYBLOCK")
 	if eb != "":
-		var ecv: DotConVar = server.console.find_cvar("mp_enemyblock")
+		var ecv: GSConVar = server.console.find_cvar("mp_enemyblock")
 		if ecv != null:
 			ecv.force_set(eb)
 

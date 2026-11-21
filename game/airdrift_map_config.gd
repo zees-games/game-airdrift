@@ -1,6 +1,6 @@
 extends RefCounted
 
-## Per-map movement settings: dot-game's [DotGameMapConfig] over the cvars a map may change.
+## Per-map movement settings: dot-game's [GSGameMapConfig] over the cvars a map may change.
 ##
 ## `cfg/game/game-airdrift/dot_map/map/<name>.yml` (a glob such as `surf_%.yml` covers a class of maps), overridable from `cfg/server/...`. Only the keys in [constant KEYS] are accepted; anything else a file says is logged and ignored. Never the auto-bhop cvar: that is the server's and the styles' call, not a map's. Keys have a `min` only (a value under it is refused with the key and value in the warning, never clamped); there is no arbitrary ceiling, and `sv_enablebunnyhopping` is a bool.
 
@@ -37,12 +37,12 @@ const FIELDS := {
 
 
 ## The applier over [param console]'s cvars, for the server.
-static func build(console: DotConsole) -> DotGameMapConfig:
-	return DotGameMapConfig.for_console(GAME_ID, console, KEYS)
+static func build(console: GSConsole) -> GSGameMapConfig:
+	return GSGameMapConfig.for_console(GAME_ID, console, KEYS)
 
 
-## Points a client's [DotGameClient] at the game's config; call `client.map_changed(id)` per map.
-static func wire_client(client: DotGameClient, game: Node) -> void:
+## Points a client's [GSGameClient] at the game's config; call `client.map_changed(id)` per map.
+static func wire_client(client: GSGameClient, game: Node) -> void:
 	client.map_config_game = GAME_ID
 	client.map_config_keys = KEYS
 	client.map_config_get_fn = func(key: String) -> Variant:

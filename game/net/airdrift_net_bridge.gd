@@ -1,12 +1,12 @@
 extends "airdrift_net_bridge_world.gd"
 
-func attach(p_game: AirdriftGame, p_net: DotNetManager, link_parent: Node) -> DotResult:
+func attach(p_game: AirdriftGame, p_net: GSNetManager, link_parent: Node) -> GSResult:
 	if p_game == null or p_net == null or link_parent == null:
-		return DotResult.fail(DotError.CODE_INVALID, "A bridge needs all three.")
+		return GSResult.fail(GSError.CODE_INVALID, "A bridge needs all three.")
 
 	if p_game.authoritative != p_net.is_server:
-		return DotResult.fail(
-			DotError.CODE_STATE,
+		return GSResult.fail(
+			GSError.CODE_STATE,
 			"The game and the manager disagree about who is authoritative.",
 			"game=%s net.is_server=%s" % [p_game.authoritative, p_net.is_server]
 		)
@@ -30,7 +30,7 @@ func attach(p_game: AirdriftGame, p_net: DotNetManager, link_parent: Node) -> Do
 	link = AirdriftNetLink.attached_to(link_parent, self, net.is_server)
 	# Not a bare add_child: the link must sit under the server node (RPCs route by path) yet die
 	# with this bridge, or a module reload leaves a second link and every RPC is lost silently.
-	DotGameLink.attach(link, link_parent, self, AirdriftNetLink.NODE_NAME)
+	GSGameLink.attach(link, link_parent, self, AirdriftNetLink.NODE_NAME)
 
 	_build_map_sync()
 
@@ -41,17 +41,17 @@ func attach(p_game: AirdriftGame, p_net: DotNetManager, link_parent: Node) -> Do
 	if net.is_server:
 		_connect_server()
 
-	return DotResult.success(self)
+	return GSResult.success(self)
 
 
-func _register_messages() -> DotResult:
+func _register_messages() -> GSResult:
 	var event := net.messages.register(
-		AirdriftEvent.NAME, AirdriftEvent, DotNetMessage.Delivery.RELIABLE, DotNetMessage.Direction.TO_CLIENT
+		AirdriftEvent.NAME, AirdriftEvent, GSNetMessage.Delivery.RELIABLE, GSNetMessage.Direction.TO_CLIENT
 	)
 	if not event.ok:
 		return event
 	var request := net.messages.register(
-		AirdriftRequest.NAME, AirdriftRequest, DotNetMessage.Delivery.RELIABLE, DotNetMessage.Direction.TO_SERVER
+		AirdriftRequest.NAME, AirdriftRequest, GSNetMessage.Delivery.RELIABLE, GSNetMessage.Direction.TO_SERVER
 	)
 	if not request.ok:
 		return request
@@ -59,10 +59,10 @@ func _register_messages() -> DotResult:
 	net.messages.on(AirdriftEvent.NAME, _on_event)
 	net.messages.on(AirdriftRequest.NAME, _on_request)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
-func _on_event(message: DotNetMessage) -> void:
+func _on_event(message: GSNetMessage) -> void:
 	var event := message as AirdriftEvent
 	if event == null or game == null or net == null or net.is_server:
 		return
@@ -90,7 +90,7 @@ func _on_event(message: DotNetMessage) -> void:
 		AirdriftEvents.Kind.FINISH:
 			var finish := AirdriftEvents.read_finish(reader)
 			if bool(finish["ok"]):
-				var f: DotTimerNet.Finish = finish["finish"]
+				var f: GSTimerNet.Finish = finish["finish"]
 				finish_received.emit(int(finish["player_id"]), f.time(1.0 / float(game.tick_rate)), f.rank)
 		AirdriftEvents.Kind.RECORD, AirdriftEvents.Kind.NOTICE:
 			var text := AirdriftEvents.read_text(reader)
@@ -127,14 +127,14 @@ func _on_event(message: DotNetMessage) -> void:
 			if bool(rules["ok"]):
 				rules_received.emit(rules)
 		AirdriftEvents.Kind.KILLVIEW:
-			var view := DotKillViewClip.unpack(event.body)
+			var view := GSKillViewClip.unpack(event.body)
 			if bool(view["ok"]):
 				killview_received.emit(view["clip"], view["info"])
 		_:
 			if not weapon_net.apply(event.kind, reader, game.weapon_layer):
 				_on_watch_event(event.kind, reader)
 
-func _apply_hello(reader: DotNetReader) -> void:
+func _apply_hello(reader: GSNetReader) -> void:
 	var hello := AirdriftEvents.read_hello(reader)
 	if not bool(hello["ok"]):
 		return
@@ -158,7 +158,7 @@ func _apply_hello(reader: DotNetReader) -> void:
 	var rtt := float(rtt_source.call()) if rtt_source.is_valid() else 0.0
 	net.clock.sync_from_server(int(hello["server_tick"]), maxf(0.0, rtt))
 
-	_apply_movement(DotNetReader.new(hello["movement"]))
+	_apply_movement(GSNetReader.new(hello["movement"]))
 
 	# No map here. The map this client joins onto arrives as the protocol's announce,
 	# right behind HELLO — see `_map_admit`.
@@ -169,7 +169,7 @@ func _apply_hello(reader: DotNetReader) -> void:
 ##
 ## Three places hold this number and all three have to move together. `game.tick_rate`
 ## is the step the simulation and every reconstituted run time use; `net.config.tick_rate`
-## is what `DotNetInput.sanitise` and the interpolator's extrapolation budget read; and
+## is what `GSNetInput.sanitise` and the interpolator's extrapolation budget read; and
 ## `net.clock.tick_rate` is the live one, built from the config back at `setup()` and
 ## therefore NOT updated by writing the config alone.
 ##
@@ -196,7 +196,7 @@ func _adopt_tick_rate(rate: int) -> void:
 	# existed. That is the "very jittery in the browser" report.
 	#
 	# Interpolating fixes it and cannot be done without this line.
-	# `DotFpsController.render_state` and `DotNetManager.interpolate_frame` both draw
+	# `GSFpsController.render_state` and `GSNetManager.interpolate_frame` both draw
 	# at `Engine.get_physics_interpolation_fraction()`, which is a fraction through a
 	# PHYSICS frame — only a fraction through a tick while the two rates are the same.
 	# Measured at 60-against-128 the interpolation changes nothing at all; measured
@@ -207,7 +207,7 @@ func _adopt_tick_rate(rate: int) -> void:
 	# writes this itself.
 	Engine.physics_ticks_per_second = game.tick_rate
 
-	DotLog.info(CHANNEL, "adopted the server's tick rate", {
+	GSLog.info(CHANNEL, "adopted the server's tick rate", {
 		"was": before, "now": game.tick_rate, "engine": Engine.physics_ticks_per_second,
 	})
 
@@ -235,14 +235,14 @@ func _keep_up_through_slow_frames() -> void:
 		return
 	var steps := ceili(SLOW_FRAME_SECONDS * float(game.tick_rate))
 	if Engine.max_physics_steps_per_frame < steps:
-		DotLog.info(CHANNEL, "the engine keeps up with slow frames", {
+		GSLog.info(CHANNEL, "the engine keeps up with slow frames", {
 			"steps_per_frame": steps, "was": Engine.max_physics_steps_per_frame,
 			"tick_rate": game.tick_rate,
 		})
 		Engine.max_physics_steps_per_frame = steps
 
 
-func _apply_movement(reader: DotNetReader) -> void:
+func _apply_movement(reader: GSNetReader) -> void:
 	var fingerprint := AirdriftEvents.read_movement(reader, game.config)
 	game.apply_movement()
 
@@ -250,12 +250,12 @@ func _apply_movement(reader: DotNetReader) -> void:
 	# through the same code, and a mismatch is one log line rather than a week of
 	# "the netcode feels bad".
 	if game.tunables.fingerprint() != fingerprint:
-		DotLog.warn(CHANNEL, "movement fingerprint disagrees with the server", {
+		GSLog.warn(CHANNEL, "movement fingerprint disagrees with the server", {
 			"ours": game.tunables.fingerprint(), "theirs": fingerprint
 		})
 
 
-func _apply_join(reader: DotNetReader) -> void:
+func _apply_join(reader: GSNetReader) -> void:
 	var join := AirdriftEvents.read_join(reader)
 	if not bool(join["ok"]):
 		return
@@ -285,7 +285,7 @@ func _apply_join(reader: DotNetReader) -> void:
 		var identity := _build_entity(player, peer_id)
 		var registered := net.registry.register(identity, int(join["net_id"]), net.clock.tick, net.config)
 		if not registered.ok:
-			DotLog.warn(CHANNEL, "could not mirror a player", {"error": str(registered.error)})
+			GSLog.warn(CHANNEL, "could not mirror a player", {"error": str(registered.error)})
 			game.remove_player(id)
 			return
 	else:
@@ -299,7 +299,7 @@ func _apply_join(reader: DotNetReader) -> void:
 	roster_changed.emit(session_id)
 
 
-func _apply_timer(session_id: int, state: DotTimerNet.RunState) -> void:
+func _apply_timer(session_id: int, state: GSTimerNet.RunState) -> void:
 	var player: AirdriftPlayer = game.players.get(_player_key(session_id))
 	if player == null or player.timer == null:
 		return
@@ -307,7 +307,7 @@ func _apply_timer(session_id: int, state: DotTimerNet.RunState) -> void:
 	# Against the ESTIMATED server tick, not the local one: the local tick runs a
 	# lead ahead so commands arrive in time, and a HUD counting from it would show
 	# every run a flight time longer than the server will file it.
-	player.timer.run = DotTimerNet.run_from_state(
+	player.timer.run = GSTimerNet.run_from_state(
 		state, net.clock.server_tick(), 1.0 / float(game.tick_rate), _style_id(state.style_index)
 	)
 

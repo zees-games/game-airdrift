@@ -7,7 +7,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## `tools/bsp_mechanics.py` reads them out of the .bsp into the manifest's `mechanics`
 ## block; this is the other half. Every volume is an [AABB] in metres, and every
 ## question is a box test against the player's own hull, for the reason
-## [DotFpsSwimMode] gives: an [Area3D] answers after the physics step on the main loop,
+## [GSFpsSwimMode] gives: an [Area3D] answers after the physics step on the main loop,
 ## and a client replaying ten ticks of prediction cannot ask one where it WAS. A box list
 ## gives the server and the client's replay the same answer for the same state.
 ##
@@ -24,7 +24,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ##   tick" the server did.
 ## - [b]Gravity[/b] (`trigger_gravity`) scales the fall while airborne inside.
 ## - [b]A conveyor[/b] (`func_conveyor`) carries a player standing on its top.
-## - [b]Water[/b] is [DotFpsSwimMode]'s; [member water] is what it is handed.
+## - [b]Water[/b] is [GSFpsSwimMode]'s; [member water] is what it is handed.
 ## - [b]A sinking block[/b] (a touch-opened `func_door` over a teleport) is timed PER
 ##   PLAYER: stand on it longer than its delay and [method simulate] says so, and the game
 ##   sends that player where the plate under it would have. The door never moves, so a
@@ -110,8 +110,8 @@ func is_empty() -> bool:
 ## One tick of the volumes on [param state], after the motor has moved it. Returns an
 ## [enum Event] the game acts on (a block that sank, a lethal hurt); the index of the
 ## block or hurt volume is in [member Rider.last_index].
-func simulate(rider: Rider, motor: DotFpsMotor, state: DotFpsState, delta: float) -> Event:
-	if motor == null or state.mode == DotFpsState.Mode.NOCLIP:
+func simulate(rider: Rider, motor: GSFpsMotor, state: GSFpsState, delta: float) -> Event:
+	if motor == null or state.mode == GSFpsState.Mode.NOCLIP:
 		rider.reset()
 		return Event.NONE
 
@@ -148,13 +148,13 @@ func simulate(rider: Rider, motor: DotFpsMotor, state: DotFpsState, delta: float
 	return _blocks(rider, state, r, hull, delta)
 
 
-func _impulse(motor: DotFpsMotor, state: DotFpsState, push: Vector3) -> void:
+func _impulse(motor: GSFpsMotor, state: GSFpsState, push: Vector3) -> void:
 	state.velocity += push
 	if push.y > 0.0 and state.is_grounded():
-		motor.set_mode(state, DotFpsState.Mode.AIR)
+		motor.set_mode(state, GSFpsState.Mode.AIR)
 
 
-func _pushes(rider: Rider, motor: DotFpsMotor, state: DotFpsState, hull: AABB, delta: float) -> void:
+func _pushes(rider: Rider, motor: GSFpsMotor, state: GSFpsState, hull: AABB, delta: float) -> void:
 	if pushes.is_empty():
 		return
 	var base := Vector3.ZERO
@@ -182,7 +182,7 @@ func _pushes(rider: Rider, motor: DotFpsMotor, state: DotFpsState, hull: AABB, d
 
 	if base != Vector3.ZERO:
 		if base.y > 0.0 and state.is_grounded():
-			motor.set_mode(state, DotFpsState.Mode.AIR)
+			motor.set_mode(state, GSFpsState.Mode.AIR)
 		_displace(motor, state, base, delta)
 	elif was != Vector3.ZERO:
 		# Out of it this tick: the base velocity becomes the player's own, which is what
@@ -201,14 +201,14 @@ func _pushes(rider: Rider, motor: DotFpsMotor, state: DotFpsState, hull: AABB, d
 
 ## Moves [param state] by [param velocity] for one tick through the motor's own sweep,
 ## leaving the player's own velocity as it was: a base velocity is not the player's.
-func _displace(motor: DotFpsMotor, state: DotFpsState, velocity: Vector3, delta: float) -> void:
+func _displace(motor: GSFpsMotor, state: GSFpsState, velocity: Vector3, delta: float) -> void:
 	var own := state.velocity
 	state.velocity = velocity
 	motor.move_and_slide(state, delta)
 	state.velocity = own
 
 
-func _blocks(rider: Rider, state: DotFpsState, r: float, hull: AABB, delta: float) -> Event:
+func _blocks(rider: Rider, state: GSFpsState, r: float, hull: AABB, delta: float) -> Event:
 	if blocks.is_empty() or not state.is_grounded():
 		rider.block = -1
 		rider.block_time = 0.0

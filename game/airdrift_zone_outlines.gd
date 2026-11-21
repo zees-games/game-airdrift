@@ -17,7 +17,7 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## environment's bloom, because the browser profile and the server's own render settings
 ## both decide whether bloom exists and a zone line should not depend on either.
 ##
-## Client only, and drawing only: it reads [member DotTimerManager.zones] and changes
+## Client only, and drawing only: it reads [member GSTimerManager.zones] and changes
 ## nothing. [method refresh] rebuilds it, on a map change and whenever the zone editor
 ## draws a zone.
 
@@ -25,22 +25,22 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## amber stages and checkpoints. A bonus track's start and finish are drawn cooler
 ## (cyan, magenta) so a player can tell the main route's line from a bonus beside it.
 const COLOURS := {
-	DotTimerZone.Kind.START: Color(0.25, 1.0, 0.45),
-	DotTimerZone.Kind.END: Color(1.0, 0.28, 0.28),
-	DotTimerZone.Kind.STAGE: Color(1.0, 0.72, 0.18),
-	DotTimerZone.Kind.CHECKPOINT: Color(1.0, 0.9, 0.3),
-	DotTimerZone.Kind.TELEPORT: Color(0.35, 0.55, 1.0),
-	DotTimerZone.Kind.RESPAWN: Color(0.75, 0.25, 0.95),
-	DotTimerZone.Kind.STOP: Color(1.0, 0.5, 0.15),
-	DotTimerZone.Kind.SPEED_LIMIT: Color(0.5, 0.85, 1.0),
+	GSTimerZone.Kind.START: Color(0.25, 1.0, 0.45),
+	GSTimerZone.Kind.END: Color(1.0, 0.28, 0.28),
+	GSTimerZone.Kind.STAGE: Color(1.0, 0.72, 0.18),
+	GSTimerZone.Kind.CHECKPOINT: Color(1.0, 0.9, 0.3),
+	GSTimerZone.Kind.TELEPORT: Color(0.35, 0.55, 1.0),
+	GSTimerZone.Kind.RESPAWN: Color(0.75, 0.25, 0.95),
+	GSTimerZone.Kind.STOP: Color(1.0, 0.5, 0.15),
+	GSTimerZone.Kind.SPEED_LIMIT: Color(0.5, 0.85, 1.0),
 }
 const BONUS_START := Color(0.2, 0.9, 1.0)
 const BONUS_END := Color(1.0, 0.3, 0.85)
 
 ## The kinds drawn by default. A pit is not on the route and there are hundreds of them;
 ## [member show_pits] adds them.
-const DRAWN := [DotTimerZone.Kind.START, DotTimerZone.Kind.END, DotTimerZone.Kind.STAGE,
-	DotTimerZone.Kind.CHECKPOINT, DotTimerZone.Kind.STOP, DotTimerZone.Kind.SPEED_LIMIT]
+const DRAWN := [GSTimerZone.Kind.START, GSTimerZone.Kind.END, GSTimerZone.Kind.STAGE,
+	GSTimerZone.Kind.CHECKPOINT, GSTimerZone.Kind.STOP, GSTimerZone.Kind.SPEED_LIMIT]
 
 @export var core_units: float = 1.6
 @export var halo_units: float = 7.0
@@ -55,7 +55,7 @@ var preview_colour: Color = Color.WHITE
 
 var _core: MultiMeshInstance3D = null
 var _halo: MultiMeshInstance3D = null
-var _zones: DotTimerZoneSet = null
+var _zones: GSTimerZoneSet = null
 
 
 func _ready() -> void:
@@ -64,15 +64,15 @@ func _ready() -> void:
 
 
 ## Rebuilds every outline from [param zones] (null draws nothing).
-func refresh(zones: DotTimerZoneSet) -> void:
+func refresh(zones: GSTimerZoneSet) -> void:
 	_zones = zones
 	var boxes: Array = []    # [AABB, Color]
 	if zones != null:
-		for zone: DotTimerZone in zones.zones:
+		for zone: GSTimerZone in zones.zones:
 			if not (zone.kind in DRAWN) and not (show_pits and zone.kind in
-					[DotTimerZone.Kind.RESPAWN, DotTimerZone.Kind.TELEPORT]):
+					[GSTimerZone.Kind.RESPAWN, GSTimerZone.Kind.TELEPORT]):
 				continue
-			if zone.shape != DotTimerZone.Shape.BOX:
+			if zone.shape != GSTimerZone.Shape.BOX:
 				continue
 			var box := AABB(zone.from, zone.to - zone.from).abs()
 			if box.size.length() <= 0.0:
@@ -89,11 +89,11 @@ func redraw() -> void:
 	refresh(_zones)
 
 
-static func colour_for(zone: DotTimerZone) -> Color:
-	if zone.track != DotTimerTrack.MAIN:
-		if zone.kind == DotTimerZone.Kind.START:
+static func colour_for(zone: GSTimerZone) -> Color:
+	if zone.track != GSTimerTrack.MAIN:
+		if zone.kind == GSTimerZone.Kind.START:
 			return BONUS_START
-		if zone.kind == DotTimerZone.Kind.END:
+		if zone.kind == GSTimerZone.Kind.END:
 			return BONUS_END
 	return COLOURS.get(zone.kind, Color.WHITE)
 

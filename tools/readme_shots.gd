@@ -36,7 +36,7 @@ var _entry := Vector3.ZERO
 
 
 func _initialize() -> void:
-	DotLog.set_level(DotLog.Level.WARN)
+	GSLog.set_level(GSLog.Level.WARN)
 	DirAccess.make_dir_recursive_absolute(OUT_DIR)
 	var args := OS.get_cmdline_user_args()
 	_kind = args[0] if args.size() > 0 else "run"
@@ -68,7 +68,7 @@ func _step(delta: float) -> bool:
 	if _loaded < 90:
 		_loaded += 1
 		if _loaded == 1:
-			_client.presentation.settings.local_store = DotSettingsStoreMemory.new()
+			_client.presentation.settings.local_store = GSSettingsStoreMemory.new()
 			_client.presentation.settings.load_now()
 			_client.presentation.apply_all()
 		return false

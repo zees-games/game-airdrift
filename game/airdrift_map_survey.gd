@@ -8,8 +8,8 @@ extends "airdrift_map_survey_grid.gd"
 ## stale_declarations, void_falls, course_links, course_problems, standable_tilted}`;
 ## every list is of human-readable lines.
 static func survey(
-	map: Node3D, zones: DotTimerZoneSet, starts: Array[Vector3], declared: Array,
-	t: DotFpsTunables, tick_rate: int
+	map: Node3D, zones: GSTimerZoneSet, starts: Array[Vector3], declared: Array,
+	t: GSFpsTunables, tick_rate: int
 ) -> Dictionary:
 	var s := new()
 	s._configure(t, tick_rate)
@@ -20,8 +20,8 @@ static func survey(
 
 ## Surveys a list of solids directly: for a fixture that is not a map.
 static func survey_solids(
-	boxes: Array[Solid], zones: DotTimerZoneSet, starts: Array[Vector3], declared: Array,
-	t: DotFpsTunables, tick_rate: int
+	boxes: Array[Solid], zones: GSTimerZoneSet, starts: Array[Vector3], declared: Array,
+	t: GSFpsTunables, tick_rate: int
 ) -> Dictionary:
 	var s := new()
 	s._configure(t, tick_rate)
@@ -49,7 +49,7 @@ static func solid(at: Vector3, size: Vector3, basis: Basis = Basis.IDENTITY) -> 
 	return out
 
 
-func _configure(t: DotFpsTunables, tick_rate: int) -> void:
+func _configure(t: GSFpsTunables, tick_rate: int) -> void:
 	_tunables = t
 	_tick_rate = tick_rate
 	hull = 2.0 * AirdriftUnits.to_units(t.radius)
@@ -83,7 +83,7 @@ func _collect(map: Node3D) -> void:
 
 
 func _run(
-	zones: DotTimerZoneSet, starts: Array[Vector3], declared: Array, courses: Array
+	zones: GSTimerZoneSet, starts: Array[Vector3], declared: Array, courses: Array
 ) -> Dictionary:
 	var slots := _slots()
 
@@ -94,7 +94,7 @@ func _run(
 	var boxes := _zone_boxes(zones)
 	var pits: Array[Box] = []
 	for box in boxes:
-		if box.kind == DotTimerZone.Kind.RESPAWN:
+		if box.kind == GSTimerZone.Kind.RESPAWN:
 			pits.append(box)
 
 	_link_regions(boxes, pits)
@@ -179,12 +179,12 @@ func _describe(region: int) -> String:
 	]
 
 
-static func _zone_boxes(zones: DotTimerZoneSet) -> Array[Box]:
+static func _zone_boxes(zones: GSTimerZoneSet) -> Array[Box]:
 	var out: Array[Box] = []
 	if zones == null:
 		return out
 	for zone in zones.zones:
-		if zone.shape != DotTimerZone.Shape.BOX:
+		if zone.shape != GSTimerZone.Shape.BOX:
 			continue
 		var box := Box.new()
 		box.kind = zone.kind
@@ -314,7 +314,7 @@ func _side_by_side(pa: PackedVector2Array, pb: PackedVector2Array) -> bool:
 func _link_regions(boxes: Array[Box], pits: Array[Box]) -> void:
 	# Standing in a finish or a reset is a way out.
 	for box in boxes:
-		if box.kind != DotTimerZone.Kind.END and box.kind != DotTimerZone.Kind.RESPAWN:
+		if box.kind != GSTimerZone.Kind.END and box.kind != GSTimerZone.Kind.RESPAWN:
 			continue
 
 		var ix0 := maxi(0, int(floor((box.from.x - _origin.x) / CELL)))

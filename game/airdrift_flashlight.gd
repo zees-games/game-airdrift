@@ -117,7 +117,7 @@ func _ready() -> void:
 	spot.spot_angle = cone_degrees * 0.5
 	spot.spot_angle_attenuation = 1.6
 	spot.spot_attenuation = 1.0
-	spot.shadow_enabled = not DotPlatform.is_web()
+	spot.shadow_enabled = not GSPlatform.is_web()
 	spot.visible = false
 	add_child(spot)
 
@@ -158,7 +158,7 @@ func set_on(value: bool) -> bool:
 	if not on:
 		_write_off()
 	toggled.emit(on)
-	DotLog.debug(CHANNEL, "flashlight", {"on": on})
+	GSLog.debug(CHANNEL, "flashlight", {"on": on})
 	return true
 
 

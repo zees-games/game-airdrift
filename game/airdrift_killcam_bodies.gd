@@ -5,7 +5,7 @@ const AirdriftRig := preload("airdrift_rig.gd")
 const AirdriftArsenal := preload("airdrift_arsenal.gd")
 const AirdriftWeaponIcons := preload("airdrift_weapon_icons.gd")
 
-## AirdriftPlayer hooks for dot-replay's [DotKillcamHost]: how a drawn body is read and posed.
+## AirdriftPlayer hooks for dot-replay's [GSKillcamHost]: how a drawn body is read and posed.
 
 ## Skip keys: jump, the key a runner's hand is already on.
 const SKIP_ACTIONS: PackedStringArray = ["dot_fps_jump", "ui_cancel"]
@@ -18,7 +18,7 @@ var _local_ids := {}
 
 
 ## Gives [param host] Airdrift's skip keys, cull layer and body hooks.
-func configure(host: DotKillcamHost, game: Node) -> void:
+func configure(host: GSKillcamHost, game: Node) -> void:
 	host.name = "FinalKillcam"
 	host.log_channel = "g2g.killcam"
 	host.camera_mode_fn = func() -> int: return game.killview_rules.camera
@@ -28,7 +28,7 @@ func configure(host: DotKillcamHost, game: Node) -> void:
 	host.players_fn = func() -> Array: return game.players.values()
 	host.player_for_fn = func(id: int) -> Variant: return game.players.get(key_for(game, id))
 	host.weapon_name_fn = func(id: String) -> String:
-		var def: DotWeaponDef = AirdriftArsenal.weapon_catalogue().get_def(StringName(id)) if id != "" else null
+		var def: GSWeaponDef = AirdriftArsenal.weapon_catalogue().get_def(StringName(id)) if id != "" else null
 		return def.display_name if def != null and def.display_name != "" else id.capitalize()
 	host.weapon_icon_fn = func(id: String) -> Texture2D: return AirdriftWeaponIcons.shared.menu_texture(StringName(id))
 	# The local rig sits on its own layer, which a first-person view culls.

@@ -19,7 +19,7 @@ const AirdriftPlayer := preload("airdrift_player.gd")
 ##   They cannot change a time.
 ## - **Movement effects** — a slow, a haste — are refused outright while a ranked run is
 ##   live, and **taint** the run when a server has chosen to allow them anyway.
-##   `DotTimerRun.tainted` is the field dot-timer already has for exactly this, and it
+##   `GSTimerRun.tainted` is the field dot-timer already has for exactly this, and it
 ##   is what stops a hunted run reaching a leaderboard beside a clean one.
 ##
 ## The second half is why the hunters are interesting rather than annoying: being
@@ -38,7 +38,7 @@ const HASTE := &"g2g_haste"
 
 var game: AirdriftGame = null
 
-var manager: DotEffectManager = null
+var manager: GSEffectManager = null
 
 ## Whether a movement effect may be applied to somebody in a ranked run at all.
 ##
@@ -47,14 +47,14 @@ var manager: DotEffectManager = null
 @export var allow_movement_during_runs: bool = false
 
 
-func setup() -> DotResult:
+func setup() -> GSResult:
 	if game == null:
-		return DotResult.fail(DotError.CODE_STATE, "AirdriftEffects needs a game.")
+		return GSResult.fail(GSError.CODE_STATE, "AirdriftEffects needs a game.")
 
-	manager = DotEffectManager.new()
+	manager = GSEffectManager.new()
 	manager.name = "EffectManager"
 	manager.authoritative = game.authoritative
-	manager.rules = DotEffectRules.new()
+	manager.rules = GSEffectRules.new()
 	manager.rules.downed_enabled = false
 	add_child(manager)
 
@@ -63,23 +63,23 @@ func setup() -> DotResult:
 		return res.wrap("Airdrift effects")
 
 	manager.damaged.connect(_on_damaged)
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## Built from the tick rate rather than exported at one. This game runs at 128 and its
 ## browser shell exported 60, which is the disagreement that cost it a whole leaderboard.
-static func table(rate: int) -> Array[DotEffectDef]:
-	var mauled := DotEffectDef.speed(MAULED, 0.65, 3 * rate)
+static func table(rate: int) -> Array[GSEffectDef]:
+	var mauled := GSEffectDef.speed(MAULED, 0.65, 3 * rate)
 	mauled.display_name = "Mauled"
 	mauled.label = "SLOW"
 
-	var bleeding := DotEffectDef.burning(BLEEDING, 2.0, 5 * rate)
+	var bleeding := GSEffectDef.burning(BLEEDING, 2.0, 5 * rate)
 	bleeding.tick_interval = rate / 2
 	bleeding.damage_type = &"bleed"
 	bleeding.display_name = "Bleeding"
 	bleeding.label = "BLD"
 
-	var haste := DotEffectDef.speed(HASTE, 1.25, 5 * rate)
+	var haste := GSEffectDef.speed(HASTE, 1.25, 5 * rate)
 	haste.display_name = "Haste"
 	haste.label = "SPD"
 
@@ -90,7 +90,7 @@ static func table(rate: int) -> Array[DotEffectDef]:
 ##
 ## Asked of the definition rather than of a list of ids, so an effect added later is
 ## classified by what it does rather than by somebody remembering to name it here.
-static func is_movement(def: DotEffectDef) -> bool:
+static func is_movement(def: GSEffectDef) -> bool:
 	if def == null:
 		return false
 	return not is_equal_approx(def.move_speed_scale, 1.0) \
@@ -98,22 +98,22 @@ static func is_movement(def: DotEffectDef) -> bool:
 
 
 ## Apply an effect, subject to the rule above.
-func apply(id: StringName, player_id: StringName, source: StringName = &"") -> DotResult:
+func apply(id: StringName, player_id: StringName, source: StringName = &"") -> GSResult:
 	if manager == null:
-		return DotResult.fail(DotError.CODE_STATE, "Effects are not set up.")
+		return GSResult.fail(GSError.CODE_STATE, "Effects are not set up.")
 
 	var def := manager.definition(id)
 	if def == null:
-		return DotResult.fail(DotError.CODE_INVALID, "No effect '%s'." % id)
+		return GSResult.fail(GSError.CODE_INVALID, "No effect '%s'." % id)
 
 	var player: AirdriftPlayer = game.players.get(player_id, null)
 	if player == null:
-		return DotResult.fail(DotError.CODE_INVALID, "No player '%s'." % player_id)
+		return GSResult.fail(GSError.CODE_INVALID, "No player '%s'." % player_id)
 
 	if is_movement(def) and _in_ranked_run(player):
 		if not allow_movement_during_runs:
-			return DotResult.fail(
-				DotError.CODE_FORBIDDEN,
+			return GSResult.fail(
+				GSError.CODE_FORBIDDEN,
 				(
 					"'%s' changes how %s moves and they are in a ranked run. A style "
 					+ "you did not choose is a record you did not set."
@@ -122,7 +122,7 @@ func apply(id: StringName, player_id: StringName, source: StringName = &"") -> D
 		# Allowed, and the run stops being comparable with a clean one. dot-timer has
 		# had this field since it was written; this is the first caller.
 		player.timer.run.tainted = true
-		DotLog.info(
+		GSLog.info(
 			CHANNEL, "a run was tainted by an effect",
 			{"player": String(player_id), "effect": String(id)}
 		)
@@ -196,9 +196,9 @@ func _on_damaged(entity: int, amount: float, type: StringName, source: int) -> v
 		return
 	var damage_type := game.combat.manager.damage_type(type)
 	if damage_type == null:
-		damage_type = DotDamageType.new()
+		damage_type = GSDamageType.new()
 		damage_type.id = type
-	var damage := DotDamage.make(source, entity, amount, damage_type)
+	var damage := GSDamage.make(source, entity, amount, damage_type)
 	damage.tick = game.current_tick()
 	var applied := health.apply(damage)
 	if applied != null and applied.lethal:

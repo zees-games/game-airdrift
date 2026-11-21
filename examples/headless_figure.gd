@@ -1,6 +1,6 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
-## The runner's drawn person (AirdriftRig's DotHumanoidFigure) against DotClipMetrics: foot slide, floor contact and bone pops at the paces this game moves at,
+## The runner's drawn person (AirdriftRig's GSHumanoidFigure) against GSClipMetrics: foot slide, floor contact and bone pops at the paces this game moves at,
 ## with the limits of tools/filmstrip_thresholds.json (the same file the filmstrip clips use).
 ## Run: godot --headless --path . res://examples/headless_figure.tscn
 
@@ -20,7 +20,7 @@ var _completed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.FATAL)
+	GSLog.set_level(GSLog.Level.FATAL)
 	_run.call_deferred()
 
 
@@ -42,10 +42,10 @@ func _section(title: String) -> void:
 
 ## Walks a figure from rest up to [param pace] over a ramp, sampling every frame, and checks every metric row.
 func _pace(pace: float, clip: String, fps: float) -> void:
-	var figure := DotHumanoidFigure.new()
+	var figure := GSHumanoidFigure.new()
 	add_child(figure)
-	figure.build(DotHumanoidLook.stock(9), AirdriftMovement.player_height())
-	var metrics := DotClipMetrics.new()
+	figure.build(GSHumanoidLook.stock(9), AirdriftMovement.player_height())
+	var metrics := GSClipMetrics.new()
 	var dt := 1.0 / fps
 	var speed := 0.0
 	for i in int(SECONDS * fps):
@@ -55,8 +55,8 @@ func _pace(pace: float, clip: String, fps: float) -> void:
 		figure.animate(speed, dt)
 		figure.skeleton().force_update_all_bone_transforms()
 		metrics.add(metrics.pose_sample(float(i) * dt, figure.skeleton(), figure.global_position, true))
-	var rows := metrics.evaluate(DotClipMetrics.limits_for(THRESHOLDS, clip))
-	print(DotClipMetrics.table(clip, rows))
+	var rows := metrics.evaluate(GSClipMetrics.limits_for(THRESHOLDS, clip))
+	print(GSClipMetrics.table(clip, rows))
 	var judged := 0
 	for row in rows:
 		# Framing needs a camera; the others are the body's own.

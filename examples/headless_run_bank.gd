@@ -2,7 +2,7 @@ extends "headless_run_bend.gd"
 
 func _test_surf_run() -> void:
 	_section("a surf run")
-	var changed: DotResult = await game.change_map(&"surf_g2g_intro")
+	var changed: GSResult = await game.change_map(&"surf_g2g_intro")
 	_check(changed.ok, "the surf map loads")
 	game.config.air_accelerate = 150.0
 	game.apply_movement()
@@ -22,7 +22,7 @@ func _test_surf_run() -> void:
 
 	# Stopped at the pit, and that is not a tidy-up.
 	#
-	# The map's respawn zone works now — `DotTimer.effect_requested` was declared,
+	# The map's respawn zone works now — `GSTimer.effect_requested` was declared,
 	# forwarded and connected, and emitted by NOTHING, so a bot that missed the ramps
 	# fell out of the level and kept falling. Measured over a flat 1500 ticks, every
 	# one of those falling ticks counted as "not grounded", and this check passed on
@@ -34,8 +34,8 @@ func _test_surf_run() -> void:
 	# inside a signal handler reads false outside it — and the first version of this
 	# fix broke out of nothing and reported "468 of 1500".
 	var reset: Array[bool] = [false]
-	var on_reset := func(id: StringName, zone: DotTimerZone) -> void:
-		if id == &"bot" and zone.kind == DotTimerZone.Kind.RESPAWN:
+	var on_reset := func(id: StringName, zone: GSTimerZone) -> void:
+		if id == &"bot" and zone.kind == GSTimerZone.Kind.RESPAWN:
 			reset[0] = true
 
 	game.timers.effect_requested.connect(on_reset)
@@ -48,7 +48,7 @@ func _test_surf_run() -> void:
 	bot.timer.stage_reached.connect(on_stage)
 
 	for i in range(1500):
-		var c := DotFpsCommand.new()
+		var c := GSFpsCommand.new()
 		var phase := (i / 90) % 2
 		c.move = Vector2(1.0 if phase == 0 else -1.0, 0.0)
 		yaw += -0.3 if phase == 0 else 0.3
@@ -115,17 +115,17 @@ func _test_surf_run() -> void:
 func _test_bonus_track() -> void:
 	_section("the bonus track")
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	_check(game.timers.set_player_track(&"bot", DotTimerTrack.of_bonus(1)), "a player can switch to the bonus")
+	_check(game.timers.set_player_track(&"bot", GSTimerTrack.of_bonus(1)), "a player can switch to the bonus")
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
-	var spawn := game.current_map_node().spawn_for(DotTimerTrack.of_bonus(1))
+	var spawn := game.current_map_node().spawn_for(GSTimerTrack.of_bonus(1))
 	_check(bot.global_position.distance_to(spawn) < 1.0, "and spawns at the bonus's own spawn")
-	_check(bot.timer.track == DotTimerTrack.of_bonus(1), "and their timer is on it")
+	_check(bot.timer.track == GSTimerTrack.of_bonus(1), "and their timer is on it")
 
 	await _test_single_bank()
 	await _test_transfer_bonus()
 
-	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
+	game.timers.set_player_track(&"bot", GSTimerTrack.MAIN)
 	_done()
 
 
@@ -152,7 +152,7 @@ func _test_bonus_track() -> void:
 ## loudest in exactly the case it was written for.
 func _test_single_bank() -> void:
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	var bonus := DotTimerTrack.of_bonus(1)
+	var bonus := GSTimerTrack.of_bonus(1)
 
 	game.config.air_accelerate = 150.0
 	game.apply_movement()
@@ -172,10 +172,10 @@ func _test_single_bank() -> void:
 	var started: Array[bool] = [false]
 	var finished: Array[bool] = [false]
 	var reset: Array[bool] = [false]
-	var on_start := func(_run: DotTimerRun) -> void: started[0] = true
-	var on_finish := func(run: DotTimerRun) -> void: finished[0] = run.track == bonus
-	var on_reset := func(id: StringName, zone: DotTimerZone) -> void:
-		if id == &"bot" and zone.kind == DotTimerZone.Kind.RESPAWN:
+	var on_start := func(_run: GSTimerRun) -> void: started[0] = true
+	var on_finish := func(run: GSTimerRun) -> void: finished[0] = run.track == bonus
+	var on_reset := func(id: StringName, zone: GSTimerZone) -> void:
+		if id == &"bot" and zone.kind == GSTimerZone.Kind.RESPAWN:
 			reset[0] = true
 
 	bot.timer.run_started.connect(on_start)
@@ -193,7 +193,7 @@ func _test_single_bank() -> void:
 
 	for i in range(2600):
 		var at := AirdriftUnits.vector_to_units(bot.global_position)
-		var c := DotFpsCommand.new()
+		var c := GSFpsCommand.new()
 		c.yaw = 0.0
 
 		if bot.controller.state.is_grounded() and at.y > SurfIntro.START_Y - 64.0:
@@ -283,7 +283,7 @@ func _test_single_bank() -> void:
 ## came down in the pit.
 func _test_fast_bank_exit(line: float) -> void:
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	var finish := game.timers.zones.first_of_kind(DotTimerZone.Kind.END, 1)
+	var finish := game.timers.zones.first_of_kind(GSTimerZone.Kind.END, 1)
 	# Just clear of the bank's end, so the hull is in the air rather than half on the
 	# slab's corner, which snags a launch into a drop straight down past the pad.
 	var end_z := SurfIntro.bonus_bank_end_z() - AirdriftUnits.PLAYER_HALF_WIDTH - 4.0
@@ -295,7 +295,7 @@ func _test_fast_bank_exit(line: float) -> void:
 		bot.controller.state.velocity = Vector3(0.0, 0.0, -900.0 * AirdriftUnits.METRES_PER_UNIT)
 		var landed := Vector3.INF
 		for _i in range(300):
-			var c := DotFpsCommand.new()
+			var c := GSFpsCommand.new()
 			c.yaw = 0.0
 			bot.controller.apply_command(c)
 			await get_tree().physics_frame
@@ -324,7 +324,7 @@ func _test_fast_bank_exit(line: float) -> void:
 ## looks perfect in a screenshot and drops every player into the pit.
 func _test_transfer_bonus() -> void:
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	var transfer := DotTimerTrack.of_bonus(2)
+	var transfer := GSTimerTrack.of_bonus(2)
 
 	_check(game.timers.set_player_track(&"bot", transfer), "and to the transfer bonus")
 
@@ -335,7 +335,7 @@ func _test_transfer_bonus() -> void:
 	_check(
 		bot.global_position.distance_to(spawn) < 1.0,
 		"which has a spawn of its own, away from the first bonus's",
-		"%.1f m apart" % spawn.distance_to(game.current_map_node().spawn_for(DotTimerTrack.of_bonus(1)))
+		"%.1f m apart" % spawn.distance_to(game.current_map_node().spawn_for(GSTimerTrack.of_bonus(1)))
 	)
 
 	var ride: Dictionary = await _transfer_ride(bot, transfer)
@@ -359,8 +359,8 @@ func _transfer_ride(bot: AirdriftPlayer, transfer: int) -> Dictionary:
 	# An Array, because a lambda captures a local by value (docs/gdscript-hazards.md).
 	var reset: Array[bool] = [false]
 
-	var watch := func(id: StringName, zone: DotTimerZone) -> void:
-		if id == &"bot" and zone.kind == DotTimerZone.Kind.RESPAWN:
+	var watch := func(id: StringName, zone: GSTimerZone) -> void:
+		if id == &"bot" and zone.kind == GSTimerZone.Kind.RESPAWN:
 			reset[0] = true
 
 	game.timers.effect_requested.connect(watch)
@@ -368,7 +368,7 @@ func _transfer_ride(bot: AirdriftPlayer, transfer: int) -> Dictionary:
 	# 2000 ticks is load-bearing: at 1200 the falling bot ended mid-air, above the
 	# respawn zone, and the reset check passed by asking about nothing.
 	for i in range(2000):
-		var c := DotFpsCommand.new()
+		var c := GSFpsCommand.new()
 		var phase := (i / 90) % 2
 		c.move = Vector2(1.0 if phase == 0 else -1.0, 0.0)
 		yaw += -0.3 if phase == 0 else 0.3
@@ -444,10 +444,10 @@ func _test_the_fall_line() -> void:
 	_section("the fall line — surf_g2g_intro's third bonus")
 
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	var fall := DotTimerTrack.of_bonus(3)
+	var fall := GSTimerTrack.of_bonus(3)
 	await _fall_line_route_checks(bot, fall)
 	await _fall_line_run(bot)
-	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
+	game.timers.set_player_track(&"bot", GSTimerTrack.MAIN)
 	_done()
 
 
@@ -518,11 +518,11 @@ func _fall_line_run(bot: AirdriftPlayer) -> void:
 	var reset: Array[bool] = [false]
 	var splits: Array[int] = []
 
-	var on_start := func(_run: DotTimerRun) -> void: started[0] = true
+	var on_start := func(_run: GSTimerRun) -> void: started[0] = true
 	var on_stage := func(number: int, _split: float) -> void: splits.append(number)
-	var on_finish := func(_run: DotTimerRun) -> void: finished[0] = true
-	var on_reset := func(id: StringName, zone: DotTimerZone) -> void:
-		if id == &"bot" and zone.kind == DotTimerZone.Kind.RESPAWN:
+	var on_finish := func(_run: GSTimerRun) -> void: finished[0] = true
+	var on_reset := func(id: StringName, zone: GSTimerZone) -> void:
+		if id == &"bot" and zone.kind == GSTimerZone.Kind.RESPAWN:
 			reset[0] = true
 
 	bot.timer.run_started.connect(on_start)
@@ -534,7 +534,7 @@ func _fall_line_run(bot: AirdriftPlayer) -> void:
 	# nobody can stand on there is no ground to leave.
 	await _prestrafe(&"bot", 60)
 
-	var command := DotFpsCommand.new()
+	var command := GSFpsCommand.new()
 	command.move = Vector2(0.0, 1.0)
 	command.yaw = 0.0
 
@@ -624,8 +624,8 @@ func _fall_line_verdict(bot: AirdriftPlayer, r: Dictionary) -> void:
 
 # --- The ghost -------------------------------------------------------------
 
-static func _fake_replay(map_id: StringName, seconds: float, tick_rate: int) -> DotTimerReplay:
-	var replay := DotTimerReplay.new()
+static func _fake_replay(map_id: StringName, seconds: float, tick_rate: int) -> GSTimerReplay:
+	var replay := GSTimerReplay.new()
 	replay.map_id = map_id
 	replay.tick_rate = tick_rate
 	replay.time = seconds
@@ -641,9 +641,9 @@ func _test_ghost() -> void:
 	_section("the world-record ghost")
 	var map_id: StringName = game.maps.current.id
 	var replay := _fake_replay(map_id, 3.0, game.tick_rate)
-	var record := DotTimerRecord.new()
+	var record := GSTimerRecord.new()
 	record.map_id = map_id
-	record.track = DotTimerTrack.MAIN
+	record.track = GSTimerTrack.MAIN
 	record.style_id = &"normal"
 	record.player_name = "Ghost"
 	record.time = 3.0
@@ -667,7 +667,7 @@ func _test_ghost() -> void:
 
 	_ghost_persistence(map_id, replay, record)
 
-	var changed: DotResult = await game.change_map(&"surf_g2g_intro")
+	var changed: GSResult = await game.change_map(&"surf_g2g_intro")
 	# The surf run above may have filed a record of its own, in which case surf has
 	# a ghost too — its own, never the bhop map's.
 	var swapped := game.ghost()
@@ -683,7 +683,7 @@ func _test_ghost() -> void:
 	_done()
 
 
-func _ghost_persistence(map_id: StringName, replay: DotTimerReplay, record: DotTimerRecord) -> void:
+func _ghost_persistence(map_id: StringName, replay: GSTimerReplay, record: GSTimerRecord) -> void:
 	# Persistence: a second keeper over the same directory finds it.
 	var dir := "user://airdrift-test-replays-%d" % Time.get_ticks_usec()
 	var keeper := AirdriftReplays.new()
@@ -717,7 +717,7 @@ func _look_guard() -> void:
 	_check(look.mouse_drives_view(),
 		"and a captured one is")
 	# A modal that holds the pointer keeps the click-to-capture from taking it back.
-	look.platform = DotGameClient.new()
+	look.platform = GSGameClient.new()
 	_check(look.click_may_capture(), "a click may capture with no modal open")
 	look.platform.hold_pointer(&"shop")
 	_check(not look.click_may_capture(), "but not while a modal holds the pointer")

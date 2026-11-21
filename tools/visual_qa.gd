@@ -1,11 +1,11 @@
-extends DotGameVisualQaCapture
+extends GSGameVisualQaCapture
 
 ## Airdrift's visual QA capture (the loop is dot-game's docs/visual-qa.md). One item per stock person, recorded frame by frame
 ## at --fps in three views (f a rival's eye 2.5 m in front, t behind-right, o an opponent in front):
 ##   person_<letter>  one of the Kenney stock characters (the body and head parts AirdriftAvatars.stock draws) as the game's
-##                    DotHumanoidFigure, idling, walking, running, crouching and jumping.
+##                    GSHumanoidFigure, idling, walking, running, crouching and jumping.
 ## Airdrift is third person and its weapons are hitscan with no held model, so there are no weapon items.
-## The outside views and frame saving are dot-game's DotGameVisualQaViews, through DotGameVisualQaCapture.
+## The outside views and frame saving are dot-game's GSGameVisualQaViews, through GSGameVisualQaCapture.
 
 const AirdriftAvatars := preload("../game/airdrift_avatars.gd")
 
@@ -16,7 +16,7 @@ const SPEED := {"idle": 0.0, "walk": 2.9, "run": 6.5, "crouch": 2.9, "jump": 2.9
 const SECONDS := {"idle": 2.0, "walk": 2.4, "run": 2.0, "crouch": 2.0, "jump": 1.6}
 const LETTERS := "abcdefghijklmnopqr"
 
-var _figure: DotHumanoidFigure = null
+var _figure: GSHumanoidFigure = null
 var _holder := Node3D.new()
 
 
@@ -48,20 +48,20 @@ func _build() -> void:
 	root.add_child(_holder)
 
 
-func _stage(item: String, _clip: String) -> DotResult:
+func _stage(item: String, _clip: String) -> GSResult:
 	for child in _holder.get_children():
 		_holder.remove_child(child)
 		child.free()
 	var letter := item.trim_prefix("person_")
-	var avatar := DotAvatar.make(AirdriftAvatars.SCHEMA_ID)
+	var avatar := GSAvatar.make(AirdriftAvatars.SCHEMA_ID)
 	avatar.set_part(AirdriftAvatars.SLOT_BODY, StringName("body_kenney_" + letter))
 	avatar.set_part(AirdriftAvatars.SLOT_HEAD, StringName("head_kenney_" + letter))
-	_figure = DotHumanoidFigure.new()
+	_figure = GSHumanoidFigure.new()
 	_figure.name = "Figure"
 	_holder.add_child(_figure)
 	_figure.global_position = Vector3.ZERO
 	_figure.build(AirdriftAvatars.look_of(avatar, StringName(item)), BODY_HEIGHT)
-	return DotResult.success(item)
+	return GSResult.success(item)
 
 
 func _subject(_item: String) -> Node3D:

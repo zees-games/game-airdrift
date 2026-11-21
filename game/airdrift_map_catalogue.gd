@@ -24,7 +24,7 @@ const AirdriftPaths := preload("airdrift_paths.gd")
 ##
 ## [b]An imported map has no scene and no script of its own[/b], and that is what makes
 ## it droppable. Every one of them is [constant IMPORTED_SCENE], which ships inside the
-## build, pointed at a different manifest through [member DotMapDef.meta]. A generated
+## build, pointed at a different manifest through [member GSMapDef.meta]. A generated
 ## `<id>.tscn` cannot work for a map that arrives after the export — `res://` is a
 ## read-only PCK in a shipped build — so an imported map is data at a path, and the
 ## paths searched include ones outside `res://` for exactly that reason.
@@ -50,14 +50,14 @@ static var IMPORTED_ROOTS := [AirdriftPaths.rebase("res://maps/imported"), "user
 const STRIPPED := [".remap", ".import"]
 
 
-## What [member DotMapDef.author] reads when nobody wrote an author down: a hand-built
+## What [member GSMapDef.author] reads when nobody wrote an author down: a hand-built
 ## map is this game's own, and an import with no credit in its zones file says so. Both
 ## are placeholders rather than names, and [method credit] is how anything that shows a
 ## player who made a map tells the two apart (`[credit-1]`).
 const BUILT_IN_AUTHOR := "g2gfast"  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 const IMPORTED_AUTHOR := "imported"
 
-## Lists the maps copied in by hand ([code]DotMapLocalMaps[/code]: a raw convert folder under `res://addons/maps/` or
+## Lists the maps copied in by hand ([code]GSMapLocalMaps[/code]: a raw convert folder under `res://addons/maps/` or
 ## `user://maps/`, as `<name>_local`). An offline client turns it on; a server never does, so no rotation, vote or pack names one.
 static var list_local := false
 
@@ -73,30 +73,30 @@ const DROP_LEVEL := 24
 
 ## Whether this host's dot-map takes dropped maps and zips and draws `<map>_orig` packs with their own textures.
 static func can_drop() -> bool:
-	return DotAddonApi.build_level("dot_map") >= DROP_LEVEL
+	return GSAddonApi.build_level("dot_map") >= DROP_LEVEL
 
 
 ## Copies the dropped [param paths] (a converted map folder, its convert folder, or a `.zip` of either) into
-## `user://maps` with dot-map's [code]DotMapLocalMaps.accept_dropped[/code]: `{added, errors}`, or one error when the
+## `user://maps` with dot-map's [code]GSMapLocalMaps.accept_dropped[/code]: `{added, errors}`, or one error when the
 ## host's dot-map is older than [constant DROP_LEVEL].
 static func accept_dropped(paths: PackedStringArray) -> Dictionary:
 	if not can_drop():
 		return {"added": [], "errors": PackedStringArray(["this build cannot import maps (dot-map %d, needs %d)" % [
-			DotAddonApi.build_level("dot_map"), DROP_LEVEL]])}
-	var local_maps: Object = DotMapLocalMaps  # API 24 by name: a call on the class itself does not parse on 23
+			GSAddonApi.build_level("dot_map"), DROP_LEVEL]])}
+	var local_maps: Object = GSMapLocalMaps  # API 24 by name: a call on the class itself does not parse on 23
 	return local_maps.call(&"accept_dropped", paths)
 
 
 ## The surfaces builder for local map [param id]: the map's own textures for a `<map>_orig` pack, the free ones otherwise;
 ## null on a dot-map older than [constant DROP_LEVEL] or for an id that is not local (the world then draws with its default).
-static func local_surfaces(id: StringName) -> DotMapSurfaces:
+static func local_surfaces(id: StringName) -> GSMapSurfaces:
 	if not can_drop():
 		return null
-	var entry := DotMapLocalMaps.find(id)
+	var entry := GSMapLocalMaps.find(id)
 	if entry.is_empty():
 		return null
-	var local_maps: Object = DotMapLocalMaps
-	return local_maps.call(&"surfaces_for", entry) as DotMapSurfaces
+	var local_maps: Object = GSMapLocalMaps
+	return local_maps.call(&"surfaces_for", entry) as GSMapSurfaces
 
 
 ## The person to credit for [param map], or "" when there is nobody to name.
@@ -141,7 +141,7 @@ static func _files_under(root: String, rel: String, out: PackedStringArray) -> v
 		_files_under(root, d if rel.is_empty() else rel.path_join(d), out)
 
 
-static func credit(map: DotMapDef) -> String:
+static func credit(map: GSMapDef) -> String:
 	if map == null:
 		return ""
 	var who := map.author.strip_edges()
@@ -156,15 +156,15 @@ static func credit(map: DotMapDef) -> String:
 ## subscribed packs of an accepted kind follow it, after this game's own so that an id of
 ## ours always wins. Solo or online is the index's, so a server lists none of them.
 static func discover(
-	extra_roots: PackedStringArray = PackedStringArray(), content: DotContentIndex = null
-) -> DotMapCatalogue:
-	var catalogue := DotMapCatalogue.new()
+	extra_roots: PackedStringArray = PackedStringArray(), content: GSContentIndex = null
+) -> GSMapCatalogue:
+	var catalogue := GSMapCatalogue.new()
 	for map in scan(extra_roots):
 		var added := catalogue.add(map)
 		if not added.ok:
-			DotLog.warn(CHANNEL, "a map was refused by the catalogue",
+			GSLog.warn(CHANNEL, "a map was refused by the catalogue",
 				{"id": String(map.id), "why": added.error.message})
-	catalogue.follow_content(content if content != null else DotContentIndex.shared(),
+	catalogue.follow_content(content if content != null else GSContentIndex.shared(),
 		accepted_map_kinds())
 	return catalogue
 
@@ -195,20 +195,20 @@ static func accepted_map_kinds() -> PackedStringArray:
 
 
 ## Whether [param def] came from a subscribed pack rather than from this game or its disk.
-static func is_workshop(def: DotMapDef) -> bool:
+static func is_workshop(def: GSMapDef) -> bool:
 	return def != null and def.entry_key != ""
 
 
 ## Bring an existing catalogue up to date with the disk, in place.
 ##
-## [b]In place, and not by building a new one.[/b] [DotMapRotation] holds the
+## [b]In place, and not by building a new one.[/b] [GSMapRotation] holds the
 ## catalogue by reference and reads its pool live, so replacing the object leaves the
 ## rotation pointing at the old set — which still works, and offers exactly the maps
 ## that are no longer there.
 ##
 ## Returns what changed: `added`, `removed` and `total`.
 static func rescan(
-	catalogue: DotMapCatalogue, extra_roots: PackedStringArray = PackedStringArray()
+	catalogue: GSMapCatalogue, extra_roots: PackedStringArray = PackedStringArray()
 ) -> Dictionary:
 	var added: Array[StringName] = []
 	var removed: Array[StringName] = []
@@ -244,8 +244,8 @@ static func rescan(
 
 
 ## Every map on disk, as definitions, sorted by id so two scans agree.
-static func scan(extra_roots: PackedStringArray = PackedStringArray()) -> Array[DotMapDef]:
-	var out: Array[DotMapDef] = []
+static func scan(extra_roots: PackedStringArray = PackedStringArray()) -> Array[GSMapDef]:
+	var out: Array[GSMapDef] = []
 	out.append_array(_built_in())
 	out.append_array(_local())
 	var seen: Dictionary = {}
@@ -261,21 +261,21 @@ static func scan(extra_roots: PackedStringArray = PackedStringArray()) -> Array[
 	# By the id's text. `a.id < b.id` compares two StringNames, which Godot orders by where
 	# each was interned rather than by text: the order differed per process, so two scans
 	# did not agree and a rotation with no file cycled maps in no stable order.
-	out.sort_custom(func(a: DotMapDef, b: DotMapDef) -> bool: return String(a.id) < String(b.id))
+	out.sort_custom(func(a: GSMapDef, b: GSMapDef) -> bool: return String(a.id) < String(b.id))
 	return out
 
 
 ## The local maps while [member list_local] is on. The folder is a mesh, not a scene: the shared imported scene builds it
 ## (`AirdriftBspMap.build_from` reads `local_prefix`).
-static func _local() -> Array[DotMapDef]:
-	var out: Array[DotMapDef] = []
+static func _local() -> Array[GSMapDef]:
+	var out: Array[GSMapDef] = []
 	if not list_local:
 		return out
-	for entry: Dictionary in DotMapLocalMaps.scan():
+	for entry: Dictionary in GSMapLocalMaps.scan():
 		var prefix := str(entry["prefix"])
 		if not is_mesh_manifest(prefix + ".json"):
 			continue
-		var map := DotMapLocalMaps.to_def(entry)
+		var map := GSMapLocalMaps.to_def(entry)
 		map.scene_path = IMPORTED_SCENE
 		map.author = IMPORTED_AUTHOR
 		map.meta["manifest"] = ""
@@ -290,8 +290,8 @@ static func is_mesh_manifest(path: String) -> bool:
 	return FileAccess.get_file_as_string(path).contains(MESH_FORMAT)
 
 
-static func _built_in() -> Array[DotMapDef]:
-	var out: Array[DotMapDef] = []
+static func _built_in() -> Array[GSMapDef]:
+	var out: Array[GSMapDef] = []
 	for id in _scene_ids(BUILT_IN_DIR):
 		var scene := "%s/%s.tscn" % [BUILT_IN_DIR, id]
 		out.append(_define(id, scene, "%s/%s.zones.json" % [BUILT_IN_DIR, id], BUILT_IN_AUTHOR))
@@ -310,8 +310,8 @@ static func roots(extra: PackedStringArray = PackedStringArray()) -> PackedStrin
 	return out
 
 
-static func _imported(root: String) -> Array[DotMapDef]:
-	var out: Array[DotMapDef] = []
+static func _imported(root: String) -> Array[GSMapDef]:
+	var out: Array[GSMapDef] = []
 	var dir := DirAccess.open(root)
 	if dir == null:
 		return out                        # a root that does not exist is not an error
@@ -322,13 +322,13 @@ static func _imported(root: String) -> Array[DotMapDef]:
 		if not FileAccess.file_exists(manifest):
 			continue
 		# Only in a root local maps share: reading every manifest under res://maps/imported would cost seconds.
-		if DotMapLocalMaps.roots().has(root) and is_mesh_manifest(manifest):
+		if GSMapLocalMaps.roots().has(root) and is_mesh_manifest(manifest):
 			continue
 		var map := _define(StringName(id), IMPORTED_SCENE, manifest, IMPORTED_AUTHOR)
 		# Without the mesh the map loads to an empty world and nothing says why, so a
 		# half-copied directory is skipped rather than offered.
 		if not FileAccess.file_exists("%s/%s/%s.bin" % [root, id, id]):
-			DotLog.warn(CHANNEL, "an imported map has no mesh and was skipped",
+			GSLog.warn(CHANNEL, "an imported map has no mesh and was skipped",
 				{"id": id, "root": root})
 			continue
 		out.append(map)
@@ -388,18 +388,18 @@ static func _scene_ids(root: String) -> Array[StringName]:
 ## Returns null when the directory does not hold the two files a map is made of, which is
 ## the same judgement [method _imported] makes and for the same reason -- a map with no
 ## mesh loads to an empty world and nothing says why.
-static func at_directory(id: StringName, dir: String) -> DotMapDef:
+static func at_directory(id: StringName, dir: String) -> GSMapDef:
 	var base := dir.rstrip("/")
 	var manifest := "%s/%s.json" % [base, id]
 
 	if not FileAccess.file_exists(manifest):
-		DotLog.warn(CHANNEL, "a mounted map has no manifest", {
+		GSLog.warn(CHANNEL, "a mounted map has no manifest", {
 			"id": String(id), "looked_for": manifest
 		})
 		return null
 
 	if not FileAccess.file_exists("%s/%s.bin" % [base, id]):
-		DotLog.warn(CHANNEL, "a mounted map has no mesh and was skipped", {
+		GSLog.warn(CHANNEL, "a mounted map has no mesh and was skipped", {
 			"id": String(id), "dir": base
 		})
 		return null
@@ -409,9 +409,9 @@ static func at_directory(id: StringName, dir: String) -> DotMapDef:
 
 static func _define(
 	id: StringName, scene: String, sidecar: String, default_author: String
-) -> DotMapDef:
+) -> GSMapDef:
 	var meta := _sidecar_meta(sidecar)
-	var map := DotMapDef.new()
+	var map := GSMapDef.new()
 	map.id = id
 	map.scene_path = scene
 	map.zones_path = sidecar if sidecar.ends_with(".zones.json") else ""
@@ -429,14 +429,14 @@ static func _define(
 ## A sidecar's descriptive fields, from either shape.
 ##
 ## A hand-written map's zones file nests them under `meta`, because that is where
-## [DotTimerZoneSet] puts what a map says about itself; an imported map's manifest has
+## [GSTimerZoneSet] puts what a map says about itself; an imported map's manifest has
 ## them at the top. Reading both here is what lets the two shapes share everything else.
 static func _sidecar_meta(path: String) -> Dictionary:
 	if path.is_empty() or not FileAccess.file_exists(path):
 		return {}
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if typeof(parsed) != TYPE_DICTIONARY:
-		DotLog.warn(CHANNEL, "a map sidecar is not usable", {"path": path})
+		GSLog.warn(CHANNEL, "a map sidecar is not usable", {"path": path})
 		return {}
 	var doc: Dictionary = parsed
 	var nested: Variant = doc.get("meta", {})
@@ -456,12 +456,12 @@ static func _sidecar_meta(path: String) -> Dictionary:
 static func kind_of(id: StringName) -> StringName:
 	var s := String(id)
 	for prefix in [
-		["bhop", DotMapDef.KIND_BHOP], ["surf", DotMapDef.KIND_SURF],
-		["kz", DotMapDef.KIND_KZ], ["race", DotMapDef.KIND_RACE],
+		["bhop", GSMapDef.KIND_BHOP], ["surf", GSMapDef.KIND_SURF],
+		["kz", GSMapDef.KIND_KZ], ["race", GSMapDef.KIND_RACE],
 	]:
 		if s.begins_with(str(prefix[0]) + "_"):
 			return prefix[1]
-	return DotMapDef.KIND_SURF
+	return GSMapDef.KIND_SURF
 
 
 ## A readable name from an id, for a map with nothing to say about itself.

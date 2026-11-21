@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 const AirdriftBspMap := preload("../game/airdrift_bsp_map.gd")
 const AirdriftConfig := preload("../game/airdrift_config.gd")
@@ -26,7 +26,7 @@ var _finished := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--source="):
 			_source = a.trim_prefix("--source=")
@@ -45,9 +45,9 @@ func _run() -> void:
 	await _test_load(&"fixture_local", "user://maps")
 	if not _source.is_empty():
 		expected += 2
-		var name := DotMapLocalMaps.prefix_in(_source).get_file()
+		var name := GSMapLocalMaps.prefix_in(_source).get_file()
 		if _check(not name.is_empty(), "the source holds a converted map", _source):
-			var id := StringName(name + DotMapLocalMaps.ID_SUFFIX)
+			var id := StringName(name + GSMapLocalMaps.ID_SUFFIX)
 			_clean()
 			_copy_tree(_source, RES_FOLDER.path_join("convert"))
 			await _test_load(id, "res://addons/maps")
@@ -60,7 +60,7 @@ func _run() -> void:
 		_clean()
 		await _test_drops()
 	else:
-		print("-- drops skipped: dot-map API %d < %d" % [DotAddonApi.build_level("dot_map"), AirdriftMapCatalogue.DROP_LEVEL])
+		print("-- drops skipped: dot-map API %d < %d" % [GSAddonApi.build_level("dot_map"), AirdriftMapCatalogue.DROP_LEVEL])
 	_clean()
 	AirdriftMapCatalogue.list_local = false
 	_report_sections(_entered, _finished, expected)
@@ -73,12 +73,12 @@ func _test_listing() -> void:
 	AirdriftMapCatalogue.list_local = false
 	_check(not _ids().has(&"fixture_local"), "a server's catalogue never lists a local map")
 	AirdriftMapCatalogue.list_local = true
-	var def: DotMapDef = null
+	var def: GSMapDef = null
 	for map in AirdriftMapCatalogue.scan():
 		if map.id == &"fixture_local":
 			def = map
 	_check(def != null, "an offline catalogue lists the copy as fixture_local", str(_ids()))
-	_check(def != null and def.display_name.ends_with(DotMapLocalMaps.TAG), "titled (local)",
+	_check(def != null and def.display_name.ends_with(GSMapLocalMaps.TAG), "titled (local)",
 		"" if def == null else def.display_name)
 	_check(def != null and def.scene_path == AirdriftMapCatalogue.IMPORTED_SCENE, "built by the imported map scene")
 	# user://maps holds legacy imported maps too, at <id>/<id>.json, the layout this copy also has.
@@ -86,7 +86,7 @@ func _test_listing() -> void:
 	for ext in [".json", ".bin"]:
 		DirAccess.copy_absolute(FIXTURE_DIR.path_join("fixture" + ext), USER_FOLDER.path_join("zz_local_maps_suite" + ext))
 	_check(_ids().has(&"zz_local_maps_suite_local"), "a copy named like its folder is listed as local")
-	var legacy_ids := AirdriftMapCatalogue.scan().filter(func(m: DotMapDef) -> bool: return m.id == &"zz_local_maps_suite")
+	var legacy_ids := AirdriftMapCatalogue.scan().filter(func(m: GSMapDef) -> bool: return m.id == &"zz_local_maps_suite")
 	_check(legacy_ids.is_empty(), "the mesh folder is not read as a legacy imported map")
 	_finished += 1
 
@@ -95,7 +95,7 @@ func _test_load(id: StringName, root: String) -> void:
 	_entered += 1
 	print("-- %s from %s" % [id, root])
 	AirdriftMapCatalogue.list_local = true
-	var found := DotMapLocalMaps.find(id)
+	var found := GSMapLocalMaps.find(id)
 	_check(str(found.get("root", "")) == root, "found under %s" % root, str(found))
 	var config := AirdriftConfig.new()
 	config.records_directory = ""
@@ -117,7 +117,7 @@ func _test_load(id: StringName, root: String) -> void:
 	if bsp != null:
 		await get_tree().physics_frame
 		await get_tree().physics_frame
-		var at := bsp.spawn_for(DotTimerTrack.MAIN)
+		var at := bsp.spawn_for(GSTimerTrack.MAIN)
 		var hit := bsp.get_world_3d().direct_space_state.intersect_ray(
 			PhysicsRayQueryParameters3D.create(at + Vector3.UP, at + Vector3.DOWN * 50.0))
 		_check(not hit.is_empty(), "the spawn stands over its floor", str(at))
@@ -130,7 +130,7 @@ func _test_drops() -> void:
 	_entered += 1
 	print("-- dropped onto the window: a folder, a zip, and junk")
 	AirdriftMapCatalogue.list_local = true
-	var local_maps: Object = DotMapLocalMaps  # API 24 by name, so this parses on API 23
+	var local_maps: Object = GSMapLocalMaps  # API 24 by name, so this parses on API 23
 	var player_cache: Variant = local_maps.get(&"zip_cache")
 	local_maps.set(&"zip_cache", ZIP_CACHE)
 	# A game has to start on a map: a local copy named like its folder, so the dropped fixture is the only new id.
@@ -155,12 +155,12 @@ func _test_drops() -> void:
 	var said: String = game.add_dropped_maps(_global(folder))
 	_check(DirAccess.dir_exists_absolute(DROPPED_FOLDER), "the folder is copied into user://maps")
 	_check(game.maps.catalogue.has(&"fixture_local"), "M lists the dropped map without a restart")
-	_check(said.begins_with("Added ") and said.contains(DotMapLocalMaps.TAG), "the player is told it was added", said)
+	_check(said.begins_with("Added ") and said.contains(GSMapLocalMaps.TAG), "the player is told it was added", said)
 	var rows: Array = game.map_rows()
 	_check(rows.any(func(row: Dictionary) -> bool:
-			return row["id"] == "fixture_local" and str(row["name"]).ends_with(DotMapLocalMaps.TAG)),
+			return row["id"] == "fixture_local" and str(row["name"]).ends_with(GSMapLocalMaps.TAG)),
 		"the solo menu offers it as (local)")
-	var started: DotResult = await game.change_map(&"fixture_local", true)
+	var started: GSResult = await game.change_map(&"fixture_local", true)
 	var bsp := game.current_map_node() as AirdriftBspMap
 	_check(started.ok and bsp != null and bsp.local_prefix.begins_with(DROPPED_FOLDER), "the dropped map plays",
 		"" if bsp == null else bsp.local_prefix)
@@ -171,7 +171,7 @@ func _test_drops() -> void:
 	said = game.add_dropped_maps(_global(zip_path))
 	_check(FileAccess.file_exists(DROPPED_ZIP), "the zip is copied into user://maps")
 	_check(said.begins_with("Added "), "a dropped zip is added", said)
-	var entry := DotMapLocalMaps.find(&"fixture_local")
+	var entry := GSMapLocalMaps.find(&"fixture_local")
 	_check(str(entry.get("zip", "")) == DROPPED_ZIP, "found as the zip", str(entry))
 
 	var junk := DROP_SOURCE.path_join("notes.txt")
@@ -207,7 +207,7 @@ func _zip_fixture(zip_path: String) -> bool:
 
 
 func _ids() -> Array:
-	return AirdriftMapCatalogue.scan().map(func(m: DotMapDef) -> StringName: return m.id)
+	return AirdriftMapCatalogue.scan().map(func(m: GSMapDef) -> StringName: return m.id)
 
 
 func _clean() -> void:

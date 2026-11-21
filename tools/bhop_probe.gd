@@ -45,8 +45,8 @@ func _ready() -> void:
 	await get_tree().physics_frame
 
 	var tunables := AirdriftMovement.tunables_for(AirdriftConfig.new())
-	var body := DotFpsPhysicsBody.for_node(self)
-	var motor := DotFpsMotor.new(tunables, body)
+	var body := GSFpsPhysicsBody.for_node(self)
+	var motor := GSFpsMotor.new(tunables, body)
 
 	# The bottom of the map, in genre units. A player below it has left the world
 	# whatever else happened; below the surface they started on is the interesting case.
@@ -63,18 +63,18 @@ func _ready() -> void:
 	var worst := {}
 
 	for sample: Array in starts_at:
-		var state := DotFpsState.new()
+		var state := GSFpsState.new()
 		# A hull's worth above the surface, which is where a spawn puts a player.
 		state.position = (sample[0] as Vector3) + Vector3.UP * AirdriftUnits.to_metres(8.0)
 		var floor_y: float = (sample[0] as Vector3).y
 		state.velocity = (sample[1] as Vector3) * AirdriftUnits.to_metres(ENTRY_SPEED_UNITS)
 
 		var height: float = tunables.stand_height
-		var command := DotFpsCommand.new()
+		var command := GSFpsCommand.new()
 		# Held, not tapped: `autobhop on` is what the server runs and what the report
 		# was recorded under, and a held jump is the input that hits the snap every
 		# single landing rather than every other one.
-		command.set_button(DotFpsCommand.BUTTON_JUMP, true)
+		command.set_button(GSFpsCommand.BUTTON_JUMP, true)
 		command.move = Vector2(0.0, 1.0)
 		command.yaw = rad_to_deg(atan2(-(sample[1] as Vector3).x, -(sample[1] as Vector3).z))
 
@@ -92,9 +92,9 @@ func _ready() -> void:
 			# it too. Shapes have margins; standing on the ground is an overlap.
 			#
 			# The distinction that matters cannot be made from out here. It is the one
-			# [method DotFpsMotor._categorise_ground] already makes and had no way to
+			# [method GSFpsMotor._categorise_ground] already makes and had no way to
 			# report — the ground probe found nothing AND the player is in something —
-			# and it is counted by [member DotFpsMotor.embedded_ticks] now, which is what
+			# and it is counted by [member GSFpsMotor.embedded_ticks] now, which is what
 			# this reads at the end instead.
 			#
 			# Worth the four lines: both of those numbers were large, plausible, and

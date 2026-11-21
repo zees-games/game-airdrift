@@ -1,7 +1,7 @@
 extends RefCounted
 
 ## A route for the rule-based bots across a map nobody wrote a route for, from dot-npc-ai's
-## navigation annotations (`DotNpcAiNavAnnotator`): the links it finds (a drop off a ledge, a jump
+## navigation annotations (`GSNpcAiNavAnnotator`): the links it finds (a drop off a ledge, a jump
 ## up onto one, a jump across a gap) joined to the walkable mesh into one graph, and the way
 ## through it from the spawn to the goal as the points [code]airdrift_route_bot.gd[/code] drives.
 ##
@@ -11,12 +11,12 @@ extends RefCounted
 ## are what join the islands, and a link is also what tells the bot WHERE to jump.
 ##
 ## [b]Never in a tick.[/b] A map's colliders are parsed in one engine call (milliseconds); the
-## bake runs on a worker thread where there are threads; the annotator is a [DotJob] stepped a
+## bake runs on a worker thread where there are threads; the annotator is a [GSJob] stepped a
 ## few items at a time; the graph, the search and the thinning are cursors over arrays. Every
 ## [method step] takes a budget in microseconds and returns when it is spent, so a server calls
 ## it once a tick with a millisecond and carries on. The annotations are cached by their own key
-## ([method DotNpcAiNavAnnotator.cache_key]), and the baked mesh by the map id and a digest of its
-## geometry (dot-bot's [DotBotNav] cache), so a round change on a map the server has seen skips both.
+## ([method GSNpcAiNavAnnotator.cache_key]), and the baked mesh by the map id and a digest of its
+## geometry (dot-bot's [GSBotNav] cache), so a round change on a map the server has seen skips both.
 ##
 ## [b]A walk through polygons, a link through a node of its own.[/b] Each polygon of the mesh is
 ## a node of an [AStar3D] at its centre, joined to its neighbours. A link is a node midway
@@ -35,16 +35,16 @@ enum State { IDLE, BAKING, ANNOTATING, GRAPH, PLAN, READY, FAILED }
 ## Cost of crossing a link, as a multiple of walking the same distance. A drop is the cheapest
 ## (nothing to miss), a jump up is a jump the bot must time, and a gap is the one that kills a run.
 const WEIGHTS := {
-	DotNpcAiNavAnnotations.LINK_DROP: 1.5,
-	DotNpcAiNavAnnotations.LINK_JUMP_UP: 3.0,
-	DotNpcAiNavAnnotations.LINK_JUMP_GAP: 4.0,
+	GSNpcAiNavAnnotations.LINK_DROP: 1.5,
+	GSNpcAiNavAnnotations.LINK_JUMP_UP: 3.0,
+	GSNpcAiNavAnnotations.LINK_JUMP_GAP: 4.0,
 }
 ## Link kinds a bot follows. A ladder, a teleport and a ride are declared by a game, and this
 ## one declares none.
 const FOLLOWED := [
-	DotNpcAiNavAnnotations.LINK_DROP,
-	DotNpcAiNavAnnotations.LINK_JUMP_UP,
-	DotNpcAiNavAnnotations.LINK_JUMP_GAP,
+	GSNpcAiNavAnnotations.LINK_DROP,
+	GSNpcAiNavAnnotations.LINK_JUMP_UP,
+	GSNpcAiNavAnnotations.LINK_JUMP_GAP,
 ]
 
 ## A gap is judged at this multiple of the running speed: the route bot chains hops and strafes
@@ -71,7 +71,7 @@ const LANDING_RADIUS := 0.9
 var state: State = State.IDLE
 ## The route-bot points, once [constant State.READY]; empty when there is no way.
 var points: Array[Dictionary] = []
-var annotations: DotNpcAiNavAnnotations = null
+var annotations: GSNpcAiNavAnnotations = null
 ## Where the work is and what it cost, for [method describe]: milliseconds per phase, the
 ## slowest single step, and whether the annotations came from the cache.
 var phase_ms: Dictionary = {}
@@ -87,9 +87,9 @@ var link_edges := 0
 var failure := ""
 
 var _mesh: NavigationMesh = null
-var _baker: DotBotNav = null
+var _baker: GSBotNav = null
 var _world: World3D = null
-var _body: DotFpsTunables = null
+var _body: GSFpsTunables = null
 var _start := Vector3.ZERO
 var _goal := Vector3.ZERO
 var _seeds := PackedVector3Array()
@@ -100,7 +100,7 @@ var _avoid: Callable = Callable()
 var _blocked: Dictionary = {}
 var _generation := 0
 var _baked := false
-var _job: DotNpcAiNavAnnotator = null
+var _job: GSNpcAiNavAnnotator = null
 var _started_us := 0
 var _phase_started_us := 0
 
@@ -121,7 +121,7 @@ var _linked: Array[Dictionary] = []
 ## Starts the work for the map under [param root], whose physics are in [param world]: a body as [param body]
 ## moves, from [param start] to [param goal] (metres). Spawns are the seeds that decide which floors count.
 ## [param cache_dir] keeps annotations by key and the baked mesh under [param map_id] (empty is no mesh cache).
-func begin(root: Node3D, world: World3D, body: DotFpsTunables, start: Vector3, goal: Vector3,
+func begin(root: Node3D, world: World3D, body: GSFpsTunables, start: Vector3, goal: Vector3,
 		seeds: PackedVector3Array, cache_dir: String, avoid: Callable = Callable(), map_id: String = "") -> void:
 	cancel()
 	_generation += 1
@@ -135,8 +135,8 @@ func begin(root: Node3D, world: World3D, body: DotFpsTunables, start: Vector3, g
 	_started_us = Time.get_ticks_usec()
 	_phase_started_us = _started_us
 
-	# DotBotNav parses, bakes and keeps the mesh by map id and geometry digest; its cells are CELL and CELL_HEIGHT.
-	_baker = DotBotNav.new()
+	# GSBotNav parses, bakes and keeps the mesh by map id and geometry digest; its cells are CELL and CELL_HEIGHT.
+	_baker = GSBotNav.new()
 	_baker.cache_dir = cache_dir.path_join("mesh")
 	_baker.cache_id = map_id
 	var agent := {"radius": body.radius, "height": body.stand_height, "climb": body.step_height, "slope": body.max_slope_angle}
@@ -178,7 +178,7 @@ func is_working() -> bool:
 	return state != State.IDLE and state != State.READY and state != State.FAILED
 
 
-func _on_baked(res: DotResult, generation: int) -> void:
+func _on_baked(res: GSResult, generation: int) -> void:
 	if generation != _generation:
 		return
 	if not res.ok:
@@ -225,7 +225,7 @@ func _fail(why: String) -> void:
 	failure = why
 	state = State.FAILED
 	points = []
-	DotLog.warn(CHANNEL, "bots cannot plan through this map", {"why": why})
+	GSLog.warn(CHANNEL, "bots cannot plan through this map", {"why": why})
 
 
 # --- Bake and annotate ---------------------------------------------------------
@@ -235,7 +235,7 @@ func _finish_bake() -> void:
 	if _mesh.get_polygon_count() == 0:
 		_fail("the bake found nowhere to walk")
 		return
-	_job = DotNpcAiNavAnnotator.new(_mesh, _world)
+	_job = GSNpcAiNavAnnotator.new(_mesh, _world)
 	_job.agent_radius = _body.radius
 	_job.stand_height = _body.stand_height
 	_job.climb = _body.step_height
@@ -254,7 +254,7 @@ func _finish_bake() -> void:
 	_job.max_hiding = 4
 	var key := _job.cache_key()
 	var path := "%s/%s.json" % [_cache_dir, key]
-	var cached := DotNpcAiNavAnnotations.load_file(path, key)
+	var cached := GSNpcAiNavAnnotations.load_file(path, key)
 	if cached.ok:
 		annotations = cached.value
 		from_cache = true
@@ -276,7 +276,7 @@ func _step_annotating() -> void:
 	annotations = _job.result.value
 	var saved := annotations.save("%s/%s.json" % [_cache_dir, _job.cache_key()])
 	if not saved.ok:
-		DotLog.debug(CHANNEL, "annotations not cached", {"error": saved.error.message})
+		GSLog.debug(CHANNEL, "annotations not cached", {"error": saved.error.message})
 	state = State.GRAPH
 	_cursor = 0
 	_step_no = 0
@@ -493,7 +493,7 @@ func _plan() -> void:
 	points = _points_for(ids)
 	phase_ms["plan"] = _lap()
 	state = State.READY
-	DotLog.info(CHANNEL, "bots have a route", {
+	GSLog.info(CHANNEL, "bots have a route", {
 		"points": points.size(), "reached_goal": reached_goal, "from_cache": from_cache,
 		"links": annotations.link_counts(), "phases_ms": phase_ms, "worst_step_ms": snappedf(worst_step_ms, 0.1)})
 
@@ -546,9 +546,9 @@ func _points_for(ids: PackedInt64Array) -> Array[Dictionary]:
 			continue
 		_flush(walk, out, link["from"])
 		var ledge := _point(link["from"], LEDGE_RADIUS, false)
-		ledge["hop"] = int(link["kind"]) == DotNpcAiNavAnnotations.LINK_JUMP_GAP
+		ledge["hop"] = int(link["kind"]) == GSNpcAiNavAnnotations.LINK_JUMP_GAP
 		out.append(ledge)
-		out.append(_point(link["to"], LANDING_RADIUS, int(link["kind"]) == DotNpcAiNavAnnotations.LINK_DROP))
+		out.append(_point(link["to"], LANDING_RADIUS, int(link["kind"]) == GSNpcAiNavAnnotations.LINK_DROP))
 		walk = []
 	_flush(walk, out, Vector3.INF)
 	return out

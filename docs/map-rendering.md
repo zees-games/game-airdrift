@@ -8,7 +8,7 @@ Stock-texture stand-ins, glass, water and the white-sky fix are applied in `Aird
 
 ## Lighting: the map says how it is lit
 
-Every `.bsp` carries its own lighting in the entity lump: `light_environment` (sun pitch, yaw, colour, compiled brightness, ambient), `env_fog_controller`, the sky name, `sky_camera`. `lighting_of` writes it into the manifest and **dot-lighting applies it** (`DotLightDocument.from_dictionary`, `DotLightRig.apply`). `AirdriftLighting` keeps one decision: which `DotLightProfile` a machine gets, `web()` in a browser, which drops shadows (a surf map is a large open volume and the shadow pass costs the whole canyon) and keeps glow (how a neon strip reads as a light, and how some maps signpost the route).
+Every `.bsp` carries its own lighting in the entity lump: `light_environment` (sun pitch, yaw, colour, compiled brightness, ambient), `env_fog_controller`, the sky name, `sky_camera`. `lighting_of` writes it into the manifest and **dot-lighting applies it** (`GSLightDocument.from_dictionary`, `GSLightRig.apply`). `AirdriftLighting` keeps one decision: which `GSLightProfile` a machine gets, `web()` in a browser, which drops shadows (a surf map is a large open volume and the shadow pass costs the whole canyon) and keeps glow (how a neon strip reads as a light, and how some maps signpost the route).
 
 - **The sun lights the characters and not the world.** Imported surfaces are `unshaded`; the baked lightmap *is* their lighting. What changes how the world looks is the tone map, fog, glow and the colour behind everything.
 - **The tone map is filmic.** Godot's `LINEAR` is a clip, not a tone map; the shoulder is why a bright sky and a dark rock face can both be readable.

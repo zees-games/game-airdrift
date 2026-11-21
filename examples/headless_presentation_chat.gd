@@ -6,7 +6,7 @@ extends "headless_presentation_menu.gd"
 func _test_a_party_run_is_tainted() -> void:
 	_section("A run nobody can vouch for is not a record")
 
-	DotP2PSignallerLoopback.reset_all()
+	GSP2PSignallerLoopback.reset_all()
 
 	var party := AirdriftParty.new()
 	party.name = "Party"
@@ -14,7 +14,7 @@ func _test_a_party_run_is_tainted() -> void:
 	_check(party.setup().ok, "a party sets up")
 
 	_check(
-		party.session.config.trust == DotP2PConfig.Trust.SANDBOXED,
+		party.session.config.trust == GSP2PConfig.Trust.SANDBOXED,
 		"a practice session is sandboxed"
 	)
 	_check(
@@ -23,7 +23,7 @@ func _test_a_party_run_is_tainted() -> void:
 		+ "no time at all"
 	)
 
-	var run := DotTimerRun.new()
+	var run := GSTimerRun.new()
 	_check(party.ranked(), "an ordinary session is ranked")
 	_check(not party.taint_if_unranked(run), "so a run in it is untouched")
 	_check(not run.tainted, "and stays clean")
@@ -63,7 +63,7 @@ func _test_chat_box() -> void:
 		return
 
 	_check(
-		DotInputBinding.describe_action(window.open_action) == "Y",
+		GSInputBinding.describe_action(window.open_action) == "Y",
 		"opened by Y, which is where this genre has put it for twenty-five years"
 	)
 	_check(window.enabled, "drawn by default, on a server that said nothing")
@@ -90,7 +90,7 @@ func _test_chat_box() -> void:
 
 	p.settings.set_value(&"chat_open_key", "T")
 	_check(
-		DotInputBinding.describe_action(window.open_action) == "T",
+		GSInputBinding.describe_action(window.open_action) == "T",
 		"rebinding through the settings document moves the key"
 	)
 	_check(
@@ -111,7 +111,7 @@ func _test_chat_box() -> void:
 	# text stripped. The client is never added to the tree; only `_on_said` is used, fed
 	# exactly what the extras' `message_received` handler hands it.
 	var extras_script := preload("../game/airdrift_client_extras.gd")
-	var join := DotChatMessage.make(DotChatMessage.Kind.JOIN, &"all", "k2", "Guest 435", "")
+	var join := GSChatMessage.make(GSChatMessage.Kind.JOIN, &"all", "k2", "Guest 435", "")
 	var said_client := AirdriftClient.new()
 	said_client.presentation = p
 	said_client._on_said(extras_script.speaker_of(join), extras_script.text_of(join), join.kind_name())
@@ -246,7 +246,7 @@ func _test_every_sound_has_a_voice() -> void:
 	var uncovered: Array[String] = []
 	for id in cat.ids():
 		# dot-audio's stock footsteps and beds are files the addon ships: no stand-in needed.
-		if not recipes.has(id) and not DotAudioStock.ids().has(id):
+		if not recipes.has(id) and not GSAudioStock.ids().has(id):
 			uncovered.append(String(id))
 	_check(
 		uncovered.is_empty(),
@@ -260,7 +260,7 @@ func _test_every_sound_has_a_voice() -> void:
 			stray.append(String(id))
 	_check(stray.is_empty(), "and no recipe names an id that is not there", str(stray))
 
-	var bank := DotAudioSynth.bank(cat, recipes)
+	var bank := GSAudioSynth.bank(cat, recipes)
 	_check(
 		bank.has(&"land") and bank.has("res://audio/land.ogg"),
 		"the bank answers under both the id and the path the def names"
@@ -281,7 +281,7 @@ func _test_the_vote_is_heard() -> void:
 	_section("The map vote is heard, and under the run")
 
 	var p := _make()
-	var sink := p.audio.sink as DotAudioSinkNull
+	var sink := p.audio.sink as GSAudioSinkNull
 
 	# AirdriftVote's constants are the one copy: its rules name them and this catalogue
 	# defines them, so a cue the server sends and the client lacks cannot be a typo.
@@ -414,10 +414,10 @@ func _test_blind_and_beacon() -> void:
 	_check(bea.beacon_marker == null, "turning it off takes the marker away")
 
 	var p := _make()
-	var sink := p.audio.sink as DotAudioSinkNull
+	var sink := p.audio.sink as GSAudioSinkNull
 	var def := p.audio.catalogue.find(AirdriftPresentation.BEACON_SOUND)
 	_check(
-		def != null and def.kind == DotAudioDef.Kind.POSITIONAL_3D and def.priority < 50,
+		def != null and def.kind == GSAudioDef.Kind.POSITIONAL_3D and def.priority < 50,
 		"the ping is positional, and below every sound the run is made of"
 	)
 	sink.forget()
@@ -433,7 +433,7 @@ func _test_blind_and_beacon() -> void:
 
 
 ## `[p2p-await-games]`: a practice session over the HTTP rendezvous, host and join, each
-## awaited end to end — through `AirdriftParty`, `DotP2PSession` and `DotP2PSignallerHttp` to
+## awaited end to end — through `AirdriftParty`, `GSP2PSession` and `GSP2PSignallerHttp` to
 ## a socket and back.
 ##
 ## [b]What "awaited" is asserted as.[/b] The answer the caller gets back is the one the
@@ -469,8 +469,8 @@ func _test_party_over_http() -> void:
 
 	_check(
 		ada.setup().ok and bob.setup().ok
-			and ada.session.signaller is DotP2PSignallerHttp
-			and bob.session.signaller is DotP2PSignallerHttp,
+			and ada.session.signaller is GSP2PSignallerHttp
+			and bob.session.signaller is GSP2PSignallerHttp,
 		"two parties set up with a URL, and both meet over HTTP rather than the loopback"
 	)
 
@@ -478,12 +478,12 @@ func _test_party_over_http() -> void:
 	ada.open.connect(func(code: String) -> void: opened.append(code))
 
 	var before := Engine.get_process_frames()
-	var hosted: DotResult = await ada.host("Ada")
+	var hosted: GSResult = await ada.host("Ada")
 	var took := Engine.get_process_frames() - before
 	var code := str(hosted.value) if hosted != null and hosted.ok else ""
 
 	_check(
-		hosted != null and hosted.ok and DotP2PLobby.is_code_shaped(code, ada.session.config.code_length),
+		hosted != null and hosted.ok and GSP2PLobby.is_code_shaped(code, ada.session.config.code_length),
 		"host() hands back a join code",
 		str(hosted.error.message) if hosted != null and not hosted.ok else "null"
 	)
@@ -499,12 +499,12 @@ func _test_party_over_http() -> void:
 	_check(ada.active() and ada.session.is_host() and opened == [code],
 		"the session is open, hosted, and says so once",
 		"state %s, opened %s" % [ada.session.state(), str(opened)])
-	var run := DotTimerRun.new()
+	var run := GSTimerRun.new()
 	_check(not ada.ranked() and ada.taint_if_unranked(run) and run.tainted,
 		"and a run started in a session that met over a real rendezvous is tainted too")
 
 	before = Engine.get_process_frames()
-	var joined: DotResult = await bob.join(code.to_lower(), "Bob")
+	var joined: GSResult = await bob.join(code.to_lower(), "Bob")
 	took = Engine.get_process_frames() - before
 
 	_check(joined != null and joined.ok and took >= stub.delay,
@@ -530,7 +530,7 @@ func _test_party_over_http() -> void:
 	add_child(carol)
 	var _set := carol.setup()
 	stub.refuse = 403
-	var refused: DotResult = await carol.host("Carol")
+	var refused: GSResult = await carol.host("Carol")
 	_check(refused != null and not refused.ok and not carol.active(),
 		"and a rendezvous that refuses leaves the session closed with a reason",
 		"null" if refused == null else ("ok" if refused.ok else refused.error.message))
@@ -552,13 +552,13 @@ func _test_party_over_http() -> void:
 func _test_a_map_credits_its_author() -> void:
 	_section("A map change names the map's author")
 
-	var bare := DotMapDef.new()
+	var bare := GSMapDef.new()
 	bare.id = &"bhop_g2g_intro"
 	_check(AirdriftHud.now_playing_text(bare) == "Now playing bhop_g2g_intro",
 		"a hand-built map with no author reads as it always did", AirdriftHud.now_playing_text(bare))
 
-	var defs: Array[DotMapDef] = AirdriftMapCatalogue.scan()
-	var imported := defs.filter(func(m: DotMapDef) -> bool:
+	var defs: Array[GSMapDef] = AirdriftMapCatalogue.scan()
+	var imported := defs.filter(func(m: GSMapDef) -> bool:
 		return FileAccess.file_exists("res://maps/imported/%s/%s.json" % [m.id, m.id]))
 	# [b]A clean checkout has nothing to ask[/b], and CI is one: `maps/imported/` is
 	# gitignored, and an imported map's author lives only in its manifest there. The
@@ -569,14 +569,14 @@ func _test_a_map_credits_its_author() -> void:
 		_skip(3, "no imported maps on this checkout, so no author to ask (maps/imported/ is gitignored)")
 		_done()
 		return
-	var uncredited := imported.filter(func(m: Variant) -> bool: return AirdriftMapCatalogue.credit(m as DotMapDef).is_empty())
+	var uncredited := imported.filter(func(m: Variant) -> bool: return AirdriftMapCatalogue.credit(m as GSMapDef).is_empty())
 	_check(imported.size() > 0, "the catalogue holds imported maps to ask", "%d defs" % defs.size())
 	_check(uncredited.is_empty(), "and every one of them has an author to name",
-		", ".join(uncredited.map(func(m: Variant) -> String: return String((m as DotMapDef).id))))
+		", ".join(uncredited.map(func(m: Variant) -> String: return String((m as GSMapDef).id))))
 
-	var mesa: DotMapDef = null
+	var mesa: GSMapDef = null
 	for m: Variant in imported:
-		if (m as DotMapDef).id == &"surf_mesa":
+		if (m as GSMapDef).id == &"surf_mesa":
 			mesa = m
 	_check(mesa != null and AirdriftHud.now_playing_text(mesa).ends_with(", by Arblarg"),
 		"so surf_mesa's line credits Arblarg",

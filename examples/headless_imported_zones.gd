@@ -11,7 +11,7 @@ func _test_zones() -> void:
 	if zones == null:
 		return
 	_check(zones.problems().is_empty(), "which is well formed", ", ".join(zones.problems()))
-	var respawns := zones.of_kind(DotTimerZone.Kind.RESPAWN).size()
+	var respawns := zones.of_kind(GSTimerZone.Kind.RESPAWN).size()
 	# A surf map's trigger_teleport volumes are its pit. Losing them means a player
 	# who falls off falls for ever, which is the bug dot-timer's effect_requested was.
 	if NO_PIT.has(_map_id):
@@ -36,11 +36,11 @@ func _test_zones() -> void:
 		# Asserted the other way round. See [constant NOT_COURSES]: if this map has grown a
 		# finish, the list is out of date and that is worth a failure, because the next
 		# person to read it would believe it.
-		_check(not tracks.has(DotTimerTrack.MAIN),
+		_check(not tracks.has(GSTimerTrack.MAIN),
 			"is not a course, and still is not",
 			"listed in NOT_COURSES; runnable tracks: %s" % str(tracks))
 	else:
-		_check(tracks.has(DotTimerTrack.MAIN),
+		_check(tracks.has(GSTimerTrack.MAIN),
 			"the main track has both a start line and a finish",
 			"runnable tracks: %s" % str(tracks))
 
@@ -48,8 +48,8 @@ func _test_zones() -> void:
 	# so a bonus with no spawn silently starts at the map's start and looks like a bonus that does not work.
 	var without := PackedStringArray()
 	for track in tracks:
-		if zones.first_of_kind(DotTimerZone.Kind.SPAWN, track) == null:
-			without.append(DotTimerTrack.name_of(track))
+		if zones.first_of_kind(GSTimerZone.Kind.SPAWN, track) == null:
+			without.append(GSTimerTrack.name_of(track))
 	_check(without.is_empty(), "and every runnable track has somewhere to spawn",
 		", ".join(without))
 
@@ -57,7 +57,7 @@ func _test_zones() -> void:
 	# its own. See [constant BONUSES_WITHOUT_PITS] for the ones known not to have one.
 	var expected := PackedStringArray()
 	for track: int in BONUSES_WITHOUT_PITS.get(String(_map_id), []):
-		expected.append("%s has no respawn zone" % DotTimerTrack.name_of(track))
+		expected.append("%s has no respawn zone" % GSTimerTrack.name_of(track))
 	var reported := PackedStringArray()
 	for problem in zones.route_problems():
 		var cut := problem.find(",")
@@ -98,13 +98,13 @@ func _test_runnable() -> void:
 
 	# Drive the timer over the map's own zones and see a time come out: the only check about the zones adding up to a run.
 	# A start with no reachable finish, a stage past the end, a finish inside the start all pass `problems()`.
-	var timer := DotTimer.new()
+	var timer := GSTimer.new()
 	timer.bind(zones, game.tick_rate)
-	var finished: Array[DotTimerRun] = []
-	timer.run_finished.connect(func(run: DotTimerRun) -> void: finished.append(run))
+	var finished: Array[GSTimerRun] = []
+	timer.run_finished.connect(func(run: GSTimerRun) -> void: finished.append(run))
 
-	var start := zones.first_of_kind(DotTimerZone.Kind.START, DotTimerTrack.MAIN)
-	var finish := zones.first_of_kind(DotTimerZone.Kind.END, DotTimerTrack.MAIN)
+	var start := zones.first_of_kind(GSTimerZone.Kind.START, GSTimerTrack.MAIN)
+	var finish := zones.first_of_kind(GSTimerZone.Kind.END, GSTimerTrack.MAIN)
 
 	if NOT_COURSES.has(_map_id):
 		# Both checks still run and still count; what changes is what the right answer is.
@@ -135,13 +135,13 @@ func _test_runnable() -> void:
 	# own stages -- and stepping back into the start zone mid-route makes the timer do
 	# what it should: treat leaving it again as a new attempt, wiping the splits.
 	var route: Array[Vector3] = [start.centre(), start.centre(), away]
-	for n in range(2, zones.stage_count(DotTimerTrack.MAIN) + 1):
-		var stage := zones.stage_zone(DotTimerTrack.MAIN, n)
+	for n in range(2, zones.stage_count(GSTimerTrack.MAIN) + 1):
+		var stage := zones.stage_zone(GSTimerTrack.MAIN, n)
 		if stage != null:
 			route.append(stage.centre())
 	route.append(finish.centre())
 
-	var sample := DotTimerSample.new()
+	var sample := GSTimerSample.new()
 	for point in route:
 		sample.previous_position = sample.position
 		sample.position = point
@@ -156,10 +156,10 @@ func _test_runnable() -> void:
 
 	# Stage 1 is the start line, and a run begins by LEAVING it -- so its split is the
 	# one that legitimately never arrives. Every stage after it must.
-	var wanted := maxi(0, zones.stage_count(DotTimerTrack.MAIN) - 1)
+	var wanted := maxi(0, zones.stage_count(GSTimerTrack.MAIN) - 1)
 
 	var got := 0
-	for n in range(2, zones.stage_count(DotTimerTrack.MAIN) + 1):
+	for n in range(2, zones.stage_count(GSTimerTrack.MAIN) + 1):
 		if finished[0].splits.has(n):
 			got += 1
 	_check(got == wanted, "and its stages come out in order",
@@ -187,9 +187,9 @@ func _test_stands_on_it() -> void:
 	# dot-core's collision audit, REPORT ONLY: an imported map's drawing is the .bsp's faces and
 	# its solids the brushes, so triggers, clips-as-drawn and sky show up. Count and worst
 	# offenders (by kind) are printed; nothing fails on them.
-	var audit := DotCollisionAudit.audit(node, true)
+	var audit := GSCollisionAudit.audit(node, true)
 	if audit.ok:
-		var report: DotCollisionAudit = audit.value
+		var report: GSCollisionAudit = audit.value
 		var kinds := {}
 		for f: Dictionary in report.findings:
 			kinds[f["kind"]] = int(kinds.get(f["kind"], 0)) + 1
@@ -215,8 +215,8 @@ func _test_stands_on_it() -> void:
 	# Watching for the pits while it falls: a sealed black spawn room whose floor is the teleport out sent the player back to the
 	# spawn for ever, and "still standing three seconds later" passed because the spawn is where it was put. A main-track pit
 	# touched at any tick is that, or a spawn over a hole. It does not see a pit the feet never enter; the spawn view below is the other half.
-	var pits: Array[DotTimerZone] = game.timers.zones.of_kind(DotTimerZone.Kind.RESPAWN, DotTimerTrack.MAIN) \
-		if game.timers.zones != null else ([] as Array[DotTimerZone])
+	var pits: Array[GSTimerZone] = game.timers.zones.of_kind(GSTimerZone.Kind.RESPAWN, GSTimerTrack.MAIN) \
+		if game.timers.zones != null else ([] as Array[GSTimerZone])
 	var in_pit := 0
 	for _i in range(180):
 		await get_tree().physics_frame
@@ -233,7 +233,7 @@ func _test_stands_on_it() -> void:
 	# And where it came to rest is inside the start zone. The timer asks the zone about the player's own position every tick;
 	# a start box that stops short of the floor contains the spawn in mid-air and not the player under it (surf_arcade's
 	# stood 240 units over the pad), so the run starts as they fall out of it.
-	var start_zone := game.timers.zones.first_of_kind(DotTimerZone.Kind.START, DotTimerTrack.MAIN) \
+	var start_zone := game.timers.zones.first_of_kind(GSTimerZone.Kind.START, GSTimerTrack.MAIN) \
 		if game.timers.zones != null else null
 	if start_zone == null:
 		_check(NOT_COURSES.has(_map_id), "and comes to rest inside the start zone",
@@ -271,8 +271,8 @@ func _test_stands_on_it() -> void:
 
 
 ## Every place the map can put a player: each track's spawn, and each `!s<n>`.
-## A destination is the one field nothing else checks: `DotTimerManager` resolves "go to stage 3" to a zone's
-## [member DotTimerZone.destination], and one in the sky, a wall, or at the origin succeeds at every step. Standing on it for a second is the test.
+## A destination is the one field nothing else checks: `GSTimerManager` resolves "go to stage 3" to a zone's
+## [member GSTimerZone.destination], and one in the sky, a wall, or at the origin succeeds at every step. Standing on it for a second is the test.
 func _test_stands_where_it_sends_you() -> void:
 	_section("destinations")
 	var node := game.current_map_node()
@@ -281,9 +281,9 @@ func _test_stands_where_it_sends_you() -> void:
 	var splits: Array[int] = []
 	if zones != null:
 		for track in zones.playable_tracks():
-			var spawn := zones.first_of_kind(DotTimerZone.Kind.SPAWN, track)
+			var spawn := zones.first_of_kind(GSTimerZone.Kind.SPAWN, track)
 			if spawn != null:
-				spots.append([DotTimerTrack.short_name_of(track) + " spawn", spawn.destination, spawn.destination_yaw])
+				spots.append([GSTimerTrack.short_name_of(track) + " spawn", spawn.destination, spawn.destination_yaw])
 			for n in range(1, zones.stage_count(track) + 1):
 				var stage := zones.stage_zone(track, n)
 				if stage == null:
@@ -291,7 +291,7 @@ func _test_stands_where_it_sends_you() -> void:
 				if stage.payload.has(AirdriftBspMap.NO_RESTART):
 					# A split with no restart has no spot; what is asserted is that
 					# nobody is sent to it. Main track only: that is the bot's.
-					if track == DotTimerTrack.MAIN:
+					if track == GSTimerTrack.MAIN:
 						splits.append(n)
 					continue
 				spots.append(["stage %d" % n, stage.destination, stage.destination_yaw])
@@ -312,7 +312,7 @@ func _test_stands_where_it_sends_you() -> void:
 				# arrivals (surf_year3000's start room takes both teams' booths, facing
 				# opposite ways), and a stage can face only one of them.
 				var door_yaws: Array[float] = []
-				for door: DotTimerZone in zones.of_kind(DotTimerZone.Kind.TELEPORT, track):
+				for door: GSTimerZone in zones.of_kind(GSTimerZone.Kind.TELEPORT, track):
 					# A finish door sends past the end (surf_rookie's lands back in stage 1), not into the stage.
 					if door.payload.has(AirdriftBspMap.FINISH_DOOR):
 						continue
@@ -348,7 +348,7 @@ func _test_stands_where_it_sends_you() -> void:
 	for n in splits:
 		var before := bot.global_position
 		var refused := game.request_stage(&"bot", n)
-		_check(not refused.ok and refused.error.code == DotError.CODE_UNSUPPORTED,
+		_check(not refused.ok and refused.error.code == GSError.CODE_UNSUPPORTED,
 			"stage %d, a split with no restart, refuses !s%d with the reason" % [n, n],
 			str(refused.error.message) if not refused.ok else "it was sent")
 		# `!rs` from inside it goes to the stage it splits, which IS somewhere to stand.
@@ -370,21 +370,21 @@ func _test_arrivals_miss_the_pits() -> void:
 	var zones := game.timers.zones
 	var inside := PackedStringArray()
 	if zones != null:
-		var pits := zones.of_kind(DotTimerZone.Kind.RESPAWN)
-		for zone: DotTimerZone in zones.zones:
+		var pits := zones.of_kind(GSTimerZone.Kind.RESPAWN)
+		for zone: GSTimerZone in zones.zones:
 			var label := ""
 			match zone.kind:
-				DotTimerZone.Kind.SPAWN:
-					label = "%s spawn" % DotTimerTrack.short_name_of(zone.track)
-				DotTimerZone.Kind.STAGE:
+				GSTimerZone.Kind.SPAWN:
+					label = "%s spawn" % GSTimerTrack.short_name_of(zone.track)
+				GSTimerZone.Kind.STAGE:
 					if zone.payload.has(AirdriftBspMap.NO_RESTART):
 						continue    # nobody is ever put there; see ARRIVES_IN_PIT
 					label = "stage %d" % int(zone.number)
-				DotTimerZone.Kind.TELEPORT:
+				GSTimerZone.Kind.TELEPORT:
 					label = "door"
 				_:
 					continue
-			for pit: DotTimerZone in pits:
+			for pit: GSTimerZone in pits:
 				if pit.track == zone.track and pit.contains(zone.destination):
 					if not inside.has(label):
 						inside.append(label)
@@ -408,11 +408,11 @@ func _test_arrivals_miss_the_pits() -> void:
 func _test_a_door_keeps_the_run() -> void:
 	_section("doors")
 	var zones := game.timers.zones
-	var door: DotTimerZone = null
-	var start: DotTimerZone = null
+	var door: GSTimerZone = null
+	var start: GSTimerZone = null
 	if zones != null:
-		door = zones.first_of_kind(DotTimerZone.Kind.TELEPORT, DotTimerTrack.MAIN)
-		start = zones.first_of_kind(DotTimerZone.Kind.START, DotTimerTrack.MAIN)
+		door = zones.first_of_kind(GSTimerZone.Kind.TELEPORT, GSTimerTrack.MAIN)
+		start = zones.first_of_kind(GSTimerZone.Kind.START, GSTimerTrack.MAIN)
 	if door == null or start == null:
 		_check(true, "a door keeps the run", "no door on the main track")
 		_done()
@@ -430,7 +430,7 @@ func _test_a_door_keeps_the_run() -> void:
 
 	# Leave the start line, so there is a run to lose. Synchronously, inside one frame,
 	# so the game's own tick cannot feed the timer the bot's real position in between.
-	var sample := DotTimerSample.new()
+	var sample := GSTimerSample.new()
 	sample.grounded = true
 	var away := start.centre() + Vector3(0.0, start.size().y + 8.0, 0.0)
 	for point in [start.centre(), start.centre(), away]:

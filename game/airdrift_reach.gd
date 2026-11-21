@@ -35,39 +35,39 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## that is spent here — every distance is the player's centre from lip to lip — so it is
 ## the margin, rather than a factor somebody picked.
 ##
-## Everything here is in genre units, read out of [DotFpsTunables] through [AirdriftUnits]:
+## Everything here is in genre units, read out of [GSFpsTunables] through [AirdriftUnits]:
 ## the jump, the gravity, the run speed, the air cap and the landing cap are the server's
 ## own, so `sv_gravity 600` or `sv_enablebunnyhopping 0` changes every answer below with
 ## no second copy of any number to update. That is the difference from the two games
 ## that asked this before (`[reach-1]`), which carry their three constants beside the
 ## maps with a check that they agree.
 ##
-## [b]The arithmetic is [DotFpsTunables]' own[/b] (`[reach-3]`): the apex, the climb
+## [b]The arithmetic is [GSFpsTunables]' own[/b] (`[reach-3]`): the apex, the climb
 ## limit, the airtime and the reach of a jump landing higher or lower than it left are
-## [method DotFpsTunables.jump_apex], [method DotFpsTunables.climb_limit],
-## [method DotFpsTunables.jump_airtime] and [method DotFpsTunables.jump_reach], asked in
+## [method GSFpsTunables.jump_apex], [method GSFpsTunables.climb_limit],
+## [method GSFpsTunables.jump_airtime] and [method GSFpsTunables.jump_reach], asked in
 ## metres and converted at the edge by [AirdriftUnits]. What stays here is the genre's: the
 ## CHAIN — [method hop] and everything built on it — which the addon has no notion of.
 
 enum Kind { RUN, CHAIN }
 
-## How much of the apex a climb may use: `DotFpsTunables.CLIMB_MARGIN`, which says why
+## How much of the apex a climb may use: `GSFpsTunables.CLIMB_MARGIN`, which says why
 ## nine tenths. None of this game's rises comes near it.
-const CLIMB_MARGIN := DotFpsTunables.CLIMB_MARGIN
+const CLIMB_MARGIN := GSFpsTunables.CLIMB_MARGIN
 
 
 ## The apex of a standing jump, in units. The number every bhop player knows as 57.
-static func apex(t: DotFpsTunables) -> float:
+static func apex(t: GSFpsTunables) -> float:
 	return AirdriftUnits.to_units(t.jump_apex())
 
 
 ## The highest rise a jump is asked to make. Above this a block is a wall.
-static func climb_limit(t: DotFpsTunables) -> float:
+static func climb_limit(t: GSFpsTunables) -> float:
 	return AirdriftUnits.to_units(t.climb_limit())
 
 
 ## A rise at or under this is walked, not jumped.
-static func step(t: DotFpsTunables) -> float:
+static func step(t: GSFpsTunables) -> float:
 	return AirdriftUnits.to_units(t.step_height)
 
 
@@ -77,17 +77,17 @@ static func step(t: DotFpsTunables) -> float:
 ## [b]The landing height is the point.[/b] The airtime everybody writes down is the time
 ## to come back to the height you left, and it is the wrong number for a climb or a drop:
 ## 0.755 s flat, 0.665 s onto a 24-unit step, 0.889 s down 48.
-static func airtime(rise: float, t: DotFpsTunables) -> float:
+static func airtime(rise: float, t: GSFpsTunables) -> float:
 	return t.jump_airtime(AirdriftUnits.to_metres(rise))
 
 
 ## Run speed, in u/s.
-static func run_speed(t: DotFpsTunables) -> float:
+static func run_speed(t: GSFpsTunables) -> float:
 	return AirdriftUnits.to_units(t.max_speed)
 
 
 ## The clear air a RUN jump crosses, landing [param rise] units higher. 0 if unreachable.
-static func run_reach(rise: float, t: DotFpsTunables) -> float:
+static func run_reach(rise: float, t: GSFpsTunables) -> float:
 	return AirdriftUnits.to_units(t.jump_reach(AirdriftUnits.to_metres(rise)))
 
 
@@ -98,8 +98,8 @@ static func run_reach(rise: float, t: DotFpsTunables) -> float:
 ## direction up to the CAP measured against the current velocity's projection on it —
 ## so the most a tick adds to the speed is a cap's worth at right angles, and speed
 ## grows as [code]v² + cap²[/code] per tick. That is the whole of air-strafing, and the
-## number is `DotFpsMotor.accelerate`'s, not a guess at a player's skill.
-static func strafe_gain(t: DotFpsTunables, tick_rate: int) -> float:
+## number is `GSFpsMotor.accelerate`'s, not a guess at a player's skill.
+static func strafe_gain(t: GSFpsTunables, tick_rate: int) -> float:
 	var cap := AirdriftUnits.to_units(t.max_air_wish_speed)
 	var step_per_tick := t.air_accelerate * run_speed(t) / float(maxi(tick_rate, 1))
 	return minf(cap, step_per_tick)
@@ -116,7 +116,7 @@ static func strafe_gain(t: DotFpsTunables, tick_rate: int) -> float:
 ## [code]bhop_speed_cap_scale × max_speed[/code] before every hop, and the air can only
 ## add back what one hop's worth of strafing adds.
 static func hop(
-	speed: float, rise: float, t: DotFpsTunables, tick_rate: int, strafe: float = 1.0
+	speed: float, rise: float, t: GSFpsTunables, tick_rate: int, strafe: float = 1.0
 ) -> Vector2:
 	var time := airtime(rise, t)
 
@@ -262,7 +262,7 @@ static func measure(bodies: Array, refused: Array = []) -> Array[Route]:
 
 ## Whether [param route] is walked rather than jumped: no gap, and a rise the step
 ## height takes. Those have no airborne phase to judge.
-static func walked(route: Route, t: DotFpsTunables) -> bool:
+static func walked(route: Route, t: GSFpsTunables) -> bool:
 	return route.gap <= 0.001 and route.rise <= step(t)
 
 
@@ -277,7 +277,7 @@ static func walked(route: Route, t: DotFpsTunables) -> bool:
 ## make it shorter by strafing wider, and landing further on leaves less run-out to
 ## spend next time. So if this falls, every other way of flying the same hops falls too.
 static func chain(
-	routes: Array, t: DotFpsTunables, tick_rate: int, strafe: float, from_index: int = 0
+	routes: Array, t: GSFpsTunables, tick_rate: int, strafe: float, from_index: int = 0
 ) -> Dictionary:
 	var speed := run_speed(t)
 	var run_out := 0.0
@@ -303,7 +303,7 @@ static func chain(
 ## to its end: 0.0 means a held key with no strafe at all does it, and a value over 1.0
 ## (returned as 2.0) means nobody can.
 static func strafe_needed(
-	routes: Array, t: DotFpsTunables, tick_rate: int, from_index: int = 0
+	routes: Array, t: GSFpsTunables, tick_rate: int, from_index: int = 0
 ) -> float:
 	if bool(chain(routes, t, tick_rate, 0.0, from_index)["ok"]):
 		return 0.0

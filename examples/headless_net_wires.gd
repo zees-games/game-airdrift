@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 const AirdriftAvatars := preload("../game/airdrift_avatars.gd")
 const AirdriftConfig := preload("../game/airdrift_config.gd")
@@ -29,8 +29,8 @@ var _completed := 0
 
 var _server_game: AirdriftGame = null
 var _client_game: AirdriftGame = null
-var _server_net: DotNetManager = null
-var _client_net: DotNetManager = null
+var _server_net: GSNetManager = null
+var _client_net: GSNetManager = null
 var _server_bridge: AirdriftNetBridge = null
 var _client_bridge: AirdriftNetBridge = null
 
@@ -45,35 +45,35 @@ var _tick: int = 0
 ## A kill and the end of a deathmatch round-trip: the killcam's inputs and the podium's rows.
 func _test_end_of_match_wire() -> void:
 	_section("a kill and a match's end over the link")
-	var shot := AirdriftEvents.read_kill(DotNetReader.new(AirdriftEvents.write_kill(4097, 12, "deagle", true)))
+	var shot := AirdriftEvents.read_kill(GSNetReader.new(AirdriftEvents.write_kill(4097, 12, "deagle", true)))
 	_check(bool(shot["ok"]) and int(shot["killer"]) == 4097 and int(shot["victim"]) == 12
 			and shot["weapon"] == "deagle" and bool(shot["headshot"]),
 		"a KILL round-trips: killer, victim, weapon and the head", str(shot))
-	var fired := AirdriftEvents.read_shot(DotNetReader.new(AirdriftEvents.write_shot(7, "deagle", Vector3(1.5, -2.0, 3000.0))))
+	var fired := AirdriftEvents.read_shot(GSNetReader.new(AirdriftEvents.write_shot(7, "deagle", Vector3(1.5, -2.0, 3000.0))))
 	_check(bool(fired["ok"]) and int(fired["shooter"]) == 7 and fired["weapon"] == "deagle"
 			and (fired["at"] as Vector3).is_equal_approx(Vector3(1.5, -2.0, 3000.0)),
 		"a SHOT round-trips: shooter, weapon and where", str(fired))
 	var flat := PackedFloat32Array()
-	flat.resize(DotKillViewRing.STRIDE * 600)
-	var packed := DotKillViewClip.pack({"v": 1, "f": flat}, {"killer": "Ana", "weapon": "deagle"}, AirdriftKillView.BYTES)
-	var unpacked := DotKillViewClip.unpack(packed)
+	flat.resize(GSKillViewRing.STRIDE * 600)
+	var packed := GSKillViewClip.pack({"v": 1, "f": flat}, {"killer": "Ana", "weapon": "deagle"}, AirdriftKillView.BYTES)
+	var unpacked := GSKillViewClip.unpack(packed)
 	_check(packed.size() <= AirdriftKillView.BYTES and packed.size() <= AirdriftEvent.MAX_BODY and bool(unpacked["ok"])
 			and unpacked["info"]["killer"] == "Ana",
 		"a KILLVIEW clip is thinned to fit an event body and round-trips", str(packed.size()))
 	_check(AirdriftEvent.fits() and AirdriftRequest.fits(), "KILLVIEW and RESPAWN fit the kind fields")
-	var rules := DotKillViewRules.new()
+	var rules := GSKillViewRules.new()
 	var names: Array = []
 	var _made := rules.bind_cvars(func(n: String, _v: String, _d: String, _f: int) -> Variant:
 		names.append(n)
-		return null, DotConVar.FLAG_REPLICATED)
+		return null, GSConVar.FLAG_REPLICATED)
 	_check("mp_killview" in names and not rules.enabled, "mp_killview is bound, and off by default", str(names.size()))
 	var rows := [{"name": "Ana", "kills": 40, "deaths": 3}, {"name": "Bo", "kills": 12, "deaths": 20},
 		{"name": "Cy", "kills": 0, "deaths": 9}, {"name": "Dee", "kills": 0, "deaths": 0}]
-	var over := AirdriftEvents.read_match_end(DotNetReader.new(AirdriftEvents.write_match_end(7.0, rows)))
+	var over := AirdriftEvents.read_match_end(GSNetReader.new(AirdriftEvents.write_match_end(7.0, rows)))
 	_check(bool(over["ok"]) and is_equal_approx(float(over["killcam"]), 7.0) and over["rows"].size() == 3
 			and over["rows"][0] == rows[0] and over["rows"][2] == rows[2],
 		"a MATCH_END round-trips: the killcam's seconds and the podium's three rows", str(over))
-	var none := AirdriftEvents.read_match_end(DotNetReader.new(AirdriftEvents.write_match_end(0.0, [])))
+	var none := AirdriftEvents.read_match_end(GSNetReader.new(AirdriftEvents.write_match_end(0.0, [])))
 	_check(bool(none["ok"]) and none["rows"].is_empty() and float(none["killcam"]) == 0.0,
 		"and an empty board reads as none")
 	_done()
@@ -83,7 +83,7 @@ func _test_end_of_match_wire() -> void:
 func _test_hit_wire() -> void:
 	_section("a confirmed hit over the link")
 
-	var round_trip := AirdriftEvents.read_hit(DotNetReader.new(
+	var round_trip := AirdriftEvents.read_hit(GSNetReader.new(
 		AirdriftEvents.write_hit(4097, 33.5, Vector3(-9123.25, 412.5, 15000.0), true, false)))
 	_check(bool(round_trip["ok"]) and int(round_trip["victim"]) == 4097
 			and absf(float(round_trip["amount"]) - 33.5) < 0.1
@@ -112,25 +112,25 @@ func _test_hit_wire() -> void:
 func _test_death_wire() -> void:
 	_section("a death and a return over the link")
 
-	var fall := DotPlayerDeath.new()
-	fall.reaction = DotPlayerDeathReactions.HEADSHOT_LAUNCH
+	var fall := GSPlayerDeath.new()
+	fall.reaction = GSPlayerDeathReactions.HEADSHOT_LAUNCH
 	fall.roll_seed = 9001
 	fall.damage = 62.0
 	fall.direction = Vector3(1.0, 0.0, 0.0)
 	fall.headshot = true
-	var carried := AirdriftEvents.read_death(DotNetReader.new(AirdriftEvents.write_death(4097, fall)))
-	var read: DotPlayerDeath = carried.get("death")
+	var carried := AirdriftEvents.read_death(GSNetReader.new(AirdriftEvents.write_death(4097, fall)))
+	var read: GSPlayerDeath = carried.get("death")
 	_check(bool(carried["ok"]) and int(carried["player_id"]) == 4097 and read != null
 			and read.reaction == fall.reaction and read.roll_seed == 9001 and read.headshot
 			and read.direction.distance_to(Vector3(1.0, 0.0, 0.0)) < 0.05,
 		"a DEATH round-trips: the victim and the server's fall", str(carried))
-	var bare := AirdriftEvents.read_death(DotNetReader.new(AirdriftEvents.write_death(4097)))
+	var bare := AirdriftEvents.read_death(GSNetReader.new(AirdriftEvents.write_death(4097)))
 	_check(bool(bare["ok"]) and int(bare["player_id"]) == 4097 and not bare.has("death"),
 		"and one without a fall reads as the victim alone", str(bare))
 
 	var deaths: Array = []
 	var alive: Array = []
-	var on_death := func(id: StringName, death: DotPlayerDeath) -> void:
+	var on_death := func(id: StringName, death: GSPlayerDeath) -> void:
 		deaths.append([id, death])
 	var on_alive := func(id: StringName) -> void:
 		alive.append(id)
@@ -149,7 +149,7 @@ func _test_death_wire() -> void:
 	_check(deaths.size() == 1 and deaths[0][0] == victim.player_id,
 		"the death reaches the client, keyed as the client keys the player", str(deaths))
 	_check(deaths.size() == 1 and deaths[0][1] != null
-			and (deaths[0][1] as DotPlayerDeath).reaction == DotPlayerDeathReactions.HEADSHOT_LAUNCH,
+			and (deaths[0][1] as GSPlayerDeath).reaction == GSPlayerDeathReactions.HEADSHOT_LAUNCH,
 		"with the reaction the server picked, so every screen draws the same fall")
 	_check(alive == [victim.player_id], "and so does the return", str(alive))
 	_done()
@@ -161,7 +161,7 @@ func _test_death_wire() -> void:
 func _test_rules_wire() -> void:
 	_section("what a client may do on its own screen, over the link")
 
-	var round_trip := AirdriftEvents.read_rules(DotNetReader.new(AirdriftEvents.write_rules({
+	var round_trip := AirdriftEvents.read_rules(GSNetReader.new(AirdriftEvents.write_rules({
 		"flashlight": false, "thirdperson": true, "commands": [["r", "Back to the start"], ["wr", "Fastest"]],
 	})))
 	_check(
@@ -174,7 +174,7 @@ func _test_rules_wire() -> void:
 	var many: Array = []
 	for i in range(1500):
 		many.append(["command_%04d" % i, "a description long enough to fill the body quickly %d" % i])
-	var big := AirdriftEvents.read_rules(DotNetReader.new(AirdriftEvents.write_rules({
+	var big := AirdriftEvents.read_rules(GSNetReader.new(AirdriftEvents.write_rules({
 		"flashlight": false, "thirdperson": false, "commands": many,
 	})))
 	_check(
@@ -185,10 +185,10 @@ func _test_rules_wire() -> void:
 		]
 	)
 
-	var junk := DotNetWriter.new()
+	var junk := GSNetWriter.new()
 	junk.write_string("{not json", AirdriftEvents.RULES_BYTES)
 	_check(
-		not bool(AirdriftEvents.read_rules(DotNetReader.new(junk.to_bytes()))["ok"]),
+		not bool(AirdriftEvents.read_rules(GSNetReader.new(junk.to_bytes()))["ok"]),
 		"a body that is not a JSON object is refused rather than half-read"
 	)
 
@@ -234,7 +234,7 @@ func _test_voice_wire() -> void:
 
 	_server_bridge.voice_relay_fn = func(speaker: int, bytes: PackedByteArray) -> void:
 		relayed.append({"speaker": speaker, "bytes": bytes})
-		# Straight back out, which is what DotVoiceRouter does once it has decided
+		# Straight back out, which is what GSVoiceRouter does once it has decided
 		# who hears it. The router itself is checked on a real server in `dedicated`.
 		_server_bridge.link.send_voice(CLIENT_PEER, bytes)
 
@@ -273,20 +273,20 @@ func _test_voice_wire() -> void:
 		"and a voice frame addressed to peer 0 is refused rather than broadcast"
 	)
 
-	# The client's own voice reaches the server. Armed: a DotVoiceManager with no send_fn captures
+	# The client's own voice reaches the server. Armed: a GSVoiceManager with no send_fn captures
 	# and counts frames that go nowhere while every check above, which hands the link bytes, passes.
 	relayed.clear()
 	var extras_script := preload("../game/airdrift_client_extras.gd")
 	var extras: Node = extras_script.new()
 	extras.name = "VoiceExtras"
 	add_child(extras)
-	var attached: DotResult = extras.call(&"attach", _client_bridge, _client_game)
-	var voice: DotVoiceManager = extras.get(&"voice")
+	var attached: GSResult = extras.call(&"attach", _client_bridge, _client_game)
+	var voice: GSVoiceManager = extras.get(&"voice")
 	_check(attached.ok and voice != null, "the client's chat and voice attach to its bridge")
 	if voice != null:
-		var mic := DotVoiceSourceBuffer.new()
+		var mic := GSVoiceSourceBuffer.new()
 		mic.sample_rate = voice.config.sample_rate
-		mic.write(DotVoiceSourceBuffer.tone(440.0, 0.2, mic.sample_rate, 0.4))
+		mic.write(GSVoiceSourceBuffer.tone(440.0, 0.2, mic.sample_rate, 0.4))
 		voice.source = mic
 		_check(not voice.is_capturing(), "no microphone is open before the talk key")
 		extras.call(&"set_talking", true)

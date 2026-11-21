@@ -1,6 +1,6 @@
 extends RefCounted
 
-## This game's lighting, which is [DotLightRig] and one decision of its own.
+## This game's lighting, which is [GSLightRig] and one decision of its own.
 ##
 ## [b]It used to be the implementation and is now the caller.[/b] Reading a map's own sun,
 ## ambient, fog and sky out of a manifest and turning them into an [Environment] is not a
@@ -14,8 +14,8 @@ extends RefCounted
 
 ## Applies the lighting a manifest carries and returns the sun.
 static func apply(parent: Node3D, lighting: Dictionary) -> DirectionalLight3D:
-	var sun := DotLightRig.apply(
-		parent, DotLightDocument.from_dictionary(lighting), profile_for(lighting)
+	var sun := GSLightRig.apply(
+		parent, GSLightDocument.from_dictionary(lighting), profile_for(lighting)
 	)
 	_recolour_white_sky(parent, lighting)
 	_darken_black_sky(parent, lighting)
@@ -63,7 +63,7 @@ static func builtin(parent: Node3D) -> DirectionalLight3D:
 	if RenderingServer.get_current_rendering_method() == "gl_compatibility":
 		p.brightness_reference = 700.0
 		p.ambient_energy = 0.62
-	var sun := DotLightRig.apply(parent, DotLightDocument.from_dictionary(DAYLIGHT), p)
+	var sun := GSLightRig.apply(parent, GSLightDocument.from_dictionary(DAYLIGHT), p)
 	var top: Array = DAYLIGHT["sky_top"]
 	for child in parent.get_children():
 		var world := child as WorldEnvironment
@@ -208,8 +208,8 @@ static func _darken_black_sky(parent: Node3D, lighting: Dictionary) -> void:
 ## light, and a neon strip is how one of these maps signposts the route. Dropping the thing
 ## a player navigates by to save a cost they cannot see would be the wrong trade even if
 ## the two cost the same.
-static func profile() -> DotLightProfile:
-	var p := DotLightProfile.web() if _is_web() else DotLightProfile.high()
+static func profile() -> GSLightProfile:
+	var p := GSLightProfile.web() if _is_web() else GSLightProfile.high()
 	# Every map this game plays floats inside its sky -- ramps and platforms in a skybox,
 	# with nothing under the horizon but more sky -- so the dark "ground" half an enclosed
 	# level wants turned every glance down between two ramps into a floor that is not
@@ -225,7 +225,7 @@ static func profile() -> DotLightProfile:
 ## mean is the scale, not below 0.4. Measured on surf_aquaflow (0.2 to 1): the footage's floor is 0.36 of
 ## ours in linear light, and the mean is 0.45. A max above 1 is not applied: it brightens a
 ## dark scene, and no footage has measured one.
-static func profile_for(lighting: Dictionary) -> DotLightProfile:
+static func profile_for(lighting: Dictionary) -> GSLightProfile:
 	var p := profile()
 	var ex: Variant = lighting.get("exposure", null)
 	if ex is Dictionary:
@@ -247,4 +247,4 @@ static func _is_web() -> bool:
 
 ## What a map's lighting amounts to, for a console command or a bug report.
 static func describe_lines(lighting: Dictionary) -> PackedStringArray:
-	return DotLightDocument.from_dictionary(lighting).describe_lines()
+	return GSLightDocument.from_dictionary(lighting).describe_lines()

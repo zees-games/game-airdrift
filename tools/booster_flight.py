@@ -2,7 +2,7 @@
 
 Mirrors the game, not a formula: `AirdriftMapMechanics` adds a `leave` push to the velocity when the hull leaves
 the trigger, the player jumped on the pad (JUMP_V up) so the flight starts at JUMP_V plus the push, gravity is
-`sv_gravity` per tick, and the air is `DotFpsMotor.accelerate` with `sv_airaccelerate` and the air wish cap.
+`sv_gravity` per tick, and the air is `GSFpsMotor.accelerate` with `sv_airaccelerate` and the air wish cap.
 The strafe is the route bot's: it alternates sides at right angles to its velocity (`AirdriftRouteBot._air`), the
 most any wish adds, so the flight gains speed while it falls. Units are game units (u, u/s), as the planner's.
 """

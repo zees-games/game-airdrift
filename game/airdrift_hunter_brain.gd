@@ -22,7 +22,7 @@ extends "res://addons/dot_npc_ai/runtime/dot_npc_ai_brain.gd"
 ##   action               walk the course, which is where the players will be
 ## [/codeblock]
 ##
-## The patrol is `DotNpcDirectorFlow`'s doing rather than this file's: a timer map IS a
+## The patrol is `GSNpcDirectorFlow`'s doing rather than this file's: a timer map IS a
 ## critical path — start pad, stages, end — and the director already knows it, so a
 ## hunter with nothing to chase walks toward the flow position ahead of it. That is
 ## what puts them where a runner is going rather than where a runner was.
@@ -43,7 +43,7 @@ var _hunters: Object = null
 ## Assigns the character BEFORE the base class looks at it.
 ##
 ## [b]`_build` is too late and the failure is silent.[/b]
-## [method DotNpcAiBrain._npc_ready] seeds the character from the instance id and puts
+## [method GSNpcAiBrain._npc_ready] seeds the character from the instance id and puts
 ## it on the context, both before calling `_build` — so a brain that assigns it inside
 ## `_build` gets neither, every hunter of a kind shares its preset's seed, and
 ## `ctx.character` is null for every node in the tree.
@@ -53,52 +53,52 @@ func _npc_ready() -> void:
 
 
 func _build() -> void:
-	_patrol_flow = DotNpcAiNode.deterministic_unit(
+	_patrol_flow = GSNpcAiNode.deterministic_unit(
 		npc.seed if npc != null else 0, 5501
 	)
 
 	# Two hunters on a runner at once and the rest close behind them on a ring. On a
 	# course that is the difference between a corridor blocked by a queue of hunters and a
 	# runner who has to get past two and then finds a third waiting the other side.
-	var attack_children: Array[DotNpcAiNode] = [
-		DotNpcAiLeaf.Condition.new(&"has an attack slot", _has_slot),
-		DotNpcAiLeaf.Action.new(&"close in", _close_in),
-		DotNpcAiLeaf.Action.new(&"strike", _strike),
+	var attack_children: Array[GSNpcAiNode] = [
+		GSNpcAiLeaf.Condition.new(&"has an attack slot", _has_slot),
+		GSNpcAiLeaf.Action.new(&"close in", _close_in),
+		GSNpcAiLeaf.Action.new(&"strike", _strike),
 	]
 
-	var engage_children: Array[DotNpcAiNode] = [
-		DotNpcAiSequence.reactive_with(&"attack", attack_children),
-		DotNpcAiLeaf.Action.new(&"surround", _surround),
+	var engage_children: Array[GSNpcAiNode] = [
+		GSNpcAiSequence.reactive_with(&"attack", attack_children),
+		GSNpcAiLeaf.Action.new(&"surround", _surround),
 	]
 
-	var fight_children: Array[DotNpcAiNode] = [
-		DotNpcAiLeaf.Condition.new(&"has a target", _has_target),
-		DotNpcAiSelector.new(&"engage", engage_children),
+	var fight_children: Array[GSNpcAiNode] = [
+		GSNpcAiLeaf.Condition.new(&"has a target", _has_target),
+		GSNpcAiSelector.new(&"engage", engage_children),
 	]
 
-	var root_children: Array[DotNpcAiNode] = [
+	var root_children: Array[GSNpcAiNode] = [
 		# Reactive, which is dot-npc-ai's own warning made into an idiom: a plain
 		# sequence resumes at the child that returned RUNNING and never re-asks its
 		# guard, so a hunter chases a target it no longer has — for ever, because the
 		# thing that would clear the chase is the condition it stopped asking.
-		DotNpcAiSequence.reactive_with(&"hunt", fight_children),
+		GSNpcAiSequence.reactive_with(&"hunt", fight_children),
 		# Between the hunt and the patrol. Without it a hunter that lost a runner round a
 		# corner went straight back to its patrol point the moment dot-npc's grace ran out,
 		# and the sprinter's fourteen seconds of `memory_time` were read by nothing.
-		DotNpcAiLeaf.Action.new(&"search", _search),
-		DotNpcAiLeaf.Action.new(&"patrol", _patrol),
+		GSNpcAiLeaf.Action.new(&"search", _search),
+		GSNpcAiLeaf.Action.new(&"patrol", _patrol),
 	]
 
-	tree = DotNpcAiSelector.new(&"root", root_children)
+	tree = GSNpcAiSelector.new(&"root", root_children)
 
 
-func _has_target(_ctx: DotNpcAiContext) -> bool:
+func _has_target(_ctx: GSNpcAiContext) -> bool:
 	return npc != null and npc.has_target()
 
 
-func _close_in(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
+func _close_in(ctx: GSNpcAiContext) -> GSNpcAiNode.Status:
 	if npc == null or not npc.is_alive():
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var to := target_position(npc.position())
 	var reach := tune(&"reach", 2.0)
@@ -108,11 +108,11 @@ func _close_in(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
 
 	if flat.length() <= reach:
 		halt()
-		return DotNpcAiNode.Status.SUCCESS
+		return GSNpcAiNode.Status.SUCCESS
 
 	if not has_reacted():
 		halt()
-		return DotNpcAiNode.Status.RUNNING
+		return GSNpcAiNode.Status.RUNNING
 
 	# With spacing, because a course is narrow: three hunters converging on one runner
 	# in a corridor climb each other, and the one on top has a horizontal offset of
@@ -122,12 +122,12 @@ func _close_in(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
 		to, npc.def.move_speed if npc.def != null else 4.0, ctx.delta, 1.4
 	)
 
-	return DotNpcAiNode.Status.RUNNING
+	return GSNpcAiNode.Status.RUNNING
 
 
-func _strike(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
+func _strike(ctx: GSNpcAiContext) -> GSNpcAiNode.Status:
 	if npc == null or not npc.is_alive() or not npc.has_target():
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	if ctx.now - _last_attack < tune(&"attack_interval", 1.2):
 		# RUNNING, not FAILURE. Failing would drop the sequence and send the selector
@@ -135,7 +135,7 @@ func _strike(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
 		# round and walk off — which looks exactly like losing interest.
 		halt()
 		face(target_position(npc.position()) - npc.position())
-		return DotNpcAiNode.Status.RUNNING
+		return GSNpcAiNode.Status.RUNNING
 
 	var flat := target_position(npc.position()) - npc.position()
 	flat.y = 0.0
@@ -144,27 +144,27 @@ func _strike(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
 	# condition, not its earlier children, so a runner who got moving again while the
 	# interval ran would otherwise be hit from anywhere.
 	if flat.length() > tune(&"reach", 2.0) * 1.2:
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	_last_attack = ctx.now
 	_deal_damage(npc.target_id, tune(&"damage", 20.0))
 
-	return DotNpcAiNode.Status.SUCCESS
+	return GSNpcAiNode.Status.SUCCESS
 
 
-func _has_slot(_ctx: DotNpcAiContext) -> bool:
+func _has_slot(_ctx: GSNpcAiContext) -> bool:
 	return claim_attack_slot()
 
 
 ## Waits on a ring just out of reach, working round the runner's back. Behind the reaction
 ## gate like the close-in.
-func _surround(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
+func _surround(ctx: GSNpcAiContext) -> GSNpcAiNode.Status:
 	if npc == null or not npc.is_alive():
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	if not has_reacted():
 		halt()
-		return DotNpcAiNode.Status.RUNNING
+		return GSNpcAiNode.Status.RUNNING
 
 	var speed := npc.def.move_speed if npc.def != null else 4.0
 	return surround(ctx, speed * 0.8, tune(&"reach", 2.0) + 2.0, 1.4)
@@ -172,7 +172,7 @@ func _surround(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
 
 ## Goes to where it last knew the runner was, and looks round. FAILURE when nothing is
 ## remembered, which hands the selector on to the patrol.
-func _search(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
+func _search(ctx: GSNpcAiContext) -> GSNpcAiNode.Status:
 	var speed := npc.def.move_speed if npc != null and npc.def != null else 4.0
 	return search(ctx, speed * 0.75, 1.4)
 
@@ -183,12 +183,12 @@ func _search(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
 ## linear course spends most of its life in a corner nobody passes; one walking the
 ## flow is always somewhere a runner is going to be. The flow comes from the director,
 ## which built it from the map's own zones, so nothing here knows what a stage is.
-func _patrol(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
+func _patrol(ctx: GSNpcAiContext) -> GSNpcAiNode.Status:
 	if npc == null or not npc.is_alive():
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	if _hunters == null:
-		_hunters = DotRegistry.get_service(HUNTERS_SERVICE)
+		_hunters = GSRegistry.get_service(HUNTERS_SERVICE)
 
 	var goal := npc.position()
 
@@ -203,13 +203,13 @@ func _patrol(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
 		# a hunter that walked to the end and stood there is a hunter nobody meets
 		# twice.
 		_patrol_flow = fmod(_patrol_flow + 0.2, 1.0)
-		return DotNpcAiNode.Status.RUNNING
+		return GSNpcAiNode.Status.RUNNING
 
 	steer_with_spacing(
 		goal, (npc.def.move_speed if npc.def != null else 4.0) * 0.5, ctx.delta, 1.4
 	)
 
-	return DotNpcAiNode.Status.RUNNING
+	return GSNpcAiNode.Status.RUNNING
 
 
 func _npc_damaged(_amount: float, by: StringName) -> void:
@@ -221,7 +221,7 @@ func _npc_damaged(_amount: float, by: StringName) -> void:
 
 func _deal_damage(victim: StringName, amount: float) -> void:
 	if _hunters == null:
-		_hunters = DotRegistry.get_service(HUNTERS_SERVICE)
+		_hunters = GSRegistry.get_service(HUNTERS_SERVICE)
 
 	if _hunters == null or not _hunters.has_method("hunter_attack"):
 		return
@@ -231,9 +231,9 @@ func _deal_damage(victim: StringName, amount: float) -> void:
 
 ## Who a hunter is, by kind. Two presets rather than one with a multiplier, because a
 ## multiplier makes every hunter the same hunter at a different speed.
-static func _character_for(kind: StringName) -> DotNpcAiCharacter:
+static func _character_for(kind: StringName) -> GSNpcAiCharacter:
 	if kind == &"g2g_sprinter":
-		var sprinter := DotNpcAiCharacter.hard()
+		var sprinter := GSNpcAiCharacter.hard()
 		sprinter.id = &"g2g.sprinter"
 		sprinter.reaction_time = 0.15
 		sprinter.memory_time = 14.0
@@ -241,7 +241,7 @@ static func _character_for(kind: StringName) -> DotNpcAiCharacter:
 		sprinter.self_preservation = 0.6
 		return sprinter
 
-	var stalker := DotNpcAiCharacter.normal()
+	var stalker := GSNpcAiCharacter.normal()
 	stalker.id = &"g2g.stalker"
 	stalker.reaction_time = 0.5
 	stalker.memory_time = 8.0

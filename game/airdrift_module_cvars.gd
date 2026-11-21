@@ -39,7 +39,7 @@ func _bind_rule_cvars() -> void:
 	)
 
 	# The bots (`airdrift_bots.gd`): the family's three cvars, at 0 until an operator asks.
-	_quota = DotBotQuota.install(self, 0)
+	_quota = GSBotQuota.install(self, 0)
 	add_cvar("bot_nav", "1", "Bots on a map without a route file plan one through the navigation annotations (0 aims them straight at the finish).").changed.connect(
 		func(_old: String, new_value: String) -> void:
 			if game.bots != null:
@@ -52,27 +52,27 @@ func _bind_rule_cvars() -> void:
 			# The older switch, kept: 0 is the family's mp_forceview 1 (first person only);
 			# 1 lifts that and leaves a forced third person alone.
 			if new_value == "0":
-				game.view_rules.force_view = DotPlayerViewRules.FIRST_ONLY
-			elif game.view_rules.force_view == DotPlayerViewRules.FIRST_ONLY:
-				game.view_rules.force_view = DotPlayerViewRules.ANY
+				game.view_rules.force_view = GSPlayerViewRules.FIRST_ONLY
+			elif game.view_rules.force_view == GSPlayerViewRules.FIRST_ONLY:
+				game.view_rules.force_view = GSPlayerViewRules.ANY
 			if bridge != null:
 				bridge.broadcast_rules()
 	)
 
 	# mp_forceview: REPLICATED, because each client places its own camera.
 	if not game.config.allow_thirdperson:
-		game.view_rules.force_view = DotPlayerViewRules.FIRST_ONLY
+		game.view_rules.force_view = GSPlayerViewRules.FIRST_ONLY
 	var _views := game.view_rules.bind_cvars(
-		add_cvar, DotConVar.FLAG_ARCHIVE | DotConVar.FLAG_NOTIFY | DotConVar.FLAG_REPLICATED
+		add_cvar, GSConVar.FLAG_ARCHIVE | GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED
 	)
 	game.view_rules.changed.connect(func() -> void:
 		if bridge != null:
 			bridge.broadcast_rules())
 	var _killview := game.killview_rules.bind_cvars(
-		add_cvar, DotConVar.FLAG_ARCHIVE | DotConVar.FLAG_NOTIFY | DotConVar.FLAG_REPLICATED)
+		add_cvar, GSConVar.FLAG_ARCHIVE | GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED)
 	# sv_mobile_*: what a phone player may use (dot-mobile). REPLICATED, because each client draws its own controls.
 	var _mobile := game.mobile_rules.bind_cvars(
-		add_cvar, DotConVar.FLAG_ARCHIVE | DotConVar.FLAG_NOTIFY | DotConVar.FLAG_REPLICATED)
+		add_cvar, GSConVar.FLAG_ARCHIVE | GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED)
 
 	# Told to every client: the light is drawn there, and 0 switches it off on the next RULES.
 	add_cvar("sv_flashlight", "1" if game.config.flashlight else "0",
@@ -104,7 +104,7 @@ func _bind_rule_cvars() -> void:
 	# dot-spectate's mp_* cvars, REPLICATED: each client flies its own camera at the server's speed.
 	if game.spectate != null and game.spectate.manager != null:
 		var _spectate_cvars := game.spectate.manager.rules.bind_cvars(
-			add_cvar, DotConVar.FLAG_ARCHIVE | DotConVar.FLAG_NOTIFY | DotConVar.FLAG_REPLICATED
+			add_cvar, GSConVar.FLAG_ARCHIVE | GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED
 		)
 
 
@@ -117,27 +117,27 @@ func _add_course_commands() -> void:
 	add_command("airdrift_stage", _cmd_stage, "To the start of stage <n>, or of this stage", "").with_chat()
 	add_command("airdrift_top", _cmd_top, "Fastest times here", "").with_chat()
 	# Not `.with_chat()` yet reachable from chat: CHANGEMAP decides, so a player without the flag is refused.
-	add_command("airdrift_map", _cmd_map, "Change map, or list them", DotAdminFlags.CHANGEMAP)
+	add_command("airdrift_map", _cmd_map, "Change map, or list them", GSAdminFlags.CHANGEMAP)
 
 	# `map`, `maps` and `mapinfo` come from dot-map; dot-server's `map` changed the GAME and is
 	# `changelevel` now. `allow_chat_change` stays ON, matching `airdrift_map`: CHANGEMAP decides.
 	# `change_fn` rather than the session, because `AirdriftGame.change_map` resets the timer, zones and styles.
-	var map_commands := DotMapCommands.new()
+	var map_commands := GSMapCommands.new()
 	map_commands.session = game.maps
 	# The catalogue is not the set of maps this server can play: the pack excludes `maps/imported/`,
 	# so an unknown id may be on the content origin, and `change_fn` below fetches it first.
 	# A real typo is still refused, with the suggestion, after the fetch fails.
 	map_commands.may_fetch_unknown = true
-	map_commands.change_fn = func(id: StringName) -> DotResult:
+	map_commands.change_fn = func(id: StringName) -> GSResult:
 		return await game.change_map(id)
 	map_commands.player_count_fn = func() -> int:
 		return game.players.size() if game != null else 0
-	map_commands.rotation_file_fn = func() -> DotMapRotationFile: return game.rotation_file
+	map_commands.rotation_file_fn = func() -> GSMapRotationFile: return game.rotation_file
 	map_commands.spec_fn = func() -> Dictionary:
 		return game.rotation_file.commands() if game.rotation_file != null else {}
 	map_commands.bind(self)
 	add_command("airdrift_maps_reload", _cmd_maps_reload,
-		"Re-read maps/ from disk, picking up anything dropped in", DotAdminFlags.CHANGEMAP)
+		"Re-read maps/ from disk, picking up anything dropped in", GSAdminFlags.CHANGEMAP)
 
 
 ## Content maps, rotation file, map sync and the rtv command.
@@ -207,16 +207,16 @@ func _add_chat_commands() -> void:
 	add_command("s", _cmd_stage, "To the start of stage <n> (alias)", "").with_chat()
 	add_command("stage", _cmd_stage, "To the start of stage <n> (alias)", "").with_chat()
 	add_command("rs", _cmd_stage, "To the start of this stage (alias)", "").with_chat()
-	add_command("airdrift_zone", _cmd_zone, "Draw a zone: airdrift_zone <kind> [track] [number]", DotAdminFlags.CHANGEMAP)
-	add_command("airdrift_zone_mark", _cmd_zone_mark, "Mark a corner where you stand, or at x y z [height] (units)", DotAdminFlags.CHANGEMAP)
-	add_command("airdrift_zone_save", _cmd_zone_save, "Write the zones to disk", DotAdminFlags.CHANGEMAP)
-	add_command("airdrift_zone_undo", _cmd_zone_undo, "Remove the last zone", DotAdminFlags.CHANGEMAP)
-	add_command("airdrift_zone_list", _cmd_zone_list, "List the zones", DotAdminFlags.CHANGEMAP)
+	add_command("airdrift_zone", _cmd_zone, "Draw a zone: airdrift_zone <kind> [track] [number]", GSAdminFlags.CHANGEMAP)
+	add_command("airdrift_zone_mark", _cmd_zone_mark, "Mark a corner where you stand, or at x y z [height] (units)", GSAdminFlags.CHANGEMAP)
+	add_command("airdrift_zone_save", _cmd_zone_save, "Write the zones to disk", GSAdminFlags.CHANGEMAP)
+	add_command("airdrift_zone_undo", _cmd_zone_undo, "Remove the last zone", GSAdminFlags.CHANGEMAP)
+	add_command("airdrift_zone_list", _cmd_zone_list, "List the zones", GSAdminFlags.CHANGEMAP)
 	add_command("airdrift_ghost", _cmd_ghost, "What the record ghost is running", "").with_chat()
 
 	#
 	# The questions a timer server is asked all evening. The answers are dot-timer's
-	# (`DotTimerManager.profile`, `recent_records`, ...); these only phrase them.
+	# (`GSTimerManager.profile`, `recent_records`, ...); these only phrase them.
 	add_command("pb", _cmd_pb, "Your best here, or another player's: !pb [name]", "").with_chat()
 	add_command("rank", _cmd_rank, "Your ranking and title on this server", "").with_chat()
 	add_command("players", _cmd_players, "The best-ranked players: !players [page]", "").with_chat()
@@ -235,10 +235,10 @@ func _add_chat_commands() -> void:
 	add_command("resume", _cmd_unpause, "Resume a paused run (alias)", "").with_chat()
 	add_command("autorestart", _cmd_auto_restart, "Restart whenever you fall behind your best", "").with_chat()
 	add_command("restore", _cmd_restore, "Take back the run you dropped", "").with_chat()
-	add_command("airdrift_settier", _cmd_set_tier, "Set this map's tier (1-10) and re-score it", DotAdminFlags.CHANGEMAP)
-	add_command("airdrift_deleterecord", _cmd_delete_record, "Remove a player's time: <name> [track] [style]", DotAdminFlags.BAN)
-	add_command("airdrift_wipeplayer", _cmd_wipe_player, "Remove every record of a player id", DotAdminFlags.BAN)
-	add_command("airdrift_rescore", _cmd_rescore, "Re-score every board on this map", DotAdminFlags.CHANGEMAP)
+	add_command("airdrift_settier", _cmd_set_tier, "Set this map's tier (1-10) and re-score it", GSAdminFlags.CHANGEMAP)
+	add_command("airdrift_deleterecord", _cmd_delete_record, "Remove a player's time: <name> [track] [style]", GSAdminFlags.BAN)
+	add_command("airdrift_wipeplayer", _cmd_wipe_player, "Remove every record of a player id", GSAdminFlags.BAN)
+	add_command("airdrift_rescore", _cmd_rescore, "Re-score every board on this map", GSAdminFlags.CHANGEMAP)
 	add_command("thirdperson", _cmd_thirdperson, "Third-person view", "").with_chat()
 	add_command("firstperson", _cmd_firstperson, "First-person view", "").with_chat()
 
@@ -253,18 +253,18 @@ func _bind_mode_cvars() -> void:
 	# reaction from them; REPLICATED, because the clients draw the bodies (the client's
 	# _build_netcode follows them). Bound whether or not anybody can die yet, so a config's
 	# `sv_ragdoll_style stiff` holds when deathmatch or the hunters are turned on later.
-	var _ragdolls := game.ragdoll_rules.bind_cvars(add_cvar, DotConVar.FLAG_ARCHIVE | DotConVar.FLAG_NOTIFY | DotConVar.FLAG_REPLICATED)
-	var _drops := game.weapon_layer.rules.bind_cvars(add_cvar, DotConVar.FLAG_ARCHIVE | DotConVar.FLAG_NOTIFY | DotConVar.FLAG_REPLICATED)
+	var _ragdolls := game.ragdoll_rules.bind_cvars(add_cvar, GSConVar.FLAG_ARCHIVE | GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED)
+	var _drops := game.weapon_layer.rules.bind_cvars(add_cvar, GSConVar.FLAG_ARCHIVE | GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED)
 
 	# mp_solidplayers: the hulls (AirdriftPlayerBodies); REPLICATED, the client predicts against them.
-	var _solid := game.body_rules.bind_cvars(add_cvar, DotConVar.FLAG_NOTIFY | DotConVar.FLAG_REPLICATED)
+	var _solid := game.body_rules.bind_cvars(add_cvar, GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED)
 
 	# sv_falldamage stays 0 (see AirdriftGame.fall_rules); bound so an admin sees it is a decision.
-	var _fall := game.fall_rules.bind_cvars(add_cvar, DotConVar.FLAG_NOTIFY)
+	var _fall := game.fall_rules.bind_cvars(add_cvar, GSConVar.FLAG_NOTIFY)
 
 	# mp_friendlyfire and mp_teammate_passthrough; the default is the rules the combat layer built (AirdriftConfig.friendly_fire).
 	if game.combat != null and game.combat.manager != null:
-		var _combat := game.combat.manager.bind_cvars(add_cvar, DotConVar.FLAG_NOTIFY | DotConVar.FLAG_REPLICATED)
+		var _combat := game.combat.manager.bind_cvars(add_cvar, GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED)
 
 	add_cvar("sv_deathmatch", "1" if game.config.deathmatch else "0",
 		"Whether players can shoot each other.").changed.connect(
@@ -289,7 +289,7 @@ func _bind_mode_cvars() -> void:
 
 	# Registered whether or not hunters are on, so `npc_skill hard` in a config holds
 	# when an operator turns `sv_hunters` on later.
-	game.npc_skill.bind_cvars(add_cvar, DotConVar.FLAG_NOTIFY)
+	game.npc_skill.bind_cvars(add_cvar, GSConVar.FLAG_NOTIFY)
 
 	add_cvar("sv_hunters", "1" if game.config.hunters else "0",
 		"Whether hunters walk the course.").changed.connect(
@@ -318,7 +318,7 @@ func _bind_mode_cvars() -> void:
 	)
 
 
-func _cmd_thirdperson(ctx: DotCmdContext) -> void:
+func _cmd_thirdperson(ctx: GSCmdContext) -> void:
 	var player := _caller(ctx)
 	if player == null or player.camera == null:
 		ctx.reply("Only a player with a camera can do that.")
@@ -329,7 +329,7 @@ func _cmd_thirdperson(ctx: DotCmdContext) -> void:
 	ctx.reply("Third person.")
 
 
-func _cmd_firstperson(ctx: DotCmdContext) -> void:
+func _cmd_firstperson(ctx: GSCmdContext) -> void:
 	var player := _caller(ctx)
 	if player == null or player.camera == null:
 		ctx.reply("Only a player with a camera can do that.")
@@ -338,7 +338,7 @@ func _cmd_firstperson(ctx: DotCmdContext) -> void:
 	ctx.reply("First person.")
 
 
-func _cmd_ghost(ctx: DotCmdContext) -> void:
+func _cmd_ghost(ctx: GSCmdContext) -> void:
 	if not game.config.show_replay_bot:
 		ctx.reply("The replay bot is off (sv_replay_bot 0).")
 		return

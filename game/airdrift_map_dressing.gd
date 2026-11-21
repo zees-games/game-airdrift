@@ -42,7 +42,7 @@ static func load_for(map_id: String) -> Dictionary:
 		return {}
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not (parsed is Dictionary):
-		DotLog.warn(CHANNEL, "a dressing file is not a JSON object", {"path": path})
+		GSLog.warn(CHANNEL, "a dressing file is not a JSON object", {"path": path})
 		return {}
 	return parsed
 
@@ -58,7 +58,7 @@ static func apply(map: Node3D, map_id: String) -> int:
 	_light(map, data.get("light", {}))
 	_materials(map, data.get("materials", []))
 	var placed := _props(map, data.get("props", []))
-	DotLog.debug(CHANNEL, "map dressed", {"map": map_id, "props": placed})
+	GSLog.debug(CHANNEL, "map dressed", {"map": map_id, "props": placed})
 	return placed
 
 
@@ -241,7 +241,7 @@ static func _props(map: Node3D, props: Variant) -> int:
 			var path := AirdriftPaths.rebase(MODELS % str(p["model"]))
 			var scene := load(path) as PackedScene
 			if scene == null:
-				DotLog.warn(CHANNEL, "a dressing model did not load", {"path": path})
+				GSLog.warn(CHANNEL, "a dressing model did not load", {"path": path})
 				continue
 			node = scene.instantiate() as Node3D
 		else:

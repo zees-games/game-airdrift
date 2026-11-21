@@ -7,7 +7,7 @@ extends CharacterBody3D
 ## list of boxes and there is no physics space on its server — so a monster there moves
 ## by writing a position. This game's players collide against Godot's physics, and a
 ## hunter that walked through the map its quarry cannot is not a hunter.
-## [method DotNpcBrain.steer_toward] handles both and applies gravity to this one,
+## [method GSNpcBrain.steer_toward] handles both and applies gravity to this one,
 ## which a [CharacterBody3D] does not have of its own.
 ##
 ## Extended by nothing and referenced by PATH. A `class_name` would reserve a global
@@ -23,7 +23,7 @@ extends CharacterBody3D
 @export var visible_body: bool = true
 
 ## The drawn person, or null when the body is not drawn. Public for the suite.
-var person: DotHumanoidFigure = null
+var person: GSHumanoidFigure = null
 
 
 func _ready() -> void:
@@ -51,8 +51,8 @@ func _ready() -> void:
 
 	# A person on the zombie gait, in the hunter's tint: the walk shuffles, the run is a real
 	# sprint, and it stands in the capsule the body collides as. It faces -Z, as the snout did.
-	var look := DotHumanoidLook.make(&"sam", Color("8a9a6a"), Color("2a2420"), tint, tint.darkened(0.55))
-	person = DotHumanoidFigure.new()
+	var look := GSHumanoidLook.make(&"sam", Color("8a9a6a"), Color("2a2420"), tint, tint.darkened(0.55))
+	person = GSHumanoidFigure.new()
 	person.name = "Person"
 	person.zombie_gait = true
 	person.auto_animate = true

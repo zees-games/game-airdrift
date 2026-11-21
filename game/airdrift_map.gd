@@ -65,7 +65,7 @@ func _build() -> void:
 	pass
 
 
-func timer_zones() -> DotTimerZoneSet:
+func timer_zones() -> GSTimerZoneSet:
 	return null
 
 
@@ -73,7 +73,7 @@ func spawn_for(track: int) -> Vector3:
 	var zones := timer_zones()
 
 	if zones != null:
-		var spawn := zones.first_of_kind(DotTimerZone.Kind.SPAWN, track)
+		var spawn := zones.first_of_kind(GSTimerZone.Kind.SPAWN, track)
 		if spawn != null:
 			return spawn.destination
 
@@ -84,7 +84,7 @@ func spawn_yaw_for(track: int) -> float:
 	var zones := timer_zones()
 
 	if zones != null:
-		var spawn := zones.first_of_kind(DotTimerZone.Kind.SPAWN, track)
+		var spawn := zones.first_of_kind(GSTimerZone.Kind.SPAWN, track)
 		if spawn != null:
 			return spawn.destination_yaw
 
@@ -93,26 +93,26 @@ func spawn_yaw_for(track: int) -> float:
 
 ## A zone box from two corners in genre units.
 static func zone_box(
-	kind: DotTimerZone.Kind, track: int, a: Vector3, b: Vector3
-) -> DotTimerZone:
-	return DotTimerZone.make(kind, track).set_box(
+	kind: GSTimerZone.Kind, track: int, a: Vector3, b: Vector3
+) -> GSTimerZone:
+	return GSTimerZone.make(kind, track).set_box(
 		AirdriftUnits.vector_to_metres(a), AirdriftUnits.vector_to_metres(b)
 	)
 
 
 ## A stage line, numbered from 1, with the spot a `!s<n>` puts a player.
 ##
-## [b]The destination is not optional on a staged map.[/b] `DotTimerManager.request_stage`
+## [b]The destination is not optional on a staged map.[/b] `GSTimerManager.request_stage`
 ## resolves "go to stage 3" to a stage zone and hands the host that zone's
-## [member DotTimerZone.destination]; a stage zone drawn with none resolves to
+## [member GSTimerZone.destination]; a stage zone drawn with none resolves to
 ## [code]Vector3.ZERO[/code], which on any of these maps is a point in the sky above the
 ## start. Nothing errors — the request succeeds and the player is dropped out of the
 ## world — so the zone that has one and the zone that does not look identical
 ## everywhere except in play.
 static func zone_stage(
 	track: int, number: int, a: Vector3, b: Vector3, at: Vector3, yaw: float = 0.0
-) -> DotTimerZone:
-	var zone := zone_box(DotTimerZone.Kind.STAGE, track, a, b)
+) -> GSTimerZone:
+	var zone := zone_box(GSTimerZone.Kind.STAGE, track, a, b)
 	zone.number = float(number)
 	zone.destination = AirdriftUnits.vector_to_metres(at)
 	zone.destination_yaw = yaw
@@ -120,8 +120,8 @@ static func zone_stage(
 
 
 ## A spawn point from a position in genre units.
-static func zone_spawn(track: int, at: Vector3, yaw: float) -> DotTimerZone:
-	var zone := DotTimerZone.make(DotTimerZone.Kind.SPAWN, track)
+static func zone_spawn(track: int, at: Vector3, yaw: float) -> GSTimerZone:
+	var zone := GSTimerZone.make(GSTimerZone.Kind.SPAWN, track)
 	zone.destination = AirdriftUnits.vector_to_metres(at)
 	zone.destination_yaw = yaw
 	return zone

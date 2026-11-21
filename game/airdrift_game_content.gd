@@ -38,32 +38,32 @@ var offered_maps: PackedStringArray = PackedStringArray()
 ## The newest version of an offered map, by id, as [method offer_collection] read it.
 var _offered_versions: Dictionary = {}
 
-## GET-as-JSON override for a suite: `func(url: String) -> DotResult`. Unset is a real [DotHttp].
+## GET-as-JSON override for a suite: `func(url: String) -> GSResult`. Unset is a real [GSHttp].
 var json_fetch_fn: Callable = Callable()
 
-var maps: DotMapSession = null
+var maps: GSMapSession = null
 
 
 ## Make sure the map [param id] is loadable, fetching it through dot-cloud if not.
 ## The map id IS the content id (the publisher's `dist/<id>/` layout), so no registry maps one to the other.
 ## Succeeds and does nothing if the catalogue has it, there is no cloud client, or it is built in.
-func ensure_map_content(id: StringName) -> DotResult:
+func ensure_map_content(id: StringName) -> GSResult:
 	if id == &"":
-		return DotResult.fail(DotError.CODE_INVALID, "No map id.")
+		return GSResult.fail(GSError.CODE_INVALID, "No map id.")
 
 	if maps != null and maps.catalogue != null and maps.catalogue.has(id):
-		return DotResult.success(null)
+		return GSResult.success(null)
 
 	if _map_content_seen.has(id):
-		return DotResult.success(null)
+		return GSResult.success(null)
 
-	var cloud: Object = DotRegistry.get_service(map_content_service)
+	var cloud: Object = GSRegistry.get_service(map_content_service)
 
 	if cloud == null or not cloud.has_method("ensure"):
 		# Not a warning: `change_to` refuses the id next, naming the map, which reads better.
-		return DotResult.success(null)
+		return GSResult.success(null)
 
-	DotLog.info(CHANNEL, "fetching a map this build does not have", {"map": String(id)})
+	GSLog.info(CHANNEL, "fetching a map this build does not have", {"map": String(id)})
 
 	# The installer-pinned version when the descriptor names the map, else the origin's latest.
 	var pinned: Array = _pinned_maps.get(id, [])
@@ -80,17 +80,17 @@ func ensure_map_content(id: StringName) -> DotResult:
 			newest = await _latest_map_version(cloud, content_id)
 		got = await cloud.call("ensure", StringName(content_id), newest)
 
-	if not (got is DotResult):
-		return DotResult.fail(
-			DotError.CODE_INTERNAL,
+	if not (got is GSResult):
+		return GSResult.fail(
+			GSError.CODE_INTERNAL,
 			"The content client answered with something else."
 		)
 
-	var res: DotResult = got
+	var res: GSResult = got
 
 	if not res.ok:
 		# An offered course the origin will not serve leaves M rather than failing every pick.
-		var transient := res.error.code in [DotError.CODE_NETWORK, DotError.CODE_TIMEOUT]
+		var transient := res.error.code in [GSError.CODE_NETWORK, GSError.CODE_TIMEOUT]
 		if offered_maps.has(String(id)) and not transient:
 			offered_maps.remove_at(offered_maps.find(String(id)))
 		return res.wrap("could not fetch the map %s" % id)
@@ -101,8 +101,8 @@ func ensure_map_content(id: StringName) -> DotResult:
 	var map := AirdriftMapCatalogue.at_directory(id, dir)
 
 	if map == null:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"%s was fetched but does not look like a map." % id
 		)
 
@@ -114,10 +114,10 @@ func ensure_map_content(id: StringName) -> DotResult:
 		return added
 
 	_map_content_seen[id] = true
-	DotLog.info(CHANNEL, "a map was added from delivered content", {
+	GSLog.info(CHANNEL, "a map was added from delivered content", {
 		"map": String(id), "version": map.content_version, "dir": dir
 	})
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## The version the origin's `latest.json` names for [param content_id], or "" when no base
@@ -130,7 +130,7 @@ func _latest_map_version(cloud: Object, content_id: String) -> String:
 
 	for base in cloud.call("resolved_http_base_urls"):
 		var url := "%s/%s/latest.json" % [str(base).rstrip("/"), content_id]
-		var res: DotResult = await _get_json(url)
+		var res: GSResult = await _get_json(url)
 
 		if res.ok and res.value is Dictionary:
 			version = str((res.value as Dictionary).get("version", ""))
@@ -138,20 +138,20 @@ func _latest_map_version(cloud: Object, content_id: String) -> String:
 				break
 			version = ""
 
-	DotLog.debug(CHANNEL, "newest published map version", {"content": content_id, "version": version})
+	GSLog.debug(CHANNEL, "newest published map version", {"content": content_id, "version": version})
 	return version
 
 
 ## Offers on M every map of [param collection] (`owner/name`) the origin publishes in its `collection.json`, minus packs whose `latest.json` it does not serve (a pack the collection
 ## names but the store lost). [param also] (the stock list) joins it, since the stock courses are published packs a collection need not name. Keeps [member offered_maps] as it was when no base answers.
-func offer_collection(collection: String, also: PackedStringArray = PackedStringArray()) -> DotResult:
-	var cloud: Object = DotRegistry.get_service(map_content_service)
+func offer_collection(collection: String, also: PackedStringArray = PackedStringArray()) -> GSResult:
+	var cloud: Object = GSRegistry.get_service(map_content_service)
 	if cloud == null or not cloud.has_method("resolved_http_base_urls"):
-		return DotResult.fail(DotError.CODE_UNSUPPORTED, "No content client to read %s from." % collection)
+		return GSResult.fail(GSError.CODE_UNSUPPORTED, "No content client to read %s from." % collection)
 	var owner := collection.get_slice("/", 0)
 	var bases: Variant = cloud.call("resolved_http_base_urls")
 	var listed := PackedStringArray()
-	var last: DotResult = DotResult.fail(DotError.CODE_UNSUPPORTED, "The content client has no origin.")
+	var last: GSResult = GSResult.fail(GSError.CODE_UNSUPPORTED, "The content client has no origin.")
 	for base in bases:
 		last = await _get_json("%s/%s/collection.json" % [str(base).rstrip("/"), collection])
 		if last.ok:
@@ -160,7 +160,7 @@ func offer_collection(collection: String, also: PackedStringArray = PackedString
 			listed = last.value
 			break
 	if not last.ok:
-		DotLog.warn(CHANNEL, "the map collection could not be read; M keeps the stock list",
+		GSLog.warn(CHANNEL, "the map collection could not be read; M keeps the stock list",
 			{"collection": collection, "why": last.error.message})
 		return last
 
@@ -182,25 +182,25 @@ func offer_collection(collection: String, also: PackedStringArray = PackedString
 				offered_maps.remove_at(offered_maps.find(id))
 		else:
 			_offered_versions[StringName(id)] = version
-	DotLog.info(CHANNEL, "the map collection is offered on M", {"collection": collection,
+	GSLog.info(CHANNEL, "the map collection is offered on M", {"collection": collection,
 		"listed": listed.size(), "offered": offered_maps.size(), "unpublished": dropped})
-	return DotResult.success(offered_maps)
+	return GSResult.success(offered_maps)
 
 
-func _get_json(url: String) -> DotResult:
+func _get_json(url: String) -> GSResult:
 	if json_fetch_fn.is_valid():
 		return await json_fetch_fn.call(url)
-	var http := DotHttp.new()
+	var http := GSHttp.new()
 	http.name = "MapContentHttp"
 	add_child(http)
-	var res: DotResult = await http.get_json(url)
+	var res: GSResult = await http.get_json(url)
 	http.queue_free()
 	return res
 
 
 ## Names the content id and version of a map that came out of a dot-cloud mount, so a client can be sent it.
 ## Both come off the mount path `res://dot_cloud/<content_id>/<version>`, not a second record that could disagree.
-func _mark_delivered(map: DotMapDef, dir: String) -> void:
+func _mark_delivered(map: GSMapDef, dir: String) -> void:
 	# Read off the path, not rebuilt from the owner cvar, so changing it mid-session
 	# does not re-announce the map under another owner.
 	var root := "res://dot_cloud/"
@@ -237,7 +237,7 @@ func fetch_content_maps() -> void:
 	var added: Array[StringName] = []
 	var failed := 0
 
-	DotLog.info(CHANNEL, "fetching the configured map set", {"maps": wanted.size()})
+	GSLog.info(CHANNEL, "fetching the configured map set", {"maps": wanted.size()})
 
 	for raw in wanted:
 		var id := StringName(raw.strip_edges())
@@ -246,12 +246,12 @@ func fetch_content_maps() -> void:
 		if maps != null and maps.catalogue != null and maps.catalogue.has(id):
 			continue
 
-		var res: DotResult = await ensure_map_content(id)
+		var res: GSResult = await ensure_map_content(id)
 
 		# ok is not "arrived" (no content client succeeds silently): the catalogue says.
 		if not res.ok:
 			failed += 1
-			DotLog.warn(CHANNEL, "a configured map could not be fetched",
+			GSLog.warn(CHANNEL, "a configured map could not be fetched",
 				{"map": String(id), "why": res.error.message})
 		elif maps != null and maps.catalogue != null and maps.catalogue.has(id):
 			added.append(id)
@@ -259,7 +259,7 @@ func fetch_content_maps() -> void:
 	_fetching_content_maps = false
 
 	var total := maps.catalogue.size() if maps != null and maps.catalogue != null else 0
-	DotLog.info(CHANNEL, "the configured map set is in", {
+	GSLog.info(CHANNEL, "the configured map set is in", {
 		"added": added.size(), "failed": failed, "catalogue": total,
 	})
 

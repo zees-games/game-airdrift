@@ -3,7 +3,7 @@ extends RefCounted
 const AirdriftConfig := preload("airdrift_config.gd")
 const AirdriftUnits := preload("airdrift_units.gd")
 
-## Turns a [AirdriftConfig] — genre units, the genre's cvars — into the [DotFpsTunables] the
+## Turns a [AirdriftConfig] — genre units, the genre's cvars — into the [GSFpsTunables] the
 ## motor simulates with.
 ##
 ## [b]The only place units cross.[/b] Everything above this speaks units per second;
@@ -23,8 +23,8 @@ const AirdriftUnits := preload("airdrift_units.gd")
 ## keeps a reference to what it was built with and derives styles from it, so editing
 ## the shared object under thirty players would change all of them at once and leave
 ## the styles compounding on a base that had moved.
-static func tunables_for(config: AirdriftConfig) -> DotFpsTunables:
-	var t := DotFpsTunables.new()
+static func tunables_for(config: AirdriftConfig) -> GSFpsTunables:
+	var t := GSFpsTunables.new()
 
 	# --- Speeds -----------------------------------------------------------
 	t.max_speed = AirdriftUnits.to_metres(config.max_speed)

@@ -11,7 +11,7 @@ const AirdriftPaths := preload("airdrift_paths.gd")
 ## the stock characters here and a player's own avatar from the platform are the same
 ## thing at different addresses: the stock parts ship in this build under
 ## [code]res://avatars/[/code], a platform part names dot-cloud content, and
-## [DotAvatarBuilder] does not care which it got.
+## [GSAvatarBuilder] does not care which it got.
 ##
 ## A player with no avatar of their own gets [method stock_avatar], which is a real
 ## document over the same schema rather than a special case — so a server that has
@@ -53,12 +53,12 @@ const PALETTE: Array[Color] = [
 
 
 ## Builds the schema. Once per game; it is content, not state.
-static func schema() -> DotAvatarSchema:
-	var s := DotAvatarSchema.new()
+static func schema() -> GSAvatarSchema:
+	var s := GSAvatarSchema.new()
 	s.id = SCHEMA_ID
 	s.version = 1
 
-	var body := DotAvatarSlot.new()
+	var body := GSAvatarSlot.new()
 	body.id = SLOT_BODY
 	body.display_name = "Body"
 	body.required = true
@@ -66,7 +66,7 @@ static func schema() -> DotAvatarSchema:
 	body.layer = 10
 	s.slots.append(body)
 
-	var head := DotAvatarSlot.new()
+	var head := GSAvatarSlot.new()
 	head.id = SLOT_HEAD
 	head.display_name = "Head"
 	head.required = true
@@ -74,7 +74,7 @@ static func schema() -> DotAvatarSchema:
 	head.layer = 20
 	s.slots.append(head)
 
-	var hat := DotAvatarSlot.new()
+	var hat := GSAvatarSlot.new()
 	hat.id = SLOT_HAT
 	hat.display_name = "Hat"
 	hat.required = false
@@ -91,8 +91,8 @@ static func schema() -> DotAvatarSchema:
 	return s
 
 
-static func _part(id: StringName, slot: StringName, channels: int) -> DotAvatarPart:
-	var p := DotAvatarPart.new()
+static func _part(id: StringName, slot: StringName, channels: int) -> GSAvatarPart:
+	var p := GSAvatarPart.new()
 	p.id = id
 	p.slot = slot
 	p.display_name = String(id).capitalize()
@@ -104,8 +104,8 @@ static func _part(id: StringName, slot: StringName, channels: int) -> DotAvatarP
 
 
 ## The catalogue that finds the stock parts, and any delivered ones through dot-cloud.
-static func catalogue() -> DotAvatarCatalogue:
-	var c := DotAvatarCatalogue.new()
+static func catalogue() -> GSAvatarCatalogue:
+	var c := GSAvatarCatalogue.new()
 	c.builtin_prefix = AirdriftPaths.rebase("res://avatars/")
 	c.builtin_suffix = ".tscn"
 	return c
@@ -114,9 +114,9 @@ static func catalogue() -> DotAvatarCatalogue:
 ## A stock avatar for a player with none of their own.
 ##
 ## Deterministic in the id, so the same player is the same character everywhere.
-static func stock_avatar(player_id: StringName) -> DotAvatar:
+static func stock_avatar(player_id: StringName) -> GSAvatar:
 	var seed_value := hash(String(player_id))
-	var avatar := DotAvatar.make(SCHEMA_ID)
+	var avatar := GSAvatar.make(SCHEMA_ID)
 
 	avatar.set_part(SLOT_BODY, BODIES[seed_value % BODIES.size()])
 	avatar.set_part(SLOT_HEAD, HEADS[(seed_value / 7) % HEADS.size()])
@@ -144,13 +144,13 @@ static func stock_avatar(player_id: StringName) -> DotAvatar:
 ## client, a slot this build does not have — is conformed rather than refused, so a
 ## player is never invisible because their hat is from the future.
 static func apply(
-	avatar: DotAvatar,
+	avatar: GSAvatar,
 	rig: Node3D,
-	p_schema: DotAvatarSchema,
-	p_catalogue: DotAvatarCatalogue
-) -> DotResult:
+	p_schema: GSAvatarSchema,
+	p_catalogue: GSAvatarCatalogue
+) -> GSResult:
 	if avatar == null or rig == null or p_schema == null:
-		return DotResult.fail(DotError.CODE_INVALID, "Nothing to build.")
+		return GSResult.fail(GSError.CODE_INVALID, "Nothing to build.")
 
 	# conform() edits the document IN PLACE and returns what it changed, not a new
 	# document — so it is run on a copy, or a player's own avatar would be quietly
@@ -161,9 +161,9 @@ static func apply(
 	if not conformed.ok:
 		return conformed.wrap("The avatar could not be conformed to the schema.")
 
-	var steps := DotAvatarBuilder.plan(document, p_schema, p_catalogue)
+	var steps := GSAvatarBuilder.plan(document, p_schema, p_catalogue)
 
-	return DotAvatarBuilder.apply(steps, rig, null)
+	return GSAvatarBuilder.apply(steps, rig, null)
 
 
 ## The person an avatar document is drawn as: one of dot-player-char's people (the family's
@@ -171,19 +171,19 @@ static func apply(
 ## part gives that skin's clothes, a Kenney head that skin's face, hair and which of the four
 ## bodies; a primitive part gives its tint to the top over a stock person seeded by
 ## [param player_key]. The hat is not drawn (the people have no mount for one).
-static func look_of(avatar: DotAvatar, player_key: StringName) -> DotHumanoidLook:
-	var look := DotHumanoidLook.stock(hash(String(player_key)))
+static func look_of(avatar: GSAvatar, player_key: StringName) -> GSHumanoidLook:
+	var look := GSHumanoidLook.stock(hash(String(player_key)))
 	if avatar == null or avatar.schema_id != SCHEMA_ID:
 		return look
 	var body := _kenney_letter(avatar.part_in(SLOT_BODY))
 	var head := _kenney_letter(avatar.part_in(SLOT_HEAD))
 	if body != "":
-		look.top = Color(DotHumanoidLook.SITE_SKINS[body][2])
-		look.bottom = Color(DotHumanoidLook.SITE_SKINS[body][3])
+		look.top = Color(GSHumanoidLook.SITE_SKINS[body][2])
+		look.bottom = Color(GSHumanoidLook.SITE_SKINS[body][3])
 	elif avatar.has_slot(SLOT_BODY):
 		look.top = avatar.colour_of(SLOT_BODY, 0)
 	if head != "":
-		var face := DotHumanoidLook.from_letter(head)
+		var face := GSHumanoidLook.from_letter(head)
 		look.skin = face.skin
 		look.hair = face.hair
 		look.body = face.body
@@ -196,13 +196,13 @@ static func _kenney_letter(part: StringName) -> String:
 	if at < 0:
 		return ""
 	var letter := text.substr(at + 8)
-	return letter if DotHumanoidLook.SITE_SKINS.has(letter) else ""
+	return letter if GSHumanoidLook.SITE_SKINS.has(letter) else ""
 
 
 ## A member's site avatar as a runner: their top's skin is the body, their face's skin
-## the head. See `DotPlatformIdentity.avatar_translate_fn`. Null when the document is not
+## the head. See `GSPlatformIdentity.avatar_translate_fn`. Null when the document is not
 ## the site's, so the member wears their stock look rather than a guess.
-static func from_site(foreign: DotAvatar) -> DotAvatar:
+static func from_site(foreign: GSAvatar) -> GSAvatar:
 	var top := _site_skin(foreign, &"top")
 	var face := _site_skin(foreign, &"face")
 
@@ -224,7 +224,7 @@ static func from_site(foreign: DotAvatar) -> DotAvatar:
 ##
 ## The site's avatar is the Kenney kit's eighteen painted skins, `skin-a` to `skin-r`,
 ## chosen per face, top and legs — the same atlases this game draws, spelt the site's way.
-static func _site_skin(foreign: DotAvatar, slot: StringName) -> String:
+static func _site_skin(foreign: GSAvatar, slot: StringName) -> String:
 	if foreign == null or foreign.schema_id != &"builtin":
 		return ""
 

@@ -6,7 +6,7 @@ extends "dedicated_checks.gd"
 ## dot-vote over this server's map catalogue.
 ##
 ## [b]This game already had a rock-the-vote and it was not one.[/b]
-## `DotMapTimeLimit` counts votes against a fraction and expires the map: a countdown
+## `GSMapTimeLimit` counts votes against a fraction and expires the map: a countdown
 ## and a tally. What a records community runs is a ballot — nominations, seconding, an
 ## instant runoff, a cooldown, an extend option — and that is dot-vote.
 func _test_vote() -> void:
@@ -20,9 +20,9 @@ func _test_vote() -> void:
 	if vote == null:
 		return
 
-	_check(vote.source != null and (vote.source as DotVoteMapSource).is_usable(), "with something to vote for")
+	_check(vote.source != null and (vote.source as GSVoteMapSource).is_usable(), "with something to vote for")
 	_check(
-		vote.director.rules.method == DotVoteRules.Method.INSTANT_RUNOFF,
+		vote.director.rules.method == GSVoteRules.Method.INSTANT_RUNOFF,
 		"counted by instant runoff rather than plurality"
 	)
 	_check(
@@ -71,7 +71,7 @@ func _test_vote_ballot(vote: AirdriftVote) -> void:
 		heard.append([String(cue), seconds_left])
 	vote.cue_due.connect(probe)
 
-	var opened := vote.director.open_vote(DotVoteClock.REASON_MANUAL)
+	var opened := vote.director.open_vote(GSVoteClock.REASON_MANUAL)
 	_check(
 		opened.ok or opened.error != null,
 		"a vote can be asked for and answers either way",
@@ -107,14 +107,14 @@ func _test_vote_commands(module: Object) -> void:
 	# One rock-the-vote. The console `rtv` went to the map session's time limit and `!rtv`
 	# in chat to this director — two votes under one name. The director's refusal names
 	# its delay; the map session's tally answers "N of M", so the reply says which one ran.
-	var session := DotClientSession.new()
+	var session := GSClientSession.new()
 	session.peer_id = 4343
 	session.userid = 43
 	session.display_name = "Rocker"
 	var _adopted := server.adopt_session(session)
 	var replies: Array[String] = []
 	var ctx := session.make_context(
-		"rtv", PackedStringArray(), DotCmdContext.Source.CHAT,
+		"rtv", PackedStringArray(), GSCmdContext.Source.CHAT,
 		func(line: String) -> void: replies.append(line)
 	)
 	server.console.execute("rtv", ctx)
@@ -165,24 +165,24 @@ func _test_map_menu_permissions() -> void:
 	var start_map: StringName = game.maps.current.id
 	# Each choice below is made past the start-of-map delay, so a rock-the-vote is counted
 	# rather than refused for time.
-	var guests: Array[DotClientSession] = []
+	var guests: Array[GSClientSession] = []
 	for i in 2:
-		var guest := DotClientSession.new()
+		var guest := GSClientSession.new()
 		guest.peer_id = 5100 + i
 		guest.userid = 510 + i
 		guest.display_name = "Guest-%d" % i
-		var who := DotGuestIdentity.new()
+		var who := GSGuestIdentity.new()
 		who.uid = "guest:map-menu-%d" % i
 		guest.identity = who
 		var _adopted := server.adopt_session(guest)
 		guest.local = false
-		guest.state = DotClientSession.State.SPAWNED if i == 0 else DotClientSession.State.CONNECTING
+		guest.state = GSClientSession.State.SPAWNED if i == 0 else GSClientSession.State.CONNECTING
 		guests.append(guest)
 	var first := guests[0]
 	var second := guests[1]
 
-	var choose := func(session: DotClientSession, permissions: PackedStringArray = PackedStringArray()) -> Dictionary:
-		var ctx := session.make_context("mapmenu", PackedStringArray(), DotCmdContext.Source.CHAT)
+	var choose := func(session: GSClientSession, permissions: PackedStringArray = PackedStringArray()) -> Dictionary:
+		var ctx := session.make_context("mapmenu", PackedStringArray(), GSCmdContext.Source.CHAT)
 		ctx.permissions = permissions
 		var target := &""
 		for row: Dictionary in menu.call("rows"):
@@ -209,7 +209,7 @@ func _test_map_menu_permissions() -> void:
 		"one guest, sv_map_menu_alone 1: their M choice changes the map", str(alone_on["result"].get("text", "")))
 
 	# A second human: a vote again, whatever sv_map_menu_alone says.
-	second.state = DotClientSession.State.SPAWNED
+	second.state = GSClientSession.State.SPAWNED
 	var two: Dictionary = await choose.call(first)
 	_check(not two["changed"] and str(two["result"].get("how", "")) == "voted" and not vote.director.is_voting(),
 		"two guests, sv_map_menu_alone 1: the M choice is a nomination and a rock, not a change",
@@ -249,7 +249,7 @@ func _test_map_menu_permissions() -> void:
 	# Back on the map the sections after this one stand on: the rows this picked from depend on
 	# which map packs are linked, and a course with its start somewhere else fails them.
 	if game.maps.current.id != start_map:
-		var _back: DotResult = await game.change_map(start_map)
+		var _back: GSResult = await game.change_map(start_map)
 	_done()
 
 
@@ -262,7 +262,7 @@ func _test_status_clock(vote: AirdriftVote) -> void:
 
 	# A known clock, so the numbers mean something whatever the config shipped.
 	rules.duration_sec = 600.0
-	rules.trigger = DotVoteRules.Trigger.TIME_LIMIT
+	rules.trigger = GSVoteRules.Trigger.TIME_LIMIT
 	rules.max_extends = 0
 	clock.start()
 
@@ -287,7 +287,7 @@ func _test_status_clock(vote: AirdriftVote) -> void:
 
 	# `trigger: rtv_only` with no limit, which is what the deployment runs.
 	rules.duration_sec = 0.0
-	rules.trigger = DotVoteRules.Trigger.RTV_ONLY
+	rules.trigger = GSVoteRules.Trigger.RTV_ONLY
 	clock.start()
 	var status := _run_command("airdrift_status")
 	_check(
@@ -385,9 +385,9 @@ func _modes_ids(runner: AirdriftPlayer) -> int:
 
 	_check(entity != 0, "and an entity id from the table (%d)" % entity)
 	_check(
-		DotEntity.is_kind(entity, DotEntity.KIND_PLAYER),
+		GSEntity.is_kind(entity, GSEntity.KIND_PLAYER),
 		"which says it names a player, without a range check",
-		DotEntity.describe_id(entity)
+		GSEntity.describe_id(entity)
 	)
 	_check(
 		game.combat.player_id_for(entity) == &"u4242",
@@ -419,9 +419,9 @@ func _modes_hit_and_fall(runner: AirdriftPlayer, entity: int) -> void:
 	game.combat.hit_landed.connect(on_hit)
 	var bullet := game.combat.manager.damage_type(AirdriftArsenal.DAMAGE_BULLET)
 	var victim_entity := game.combat.entity_for(&"u4343")
-	game.combat.manager.apply_damage(DotDamage.make(entity, entity, 10.0, bullet))
+	game.combat.manager.apply_damage(GSDamage.make(entity, entity, 10.0, bullet))
 	var self_heard := heard.size()
-	var hit := DotDamage.make(entity, victim_entity, 25.0, bullet)
+	var hit := GSDamage.make(entity, victim_entity, 25.0, bullet)
 	game.combat.manager.apply_damage(hit)
 	game.combat.hit_landed.disconnect(on_hit)
 	_check(self_heard == 0, "a hit on yourself is no hit marker", str(heard))
@@ -438,11 +438,11 @@ func _modes_hit_and_fall(runner: AirdriftPlayer, entity: int) -> void:
 	# and the pick stays a draw over the stock weights) and by deciding nothing in
 	# `_on_entity_killed` (the death is null).
 	var weights := server.console.find_cvar("sv_ragdoll_reactions")
-	_check(weights != null and weights.has_flag(DotConVar.FLAG_REPLICATED)
+	_check(weights != null and weights.has_flag(GSConVar.FLAG_REPLICATED)
 			and server.console.find_cvar("sv_ragdoll") != null,
 		"the sv_ragdoll* set is bound, replicated, because the clients draw the bodies")
 	var _only := _run_command("sv_ragdoll_reactions limp=0,crumple=0,face_plant=1")
-	var fatal := DotDamage.make(entity, victim_entity, 500.0, bullet)
+	var fatal := GSDamage.make(entity, victim_entity, 500.0, bullet)
 	fatal.tick = game.current_tick()
 	game.combat.manager.apply_damage(fatal)
 	var fallen: AirdriftPlayer = game.players.get(&"u4343")
@@ -451,7 +451,7 @@ func _modes_hit_and_fall(runner: AirdriftPlayer, entity: int) -> void:
 		away = fallen.controller.state.position - runner.controller.state.position
 		away.y = 0.0
 	_check(fallen != null and fallen.death != null
-			and fallen.death.reaction == DotPlayerDeathReactions.FACE_PLANT,
+			and fallen.death.reaction == GSPlayerDeathReactions.FACE_PLANT,
 		"a kill picks the body's fall on the server, from sv_ragdoll_reactions",
 		str(fallen.death.describe()) if fallen != null and fallen.death != null else "no death")
 	_check(fallen != null and fallen.death != null
@@ -482,12 +482,12 @@ func _modes_killview(entity: int) -> void:
 	var kv_clips: Array = []
 	for kv_tick in range(kv_base - 60, kv_base + 60):
 		if kv_tick == kv_base:
-			game.combat.manager.apply_damage(DotDamage.make(entity, game.combat.entity_for(&"u4444"), 500.0, bullet))
+			game.combat.manager.apply_damage(GSDamage.make(entity, game.combat.entity_for(&"u4444"), 500.0, bullet))
 		if kv != null:
 			kv_clips.append_array(kv.tick(kv_tick))
 	var kv_info := {}
 	for clip: Dictionary in kv_clips:
-		var kv_read := DotKillViewClip.unpack(clip["body"])
+		var kv_read := GSKillViewClip.unpack(clip["body"])
 		if bool(kv_read["ok"]):
 			kv_info = kv_read["info"]
 	_check(prey != null and kv_clips.size() == 1 and kv_info.get("killer_key", "") == "u4242",
@@ -507,7 +507,7 @@ func _modes_fire() -> void:
 	)
 
 	# The trigger is a bit on `AirdriftNetCommand`, replayed with that tick's movement, not a request.
-	var arsenal_before := game.combat._kit[&"u4242"]["arsenal"] as DotWeaponArsenal
+	var arsenal_before := game.combat._kit[&"u4242"]["arsenal"] as GSWeaponArsenal
 	_check(
 		arsenal_before.slots().size() >= 1,
 		"an armed player has something to shoot with",
@@ -523,20 +523,20 @@ func _modes_fire() -> void:
 	# Release the trigger until the semi-automatic deagle has deployed: a press during
 	# a switch must not fire.
 	# Once a tick: a command is consumed by the tick that reads it.
-	var idle := DotWeaponCommand.new()
+	var idle := GSWeaponCommand.new()
 
 	# `tick_once`, not `combat.tick`: dot-weapon durations are measured in ticks.
 	for _deploy in range(game.tick_rate):
 		game.combat.set_fire_command(&"u4242", idle)
 		game.tick_once(game.current_tick() + 1)
 
-	var fire := DotWeaponCommand.new()
-	fire.set_button(DotWeaponCommand.BUTTON_ATTACK, true)
+	var fire := GSWeaponCommand.new()
+	fire.set_button(GSWeaponCommand.BUTTON_ATTACK, true)
 
 	# An Array: a lambda captures locals by value.
-	var shots: Array[DotShot] = []
+	var shots: Array[GSShot] = []
 	game.combat.manager.shot_resolved.connect(
-		func(shot: DotShot) -> void: shots.append(shot)
+		func(shot: GSShot) -> void: shots.append(shot)
 	)
 
 	# Enough ticks for the deagle's 160 rpm to come round. A weapon that fired
@@ -562,7 +562,7 @@ func _modes_fire() -> void:
 
 
 ## A tick whose input never arrived is not the last trigger again.
-func _modes_fire_starved(fire: DotWeaponCommand) -> void:
+func _modes_fire_starved(fire: GSWeaponCommand) -> void:
 	# dot-net skips `_net_apply_input` for a starved tick, so a command left on
 	# the player would be replayed for as long as packets are lost — the held
 	# trigger `AirdriftPlayerNet.last_attack` says does not survive a hiccup.
@@ -585,19 +585,19 @@ func _modes_hunter_kill(runner: AirdriftPlayer) -> void:
 		var hunter := game.hunters.spawn_one(&"g2g_stalker", at)
 		if hunter != null:
 			game.hunters.hunter_attack(hunter, &"u4242", 1000.0)
-			game.hunters.spawner.remove(hunter.instance_id, DotNpcSpawner.REASON_ADMIN)
+			game.hunters.spawner.remove(hunter.instance_id, GSNpcSpawner.REASON_ADMIN)
 		_check(hunter != null and runner.death != null and runner.death.direction.x < -0.9,
 			"a hunter's kill falls too, away from the hunter",
 			str(runner.death.describe()) if runner.death != null else "no death")
 
 
-## dot-browser asking a real [DotServer] — which nothing in this family had done.
+## dot-browser asking a real [GSServer] — which nothing in this family had done.
 ##
 ## [b]This is the seam the family's own notes name.[/b] dot-server has answered A2S and
 ## its own richer protocol since it was written; dot-browser's suite queries a DQP
 ## server over a real loopback socket. Neither had ever met the other.
 ##
-## What this game contributes that a bare `DotGameDescriptor` cannot is `AirdriftQuery`'s
+## What this game contributes that a bare `GSGameDescriptor` cannot is `AirdriftQuery`'s
 ## section: the map, the tick rate, the styles, the world record, and — since the
 ## modes were added — whether deathmatch and the hunters are on. A player filtering a
 ## list for "surf DM" is filtering for exactly that.

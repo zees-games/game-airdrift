@@ -41,7 +41,7 @@ const BLOCK_WIDE := &"g2g_block_medium"
 const PLATFORM := &"g2g_platform"
 
 ## A prop was placed. Carries who placed it.
-signal prop_placed(player_id: StringName, prop: DotPropInstance)
+signal prop_placed(player_id: StringName, prop: GSPropInstance)
 
 @export_group("Rules")
 
@@ -60,10 +60,10 @@ signal prop_placed(player_id: StringName, prop: DotPropInstance)
 
 var game: AirdriftGame = null
 
-var spawner: DotPropSpawner = null
+var spawner: GSPropSpawner = null
 
 var _world: Node3D = null
-var _limits: DotPropLimits = null
+var _limits: GSPropLimits = null
 
 ## Per player, because a tool holds what that player has. A single tool object is a
 ## single held prop, so the second player to press the button takes the first player's
@@ -71,9 +71,9 @@ var _limits: DotPropLimits = null
 var _phys_guns: Dictionary = {}
 
 
-func setup() -> DotResult:
+func setup() -> GSResult:
 	if game == null:
-		return DotResult.fail(DotError.CODE_STATE, "Props need a game.")
+		return GSResult.fail(GSError.CODE_STATE, "Props need a game.")
 
 	_world = Node3D.new()
 	_world.name = "Props"
@@ -81,19 +81,19 @@ func setup() -> DotResult:
 
 	_limits = limits()
 
-	spawner = DotPropSpawner.new()
+	spawner = GSPropSpawner.new()
 	spawner.name = "PropSpawner"
 	spawner.catalogue = catalogue()
 	spawner.limits = _limits
 	spawner.authoritative = game.authoritative
-	spawner.world_ref = DotNodeRef.of_path(NodePath("../Props"))
+	spawner.world_ref = GSNodeRef.of_path(NodePath("../Props"))
 	add_child(spawner)
 
 	spawner.spawned.connect(_on_spawned)
 
 	game.map_ready.connect(_on_map_ready)
 
-	return DotResult.success(self)
+	return GSResult.success(self)
 
 
 ## What can be placed. Three sizes, in the genre's units.
@@ -101,53 +101,53 @@ func setup() -> DotResult:
 ## 32, 64 and 128 units — the grid this genre's maps are built on — converted at the
 ## one boundary [AirdriftUnits] owns. A block that is "about half a metre" is a block a
 ## mapper cannot line up with anything.
-static func catalogue() -> DotPropCatalogue:
-	var out := DotPropCatalogue.new()
+static func catalogue() -> GSPropCatalogue:
+	var out := GSPropCatalogue.new()
 	out.meta = {"game": "g2gfast"}  # legacy id: saved-data/wire name kept so existing data and published packs keep working
 
 	for def in [_block(), _block_wide(), _platform()]:
 		var added := out.add(def)
 
 		if not added.ok:
-			DotLog.warn(CHANNEL, "a prop could not be catalogued", {
+			GSLog.warn(CHANNEL, "a prop could not be catalogued", {
 				"prop": String(def.id), "why": added.error.message
 			})
 
 	return out
 
 
-static func _block() -> DotPropDef:
-	var def := DotPropDef.make(BLOCK, AirdriftPaths.rebase("res://props/airdrift_block_small.tscn"))
+static func _block() -> GSPropDef:
+	var def := GSPropDef.make(BLOCK, AirdriftPaths.rebase("res://props/airdrift_block_small.tscn"))
 	def.display_name = "Block (32u)"
 	def.category = &"practice"
-	def.size = DotPropDef.Size.SMALL
+	def.size = GSPropDef.Size.SMALL
 	def.mass = 200.0
 	def.cost = 1
 	return def
 
 
-static func _block_wide() -> DotPropDef:
-	var def := DotPropDef.make(BLOCK_WIDE, AirdriftPaths.rebase("res://props/airdrift_block_medium.tscn"))
+static func _block_wide() -> GSPropDef:
+	var def := GSPropDef.make(BLOCK_WIDE, AirdriftPaths.rebase("res://props/airdrift_block_medium.tscn"))
 	def.display_name = "Block (64u)"
 	def.category = &"practice"
-	def.size = DotPropDef.Size.MEDIUM
+	def.size = GSPropDef.Size.MEDIUM
 	def.mass = 400.0
 	def.cost = 2
 	return def
 
 
-static func _platform() -> DotPropDef:
-	var def := DotPropDef.make(PLATFORM, AirdriftPaths.rebase("res://props/airdrift_platform.tscn"))
+static func _platform() -> GSPropDef:
+	var def := GSPropDef.make(PLATFORM, AirdriftPaths.rebase("res://props/airdrift_platform.tscn"))
 	def.display_name = "Platform (128u)"
 	def.category = &"practice"
-	def.size = DotPropDef.Size.LARGE
+	def.size = GSPropDef.Size.LARGE
 	def.mass = 900.0
 	def.cost = 3
 	return def
 
 
-static func limits() -> DotPropLimits:
-	var out := DotPropLimits.new()
+static func limits() -> GSPropLimits:
+	var out := GSPropLimits.new()
 
 	# Small. A practice line is a handful of blocks; a budget that allows a staircase
 	# to the end zone allows a staircase to the end zone.
@@ -157,7 +157,7 @@ static func limits() -> DotPropLimits:
 	out.world_budget = 64
 	out.clean_up_on_leave = true
 	out.undo_depth = 16
-	out.max_size = DotPropDef.Size.LARGE
+	out.max_size = GSPropDef.Size.LARGE
 
 	# In metres, converted from the genre's numbers: 2048 units of reach and a hold
 	# distance between 64 and 512.
@@ -177,7 +177,7 @@ static func limits() -> DotPropLimits:
 ## who is an admin, because only the host holds the session.
 func place(
 	player_id: StringName, prop_id: StringName, at: Vector3, is_admin: bool = false
-) -> DotPropInstance:
+) -> GSPropInstance:
 	if spawner == null:
 		return null
 
@@ -196,7 +196,7 @@ func clear_player(player_id: StringName) -> int:
 
 
 func clear() -> int:
-	return spawner.clear_all(DotPropSpawner.REASON_ADMIN) if spawner != null else 0
+	return spawner.clear_all(GSPropSpawner.REASON_ADMIN) if spawner != null else 0
 
 
 func count() -> int:
@@ -218,11 +218,11 @@ func taints_records() -> bool:
 ##
 ## [b]This is what a practice line is actually built with.[/b] Placing a block puts one
 ## roughly where you are looking; getting it onto the ledge you meant needs a nudge,
-## and a gun is the nudge. `DotPhysGun` was built per player here and reachable from
+## and a gun is the nudge. `GSPhysGun` was built per player here and reachable from
 ## nothing until the family's own detector — a public method whose name occurs once in
 ## its repository — found it.
 ##
-## [b]It re-freezes on release.[/b] `DotPhysGun.grab` unfreezes what it picks up,
+## [b]It re-freezes on release.[/b] `GSPhysGun.grab` unfreezes what it picks up,
 ## because a frozen prop being dragged is a contradiction the solver resolves by doing
 ## something alarming — so a block let go over a gap would fall through it, and every
 ## block on this server is meant to stay where it was put.
@@ -253,7 +253,7 @@ func drop(player_id: StringName) -> bool:
 	if not _phys_guns.has(player_id):
 		return false
 
-	var gun: DotPhysGun = _phys_guns[player_id]
+	var gun: GSPhysGun = _phys_guns[player_id]
 	var was := gun.release()
 
 	if was == null:
@@ -261,13 +261,13 @@ func drop(player_id: StringName) -> bool:
 
 	# Frozen again. Every block on this server is meant to stay where it was put, and
 	# `grab` unfroze it to move it.
-	DotPhysGun.set_frozen(was, true)
+	GSPhysGun.set_frozen(was, true)
 	return true
 
 
 ## The physics space the tools trace in, or null when there is none.
 ##
-## Typed [Variant] because `DotPropTool.target` takes one — the tools are written so
+## Typed [Variant] because `GSPropTool.target` takes one — the tools are written so
 ## they compile in a project that is not in a 3D scene at all, which is how they are
 ## tested headlessly.
 ##
@@ -286,9 +286,9 @@ func _space() -> Variant:
 
 
 ## This player's physics gun, made on first use.
-func phys_gun(player_id: StringName) -> DotPhysGun:
+func phys_gun(player_id: StringName) -> GSPhysGun:
 	if not _phys_guns.has(player_id):
-		var gun := DotPhysGun.new()
+		var gun := GSPhysGun.new()
 		gun.spawner = spawner
 		gun.wielder = player_id
 		_phys_guns[player_id] = gun
@@ -303,7 +303,7 @@ func phys_gun(player_id: StringName) -> DotPhysGun:
 ## owns.
 func release_player(player_id: StringName) -> void:
 	if _phys_guns.has(player_id):
-		(_phys_guns[player_id] as DotPhysGun).release()
+		(_phys_guns[player_id] as GSPhysGun).release()
 		_phys_guns.erase(player_id)
 
 	if spawner != null:
@@ -327,7 +327,7 @@ func _carry(delta: float) -> void:
 		return
 
 	for id in _phys_guns.keys():
-		var gun: DotPhysGun = _phys_guns[id]
+		var gun: GSPhysGun = _phys_guns[id]
 
 		if gun.held == null or not gun.held.is_alive():
 			continue
@@ -344,7 +344,7 @@ func _carry(delta: float) -> void:
 		)
 
 
-func _on_spawned(prop: DotPropInstance) -> void:
+func _on_spawned(prop: GSPropInstance) -> void:
 	# [b]On the prop layer, which is what makes blocks touch each other.[/b] A spawned
 	# block is a `RigidBody3D` on Godot's default layer 1 masking layer 1, so two placed
 	# in the same spot passed through one another — a practice line whose blocks were
@@ -360,15 +360,15 @@ func _on_spawned(prop: DotPropInstance) -> void:
 		game.progress.record(prop.owner_id, AirdriftStats.PROPS_SPAWNED)
 
 
-func _on_map_ready(_map: DotMapDef) -> void:
+func _on_map_ready(_map: GSMapDef) -> void:
 	# Every block belonged to the map that was just replaced, and its nodes are
 	# children of this node rather than of the world — so nothing freed them, and a
 	# block left floating where a ramp used to be has no floor under it.
 	if spawner != null:
-		spawner.clear_all(DotPropSpawner.REASON_CLEANUP)
+		spawner.clear_all(GSPropSpawner.REASON_CLEANUP)
 
 	for id in _phys_guns.keys():
-		(_phys_guns[id] as DotPhysGun).release()
+		(_phys_guns[id] as GSPhysGun).release()
 
 
 func describe() -> Dictionary:

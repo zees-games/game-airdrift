@@ -9,7 +9,7 @@ const AirdriftBotNav := preload("../game/airdrift_bot_nav.gd")
 ##     timeout 600 godot --headless --path . tools/nav_bake_probe.tscn -- surf_rookie
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -27,11 +27,11 @@ func _run() -> void:
 		if game.maps != null and game.maps.current != null:
 			break
 	var map := game.current_map_node()
-	var spawn: Vector3 = map.spawn_for(DotTimerTrack.MAIN)
+	var spawn: Vector3 = map.spawn_for(GSTimerTrack.MAIN)
 	var finish := Vector3.ZERO
-	for z in game.timers.zones.of_kind(DotTimerZone.Kind.END, DotTimerTrack.MAIN):
+	for z in game.timers.zones.of_kind(GSTimerZone.Kind.END, GSTimerTrack.MAIN):
 		finish = z.centre()
-	var body: DotFpsTunables = DotFpsTunables.new()
+	var body: GSFpsTunables = GSFpsTunables.new()
 	for pass_no in range(3):
 		var nav := AirdriftBotNav.new()
 		var t := Time.get_ticks_usec()

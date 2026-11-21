@@ -1,7 +1,7 @@
-extends DotBotSurfCourse
+extends GSBotSurfCourse
 
 ## One stage of a map as a surf bot sees it, read from the timer's zones: the adapter between
-## this game and dot-bot's surf planner and pilot ([DotBotSurfPlanner], [DotBotSurfPilot]).
+## this game and dot-bot's surf planner and pilot ([GSBotSurfPlanner], [GSBotSurfPilot]).
 ##
 ## [b]Read from the timer's zones, never written per map.[/b] The start is the stage zone's own
 ## destination and yaw (what `!s<n>` does to a player); the goal is the next stage's zone, the
@@ -10,8 +10,8 @@ extends DotBotSurfCourse
 ## every RESPAWN and SLAY zone and every other door. A door that does not lead on is a pit for the
 ## bot even when it is a shortcut, because nothing here can tell a shortcut from a way back.
 ##
-## Progress and energy are dot-bot's ([method DotBotSurfCourse.score]). The simulator is
-## dot-player-controller's ([DotFpsSimulator]); what this game runs beside the motor (the map's
+## Progress and energy are dot-bot's ([method GSBotSurfCourse.score]). The simulator is
+## dot-player-controller's ([GSFpsSimulator]); what this game runs beside the motor (the map's
 ## pushes, gravity volumes and lethal hurt, [AirdriftMapMechanics]) is its [code]mechanics[/code]
 ## hook, on a rider of the simulation's own ([method simulator_for]). The volume modes (water,
 ## ladders) come with the motor's registered modes. The rider memory of pushes and sinking
@@ -34,8 +34,8 @@ const START_PIT_MARGIN := 2.0
 
 var map_id: StringName = &""
 var stage := 1
-var goal_zones: Array[DotTimerZone] = []
-var pit_zones: Array[DotTimerZone] = []
+var goal_zones: Array[GSTimerZone] = []
+var pit_zones: Array[GSTimerZone] = []
 ## Score per metre a line is under the guide's height at its own place along it; 0 keeps the
 ## guide to plan only. For a stage whose way on is a climb the energy term cannot ask for.
 var height_weight := 0.0
@@ -44,11 +44,11 @@ var height_weight := 0.0
 ## The course for stage [param number] of the main track of the map [param game] has loaded (0 is
 ## the whole run, from the spawn to the finish). Null, with the reason in [param why], when the
 ## map has no such stage.
-static func for_stage(game: Node, number: int, why: Array = []) -> DotBotSurfCourse:
-	var zones: DotTimerZoneSet = game.timers.zones
-	var track := DotTimerTrack.MAIN
+static func for_stage(game: Node, number: int, why: Array = []) -> GSBotSurfCourse:
+	var zones: GSTimerZoneSet = game.timers.zones
+	var track := GSTimerTrack.MAIN
 	var total := zones.stage_count(track)
-	var course: DotBotSurfCourse = (load(AirdriftPaths.rebase("res://game/airdrift_surf_course.gd")) as GDScript).new()
+	var course: GSBotSurfCourse = (load(AirdriftPaths.rebase("res://game/airdrift_surf_course.gd")) as GDScript).new()
 	course.map_id = game.maps.current.id
 	course.stage = number
 	course.gravity = AirdriftUnits.to_metres(800.0)
@@ -64,32 +64,32 @@ static func for_stage(game: Node, number: int, why: Array = []) -> DotBotSurfCou
 			return null
 		course.start = from.destination
 		course.start_yaw = from.destination_yaw
-	var goals: Array[DotTimerZone] = []
-	var pits: Array[DotTimerZone] = []
+	var goals: Array[GSTimerZone] = []
+	var pits: Array[GSTimerZone] = []
 	if number > 0 and number < total:
 		goals.append(zones.stage_zone(track, number + 1))
 	# The finish is a goal only of the last stage: from any other it is at the far end of the map,
 	# and as a goal it dragged the floor down to its own height.
 	if number == 0 or number >= total:
-		for zone: DotTimerZone in zones.of_kind(DotTimerZone.Kind.END, track):
+		for zone: GSTimerZone in zones.of_kind(GSTimerZone.Kind.END, track):
 			goals.append(zone)
-	for zone: DotTimerZone in zones.of_kind(DotTimerZone.Kind.TELEPORT):
+	for zone: GSTimerZone in zones.of_kind(GSTimerZone.Kind.TELEPORT):
 		var leads_on := false
-		for goal: DotTimerZone in goals.duplicate():
+		for goal: GSTimerZone in goals.duplicate():
 			if goal.contains(zone.destination):
 				leads_on = true
 		if leads_on:
 			goals.append(zone)
 		else:
 			pits.append(zone)
-	for kind: DotTimerZone.Kind in [DotTimerZone.Kind.RESPAWN, DotTimerZone.Kind.SLAY]:
-		for zone: DotTimerZone in zones.of_kind(kind):
+	for kind: GSTimerZone.Kind in [GSTimerZone.Kind.RESPAWN, GSTimerZone.Kind.SLAY]:
+		for zone: GSTimerZone in zones.of_kind(kind):
 			pits.append(zone)
 	if goals.is_empty():
 		why.append("stage %d has nowhere to arrive" % number)
 		return null
 	course.goal_zones = goals
-	course.pit_zones = pits.filter(func(z: DotTimerZone) -> bool: return not _hugs_start(z, course.start))
+	course.pit_zones = pits.filter(func(z: GSTimerZone) -> bool: return not _hugs_start(z, course.start))
 	course.settle_zones()
 	course.guide = guide_from_cache(course.map_id, number, course.start)
 	return course
@@ -98,8 +98,8 @@ static func for_stage(game: Node, number: int, why: Array = []) -> DotBotSurfCou
 ## Whether a pit box holds, or comes within START_PIT_MARGIN of, the start. An inflated RESPAWN or
 ## teleport box that overlaps the floor the stage starts on is a map artefact: a bot hopping at the
 ## spawn touches it and is put back every few ticks, so it never leaves.
-static func _hugs_start(zone: DotTimerZone, start: Vector3) -> bool:
-	if zone.shape != DotTimerZone.Shape.BOX:
+static func _hugs_start(zone: GSTimerZone, start: Vector3) -> bool:
+	if zone.shape != GSTimerZone.Shape.BOX:
 		return false
 	return AABB(zone.from, zone.to - zone.from).abs().grow(START_PIT_MARGIN).has_point(start)
 
@@ -183,10 +183,10 @@ func settle_zones() -> void:
 	# The start counts too: a stage that climbs to its goal starts below the goals, and a floor
 	# measured from them alone sits above the start and puts the bot back every tick.
 	var lowest := start.y
-	var has_door := goal_zones.any(func(z: DotTimerZone) -> bool: return z.kind == DotTimerZone.Kind.TELEPORT)
-	for goal: DotTimerZone in goal_zones:
+	var has_door := goal_zones.any(func(z: GSTimerZone) -> bool: return z.kind == GSTimerZone.Kind.TELEPORT)
+	for goal: GSTimerZone in goal_zones:
 		var d := goal.centre().distance_to(start)
-		if d < best and (goal.kind == DotTimerZone.Kind.TELEPORT or not has_door):
+		if d < best and (goal.kind == GSTimerZone.Kind.TELEPORT or not has_door):
 			best = d
 			goal_centre = goal.centre()
 		lowest = minf(lowest, minf(goal.from.y, goal.to.y))
@@ -205,10 +205,10 @@ func event_at(state: Variant) -> int:
 		return EVENT_PIT
 	if goal_fn.is_valid() and bool(goal_fn.call(state)):
 		return EVENT_GOAL
-	for goal: DotTimerZone in goal_zones:
+	for goal: GSTimerZone in goal_zones:
 		if goal.contains(position):
 			return EVENT_GOAL
-	for pit: DotTimerZone in pit_zones:
+	for pit: GSTimerZone in pit_zones:
 		if pit.contains(position):
 			return EVENT_PIT
 	return EVENT_NONE
@@ -217,13 +217,13 @@ func event_at(state: Variant) -> int:
 ## The simulator the planner and the pilot ride this course on: the player's own motor copied,
 ## the map's mechanics run after each tick on a rider of its own (a lethal hurt is a pit), and
 ## this course as the oracle.
-func simulator_for(controller: DotFpsController, mechanics: AirdriftMapMechanics) -> DotFpsSimulator:
+func simulator_for(controller: GSFpsController, mechanics: AirdriftMapMechanics) -> GSFpsSimulator:
 	var sim := controller.simulator()
 	if sim == null:
 		return null
 	if mechanics != null:
 		var rider := AirdriftMapMechanics.Rider.new()
-		sim.mechanics = func(state: DotFpsState, motor: DotFpsMotor, delta: float, _start: Vector3) -> int:
+		sim.mechanics = func(state: GSFpsState, motor: GSFpsMotor, delta: float, _start: Vector3) -> int:
 			return EVENT_PIT if mechanics.simulate(rider, motor, state, delta) == AirdriftMapMechanics.Event.HURT else EVENT_NONE
 	sim.oracle = event_at
 	return sim

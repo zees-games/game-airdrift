@@ -8,8 +8,8 @@ const AirdriftSurfCourse := preload("../game/airdrift_surf_course.gd")
 
 ## Plans a surf stage on the real motor, saves what it found as the map's surf cache, and
 ## measures the bot that rides from it. The planner and the pilot are dot-bot's
-## ([DotBotSurfPlanner], [DotBotSurfPilot]), the simulator dot-player-controller's
-## ([DotFpsSimulator]); the stage is [code]AirdriftSurfCourse[/code], read from the timer's zones.
+## ([GSBotSurfPlanner], [GSBotSurfPilot]), the simulator dot-player-controller's
+## ([GSFpsSimulator]); the stage is [code]AirdriftSurfCourse[/code], read from the timer's zones.
 ##
 ##     godot --headless --fixed-fps 128 --path . tools/surf_plan.tscn -- surf_beginner 1
 ##     godot --headless --fixed-fps 128 --path . tools/surf_plan.tscn -- surf_beginner 1 --starts 6 --runs 50 --live 20
@@ -22,11 +22,11 @@ const AirdriftSurfCourse := preload("../game/airdrift_surf_course.gd")
 ## 2. `--starts M` (default 6): searches from M starts perturbed from the stage's own
 ##    arrival (sideways and along by up to [constant SIDE_UNITS] and
 ##    [constant ALONG_UNITS], an initial velocity of up to [constant SPEED_UNITS] in any
-##    direction), each with [DotBotSurfPlanner], and writes every ride found to
+##    direction), each with [GSBotSurfPlanner], and writes every ride found to
 ##    `maps/routes/<id>.surf/<stage>.json`. `--no-plan` keeps the file.
 ##    Then up to `--rounds R` (default 4) rounds of repair: the pilot rides from
 ##    `--repairs K` (default 24) further perturbed starts, and every ride that fails is
-##    searched again from a second before it failed (see `DotBotSurfPlanner.build`).
+##    searched again from a second before it failed (see `GSBotSurfPlanner.build`).
 ## 3. `--runs N` (default 40): rides the stage N times in the simulator with the pilot,
 ##    from N other perturbed starts, reading the cache as it was saved.
 ## 4. `--live N` (default 10): rides it N times in the game itself -- the timer's zones,
@@ -47,7 +47,7 @@ var ride_seconds := RIDE_SECONDS
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -67,7 +67,7 @@ func _run() -> void:
 		return
 
 	var why: Array = []
-	var course: DotBotSurfCourse = AirdriftSurfCourse.for_stage(game, number, why)
+	var course: GSBotSurfCourse = AirdriftSurfCourse.for_stage(game, number, why)
 	if course == null:
 		print("[surf] %s: %s" % [id, why[0]])
 		get_tree().quit(1)
@@ -80,7 +80,7 @@ func _run() -> void:
 	await get_tree().physics_frame
 	bot.teleport(course.start, course.start_yaw)
 	var base := bot.controller.state.duplicate_state()
-	var sim: DotFpsSimulator = course.simulator_for(bot.controller, game.mechanics)
+	var sim: GSFpsSimulator = course.simulator_for(bot.controller, game.mechanics)
 	print("[surf] %s stage %d: from %s u, %d goal zones, %d pits, aiming %s u" % [id, number,
 		str(AirdriftUnits.vector_to_units(course.start).round()), course.goal_zones.size(), course.pit_zones.size(),
 		str(AirdriftUnits.vector_to_units(course.goal_centre).round())])
@@ -115,7 +115,7 @@ func _run() -> void:
 		print("[surf] no cache for stage %d at %s" % [number, path])
 		get_tree().quit(1)
 		return
-	var pilot := DotBotSurfPilot.new()
+	var pilot := GSBotSurfPilot.new()
 	pilot.load_stage(data, AirdriftUnits.METRES_PER_UNIT)
 	pilot.sim = sim
 	pilot.score = course.score
@@ -163,7 +163,7 @@ func _load_game(id: StringName) -> bool:
 
 
 ## `--guide`: a polyline in genre units after the start that progress is measured along. Returns it.
-func _apply_guide(args: PackedStringArray, guide_at: int, course: DotBotSurfCourse) -> Array:
+func _apply_guide(args: PackedStringArray, guide_at: int, course: GSBotSurfCourse) -> Array:
 	var guide_units: Array = []
 	if guide_at >= 0 and guide_at + 1 < args.size():
 		for part in args[guide_at + 1].split(";"):
@@ -177,7 +177,7 @@ func _apply_guide(args: PackedStringArray, guide_at: int, course: DotBotSurfCour
 
 ## `--trace`: one search from the stage's own arrival, the beam's best line printed every half second,
 ## and nothing saved. `--from "x,y,z,vx,vy,vz"` (units) starts it already in flight.
-func _trace(args: PackedStringArray, base: DotFpsState, course: DotBotSurfCourse, sim: DotFpsSimulator) -> void:
+func _trace(args: PackedStringArray, base: GSFpsState, course: GSBotSurfCourse, sim: GSFpsSimulator) -> void:
 	# `--from "x,y,z,vx,vy,vz"` (units, Godot axes): search from a state already in flight,
 	# to ask whether a line exists from, say, a flank at 1500 u/s.
 	var from_at := args.find("--from")
@@ -185,14 +185,14 @@ func _trace(args: PackedStringArray, base: DotFpsState, course: DotBotSurfCourse
 		var f := args[from_at + 1].split(",")
 		base.position = AirdriftUnits.vector_to_metres(Vector3(float(f[0]), float(f[1]), float(f[2])))
 		base.velocity = AirdriftUnits.vector_to_metres(Vector3(float(f[3]), float(f[4]), float(f[5])))
-		base.mode = DotFpsState.Mode.AIR
+		base.mode = GSFpsState.Mode.AIR
 		base.yaw = rad_to_deg(atan2(-base.velocity.x, -base.velocity.z))
-	var tracer := DotBotSurfPlanner.new()
+	var tracer := GSBotSurfPlanner.new()
 	tracer.seconds = ride_seconds
 	tracer.width = _opt(args, "--width", tracer.width)
 	tracer.trace = func(depth: int, best: Dictionary) -> void:
 		if depth % 4 == 0:
-			var st: DotFpsState = best["state"]
+			var st: GSFpsState = best["state"]
 			print("[surf]   %.1f s best %s u, velocity %s u/s, score %.1f" % [(depth + 1) * tracer.hold / 128.0,
 				str(AirdriftUnits.vector_to_units(st.position).round()), str(AirdriftUnits.vector_to_units(st.velocity).round()), float(best["score"])])
 	var found: Dictionary = tracer.search(base, course, sim)
@@ -201,7 +201,7 @@ func _trace(args: PackedStringArray, base: DotFpsState, course: DotBotSurfCourse
 
 ## The planning pass and its save. False when no search found a ride.
 func _plan_stage(args: PackedStringArray, id: StringName, number: int, starts: int, repairs: int, rounds: int,
-		course: DotBotSurfCourse, sim: DotFpsSimulator, bot: AirdriftPlayer, base: DotFpsState, path: String,
+		course: GSBotSurfCourse, sim: GSFpsSimulator, bot: AirdriftPlayer, base: GSFpsState, path: String,
 		guide_units: Array, guide_at: int) -> bool:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1000 + number
@@ -215,11 +215,11 @@ func _plan_stage(args: PackedStringArray, id: StringName, number: int, starts: i
 		repair_starts.append(perturbed(base, course, repair_rng))
 	var started := Time.get_ticks_msec()
 	var steps_before: int = sim.steps
-	var planner := DotBotSurfPlanner.new()
+	var planner := GSBotSurfPlanner.new()
 	planner.seconds = ride_seconds
 	planner.width = _opt(args, "--width", planner.width)
-	var repair_sim: DotFpsSimulator = course.simulator_for(bot.controller, game.mechanics)
-	var repair_pilot := DotBotSurfPilot.new()
+	var repair_sim: GSFpsSimulator = course.simulator_for(bot.controller, game.mechanics)
+	var repair_pilot := GSBotSurfPilot.new()
 	repair_pilot.rolling = not args.has("--no-rolling")
 	var resume := args.has("--resume")
 	var keep: Dictionary = AirdriftSurfCourse.read_stage(id, number) if resume else {}
@@ -239,13 +239,13 @@ func _plan_stage(args: PackedStringArray, id: StringName, number: int, starts: i
 		float(sim.usec + repair_sim.usec) / maxf(1.0, float(sim.steps + repair_sim.steps)), planner.expanded])
 	if seconds.is_empty():
 		return false
-	print("[surf]   saved %d entries to %s" % [rides.size() / DotBotSurfPilot.STRIDE, AirdriftSurfCourse.stage_path(id, number)])
+	print("[surf]   saved %d entries to %s" % [rides.size() / GSBotSurfPilot.STRIDE, AirdriftSurfCourse.stage_path(id, number)])
 	return true
 
 
 ## Rides the cached line `runs` times from perturbed starts, in simulation.
-func _simulated_rides(runs: int, number: int, base: DotFpsState, course: DotBotSurfCourse, bot: AirdriftPlayer,
-		sim: DotFpsSimulator, pilot: DotBotSurfPilot) -> void:
+func _simulated_rides(runs: int, number: int, base: GSFpsState, course: GSBotSurfCourse, bot: AirdriftPlayer,
+		sim: GSFpsSimulator, pilot: GSBotSurfPilot) -> void:
 	if runs <= 0:
 		return
 	var rng := RandomNumberGenerator.new()
@@ -256,16 +256,16 @@ func _simulated_rides(runs: int, number: int, base: DotFpsState, course: DotBotS
 	var usec_before: int = sim.usec
 	var ridden := 0
 	var misses: Array[String] = []
-	var ride_sim: DotFpsSimulator = course.simulator_for(bot.controller, game.mechanics)
+	var ride_sim: GSFpsSimulator = course.simulator_for(bot.controller, game.mechanics)
 	for i in range(runs):
 		var r: Dictionary = pilot.ride(perturbed(base, course, rng), ride_sim, int(ride_seconds / sim.delta))
 		ridden += int(r["ticks"])
-		if int(r["event"]) == DotBotSurfCourse.EVENT_GOAL:
+		if int(r["event"]) == GSBotSurfCourse.EVENT_GOAL:
 			ok += 1
 			times.append(float(r["ticks"]) * sim.delta)
 		elif misses.size() < 12:
-			var last: DotFpsState = (r["trail"] as Array).back()
-			misses.append("%s %.2f s near %s u" % ["fell" if int(r["event"]) != DotBotSurfCourse.EVENT_NONE else "stalled",
+			var last: GSFpsState = (r["trail"] as Array).back()
+			misses.append("%s %.2f s near %s u" % ["fell" if int(r["event"]) != GSBotSurfCourse.EVENT_NONE else "stalled",
 				float(r["ticks"]) * sim.delta, str(AirdriftUnits.vector_to_units(last.position).round())])
 	var lookahead: int = sim.steps - steps_before
 	print("[surf]   simulated rides: %d of %d reached the goal (%.0f%%), %s; lookahead %.2f motor ticks per ridden tick (%.0f us of motor per ridden tick); %d futures, %d vetoes, %d hopeless, %d resyncs" % [
@@ -277,23 +277,23 @@ func _simulated_rides(runs: int, number: int, base: DotFpsState, course: DotBotS
 
 
 ## `--chain`: see [method _run]. Returns the exit code.
-func _chain(args: PackedStringArray, box_arg: String, course: DotBotSurfCourse, sim: DotFpsSimulator,
-		base: DotFpsState, path: String, id: StringName, number: int, guide1: Array) -> int:
+func _chain(args: PackedStringArray, box_arg: String, course: GSBotSurfCourse, sim: GSFpsSimulator,
+		base: GSFpsState, path: String, id: StringName, number: int, guide1: Array) -> int:
 	var b := box_arg.split(",")
 	var centre := AirdriftUnits.vector_to_metres(Vector3(float(b[0]), float(b[1]), float(b[2])))
 	var half := AirdriftUnits.vector_to_metres(Vector3(float(b[3]), float(b[4]), float(b[5])))
 	var min_speed := AirdriftUnits.to_metres(float(b[6]))
 	var box := AABB(centre - half, half * 2.0)
-	var real_goals: Array[DotTimerZone] = course.goal_zones.duplicate()
+	var real_goals: Array[GSTimerZone] = course.goal_zones.duplicate()
 	course.goal_zones.clear()
 	course.goal_fn = func(s: Variant) -> bool:
 		return box.has_point(s.position) and Vector2(s.velocity.x, s.velocity.z).length() >= min_speed
-	var planner := DotBotSurfPlanner.new()
+	var planner := GSBotSurfPlanner.new()
 	planner.seconds = ride_seconds
 	planner.width = _opt(args, "--width", planner.width)
 	planner.trace = func(depth: int, best: Dictionary) -> void:
 		if depth % 4 == 0:
-			var st: DotFpsState = best["state"]
+			var st: GSFpsState = best["state"]
 			print("[surf]   %.1f s best %s u, velocity %s u/s" % [(depth + 1) * planner.hold / 128.0,
 				str(AirdriftUnits.vector_to_units(st.position).round()), str(AirdriftUnits.vector_to_units(st.velocity).round())])
 	var found: Dictionary = planner.search(base, course, sim)
@@ -301,15 +301,15 @@ func _chain(args: PackedStringArray, box_arg: String, course: DotBotSurfCourse, 
 	if not bool(found["found"]):
 		return 1
 	var reference := course.reference_yaw()
-	var s: DotFpsState = base.duplicate_state()
+	var s: GSFpsState = base.duplicate_state()
 	var entries := PackedFloat32Array()
 	for action: int in found["actions"]:
 		for _t in range(planner.hold):
 			entries.append_array([s.position.x, s.position.y, s.position.z, s.velocity.x, s.velocity.y, s.velocity.z, float(action)])
-			if sim.step(s, DotBotSurfPilot.command_for(sim, action, s, reference)) != DotBotSurfCourse.EVENT_NONE:
+			if sim.step(s, GSBotSurfPilot.command_for(sim, action, s, reference)) != GSBotSurfCourse.EVENT_NONE:
 				break
 	print("[surf]   first leg arrives at %s u, %s u/s after %d ticks" % [str(AirdriftUnits.vector_to_units(s.position).round()),
-		str(AirdriftUnits.vector_to_units(s.velocity).round()), entries.size() / DotBotSurfPilot.STRIDE])
+		str(AirdriftUnits.vector_to_units(s.velocity).round()), entries.size() / GSBotSurfPilot.STRIDE])
 	course.goal_fn = Callable()
 	course.goal_zones = real_goals
 	var guide2: Array = []
@@ -325,12 +325,12 @@ func _chain(args: PackedStringArray, box_arg: String, course: DotBotSurfCourse, 
 	print("[surf] second leg: %s %s" % [found["found"], found["why"]])
 	if not bool(found["found"]):
 		return 1
-	var ride := DotBotSurfPlanner.trajectory(s, found["actions"], planner.hold, course, sim)
-	if int(ride["event"]) != DotBotSurfCourse.EVENT_GOAL:
+	var ride := GSBotSurfPlanner.trajectory(s, found["actions"], planner.hold, course, sim)
+	if int(ride["event"]) != GSBotSurfCourse.EVENT_GOAL:
 		print("[surf] second leg did not replay to the goal")
 		return 1
 	entries.append_array(ride["entries"])
-	var total := entries.size() / DotBotSurfPilot.STRIDE
+	var total := entries.size() / GSBotSurfPilot.STRIDE
 	print("[surf]   chained ride of %d ticks (%.2f s)" % [total, total * sim.delta])
 	var whole: Array = guide1.duplicate()
 	whole.append_array(guide2)
@@ -341,13 +341,13 @@ func _chain(args: PackedStringArray, box_arg: String, course: DotBotSurfCourse, 
 	return 0
 
 
-## [method DotBotSurfPlanner.build], saving as it goes. The addon's returns only when every
+## [method GSBotSurfPlanner.build], saving as it goes. The addon's returns only when every
 ## round is done, and a stage that takes an hour to plan lost all of it to the tool's own timeout
 ## (surf_beginner stage 2); here the cache on disk grows with each ride found, and
 ## [code]--resume[/code] ([param keep]) continues from what an interrupted run left. Same
 ## search and same repair rounds, so what is found is what the addon would have found.
-func _build_saving(planner: DotBotSurfPlanner, starts: Array, repairs: Array, rounds: int, course: DotBotSurfCourse,
-		sim: DotFpsSimulator, ride_sim: DotFpsSimulator, say: Callable, pilot: DotBotSurfPilot, keep: Dictionary,
+func _build_saving(planner: GSBotSurfPlanner, starts: Array, repairs: Array, rounds: int, course: GSBotSurfCourse,
+		sim: GSFpsSimulator, ride_sim: GSFpsSimulator, say: Callable, pilot: GSBotSurfPilot, keep: Dictionary,
 		save: Callable) -> Dictionary:
 	var rides := PackedFloat32Array()
 	var lengths := PackedInt32Array()
@@ -392,7 +392,7 @@ func _build_saving(planner: DotBotSurfPlanner, starts: Array, repairs: Array, ro
 		var failures := 0
 		for j in range(repairs.size()):
 			var r := pilot.ride(repairs[j], ride_sim, max_ticks)
-			if int(r["event"]) == DotBotSurfCourse.EVENT_GOAL:
+			if int(r["event"]) == GSBotSurfCourse.EVENT_GOAL:
 				continue
 			failures += 1
 			var trail: Array = r["trail"]
@@ -413,20 +413,20 @@ func _build_saving(planner: DotBotSurfPlanner, starts: Array, repairs: Array, ro
 				ride_seconds.append(snappedf(float(ride["ticks"]) * delta, 0.01))
 				pilot.load_entries(rides, lengths, course.reference_yaw())
 				say.call("round %d, ride %d: %s at %.2f s; a ride of %.2f s from %.2f s in, %.1f s searching" % [
-					round, j, "fell" if int(r["event"]) != DotBotSurfCourse.EVENT_NONE else "stalled",
+					round, j, "fell" if int(r["event"]) != GSBotSurfCourse.EVENT_NONE else "stalled",
 					float(r["ticks"]) * delta, float(ride["ticks"]) * delta, float(k * 16) * delta,
 					(Time.get_ticks_msec() - t0) / 1000.0])
 				save.call(snapshot.call())
 				break
 		per_round.append(failures)
-		say.call("round %d: %d of %d rides failed; the cache has %d entries" % [round, failures, repairs.size(), rides.size() / DotBotSurfPilot.STRIDE])
+		say.call("round %d: %d of %d rides failed; the cache has %d entries" % [round, failures, repairs.size(), rides.size() / GSBotSurfPilot.STRIDE])
 		if failures == 0:
 			break
 	return snapshot.call()
 
 
 ## Writes [param snapshot] ([method _build_saving]'s) as stage [param number]'s own cache file.
-static func _save_stage(_path: String, id: StringName, number: int, course: DotBotSurfCourse, snapshot: Dictionary,
+static func _save_stage(_path: String, id: StringName, number: int, course: GSBotSurfCourse, snapshot: Dictionary,
 		guide_units: Array, planned: Dictionary) -> void:
 	AirdriftSurfCourse.write_stage_file(AirdriftSurfCourse.stage_path(id, number), {
 		"reference_yaw": snappedf(course.reference_yaw(), 0.01),
@@ -435,7 +435,7 @@ static func _save_stage(_path: String, id: StringName, number: int, course: DotB
 		"lengths": Array(snapshot["lengths"]),
 		"planned": planned,
 		"guide": guide_units,
-		"entries": DotBotSurfPilot.entries_to_rows(snapshot["rides"], AirdriftUnits.METRES_PER_UNIT),
+		"entries": GSBotSurfPilot.entries_to_rows(snapshot["rides"], AirdriftUnits.METRES_PER_UNIT),
 	})
 
 
@@ -445,7 +445,7 @@ static func _save_stage(_path: String, id: StringName, number: int, course: DotB
 ## (from its start, stopped short of the door that would teleport the live player), so
 ## the comparison covers the drop, the ramp and the flight, not just a deck. Empty, a
 ## fixed run-and-strafe of 256 ticks.
-static func simulator_checks(p_game: Node, bot: AirdriftPlayer, sim: DotFpsSimulator, base: DotFpsState,
+static func simulator_checks(p_game: Node, bot: AirdriftPlayer, sim: GSFpsSimulator, base: GSFpsState,
 		reference: float, actions: PackedInt32Array = PackedInt32Array()) -> Array:
 	var out: Array = []
 	var tree := bot.get_tree()
@@ -459,20 +459,20 @@ static func simulator_checks(p_game: Node, bot: AirdriftPlayer, sim: DotFpsSimul
 	var motor_before := bot.controller.motor.ticks_simulated
 	var a := base.duplicate_state()
 	for action in plan:
-		var _e: int = sim.step(a, DotBotSurfPilot.command_for(sim, action, a, reference))
+		var _e: int = sim.step(a, GSBotSurfPilot.command_for(sim, action, a, reference))
 	out.append([bot.controller.state.equals(live_before) and bot.controller.motor.ticks_simulated == motor_before
 		and bot.controller.state.position == live_before.position,
 		"a simulated ride leaves the live player and its motor untouched", ""])
 	var b := base.duplicate_state()
 	for action in plan:
-		var _e: int = sim.step(b, DotBotSurfPilot.command_for(sim, action, b, reference))
+		var _e: int = sim.step(b, GSBotSurfPilot.command_for(sim, action, b, reference))
 	out.append([a.equals(b, 0.0), "the same start and inputs end in the same state",
 		"" if a.equals(b, 0.0) else "%.6f m apart" % a.divergence(b)])
 	# The live player, from the same start, given the same commands.
 	bot.teleport(base.position, base.yaw)
 	bot.controller.state.copy_from(base)
 	for action in plan:
-		bot.controller.apply_command(DotBotSurfPilot.command_for(sim, action, bot.controller.state, reference))
+		bot.controller.apply_command(GSBotSurfPilot.command_for(sim, action, bot.controller.state, reference))
 		await tree.physics_frame
 	var apart := bot.controller.state.position.distance_to(a.position)
 	out.append([apart < 0.001, "the live player given the same commands ends where the simulation did",
@@ -483,8 +483,8 @@ static func simulator_checks(p_game: Node, bot: AirdriftPlayer, sim: DotFpsSimul
 ## Rides the stage [param count] times in the game from perturbed starts. Returns
 ## `{"ok": int, "times": Array[float], "failures": Array[String]}`.
 ## The first ride is from [param base] itself when [param exact_first] is true.
-static func ride_live(p_game: Node, bot: AirdriftPlayer, course: DotBotSurfCourse, pilot: DotBotSurfPilot,
-		base: DotFpsState, count: int, seed_value: int, exact_first: bool = false, seconds: float = RIDE_SECONDS) -> Dictionary:
+static func ride_live(p_game: Node, bot: AirdriftPlayer, course: GSBotSurfCourse, pilot: GSBotSurfPilot,
+		base: GSFpsState, count: int, seed_value: int, exact_first: bool = false, seconds: float = RIDE_SECONDS) -> Dictionary:
 	var tree := bot.get_tree()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
@@ -493,13 +493,13 @@ static func ride_live(p_game: Node, bot: AirdriftPlayer, course: DotBotSurfCours
 	# Where it was on the tick the pit took it: by the time the effect is heard the game
 	# has already sent it back to the stage's start.
 	var fell_at: Array[Vector3] = [Vector3.ZERO]
-	var on_effect := func(pid: StringName, zone: DotTimerZone) -> void:
+	var on_effect := func(pid: StringName, zone: GSTimerZone) -> void:
 		if pid != bot.player_id:
 			return
 		match zone.kind:
-			DotTimerZone.Kind.RESPAWN, DotTimerZone.Kind.SLAY:
+			GSTimerZone.Kind.RESPAWN, GSTimerZone.Kind.SLAY:
 				put_back[0] = true
-			DotTimerZone.Kind.TELEPORT:
+			GSTimerZone.Kind.TELEPORT:
 				if course.goal_zones.has(zone):
 					arrived[0] = true
 				else:
@@ -522,7 +522,7 @@ static func ride_live(p_game: Node, bot: AirdriftPlayer, course: DotBotSurfCours
 			fell_at[0] = bot.controller.state.position
 			await tree.physics_frame
 			t += 1
-			if course.event_at(bot.controller.state) == DotBotSurfCourse.EVENT_GOAL:
+			if course.event_at(bot.controller.state) == GSBotSurfCourse.EVENT_GOAL:
 				arrived[0] = true
 		if arrived[0]:
 			ok += 1
@@ -535,9 +535,9 @@ static func ride_live(p_game: Node, bot: AirdriftPlayer, course: DotBotSurfCours
 
 
 ## [param base] moved sideways and along the course and given a small velocity.
-static func perturbed(base: DotFpsState, course: DotBotSurfCourse, rng: RandomNumberGenerator) -> DotFpsState:
+static func perturbed(base: GSFpsState, course: GSBotSurfCourse, rng: RandomNumberGenerator) -> GSFpsState:
 	var s := base.duplicate_state()
-	var forward := DotFpsMotor.forward_for(course.reference_yaw())
+	var forward := GSFpsMotor.forward_for(course.reference_yaw())
 	var side := Vector3(-forward.z, 0.0, forward.x)
 	s.position += side * AirdriftUnits.to_metres(rng.randf_range(-SIDE_UNITS, SIDE_UNITS))
 	s.position += forward * AirdriftUnits.to_metres(rng.randf_range(-ALONG_UNITS, ALONG_UNITS))

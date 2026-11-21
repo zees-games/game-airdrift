@@ -74,7 +74,7 @@ func _test_reach() -> void:
 ## Every declared course on every hand-written map, decided. Separate from the checks
 ## so the numbers can be printed whether or not anything fails — a detail line only
 ## shows on a failure, and the widths and the strafe a chain needs are the measurement.
-func reach_sweep(t: DotFpsTunables, tick_rate: int) -> Dictionary:
+func reach_sweep(t: GSFpsTunables, tick_rate: int) -> Dictionary:
 	var out := {
 		"lines": [], "undeclared": [], "refused": [], "too_high": [], "too_far": [],
 		"unchainable": [], "restarts": [],
@@ -89,7 +89,7 @@ func reach_sweep(t: DotFpsTunables, tick_rate: int) -> Dictionary:
 
 	for id in _hand_written_map_ids():
 		var map := _built_map(id)
-		var zones: DotTimerZoneSet = (load("res://maps/%s.gd" % id) as GDScript).build_zones()
+		var zones: GSTimerZoneSet = (load("res://maps/%s.gd" % id) as GDScript).build_zones()
 		var courses: Array = map.get("courses")
 
 		if courses.is_empty():
@@ -149,7 +149,7 @@ func reach_sweep(t: DotFpsTunables, tick_rate: int) -> Dictionary:
 			# chain begins again at run speed rather than at what the stages before it
 			# built. Found by the stage zone's own destination, not by an index.
 			for zone in zones.zones:
-				if zone.kind != DotTimerZone.Kind.STAGE or zone.track != int(course.get("track")):
+				if zone.kind != GSTimerZone.Kind.STAGE or zone.track != int(course.get("track")):
 					continue
 
 				var at := AirdriftUnits.vector_to_units(zone.destination)
@@ -176,7 +176,7 @@ func reach_sweep(t: DotFpsTunables, tick_rate: int) -> Dictionary:
 
 ## "192 u down 48, inside the 222 a jump from its lip reaches": a RUN gap beside the
 ## reach [method reach_sweep] judges it by, which depends on the landing's height.
-static func _reach_text(route: AirdriftReach.Route, t: DotFpsTunables) -> String:
+static func _reach_text(route: AirdriftReach.Route, t: GSFpsTunables) -> String:
 	if route == null:
 		return "none"
 	var height := ""
@@ -204,12 +204,12 @@ static func _percent(fraction: float) -> String:
 func _test_stage_command() -> void:
 	_section("a stage restart")
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
+	game.timers.set_player_track(&"bot", GSTimerTrack.MAIN)
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
 
 	var sent := game.request_stage(&"bot", 2)
-	var zone: DotTimerZone = sent.value if sent.ok else null
+	var zone: GSTimerZone = sent.value if sent.ok else null
 	_check(zone != null and bot.global_position.distance_to(zone.destination) < 0.01,
 		"`!s 2` puts the player on stage 2's own spot",
 		str(bot.global_position) if zone == null else "%s vs %s" % [bot.global_position, zone.destination])
@@ -219,8 +219,8 @@ func _test_stage_command() -> void:
 	_check(not game.request_stage(&"bot", 9).ok, "a stage the track does not have is refused")
 
 	var back := game.restart_stage(&"bot")
-	_check(back.ok and bot.global_position.distance_to((back.value as DotTimerZone).destination) < 0.01
-			and int((back.value as DotTimerZone).number) == 1,
+	_check(back.ok and bot.global_position.distance_to((back.value as GSTimerZone).destination) < 0.01
+			and int((back.value as GSTimerZone).number) == 1,
 		"`!rs` before any stage line is stage 1")
 
 	game.spawn_player(&"bot")
@@ -233,12 +233,12 @@ func _test_stage_command() -> void:
 ## track when you are in none; two are the main start zone, from a bonus too.
 func _test_restart_key() -> void:
 	_section("R once is the stage, R twice is the start")
-	var loaded: DotResult = await game.change_map(&"bhop_g2g_intro")
+	var loaded: GSResult = await game.change_map(&"bhop_g2g_intro")
 	_check(loaded.ok, "bhop_g2g_intro loads, for its staged main route and its bonuses")
 	await get_tree().physics_frame
 	var bot: AirdriftPlayer = game.players[&"bot"]
 	var map: AirdriftMap = game.current_map_node() as AirdriftMap
-	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
+	game.timers.set_player_track(&"bot", GSTimerTrack.MAIN)
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
 	var start := bot.global_position
@@ -246,22 +246,22 @@ func _test_restart_key() -> void:
 	# A run past the first stage line, put there directly: driving one is what the route
 	# sections are for, and what is being asked here is only where R sends it.
 	bot.teleport(start + Vector3(0.0, 0.0, -40.0), 0.0)
-	bot.timer.run.status = DotTimerRun.Status.RUNNING
+	bot.timer.run.status = GSTimerRun.Status.RUNNING
 	bot.timer.run.stage = 2
 	var once := game.restart(&"bot", AirdriftEvents.RESTART_STAGE)
-	var stage_two := game.timers.zones.stage_zone(DotTimerTrack.MAIN, 2)
+	var stage_two := game.timers.zones.stage_zone(GSTimerTrack.MAIN, 2)
 	_check(once.ok and stage_two != null and bot.global_position.distance_to(stage_two.destination) < 0.01,
 		"one R in stage 2 is the start of stage 2", "%s" % bot.global_position)
 	_check(not bot.timer.run.is_running(), "and stops the run, because a stage restart is practice")
 
 	bot.teleport(start + Vector3(0.0, 0.0, -40.0), 0.0)
-	bot.timer.run.status = DotTimerRun.Status.RUNNING
+	bot.timer.run.status = GSTimerRun.Status.RUNNING
 	bot.timer.run.stage = 1
 	var _first := game.restart(&"bot", AirdriftEvents.RESTART_STAGE)
 	_check(bot.global_position.distance_to(start) < 0.01, "in stage 1 it is the start zone")
 
 	bot.teleport(start + Vector3(0.0, 0.0, -40.0), 0.0)
-	bot.timer.run.status = DotTimerRun.Status.STOPPED
+	bot.timer.run.status = GSTimerRun.Status.STOPPED
 	bot.timer.run.stage = 3
 	var _idle := game.restart(&"bot", AirdriftEvents.RESTART_STAGE)
 	_check(bot.global_position.distance_to(start) < 0.01, "and with no run going it is the start zone too")
@@ -272,7 +272,7 @@ func _test_restart_key() -> void:
 	_check(bot.timer.track == 1 and bot.global_position.distance_to(bonus_spawn) < 1.0,
 		"on a bonus one R is the bonus's start", "%s vs %s" % [bot.global_position, bonus_spawn])
 	var _twice := game.restart(&"bot", AirdriftEvents.RESTART_MAIN)
-	_check(bot.timer.track == DotTimerTrack.MAIN and bot.global_position.distance_to(start) < 0.01,
+	_check(bot.timer.track == GSTimerTrack.MAIN and bot.global_position.distance_to(start) < 0.01,
 		"and two are the main start zone")
 
 	var watcher := game.add_player(&"watcher", "Watcher", false)
@@ -293,14 +293,14 @@ func _test_bhop_run() -> void:
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
 
-	var finished: Array[DotTimerRun] = []
+	var finished: Array[GSTimerRun] = []
 	var filed := []
-	bot.timer.run_finished.connect(func(run: DotTimerRun) -> void: finished.append(run))
-	game.run_filed.connect(func(_id: StringName, _run: DotTimerRun, rank: int, reason: String) -> void: filed.append([rank, reason]))
+	bot.timer.run_finished.connect(func(run: GSTimerRun) -> void: finished.append(run))
+	game.run_filed.connect(func(_id: StringName, _run: GSTimerRun, rank: int, reason: String) -> void: filed.append([rank, reason]))
 
-	var hold := DotFpsCommand.new()
+	var hold := GSFpsCommand.new()
 	hold.move = Vector2(0.0, 1.0)
-	hold.set_button(DotFpsCommand.BUTTON_JUMP, true)
+	hold.set_button(GSFpsCommand.BUTTON_JUMP, true)
 
 	await _prestrafe(&"bot", 100)
 	bot.controller.stats.reset()
@@ -328,7 +328,7 @@ func _test_bhop_run() -> void:
 		await get_tree().physics_frame
 
 		# Driven until the run starts rather than for a fixed 420 ticks. That number
-		# was tuned when `DotTimer.effect_requested` was emitted by nothing, so the
+		# was tuned when `GSTimer.effect_requested` was emitted by nothing, so the
 		# map's respawn zone did nothing and a fallen bot simply kept going: now it
 		# is put back on the start pad, and a fixed drive long enough to leave the
 		# pad is also long enough to fall off, be reset, and be standing on the pad
@@ -340,10 +340,10 @@ func _test_bhop_run() -> void:
 			waited += 20
 
 		_check(bot.timer.run.is_running(), "a fresh run is going", "%d ticks" % waited)
-		var end := game.timers.zones.first_of_kind(DotTimerZone.Kind.END, 0)
+		var end := game.timers.zones.first_of_kind(GSTimerZone.Kind.END, 0)
 		bot.controller.state.position = end.centre() + Vector3.UP * 0.3
 		bot.controller.state.velocity = Vector3(0.0, 0.0, -3.0)
-		var forward := DotFpsCommand.new()
+		var forward := GSFpsCommand.new()
 		forward.move = Vector2(0.0, 1.0)
 		await _drive(&"bot", forward, 4)
 
@@ -355,7 +355,7 @@ func _test_bhop_run() -> void:
 		await get_tree().process_frame
 	_check(filed.size() == 1, "and is offered to the store", str(filed))
 
-	var page: DotResult = await game.boards.page_async(&"fastest", {"map": "bhop_g2g_intro", "track": "0", "style": "normal"})
+	var page: GSResult = await game.boards.page_async(&"fastest", {"map": "bhop_g2g_intro", "track": "0", "style": "normal"})
 	_check((page.value as Array).size() >= 1 or (filed.size() == 1 and filed[0][1] != ""),
 		"and reaches the leaderboard, or says why not", str(filed))
 	_done()
@@ -401,7 +401,7 @@ func _test_needle_bonus() -> void:
 	_section("the needle, run end to end")
 
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	var needle := DotTimerTrack.of_bonus(2)
+	var needle := GSTimerTrack.of_bonus(2)
 
 	_check(game.timers.set_player_track(&"bot", needle), "a player can switch to the needle")
 
@@ -415,11 +415,11 @@ func _test_needle_bonus() -> void:
 		bot.global_position.distance_to(spawn) < 1.0,
 		"and spawns on its own pad rather than the main one",
 		"%.1f m from the main spawn"
-			% bot.global_position.distance_to(game.current_map_node().spawn_for(DotTimerTrack.MAIN))
+			% bot.global_position.distance_to(game.current_map_node().spawn_for(GSTimerTrack.MAIN))
 	)
 
 	var splits: Array[int] = []
-	var finished: Array[DotTimerRun] = []
+	var finished: Array[GSTimerRun] = []
 	# An array, not a bool: a lambda captures a local by value, so `reset = true` inside
 	# one never reached this function and "without ever being put back" could not fail.
 	var reset: Array[bool] = [false]
@@ -428,13 +428,13 @@ func _test_needle_bonus() -> void:
 		if id == &"bot":
 			splits.append(number)
 
-	var on_effect := func(id: StringName, zone: DotTimerZone) -> void:
-		if id == &"bot" and zone.kind == DotTimerZone.Kind.RESPAWN:
+	var on_effect := func(id: StringName, zone: GSTimerZone) -> void:
+		if id == &"bot" and zone.kind == GSTimerZone.Kind.RESPAWN:
 			reset[0] = true
 
 	game.timers.player_staged.connect(on_split)
 	game.timers.effect_requested.connect(on_effect)
-	bot.timer.run_finished.connect(func(run: DotTimerRun) -> void: finished.append(run))
+	bot.timer.run_finished.connect(func(run: GSTimerRun) -> void: finished.append(run))
 
 	# [b]Jumped AT the gaps, not held.[/b] This is the whole reason the route is
 	# runnable, and it was measured here rather than assumed: a bot that holds jump on a
@@ -456,10 +456,10 @@ func _test_needle_bonus() -> void:
 	var resets := 0
 
 	for _i in range(2600):
-		var c := DotFpsCommand.new()
+		var c := GSFpsCommand.new()
 		c.move = Vector2(0.0, 1.0)
 		c.set_button(
-			DotFpsCommand.BUTTON_JUMP,
+			GSFpsCommand.BUTTON_JUMP,
 			_needle_jumps_at(AirdriftUnits.vector_to_units(bot.global_position).z)
 		)
 		bot.controller.apply_command(c)
@@ -503,7 +503,7 @@ func _test_needle_bonus() -> void:
 		"%d finished" % finished.size()
 	)
 
-	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
+	game.timers.set_player_track(&"bot", GSTimerTrack.MAIN)
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
 	_done()
@@ -530,11 +530,11 @@ func _ridge_jumps_at(z_units: float) -> bool:
 func _test_ridge_bonus() -> void:
 	_section("the ridge, run end to end")
 
-	var changed: DotResult = await game.change_map(&"bhop_g2g_stages")
+	var changed: GSResult = await game.change_map(&"bhop_g2g_stages")
 	_check(changed.ok, "the stages map loads")
 
 	var bot: AirdriftPlayer = game.players[&"bot"]
-	var ridge := DotTimerTrack.of_bonus(2)
+	var ridge := GSTimerTrack.of_bonus(2)
 	var zones := game.timers.zones
 	_check(zones != null and zones.playable_tracks() == PackedInt32Array([0, 1, 2, 3, 4])
 		and zones.stage_count(ridge) == 2,
@@ -548,7 +548,7 @@ func _test_ridge_bonus() -> void:
 	await get_tree().physics_frame
 
 	var splits: Array[int] = []
-	var finished: Array[DotTimerRun] = []
+	var finished: Array[GSTimerRun] = []
 	# An array, not a bool: a lambda captures a local by value, so `reset = true` inside
 	# one never reached this function and "without ever being put back" could not fail.
 	var reset: Array[bool] = [false]
@@ -557,11 +557,11 @@ func _test_ridge_bonus() -> void:
 		if id == &"bot":
 			splits.append(number)
 
-	var on_effect := func(id: StringName, zone: DotTimerZone) -> void:
-		if id == &"bot" and zone.kind == DotTimerZone.Kind.RESPAWN:
+	var on_effect := func(id: StringName, zone: GSTimerZone) -> void:
+		if id == &"bot" and zone.kind == GSTimerZone.Kind.RESPAWN:
 			reset[0] = true
 
-	var on_finished := func(run: DotTimerRun) -> void: finished.append(run)
+	var on_finished := func(run: GSTimerRun) -> void: finished.append(run)
 
 	game.timers.player_staged.connect(on_split)
 	game.timers.effect_requested.connect(on_effect)
@@ -578,10 +578,10 @@ func _test_ridge_bonus() -> void:
 	var descent := _DescentLedger.new()
 
 	for _i in range(4000):
-		var c := DotFpsCommand.new()
+		var c := GSFpsCommand.new()
 		c.move = Vector2(0.0, 1.0)
 		c.set_button(
-			DotFpsCommand.BUTTON_JUMP,
+			GSFpsCommand.BUTTON_JUMP,
 			_ridge_jumps_at(AirdriftUnits.vector_to_units(bot.global_position).z)
 		)
 		var before := AirdriftUnits.vector_to_units(bot.global_position)
@@ -625,7 +625,7 @@ func _test_ridge_bonus() -> void:
 		"%d finished, ended at %s u" % [finished.size(), str(AirdriftUnits.vector_to_units(bot.global_position).round())]
 	)
 
-	game.timers.set_player_track(&"bot", DotTimerTrack.MAIN)
+	game.timers.set_player_track(&"bot", GSTimerTrack.MAIN)
 	game.spawn_player(&"bot")
 	await get_tree().physics_frame
 	_done()
@@ -663,7 +663,7 @@ class _DescentLedger:
 	var on_flat := 0.0
 	var in_air := 0.0
 
-	func add(dropped: float, state: DotFpsState) -> void:
+	func add(dropped: float, state: GSFpsState) -> void:
 		if dropped <= 0.0:
 			return
 		if not state.is_grounded():

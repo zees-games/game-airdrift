@@ -11,13 +11,13 @@ const AirdriftNetLink := preload("airdrift_net_link.gd")
 ## Godot refuses an RPC unless both ends declare the same set of @rpc methods, and
 ## routes it by the receiver's node path. Using the same script on both ends makes the
 ## checksum identical by construction; naming the node the same on both ends and
-## parenting it to a node that is itself named the same — [DotServer] on one side and
-## [DotClientLink] on the other, both called [code]Server[/code] — is the whole of the
+## parenting it to a node that is itself named the same — [GSServer] on one side and
+## [GSClientLink] on the other, both called [code]Server[/code] — is the whole of the
 ## routing.
 ##
 ## [codeblock]
-## Server            <- DotServer, or DotClientLink named to match
-##   Chat            <- DotChatManager / DotClientChat
+## Server            <- GSServer, or GSClientLink named to match
+##   Chat            <- GSChatManager / GSClientChat
 ##   Airdrift             <- this, on both
 ## [/codeblock]
 
@@ -26,7 +26,7 @@ const CHANNEL := "g2g.link"
 ## The node name both ends must use. It is the routing, so it is a constant.
 const NODE_NAME := &"G2G"
 
-## Everything here rides [constant DotTransport.Channel.STATE], which dot-server reserves
+## Everything here rides [constant GSTransport.Channel.STATE], which dot-server reserves
 ## for exactly this and uses for nothing itself. Sharing chat's channel would make a burst
 ## of snapshots delay a chat line, and vice versa.
 const CHANNEL_STATE := 1
@@ -43,7 +43,7 @@ const CHANNEL_STATE := 1
 ## below are declared `unreliable`, which is what voice wants: a lost frame is 20 ms of
 ## silence a jitter buffer conceals, and a resent one arrives after the frames either
 ## side of it have already played. What that becomes on the wire is the transport's
-## decision (dot-server's default is `DotTransportDual`: native clients on ENet,
+## decision (dot-server's default is `GSTransportDual`: native clients on ENet,
 ## browsers on WebSocket, behind one peer) and it has one sensible answer either way —
 ## ENet honours the unreliable channel as UDP; a browser has no UDP at all, so
 ## WebSocket delivers it reliably and in order over TCP whatever anybody asks for.
@@ -84,7 +84,7 @@ var voice_sent: int = 0
 var voice_received: int = 0
 
 
-## Builds the link; the caller places it (see [DotGameLink.attach]).
+## Builds the link; the caller places it (see [GSGameLink.attach]).
 static func attached_to(parent: Node, p_bridge: AirdriftNetBridge, server: bool) -> AirdriftNetLink:
 	var link := AirdriftNetLink.new()
 	link.bridge = p_bridge
@@ -107,10 +107,10 @@ func _unbridged(kind: String, from_peer_id: int) -> void:
 	_warned_unbridged = true
 	# A retired link (the game was switched away from) has its bridge cleared on purpose and
 	# receives what clients still send until LOAD_GAME reaches them: expected, not broken ordering.
-	if String(name).begins_with(DotGameLink.RETIRED):
-		DotLog.trace(CHANNEL, "a retired link dropped a payload", {"kind": kind, "from": from_peer_id})
+	if String(name).begins_with(GSGameLink.RETIRED):
+		GSLog.trace(CHANNEL, "a retired link dropped a payload", {"kind": kind, "from": from_peer_id})
 		return
-	DotLog.warn(CHANNEL, "a payload arrived before the link had a bridge, and was dropped", {
+	GSLog.warn(CHANNEL, "a payload arrived before the link had a bridge, and was dropped", {
 		"kind": kind, "from": from_peer_id,
 	})
 
@@ -241,7 +241,7 @@ func _net_request(payload: PackedByteArray) -> void:
 ##
 ## One encoded voice frame, server to one listener.
 ##
-## [b]Never a broadcast.[/b] [DotVoiceRouter] decides who hears a speaker, and a
+## [b]Never a broadcast.[/b] [GSVoiceRouter] decides who hears a speaker, and a
 ## `send(bytes, 0)` convention here would quietly deliver a proximity packet to the
 ## whole server — which is the bug this family has already shipped once, through a bot
 ## registered as peer 0.

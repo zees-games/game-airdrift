@@ -31,9 +31,9 @@ const SERVICE := &"airdrift_game"
 const GHOST_ID := &"u900000001"
 const GHOST_SESSION := 900000001
 
-signal map_ready(map: DotMapDef)
+signal map_ready(map: GSMapDef)
 
-signal run_filed(player_id: StringName, run: DotTimerRun, rank: int, reason: String)
+signal run_filed(player_id: StringName, run: GSTimerRun, rank: int, reason: String)
 
 ## Where a player stands on the board they are on: [code]{pb, wr, rank, total}[/code],
 ## seconds and places, 0 for "none". The HUD's standing line, and what the net bridge
@@ -68,13 +68,13 @@ signal player_removed(player_id: StringName)
 
 ## The config as an operator surface (cvars, cfg/ profile, workbench, yml diff). Built in
 ## [method _ready] over [member config].
-var config_binder: DotGameConfigBinder = null
+var config_binder: GSGameConfigBinder = null
 
 ## Whether players are solid to each other (`mp_solidplayers`, 1). Every player has a hull (`airdrift_player_bodies.gd`) and dot-team's block rules, on `pair_fn`, say which pairs stop:
 ## runners pass through each other (the genre) until `mp_teamblock`, `mp_enemyblock` or `!block` say otherwise. With no block rules (no dot-team in the build) nobody blocks.
-var body_rules: DotPlayerBodyRules = _make_body_rules()
+var body_rules: GSPlayerBodyRules = _make_body_rules()
 
-## dot-team's `DotTeamBlockRules` (`mp_teamblock`, `!block`, `!noblock`), set by the module or
+## dot-team's `GSTeamBlockRules` (`mp_teamblock`, `!block`, `!noblock`), set by the module or
 ## the client's `add_noblock`; null while dot-team is not in the build.
 var block_rules: Object = null:
 	set(value):
@@ -99,8 +99,8 @@ static func snapshot_rate_for(rate: int) -> int:
 	return rate / maxi(1, roundi(float(rate) / 32.0))
 
 
-static func _make_body_rules() -> DotPlayerBodyRules:
-	var rules := DotPlayerBodyRules.new()
+static func _make_body_rules() -> GSPlayerBodyRules:
+	var rules := GSPlayerBodyRules.new()
 	rules.pair_fn = func(_a: Variant, _b: Variant) -> bool: return false
 	return rules
 
@@ -122,7 +122,7 @@ func block_side(id: Variant) -> Variant:
 
 ## The dot-server game manager to read a loading game's descriptor from, by registry name.
 ## See [method _adopt_descriptor_owner]. Nothing under it is normal: a suite, a client.
-@export var game_manager_service: StringName = DotGameManager.SERVICE
+@export var game_manager_service: StringName = GSGameManager.SERVICE
 
 
 var authoritative: bool = true
@@ -132,7 +132,7 @@ var authoritative: bool = true
 var mechanics: AirdriftMapMechanics = null
 
 ## The server's maps.yml, or null when there is none. See [method load_rotation].
-var rotation_file: DotMapRotationFile = null
+var rotation_file: GSMapRotationFile = null
 
 ## Where [member rotation_file] was read from, or "" when there was no file.
 var rotation_source: String = ""
@@ -146,7 +146,7 @@ var rotation_source: String = ""
 ## rather than made here and reported afterwards. Every way a map changes on a server —
 ## `map`, `airdrift_map`, the vote, the rotation's clock — already calls [method change_map],
 ## which is why this is the one line that needed to know.
-var map_sync: DotMapSyncHost = null
+var map_sync: GSMapSyncHost = null
 
 ## Whether the map session's own clock running out changes to the rotation's next map.
 ##
@@ -156,7 +156,7 @@ var map_sync: DotMapSyncHost = null
 ## old clock, by a rotation nobody asked.
 var rotation_ends_maps: bool = true
 
-## The clock that ends a map, as [method DotVoteClockView.state_of] describes it. Set by
+## The clock that ends a map, as [method GSVoteClockView.state_of] describes it. Set by
 ## [code]AirdriftModule[/code] to its vote's [code]clock_state[/code]; unset on a server with
 ## no vote, where the map session's own clock is the one that ends a map.
 ##
@@ -167,24 +167,24 @@ var rotation_ends_maps: bool = true
 ## taken the map's end over, so an operator was shown a limit an extend had already moved,
 ## and under `trigger: rtv_only` a limit the server did not have at all.
 var clock_fn: Callable = Callable()
-var timers: DotTimerManager = null
-var boards: DotLeaderboardManager = null
+var timers: GSTimerManager = null
+var boards: GSLeaderboardManager = null
 ## Where the boards live; null builds one layered from [constant BOARDS_CONFIG_PATH].
-var boards_config: DotBoardsConfig = null
+var boards_config: GSBoardsConfig = null
 
 const BOARDS_CONFIG_PATH := "user://g2g_boards.json"
 
 var world: Node3D = null
 
 ## The tunables every player is on, before their style. Rebuilt on a cvar change.
-var tunables: DotFpsTunables = null
+var tunables: GSFpsTunables = null
 
 ## Movement halves of the styles, by id. The ranking halves are on the timer manager.
 var movement_styles: Dictionary = {}
 
 ## The avatar schema and catalogue every rig is dressed from.
-var avatar_schema: DotAvatarSchema = null
-var avatar_catalogue: DotAvatarCatalogue = null
+var avatar_schema: GSAvatarSchema = null
+var avatar_catalogue: GSAvatarCatalogue = null
 
 var players: Dictionary = {}
 
@@ -196,14 +196,14 @@ var replays: AirdriftReplays = AirdriftReplays.new()
 ## [b]A layer, not a mode switch on the game.[/b] While it exists the timer still runs
 ## and a player who never presses fire plays exactly the game they played before —
 ## which is the only shape a deathmatch on a records server can honestly take.
-## Every world object the server has an id for. See [DotEntityTable].
+## Every world object the server has an id for. See [GSEntityTable].
 ##
 ## [b]Here rather than on [code]combat[/code], which is where the ids are minted.[/b]
 ## The table outlives the deathmatch layer -- `sv_deathmatch` is a cvar an operator
 ## turns off mid-map -- and the hunters and the effects layer both ask it questions
 ## without going through combat at all. A handle whose lifetime is shorter than its
 ## holders' is the shape that leaks.
-var entities := DotEntityTable.new()
+var entities := GSEntityTable.new()
 
 var combat: AirdriftCombat = null
 
@@ -212,7 +212,7 @@ var weapon_layer: AirdriftWeaponLayer = null
 
 ## What a dead body does, and which death reactions the server allows: dot-player-char's `sv_ragdoll*` cvars, bound by the module (REPLICATED) and followed by a client through its
 ## link, because the client draws the bodies. On the game, not on [member combat]: a client has no combat layer and still draws every fall.
-var ragdoll_rules: DotPlayerRagdollRules = DotPlayerRagdollRules.new()
+var ragdoll_rules: GSPlayerRagdollRules = GSPlayerRagdollRules.new()
 
 ## Hunters on the course. Null unless `sv_hunters` built them.
 var hunters: AirdriftHunters = null
@@ -221,7 +221,7 @@ var hunters: AirdriftHunters = null
 ## `npc_reaction_min`. On the game rather than on [member hunters], which is null until
 ## `sv_hunters` builds it and is rebuilt on a map change; the module binds the cvars and
 ## the hunters attach this to each spawner they make.
-var npc_skill: DotNpcAiSkill = DotNpcAiSkill.new()
+var npc_skill: GSNpcAiSkill = GSNpcAiSkill.new()
 
 ## Props an admin can place. Null unless `sv_props` built them.
 var props: AirdriftProps = null
@@ -269,14 +269,14 @@ var covered: Callable = Callable()
 
 ## dot-player-controller's `mp_forceview`: third person allowed (0), held first (1) or third (2).
 ## `sv_allow_thirdperson` writes it; bound REPLICATED by the module, followed by a client.
-var view_rules: DotPlayerViewRules = DotPlayerViewRules.new()
+var view_rules: GSPlayerViewRules = GSPlayerViewRules.new()
 
 ## dot-mobile's `sv_mobile_*`, `sv_aim_assist*` and `sv_autofire*`: what a phone player may use. Bound REPLICATED by
 ## the module, followed by a client. Aim assist and auto-fire need targets this game does not hand in, so stay inert.
-var mobile_rules: DotMobileRules = DotMobileRules.new()
+var mobile_rules: GSMobileRules = GSMobileRules.new()
 
 ## dot-replay's `mp_killview*`: the killer's replayed eye, off until the server turns it on.
-var killview_rules: DotKillViewRules = DotKillViewRules.new()
+var killview_rules: GSKillViewRules = GSKillViewRules.new()
 
 ## Hulls, masks and exclusions to match `body_rules` ([AirdriftPlayerBodies.apply]): when the rules
 ## change, and when a player joins or leaves.
@@ -309,7 +309,7 @@ func _adopt_descriptor_owner() -> void:
 	if not authoritative:
 		return
 
-	var manager: Object = DotRegistry.get_service(game_manager_service)
+	var manager: Object = GSRegistry.get_service(game_manager_service)
 
 	if manager == null:
 		return
@@ -327,7 +327,7 @@ func _adopt_descriptor_owner() -> void:
 		return
 
 	config.map_content_owner = str(cvars[AirdriftConfig.MAP_CONTENT_OWNER_CVAR]).strip_edges()
-	DotLog.info(CHANNEL, "the map owner comes from the game's descriptor", {
+	GSLog.info(CHANNEL, "the map owner comes from the game's descriptor", {
 		"owner": config.map_content_owner,
 	})
 
@@ -336,7 +336,7 @@ func _adopt_descriptor_owner() -> void:
 ##
 ## [b]Not this game's own cvars[/b] (`sv_content_maps` and an owner), which would fetch
 ## whatever version each pack's origin calls latest, on whichever day a box boots. dot-server now carries a game's delivered maps as pinned
-## `<owner>/<map id>@<version>` keys (DotGameDescriptor.maps), written by the installer
+## `<owner>/<map id>@<version>` keys (GSGameDescriptor.maps), written by the installer
 ## that checked each one exists, so every server running one release of this game offers
 ## the same bytes. A server whose dot-server predates the field has no `maps` property;
 ## `get` answers null and the cvars still work as they always did.
@@ -349,17 +349,17 @@ func _adopt_descriptor_maps(descriptor: Object) -> void:
 	var ids := PackedStringArray()
 
 	for key in (keys as PackedStringArray):
-		var map := DotMapDef.from_content_key(key)
+		var map := GSMapDef.from_content_key(key)
 
 		if map == null:
-			DotLog.warn(CHANNEL, "a maps: entry is not <owner>/<map>@<version>", {"entry": key})
+			GSLog.warn(CHANNEL, "a maps: entry is not <owner>/<map>@<version>", {"entry": key})
 			continue
 
 		_pinned_maps[map.id] = [String(map.content_id), map.content_version]
 		ids.append(String(map.id))
 
 	config.content_maps = ids
-	DotLog.info(CHANNEL, "the map set comes from the game's descriptor", {"maps": ids.size()})
+	GSLog.info(CHANNEL, "the map set comes from the game's descriptor", {"maps": ids.size()})
 
 
 ## The descriptor this scene is being built for: the manager's pending game, or, when
@@ -408,7 +408,7 @@ func _build_player_stack() -> void:
 	var res := player_stack.setup(self)
 
 	if not res.ok:
-		DotLog.warn(CHANNEL, "the player stack is off", {"why": res.error.message})
+		GSLog.warn(CHANNEL, "the player stack is off", {"why": res.error.message})
 		remove_child(player_stack)
 		player_stack.queue_free()
 		player_stack = null
@@ -431,7 +431,7 @@ func _resolve_tick_rate() -> int:
 ## everything else looks healthy. [AirdriftNetBridge] calls this from HELLO, which has
 ## carried the server's rate since it was written.
 ##
-## Every run in progress is abandoned, by [method DotTimerManager.set_tick_rate]'s own
+## Every run in progress is abandoned, by [method GSTimerManager.set_tick_rate]'s own
 ## rule: a run half at one rate and half at another is a run at neither. That costs
 ## nothing here, because this is called before a client has a player.
 func set_tick_rate(rate: int) -> bool:
@@ -446,14 +446,14 @@ func set_tick_rate(rate: int) -> bool:
 	for id in players:
 		(players[id] as AirdriftPlayer).tick_rate = tick_rate
 
-	DotLog.info(CHANNEL, "tick rate adopted", {"tick_rate": tick_rate})
+	GSLog.info(CHANNEL, "tick rate adopted", {"tick_rate": tick_rate})
 	return true
 
 
 # --- Building --------------------------------------------------------------
 
 func _build_styles() -> void:
-	for style in DotFpsStyle.defaults():
+	for style in GSFpsStyle.defaults():
 		# Prespeed limits are in genre units here, like everything a style says to
 		# an operator. 290 u/s is the number every timer in this genre ships.
 		style.prespeed_limit = 290.0
@@ -465,23 +465,23 @@ func _build_styles() -> void:
 		# integration suite caught it as a held key still hopping. Every style
 		# inherits, except the one whose whole identity is "no auto-hop".
 		if style.id != &"prebhop":
-			style.auto_hop = DotFpsStyle.Toggle.INHERIT
-			style.easy_bhop = DotFpsStyle.Toggle.INHERIT
+			style.auto_hop = GSFpsStyle.Toggle.INHERIT
+			style.easy_bhop = GSFpsStyle.Toggle.INHERIT
 
 		movement_styles[style.id] = style
 
 
 func _build_boards() -> void:
-	boards = DotLeaderboardManager.new()
+	boards = GSLeaderboardManager.new()
 	boards.name = "Leaderboards"
 	if boards_config == null:
-		boards_config = DotBoardsConfig.for_game("g2g")
+		boards_config = GSBoardsConfig.for_game("g2g")
 		var layered := boards_config.load_layered(BOARDS_CONFIG_PATH)
 		if not layered.ok:
-			DotLog.warn(CHANNEL, "the boards configuration is not usable, using memory", {
+			GSLog.warn(CHANNEL, "the boards configuration is not usable, using memory", {
 				"why": str(layered.error),
 			})
-			boards_config = DotBoardsConfig.for_game("g2g")
+			boards_config = GSBoardsConfig.for_game("g2g")
 	boards.backend = boards_config.backend
 	boards.report_to_backbone = config.report_to_backbone
 	add_child(boards)
@@ -496,14 +496,14 @@ func _build_boards() -> void:
 
 
 ## The boards a server defines, `publish` following its report_to_backbone switch; also what ./game.sh defs exports for the site import.
-static func board_definitions(publish: bool = true) -> Array[DotLeaderboardDef]:
-	var out: Array[DotLeaderboardDef] = []
-	var fastest := DotLeaderboardDef.make(&"fastest", DotLeaderboardDef.Kind.TIME)
+static func board_definitions(publish: bool = true) -> Array[GSLeaderboardDef]:
+	var out: Array[GSLeaderboardDef] = []
+	var fastest := GSLeaderboardDef.make(&"fastest", GSLeaderboardDef.Kind.TIME)
 	fastest.display_name = "Fastest time"
 	fastest.publish = publish
 	out.append(fastest)
 
-	var points := DotLeaderboardDef.make(&"points", DotLeaderboardDef.Kind.POINTS)
+	var points := GSLeaderboardDef.make(&"points", GSLeaderboardDef.Kind.POINTS)
 	points.display_name = "Ranking points"
 	points.decimals = 1
 	points.publish = publish
@@ -526,7 +526,7 @@ func _bind_board_reporter() -> void:
 	if boards == null or not config.report_to_backbone or boards.reporter.client != null:
 		return
 
-	var client: Object = DotRegistry.get_service(&"dot_backbone_client")
+	var client: Object = GSRegistry.get_service(&"dot_backbone_client")
 
 	if client != null:
 		boards.reporter.client = client
@@ -538,18 +538,18 @@ func _bind_board_reporter() -> void:
 ##
 ## [b]dot-sql is reached by path, never by name.[/b] This game is delivered as a pack, and
 ## a pack's scripts parse against whatever addons the host build carries; naming
-## `DotSql` would make every one of them fail to parse on a host without it. Loading the
+## `GSSql` would make every one of them fail to parse on a host without it. Loading the
 ## script by path is a missing feature on such a host, not a broken game.
-func _records_store_from_config() -> DotTimerStoreSql:
+func _records_store_from_config() -> GSTimerStoreSql:
 	var path := "res://addons/dot_sql/core/dot_sql.gd"
 	if not ResourceLoader.exists(path):
-		DotLog.error(CHANNEL, "records_database is set but dot-sql is not installed; records stay in files", {
+		GSLog.error(CHANNEL, "records_database is set but dot-sql is not installed; records stay in files", {
 			"records_database": config.records_database,
 		})
 		return null
 	var sql_script: Script = load(path)
 	var kind := config.records_database.strip_edges().to_lower()
-	var made: DotResult = sql_script.call("from_config", {
+	var made: GSResult = sql_script.call("from_config", {
 		"driver": kind if kind == "sqlite" else "gateway",
 		"dialect": kind if kind != "sqlite" else "sqlite",
 		"path": config.records_database_path,
@@ -557,11 +557,11 @@ func _records_store_from_config() -> DotTimerStoreSql:
 		"token": config.records_database_token,
 	}, self)
 	if not made.ok or made.value == null:
-		DotLog.error(CHANNEL, "the records database settings are not usable; records stay in files", {
+		GSLog.error(CHANNEL, "the records database settings are not usable; records stay in files", {
 			"why": made.error.message if not made.ok else "no driver", "detail": made.error.detail if not made.ok else "",
 		})
 		return null
-	var store := DotTimerStoreSql.new(made.value)
+	var store := GSTimerStoreSql.new(made.value)
 	store.prefix = config.records_table_prefix
 	store.cache_seconds = config.records_cache_seconds
 	return store
@@ -569,22 +569,22 @@ func _records_store_from_config() -> DotTimerStoreSql:
 
 ## Opens the SQL store, or falls back to files if it will not open.
 func _open_records_store() -> void:
-	var sql := timers.store as DotTimerStoreSql
+	var sql := timers.store as GSTimerStoreSql
 	if sql == null:
 		return
-	var opened: DotResult = await sql.open()
+	var opened: GSResult = await sql.open()
 	if opened.ok:
-		DotLog.info(CHANNEL, "records are kept in a database", {"database": config.records_database, "prefix": sql.prefix})
+		GSLog.info(CHANNEL, "records are kept in a database", {"database": config.records_database, "prefix": sql.prefix})
 		return
-	DotLog.error(CHANNEL, "the records database would not open; records stay in files this session", {
+	GSLog.error(CHANNEL, "the records database would not open; records stay in files this session", {
 		"why": opened.error.message, "detail": opened.error.detail,
 	})
 	# Files only where the configuration said there is a directory; with none it means
 	# "memory", and a file store pointed at "" writes to the filesystem root and fails
 	# every flush for the rest of the session.
 	timers.store = (
-		DotTimerStoreFile.at(config.records_directory) if config.records_directory.strip_edges() != ""
-		else DotTimerStoreMemory.new()
+		GSTimerStoreFile.at(config.records_directory) if config.records_directory.strip_edges() != ""
+		else GSTimerStoreMemory.new()
 	)
 
 
@@ -610,14 +610,14 @@ func _build_progress() -> void:
 	if not attached.ok:
 		# A server with no statistics is a server. One that refuses to boot because an
 		# achievement catalogue was rejected is not.
-		DotLog.warn(CHANNEL, "progression is off", {"why": attached.error.message})
+		GSLog.warn(CHANNEL, "progression is off", {"why": attached.error.message})
 		remove_child(progress)
 		progress.queue_free()
 		progress = null
 
 
 ## Who is watching whom. On a server it decides; on a client it is a mirror the bridge
-## tells (`DotSpectatorManager.authoritative` follows the game's), and only its camera is
+## tells (`GSSpectatorManager.authoritative` follows the game's), and only its camera is
 ## used. After combat on a server, because its rules read whether the deathmatch is on.
 func _build_spectate() -> void:
 	spectate = AirdriftSpectate.new()
@@ -628,7 +628,7 @@ func _build_spectate() -> void:
 	var watching := spectate.setup()
 
 	if not watching.ok:
-		DotLog.warn(CHANNEL, "spectating is off", {"why": watching.error.message})
+		GSLog.warn(CHANNEL, "spectating is off", {"why": watching.error.message})
 		remove_child(spectate)
 		spectate.queue_free()
 		spectate = null
@@ -665,7 +665,7 @@ func _build_layers() -> void:
 		var armed := combat.setup()
 
 		if not armed.ok:
-			DotLog.warn(CHANNEL, "deathmatch is off", {"why": armed.error.message})
+			GSLog.warn(CHANNEL, "deathmatch is off", {"why": armed.error.message})
 			remove_child(combat)
 			combat.queue_free()
 			combat = null
@@ -680,7 +680,7 @@ func _build_layers() -> void:
 		var hunting := hunters.setup()
 
 		if not hunting.ok:
-			DotLog.warn(CHANNEL, "the hunt is off", {"why": hunting.error.message})
+			GSLog.warn(CHANNEL, "the hunt is off", {"why": hunting.error.message})
 			remove_child(hunters)
 			hunters.queue_free()
 			hunters = null
@@ -697,7 +697,7 @@ func _build_layers() -> void:
 		var applied := effects.setup()
 
 		if not applied.ok:
-			DotLog.warn(CHANNEL, "effects are off", {"why": applied.error.message})
+			GSLog.warn(CHANNEL, "effects are off", {"why": applied.error.message})
 			remove_child(effects)
 			effects.queue_free()
 			effects = null
@@ -711,7 +711,7 @@ func _build_layers() -> void:
 		var placed := props.setup()
 
 		if not placed.ok:
-			DotLog.warn(CHANNEL, "props are off", {"why": placed.error.message})
+			GSLog.warn(CHANNEL, "props are off", {"why": placed.error.message})
 			remove_child(props)
 			props.queue_free()
 			props = null
@@ -724,9 +724,9 @@ func apply_rotation() -> void:
 	if rotation_file != null and rotation_file.has_rotations():
 		# An empty rotation plays "every installed map", but not the ones this game keeps out
 		# when there is no file: the fallback is the no-file behaviour, not a wider one.
-		rotation_file.fallback_in = func(map: DotMapDef) -> bool: return map.kind != DotMapDef.KIND_ARENA
+		rotation_file.fallback_in = func(map: GSMapDef) -> bool: return map.kind != GSMapDef.KIND_ARENA
 		rotation_file.apply(maps.rotation)
 		return
 	maps.rotation.order = []
-	for map: DotMapDef in maps.catalogue.maps:
-		map.in_rotation = map.kind != DotMapDef.KIND_ARENA
+	for map: GSMapDef in maps.catalogue.maps:
+		map.in_rotation = map.kind != GSMapDef.KIND_ARENA

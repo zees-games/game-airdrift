@@ -1,6 +1,6 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
-## FC's config through the workbench: DotGameWorkbench over the binder's set, an edit, and the "Export changes as defaults" diff.
+## FC's config through the workbench: GSGameWorkbench over the binder's set, an edit, and the "Export changes as defaults" diff.
 ## Run: godot --headless --path . res://examples/headless_workbench.tscn
 
 const AirdriftConfig := preload("../game/airdrift_config.gd")
@@ -13,7 +13,7 @@ var _completed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.FATAL)
+	GSLog.set_level(GSLog.Level.FATAL)
 	_run.call_deferred()
 
 
@@ -23,10 +23,10 @@ func _run() -> void:
 	var config := AirdriftConfig.new()
 	var binder := AirdriftConfig.make_binder(config)
 	_check(binder.load_layers().ok, "defaults load")
-	var wb := DotGameWorkbench.new()
+	var wb := GSGameWorkbench.new()
 	wb.panel_mode = 2
 	wb.config = {"enabled": false}
-	for set: DotProfileSet in binder.profile_sets():
+	for set: GSProfileSet in binder.profile_sets():
 		wb.add_set(set, set.rel_path)
 	add_child(wb)
 	var started := wb.start()
@@ -37,7 +37,7 @@ func _run() -> void:
 	_check(wb.is_open(), "F9 or the command opens it")
 	_check(wb.console_command(PackedStringArray(["close"])) == "workbench closed", "the console command closes it")
 	var kind := "config_modes"
-	var res: DotResult = wb.api.handle(DotGameWorkbench.LOCAL_ACTOR, {"op": "set", "kind": kind, "id": binder.profile_id, "key": "score_limit", "value": 25})
+	var res: GSResult = wb.api.handle(GSGameWorkbench.LOCAL_ACTOR, {"op": "set", "kind": kind, "id": binder.profile_id, "key": "score_limit", "value": 25})
 	_check(res.ok and config.score_limit == 25, "an edit in the window reaches the live config")
 	var files: Dictionary = wb.exporter.call("collect")
 	var text: String = files.get("cfg/game/game-airdrift/config_modes/game.yml", "")

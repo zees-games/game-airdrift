@@ -33,7 +33,7 @@ const AirdriftClient := preload("../game/airdrift_client.gd")
 ## menus_help           the H screen over the menu
 ## menus_scoreboard     Tab, held, with a sample of a busy server's roster
 ## menus_help_browser   the same, as a browser player on a server sees it
-## menus_console        the console open over the game (DotConsoleKit's panel)
+## menus_console        the console open over the game (GSConsoleKit's panel)
 ## menus_small          the menu in a 1024 x 640 window
 ## [/codeblock]
 ##
@@ -56,7 +56,7 @@ var _pitch := INF
 
 
 func _initialize() -> void:
-	DotLog.set_level(DotLog.Level.WARN)
+	GSLog.set_level(GSLog.Level.WARN)
 	DirAccess.make_dir_recursive_absolute(OUT_DIR)
 
 	var args := OS.get_cmdline_user_args()
@@ -80,7 +80,7 @@ func _world_steps() -> Array[Callable]:
 	return [
 		# Settings stay in memory: the frames below flip the theme and drag the HUD.
 		func() -> void:
-			_client.presentation.settings.local_store = DotSettingsStoreMemory.new()
+			_client.presentation.settings.local_store = GSSettingsStoreMemory.new()
 			_client.presentation.settings.load_now()
 			_client.presentation.apply_all(),
 		func() -> void: _capture("menus_play"),
@@ -207,8 +207,8 @@ func _sample_scoreboard() -> void:
 
 
 
-## Frame sequence after each still (GS_SHOT_FRAMES); see DotShotSeq.
-var _seq := DotShotSeq.new()
+## Frame sequence after each still (GS_SHOT_FRAMES); see GSShotSeq.
+var _seq := GSShotSeq.new()
 var _seq_active := false
 
 
@@ -250,9 +250,9 @@ func _aim() -> void:
 
 
 func _listen_on_first_key() -> void:
-	for node in _client.menu.screen.find_children("*", "DotMenuKeyButton", true, false):
+	for node in _client.menu.screen.find_children("*", "GSMenuKeyButton", true, false):
 		(node as Button).grab_focus()
-		(node as DotMenuKeyButton).listen()
+		(node as GSMenuKeyButton).listen()
 		return
 
 

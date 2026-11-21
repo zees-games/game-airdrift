@@ -21,8 +21,8 @@ const SECTIONS := 18
 
 
 func _ready() -> void:
-	DotLog.set_level(
-		DotLog.Level.DEBUG if "--verbose" in OS.get_cmdline_user_args() else DotLog.Level.ERROR
+	GSLog.set_level(
+		GSLog.Level.DEBUG if "--verbose" in OS.get_cmdline_user_args() else GSLog.Level.ERROR
 	)
 	_run.call_deferred()
 
@@ -38,7 +38,7 @@ func _run() -> void:
 
 	# A memory store, so nothing this suite changes reaches the player's own settings file
 	# — and nothing in it changes what this suite sees.
-	_client.presentation.settings.local_store = DotSettingsStoreMemory.new()
+	_client.presentation.settings.local_store = GSSettingsStoreMemory.new()
 	_client.presentation.settings.load_now()
 	_client.presentation.apply_all()
 
@@ -159,13 +159,13 @@ func _test_spectating_holds_the_runner() -> void:
 	# A free camera has no target; it still holds the keys, hides the "watching" line's
 	# name, and names the key only while the server offers it.
 	var pid: StringName = _client.player.player_id
-	_client.game.spectate.manager.apply_wire({"k": String(pid), "v": {"m": DotSpectatorView.Mode.ROAMING, "t": "", "u": -1}})
+	_client.game.spectate.manager.apply_wire({"k": String(pid), "v": {"m": GSSpectatorView.Mode.ROAMING, "t": "", "u": -1}})
 	_client._on_spectate(&"", "")
 	_check(_client.roaming and _client.is_spectating() and _client.player.sampler.suspended,
 		"roaming counts as spectating and holds the runner still")
 	_check(_client.hud._spectating.visible and _client.hud._spectating.text.begins_with("Free camera"),
 		"and the HUD line is the free camera's controls", _client.hud._spectating.text)
-	_client.game.spectate.manager.apply_wire({"k": String(pid), "v": {"m": DotSpectatorView.Mode.NONE, "t": "", "u": -1}})
+	_client.game.spectate.manager.apply_wire({"k": String(pid), "v": {"m": GSSpectatorView.Mode.NONE, "t": "", "u": -1}})
 	_client._on_spectate(&"", "")
 	_check(not _client.roaming and not _client.is_spectating(), "and leaving it gives the keys back")
 	_done()
@@ -274,7 +274,7 @@ func _test_a_dead_body_falls() -> void:
 	var game := _client.game
 	# A Kenney body, whose parts are named (torso, arm-left, ...): the stock primitives are one
 	# capsule, which is honestly one rigid piece.
-	var dressed := DotAvatar.make(&"g2g_stock")
+	var dressed := GSAvatar.make(&"g2g_stock")
 	dressed.set_part(&"body", &"body_kenney_c")
 	dressed.set_part(&"head", &"head_kenney_c")
 	var other: AirdriftPlayer = game.add_player(&"u91", "Fallen", false, dressed)
@@ -282,11 +282,11 @@ func _test_a_dead_body_falls() -> void:
 	for _i in range(4):
 		await get_tree().process_frame
 
-	var crumple := DotPlayerDeath.new()
-	crumple.reaction = DotPlayerDeathReactions.CRUMPLE
+	var crumple := GSPlayerDeath.new()
+	crumple.reaction = GSPlayerDeathReactions.CRUMPLE
 	crumple.roll_seed = 7
 	var body := _client.fall(&"u91", crumple)
-	_check(body != null and body.reaction.id == DotPlayerDeathReactions.CRUMPLE
+	_check(body != null and body.reaction.id == GSPlayerDeathReactions.CRUMPLE
 			and body.part_count() > 1 and _client.ragdolls.live().size() == 1,
 		"the server's reaction, as a jointed body copied from the drawn rig",
 		str(body.describe()) if body != null else "no body")
@@ -297,7 +297,7 @@ func _test_a_dead_body_falls() -> void:
 
 	var _off := game.ragdoll_rules.set_cvar("sv_ragdoll", "0")
 	var toppled := _client.fall(&"u91", crumple)
-	_check(toppled != null and toppled.style == DotPlayerRagdollRules.Style.TOPPLE,
+	_check(toppled != null and toppled.style == GSPlayerRagdollRules.Style.TOPPLE,
 		"the server's sv_ragdoll 0 is the topple fallback, no physics",
 		str(toppled.describe()) if toppled != null else "no body")
 	var _on := game.ragdoll_rules.set_cvar("sv_ragdoll", "1")
@@ -333,7 +333,7 @@ func _test_the_end_of_a_deathmatch() -> void:
 		kc.frame()
 		if absf(clock[0] - 8.0) < step * 0.5:
 			kc.note_kill(_client.killcam_bodies.id_for(game, &"u92"), _client.killcam_bodies.id_for(game, _client.player.player_id), "deagle")
-	_check(kc is DotKillcamHost and DotAddonApi.build_level("dot_replay") >= 6, "the killcam is dot-replay's shared host")
+	_check(kc is GSKillcamHost and GSAddonApi.build_level("dot_replay") >= 6, "the killcam is dot-replay's shared host")
 	_check(kc.buffer.frame_count() > 400 and int(kc.buffer.last_event(&"kill")["data"]["killer"]) == _client.killcam_bodies.id_for(game, &"u92"),
 		"every frame drawn and the kill went into the buffer")
 
@@ -426,14 +426,14 @@ func _test_an_online_kill_view_poses_the_bodies() -> void:
 	for i in range(12):
 		var t := -1.0 + float(i) * 0.2
 		flat.append_array(PackedFloat32Array([t, 0.0, 1.6, 0.0, 0.0, 0.0, 0.0, 1.0, 90.0, -1.0, -1.0]))
-		flat.resize(flat.size() + DotKillViewRing.AUX)
+		flat.resize(flat.size() + GSKillViewRing.AUX)
 	# 9000 is a server entity id: nothing on this client is numbered that.
 	# The deagle's hash rides the first aux float, as the server's eyes record it.
 	var weapon_hash := float(int(String("deagle").hash() & 0xFFFFFF))
 	for i in range(12):
-		flat[i * (11 + DotKillViewRing.AUX) + 11] = weapon_hash
+		flat[i * (11 + GSKillViewRing.AUX) + 11] = weapon_hash
 	var info := {"killer": "Rival", "weapon": "deagle", "killer_key": "u93"}
-	var clip := {"v": DotKillViewRing.VERSION, "killer": 9000, "cursor": false, "f": flat, "info": info}
+	var clip := {"v": GSKillViewRing.VERSION, "killer": 9000, "cursor": false, "f": flat, "info": info}
 	bridge.killview_received.emit(clip, info)
 	_check(host.view.is_active(), "the server's clip starts the kill view")
 	for _i in range(6):
@@ -463,12 +463,12 @@ func _test_an_online_kill_view_poses_the_bodies() -> void:
 ## (pressed and released inside one frame) reaches the next command as a press.
 func _test_the_wheel_jumps() -> void:
 	_section("the mouse wheel jumps, one press per tick")
-	var keys: DotMenuBindings = _client.menu.bindings
+	var keys: GSMenuBindings = _client.menu.bindings
 	var wheel_rows := keys.rows.filter(func(r: Dictionary) -> bool:
 		return r["action"] == &"dot_fps_jump" and bool(r.get("extra", false)))
 	_check(wheel_rows.size() == 2 and keys.row_for_action(&"dot_fps_jump")["default"] == "Space",
 		"Space stays and two extra rows (wheel up, wheel down) sit on dot_fps_jump", str(wheel_rows.size()))
-	var sampler: DotFpsSampler = _client._active_sampler()
+	var sampler: GSFpsSampler = _client._active_sampler()
 	var _flush := sampler.sample(0.0)
 	for button in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
 		var down := InputEventMouseButton.new()
@@ -479,9 +479,9 @@ func _test_the_wheel_jumps() -> void:
 		up.button_index = button
 		up.pressed = false
 		sampler.handle_event(up)
-		_check(sampler.sample(0.0).is_pressed(DotFpsCommand.BUTTON_JUMP),
+		_check(sampler.sample(0.0).is_pressed(GSFpsCommand.BUTTON_JUMP),
 			"wheel %s is a jump in the next command" % ("up" if button == MOUSE_BUTTON_WHEEL_UP else "down"))
-		_check(not sampler.sample(0.0).is_pressed(DotFpsCommand.BUTTON_JUMP),
+		_check(not sampler.sample(0.0).is_pressed(GSFpsCommand.BUTTON_JUMP),
 			"and only that one command")
 	_done()
 
@@ -528,12 +528,12 @@ func _press_left(down: bool) -> void:
 ## (`dedicated`, dot-vote's suite).
 func _test_the_map_menu() -> void:
 	_section("M opens the map list, and solo a choice changes the map")
-	var menu: DotMenu = _client.menu
-	var keys: DotMenuBindings = menu.bindings
+	var menu: GSMenu = _client.menu
+	var keys: GSMenuBindings = menu.bindings
 
 	# M, the family's rule since the first play test: the map list, and solo a choice
 	# changes it now. The server's half (the owner's flag, the vote) is in `dedicated`.
-	_check(keys.key_for(DotMenuBindings.MAPS_ACTION) == "M" and keys.defaults_on("M").size() == 1,
+	_check(keys.key_for(GSMenuBindings.MAPS_ACTION) == "M" and keys.defaults_on("M").size() == 1,
 		"the map menu is on M, and nothing else in the table is",
 		str(keys.defaults_on("M").map(func(r: Dictionary) -> String: return str(r["label"]))))
 	# Closed right before the key: an offline client with no captured pointer (headless) may
@@ -548,7 +548,7 @@ func _test_the_map_menu() -> void:
 		"M opens the map list, more than one to choose", str(menu.picker.items.size()))
 	var wanted_map: StringName = &""
 	var map_key := KEY_NONE
-	for row in range(1, DotMenuPicker.PAGE_SIZE + 1):
+	for row in range(1, GSMenuPicker.PAGE_SIZE + 1):
 		var it: Variant = menu.picker.at_row(row)
 		if it is Dictionary and not bool((it as Dictionary)["current"]):
 			wanted_map = StringName(str((it as Dictionary)["id"]))
@@ -577,8 +577,8 @@ func _test_the_map_menu() -> void:
 func _test_the_stage_splits_panel() -> void:
 	_section("The stage splits panel: stages, setting, spectating and a comparison")
 	var hud: AirdriftHud = _client.hud
-	var panel: DotTimerSplitsPanel = hud.splits_panel
-	var settings: DotSettingsManager = _client.presentation.settings
+	var panel: GSTimerSplitsPanel = hud.splits_panel
+	var settings: GSSettingsManager = _client.presentation.settings
 	var _first: Variant = await _client.menu.maps.change_fn.call(&"bhop_g2g_intro")
 	for _i in 30:
 		await get_tree().physics_frame
@@ -609,9 +609,9 @@ func _test_the_stage_splits_panel() -> void:
 
 	# A comparison from the game's own store: a personal best with splits and a best section.
 	var game: AirdriftGame = _client.game
-	var timer: DotTimer = _client.player.timer
+	var timer: GSTimer = _client.player.timer
 	var key: StringName = game.record_key(hud.player_id)
-	var record := DotTimerRecord.new()
+	var record := GSTimerRecord.new()
 	record.map_id = game.maps.current.id
 	record.track = timer.track
 	record.style_id = timer.run.style_id
@@ -621,7 +621,7 @@ func _test_the_stage_splits_panel() -> void:
 	for k in range(1, stages + 1):
 		record.splits[k] = 10.0 * float(k)
 	var _put := await game.timers.store.put(record)
-	var section := DotTimerRecord.new()
+	var section := GSTimerRecord.new()
 	section.map_id = record.map_id
 	section.track = record.track
 	section.style_id = record.style_id

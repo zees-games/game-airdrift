@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 ## The pilot of drawing imported maps through dot-map's world document (`airdrift_global_worlds`): the switch is off by default and changes nothing; on, a map is drawn from `worlds/<id>` while its zones, spawns and collision stay the manifest's.
 ## Run: godot --headless --path . res://examples/headless_global_worlds.tscn
@@ -18,7 +18,7 @@ const MIN_PHOTO_SHARE := 0.7
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -57,7 +57,7 @@ func _run() -> void:
 		var zl := legacy.timer_zones()
 		var zg := global.timer_zones()
 		_check(zl.zones.size() == zg.zones.size(), "%s: zones are the manifest's either way (%d)" % [id, zg.zones.size()])
-		var start := zg.first_of_kind(DotTimerZone.Kind.START, DotTimerTrack.MAIN)
+		var start := zg.first_of_kind(GSTimerZone.Kind.START, GSTimerTrack.MAIN)
 		if start != null:
 			var inside := 0
 			for s: Dictionary in spawns:
@@ -87,7 +87,7 @@ func _run() -> void:
 	_report_sections(_entered, _completed, SECTIONS, CHECKS)
 
 
-func _build(def: DotMapDef, on: bool) -> AirdriftBspMap:
+func _build(def: GSMapDef, on: bool) -> AirdriftBspMap:
 	var map := (load(def.scene_path) as PackedScene).instantiate() as AirdriftBspMap
 	map.global_worlds = on
 	map.build_from(def)

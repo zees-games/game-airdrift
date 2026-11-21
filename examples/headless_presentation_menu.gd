@@ -38,7 +38,7 @@ func _test_the_menu_is_a_view_of_the_settings() -> void:
 	var menu := _menu_for(p, host)
 	await get_tree().process_frame
 
-	var order: Array = menu.screen.visible_pages().map(func(page: DotMenuPage) -> StringName: return page.id)
+	var order: Array = menu.screen.visible_pages().map(func(page: GSMenuPage) -> StringName: return page.id)
 	# dot-menu may append its own optional `advanced` page (the connection overlay) after
 	# this game's six; it is the addon's, not a reordering of ours, so both shapes pass and
 	# anything else -- a page missing, moved or added elsewhere -- does not.
@@ -49,7 +49,7 @@ func _test_the_menu_is_a_view_of_the_settings() -> void:
 	menu.open(&"general")
 	await get_tree().process_frame
 	_check(menu.is_open() and menu.screen.visible, "it opens")
-	var switches := _live(menu.screen, "DotMenuSwitch")
+	var switches := _live(menu.screen, "GSMenuSwitch")
 	# dot-menu adds its Scoreboard section (one switch per hideable column) to General.
 	var board_switches := menu.scoreboard_column_rows().size()
 	_check(switches.size() == 7 + board_switches, "the General page has a switch per HUD setting, zones and the counter included, plus dot-menu's scoreboard columns (%d)" % switches.size())
@@ -79,17 +79,17 @@ func _test_the_menu_is_a_view_of_the_settings() -> void:
 
 	menu.open(&"controls")
 	await get_tree().process_frame
-	var keys := _live(menu.screen, "DotMenuKeyButton")
+	var keys := _live(menu.screen, "GSMenuKeyButton")
 	_check(keys.size() == AirdriftBindings.ROWS.size() + 2, "the Controls page has a key per action (plus the wheel's two) (%d)" % keys.size())
 
 	# Flashlight onto R: R was Restart, so Restart gets F rather than nothing.
 	var _r := p.bindings.rebind(p.bindings.row_for_action(&"airdrift_flashlight"), "R", p.settings)
-	_check(DotInputBinding.describe_action(&"airdrift_flashlight") == "R"
-		and DotInputBinding.describe_action(&"airdrift_restart") == "F",
+	_check(GSInputBinding.describe_action(&"airdrift_flashlight") == "R"
+		and GSInputBinding.describe_action(&"airdrift_restart") == "F",
 		"binding a key that is taken swaps the two, so nothing is left unbound")
 	p.bindings.reset_all(p.settings)
-	_check(DotInputBinding.describe_action(&"airdrift_flashlight") == "F"
-		and DotInputBinding.describe_action(&"airdrift_restart") == "R",
+	_check(GSInputBinding.describe_action(&"airdrift_flashlight") == "F"
+		and GSInputBinding.describe_action(&"airdrift_restart") == "R",
 		"and Reset puts every key back")
 
 	var changes: Array = []
@@ -136,7 +136,7 @@ func _test_help_lists_what_it_is_told() -> void:
 	# The family's rule since the first play test: H is help, nothing else is on H, the help
 	# says what the game is, and the Escape menu has Help & commands and Leave.
 	_check(p.bindings.key_for(&"airdrift_help") == "H" and p.bindings.defaults_on("H").size() == 1
-		and p.bindings.key_for(DotMenuBindings.MAPS_ACTION) == "M" and p.bindings.defaults_on("M").size() == 1,
+		and p.bindings.key_for(GSMenuBindings.MAPS_ACTION) == "M" and p.bindings.defaults_on("M").size() == 1,
 		"help is on H and the map menu on M, and nothing else in the table is on either",
 		str(p.bindings.defaults_on("H").map(func(r: Dictionary) -> String: return str(r["label"]))))
 	var h := InputEventKey.new()
@@ -163,8 +163,8 @@ func _test_a_theme_is_every_screen() -> void:
 	_section("A theme reaches the menus and the HUD, and switches while they are open")
 
 	var s := AirdriftPresentation.schema()
-	var themes := DotMenuThemes.stock()
-	_check(themes.size() == DotMenuThemes.STOCK.size() and themes.size() >= 7 and s.find(&"ui_theme") != null
+	var themes := GSMenuThemes.stock()
+	_check(themes.size() == GSMenuThemes.STOCK.size() and themes.size() >= 7 and s.find(&"ui_theme") != null
 		and StringName(str(s.find(&"ui_theme").default_value)) == &"midnight",
 		"every stock theme (seven or more), offered by a setting whose default is the palette the menus always had")
 	var row := AirdriftBindings.make().row_for_action(&"airdrift_theme_next")
@@ -179,7 +179,7 @@ func _test_a_theme_is_every_screen() -> void:
 	await get_tree().process_frame
 
 	var seen: Array = []
-	menu.theme_changed.connect(func(palette: DotMenuPalette) -> void: seen.append(palette))
+	menu.theme_changed.connect(func(palette: GSMenuPalette) -> void: seen.append(palette))
 	p.settings.set_value(&"ui_theme", &"ember")
 	await get_tree().process_frame
 	var resume := menu.screen.find_child("Resume", true, false) as Button
@@ -263,10 +263,10 @@ func _test_the_timer_is_the_players_layout() -> void:
 	})
 	var t := hud.timer_hud
 	_check(not t.show_stats and not t.show_track and t.show_time and t.clock_size == 40
-		and t.comparison == DotTimerHud.Comparison.WORLD_RECORD and not t.compact,
+		and t.comparison == GSTimerHud.Comparison.WORLD_RECORD and not t.compact,
 		"every timer line is the timer's own switch, so an off line closes up rather than leaving a gap")
 	hud.place()
-	_check(t.corner == DotTimerHud.Placement.TOP_LEFT, "and the block goes where the player put it")
+	_check(t.corner == GSTimerHud.Placement.TOP_LEFT, "and the block goes where the player put it")
 
 	_check(AirdriftHud.positions_from_text("not json").is_empty() and AirdriftHud.positions_from_text("").is_empty(),
 		"a positions setting that is not a layout is the default layout")
@@ -284,7 +284,7 @@ func _test_the_timer_is_the_players_layout() -> void:
 		"and the keys follow it, centred underneath", "%s under %s" % [keys, clock])
 	hud.reset_element(&"timer")
 	hud.place()
-	_check(not hud.positions.has(&"timer") and t.corner == DotTimerHud.Placement.TOP_LEFT,
+	_check(not hud.positions.has(&"timer") and t.corner == GSTimerHud.Placement.TOP_LEFT,
 		"putting it back is the layout's place again")
 
 	hud.set_spectators(PackedStringArray(["Ada", "Bea"]))
@@ -300,7 +300,7 @@ func _test_the_timer_is_the_players_layout() -> void:
 	hud.set_spectating(&"")
 	_check(hud.shown_id() == hud.player_id, "and back to your own when you stop")
 
-	var editor := DotMenuLayoutEditor.new()
+	var editor := GSMenuLayoutEditor.new()
 	editor.target = hud
 	editor.pieces = AirdriftClient.HUD_PIECES
 	add_child(editor)
@@ -324,7 +324,7 @@ func _test_the_timer_is_the_players_layout() -> void:
 	await get_tree().process_frame
 	menu.open(&"hud")
 	await get_tree().process_frame
-	var switches := _live(menu.screen, "DotMenuSwitch")
+	var switches := _live(menu.screen, "GSMenuSwitch")
 	_check(switches.size() == 8, "the HUD page has a switch per timer line and piece (%d)" % switches.size())
 	(_row(menu, "timer_show_stats") as Button).button_pressed = false
 	_check(not p.settings.get_bool(&"timer_show_stats", true), "and flipping one writes its setting")
@@ -397,7 +397,7 @@ func _test_the_weapon_in_hand_is_named() -> void:
 			and not hud.ammo.get_global_rect().intersects(hud.element_rect(&"timer")),
 		"drawn bottom right, clear of the clock", "%s / %s" % [hud.ammo.get_global_rect(), hud.element_rect(&"timer")])
 
-	var icons: DotWeaponIconStyle = AirdriftWeaponIcons.shared
+	var icons: GSWeaponIconStyle = AirdriftWeaponIcons.shared
 	var unmapped := PackedStringArray()
 	for weapon in AirdriftWeaponIcons.TAGS:
 		if not icons.icon_set().has_icon(weapon):

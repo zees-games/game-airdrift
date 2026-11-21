@@ -31,7 +31,7 @@ const PLAYER_CROUCH_EYE_HEIGHT := 46.0
 
 ## The genre's hard-coded cap on airborne wish speed, in units per second.
 ##
-## The number the whole of air-strafing rests on — see [method DotFpsMotor.accelerate].
+## The number the whole of air-strafing rests on — see [method GSFpsMotor.accelerate].
 ## Not adjustable in the games this comes from; exposed as a cvar here because a
 ## movement server wants it.
 const AIR_WISH_CAP := 30.0

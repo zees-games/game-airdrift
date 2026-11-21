@@ -52,7 +52,7 @@ const IDS: PackedStringArray = [
 
 ## The shell's solo session, or null when this game is not running inside one.
 static func session() -> Object:
-	return DotRegistry.get_service(SERVICE)
+	return GSRegistry.get_service(SERVICE)
 
 
 ## True for a course id a solo session may start on: the shell already checked it, but a map
@@ -63,19 +63,19 @@ static func valid_start_map(id: String) -> bool:
 
 ## The map ids of [param collection]'s `collection.json` body `{format, id, version, packs:
 ## ["<owner>/<map>"]}`: packs under [param owner] only, since a map is fetched under one owner.
-static func collection_maps(body: Variant, collection: String, owner: String) -> DotResult:
+static func collection_maps(body: Variant, collection: String, owner: String) -> GSResult:
 	if not (body is Dictionary) or not ((body as Dictionary).get("packs") is Array):
-		return DotResult.fail(DotError.CODE_PARSE, "%s: collection.json has no packs list." % collection)
+		return GSResult.fail(GSError.CODE_PARSE, "%s: collection.json has no packs list." % collection)
 	var doc := body as Dictionary
 	var format := int(doc.get("format", 0)) if (doc.get("format") is int or doc.get("format") is float) else 0
 	if format < 1 or format > COLLECTION_FORMAT:
-		return DotResult.fail(DotError.CODE_VERSION, "%s: collection.json format %s is not one this build reads." % [collection, str(doc.get("format"))])
+		return GSResult.fail(GSError.CODE_VERSION, "%s: collection.json format %s is not one this build reads." % [collection, str(doc.get("format"))])
 	if str(doc.get("id", collection)) != collection:
-		return DotResult.fail(DotError.CODE_INVALID, "%s: collection.json says it is %s." % [collection, str(doc.get("id"))])
+		return GSResult.fail(GSError.CODE_INVALID, "%s: collection.json says it is %s." % [collection, str(doc.get("id"))])
 	var re := RegEx.create_from_string("^[a-z0-9][a-z0-9_-]{0,63}$")
 	var out := PackedStringArray()
 	for pack: Variant in (doc["packs"] as Array):
 		var parts := str(pack).split("/")
 		if pack is String and parts.size() == 2 and parts[0] == owner and re.search(parts[1]) != null and not out.has(parts[1]):
 			out.append(parts[1])
-	return DotResult.success(out)
+	return GSResult.success(out)

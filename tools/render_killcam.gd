@@ -27,7 +27,7 @@ func _wait(sec: float) -> void:
 
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
-	var store := DotSettingsStoreMemory.new()
+	var store := GSSettingsStoreMemory.new()
 	var presentation: Object = client.get("presentation")
 	presentation.get("settings").set("local_store", store)
 	presentation.get("settings").call("load_now")
@@ -47,16 +47,16 @@ func _run() -> void:
 	var forward := Vector3(sin(deg_to_rad(me.controller.state.yaw)), 0.0, cos(deg_to_rad(me.controller.state.yaw)))
 	rival.teleport(start + forward * -4.0)
 	for i in range(60):
-		if combat.match_node.state == DotMatch.State.LIVE:
+		if combat.match_node.state == GSMatch.State.LIVE:
 			break
 		await _wait(0.25)
 	print("match state %d" % int(combat.match_node.state))
 	await _wait(4.0)
 
-	var mine: DotPlayerScore = combat.match_node.scoreboard.find(str(combat.entity_for(&"u92")))
+	var mine: GSPlayerScore = combat.match_node.scoreboard.find(str(combat.entity_for(&"u92")))
 	combat.match_node.rules.score_limit = (mine.score if mine != null else 0) + 1
 	var victim_entity: int = combat.entity_for(me.player_id)
-	var damage := DotDamage.make(combat.entity_for(&"u92"), victim_entity, 500.0, combat.manager.damage_type(&""))
+	var damage := GSDamage.make(combat.entity_for(&"u92"), victim_entity, 500.0, combat.manager.damage_type(&""))
 	damage.tick = game.current_tick()
 	damage.weapon_id = &"deagle"
 	combat._on_entity_killed(victim_entity, damage)

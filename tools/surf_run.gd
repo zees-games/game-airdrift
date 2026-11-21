@@ -13,7 +13,7 @@ const AirdriftUnits := preload("../game/airdrift_units.gd")
 ## no assertion's reach, because the ramp is solid, the spawn is fine and the map looks
 ## right in a screenshot.
 ##
-## So this runs [method DotFpsMotor.simulate] -- the same code the game and the server
+## So this runs [method GSFpsMotor.simulate] -- the same code the game and the server
 ## run, with the game's own tunables -- from a point on each ramp, with no input at
 ## all, and asks the only question that matters: did the player still have speed when
 ## the clock ran out, or did they come to rest on the ride?
@@ -55,8 +55,8 @@ func _ready() -> void:
 			tunables.max_slide_iterations = int(args[a + 1])
 		elif args[a] == "--planes":
 			tunables.max_slide_planes = int(args[a + 1])
-	var body := DotFpsPhysicsBody.for_node(self)
-	var motor := DotFpsMotor.new(tunables, body)
+	var body := GSFpsPhysicsBody.for_node(self)
+	var motor := GSFpsMotor.new(tunables, body)
 
 	var samples := _ramp_samples(map)
 	samples.resize(mini(runs, samples.size()))
@@ -71,7 +71,7 @@ func _ready() -> void:
 
 
 ## Prints the row for [param id] from [param tally].
-func _report(id: String, tunables: DotFpsTunables, motor: DotFpsMotor, tally: Dictionary) -> void:
+func _report(id: String, tunables: GSFpsTunables, motor: GSFpsMotor, tally: Dictionary) -> void:
 	var dead_stops: int = tally["dead_stops"]
 	var worst_stop: Dictionary = tally["worst_stop"]
 	var grounded_on_steep: int = tally["grounded_on_steep"]
@@ -103,9 +103,9 @@ func _report(id: String, tunables: DotFpsTunables, motor: DotFpsMotor, tally: Di
 
 
 ## Rides one sample down its ramp and adds what happened to [param tally].
-func _ride(motor: DotFpsMotor, sample: Array, limit: float, tally: Dictionary) -> void:
+func _ride(motor: GSFpsMotor, sample: Array, limit: float, tally: Dictionary) -> void:
 	var step := 1.0 / 128.0
-	var state := DotFpsState.new()
+	var state := GSFpsState.new()
 	var n: Vector3 = sample[1]
 	state.position = sample[0] + n * AirdriftUnits.to_metres(DROP_UNITS)
 	# Entering the way a player does: across the slope, not into it. The downhill
@@ -115,7 +115,7 @@ func _ride(motor: DotFpsMotor, sample: Array, limit: float, tally: Dictionary) -
 	if along.length_squared() < 1e-9:
 		return
 	state.velocity = along.normalized() * AirdriftUnits.to_metres(ENTRY_SPEED_UNITS)
-	var command := DotFpsCommand.new()
+	var command := GSFpsCommand.new()
 
 	var outcome := "carried"
 	var ticks := int(SECONDS / step)
@@ -134,7 +134,7 @@ func _ride(motor: DotFpsMotor, sample: Array, limit: float, tally: Dictionary) -
 		# [b]A dead stop is not a slow-down, and only one thing in the motor does
 		# it.[/b] `_slide` zeroes the velocity outright when `_remember_plane`
 		# returns PLANE_FULL -- the player has touched
-		# [member DotFpsTunables.max_slide_planes] distinct planes inside one tick
+		# [member GSFpsTunables.max_slide_planes] distinct planes inside one tick
 		# and the crease search gives up. That is the correct answer in a real
 		# five-plane corner and it is what an imported map hands out for free: a
 		# curved surf ramp is not one brush, it is a fan of convex hulls whose
@@ -172,7 +172,7 @@ func _ride(motor: DotFpsMotor, sample: Array, limit: float, tally: Dictionary) -
 
 ## Is the player resting on something steeper than a floor? That is a ramp, and coming
 ## to rest on one is the bug; coming to rest on a floor is arriving.
-func _on_a_ramp(state: DotFpsState) -> bool:
+func _on_a_ramp(state: GSFpsState) -> bool:
 	if not state.is_grounded():
 		return false
 	return state.ground_normal.angle_to(Vector3.UP) > deg_to_rad(30.0)

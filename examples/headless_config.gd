@@ -1,6 +1,6 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
-## AirdriftConfig through DotGameConfigBinder: fields, cvars, the deathmatch rules reading them, strict refusal, the diff.
+## AirdriftConfig through GSGameConfigBinder: fields, cvars, the deathmatch rules reading them, strict refusal, the diff.
 ## Run: godot --headless --path . res://examples/headless_config.tscn
 
 const AirdriftArsenal := preload("../game/airdrift_arsenal.gd")
@@ -21,7 +21,7 @@ var _completed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.FATAL)
+	GSLog.set_level(GSLog.Level.FATAL)
 	_run.call_deferred()
 
 
@@ -41,13 +41,13 @@ func _run() -> void:
 	var config := AirdriftConfig.new()
 	var binder := AirdriftConfig.make_binder(config)
 	binder.strict = true
-	_check(DotAddonConfig.game_names("game-airdrift") == PackedStringArray(["game-g2gfast", "game-airdrift"]), "the binder registers game-g2gfast as game-airdrift's former id", str(DotAddonConfig.game_names("game-airdrift")))  # legacy id
+	_check(GSAddonConfig.game_names("game-airdrift") == PackedStringArray(["game-g2gfast", "game-airdrift"]), "the binder registers game-g2gfast as game-airdrift's former id", str(GSAddonConfig.game_names("game-airdrift")))  # legacy id
 	_check(binder.load_layers().ok, "defaults load")
 	_check(binder.diff().is_empty(), "no diff at the code defaults")
 	_check(binder.schema().size() >= 55, "every exported field is in the schema")
-	var console := DotConsole.new()
+	var console := GSConsole.new()
 	add_child(console)
-	binder.bind_cvars(console.cvar, DotConVar.FLAG_ARCHIVE, console.has_name)
+	binder.bind_cvars(console.cvar, GSConVar.FLAG_ARCHIVE, console.has_name)
 	_check(console.get_int("airdrift_score_limit") == 40 and console.get_int("airdrift_max_players") == 64, "cvars start at the defaults")
 	console.set_cvar("airdrift_max_players", "300")
 	_check(config.max_players == 300, "max_players is not capped at the old 128")
@@ -82,16 +82,16 @@ func _run() -> void:
 	_check(binder.schema()[0]["description"].length() > 5, "doc comments reach the schema")
 	_check(binder.write_schema(ROOT + "_schema_check.json").ok, "write_schema works")
 	var fall := AirdriftGame.make_fall_rules()
-	var _made := fall.bind_cvars(console.cvar, DotConVar.FLAG_NOTIFY)
+	var _made := fall.bind_cvars(console.cvar, GSConVar.FLAG_NOTIFY)
 	_check(console.get_int("sv_falldamage") == 0 and not fall.enabled, "fall damage is off in this game by default")
 	_check(fall.damage_for(60.0) == 0.0, "a 60 m/s landing costs nothing while it is off")
 	console.set_cvar("sv_falldamage", "1")
 	_check(fall.enabled and fall.damage_for(60.0) > 0.0, "the cvar is the only way on (and it works)")
-	var manager := DotCombatManager.new()
-	var ff_rules := DotDamageRules.new()
+	var manager := GSCombatManager.new()
+	var ff_rules := GSDamageRules.new()
 	ff_rules.friendly_fire = config.friendly_fire
 	manager.rules = ff_rules
-	var _ff := manager.bind_cvars(console.cvar, DotConVar.FLAG_NOTIFY | DotConVar.FLAG_REPLICATED)
+	var _ff := manager.bind_cvars(console.cvar, GSConVar.FLAG_NOTIFY | GSConVar.FLAG_REPLICATED)
 	_check(console.get_int("mp_friendlyfire") == 1, "mp_friendlyfire starts at the game's rule (on)")
 	console.set_cvar("mp_friendlyfire", "0")
 	_check(not ff_rules.friendly_fire, "the cvar drives the damage rules")
@@ -108,19 +108,19 @@ func _run() -> void:
 
 
 ## The workbench lists every key of the binder's schema across its profile files.
-func _check_workbench(binder: DotGameConfigBinder) -> void:
+func _check_workbench(binder: GSGameConfigBinder) -> void:
 	_section("workbench")
-	var wb := DotGameWorkbench.new()
+	var wb := GSGameWorkbench.new()
 	wb.panel_mode = 1
 	wb.config = {"enabled": false}
-	for set: DotProfileSet in binder.profile_sets():
+	for set: GSProfileSet in binder.profile_sets():
 		wb.add_set(set, set.rel_path)
 	add_child(wb)
 	_check(wb.start().ok, "the workbench starts")
 	binder.attach(wb.api.runtime)
 	var listed := PackedStringArray()
 	for kind: String in wb.api.kinds():
-		var got: DotResult = wb.api.handle(DotGameWorkbench.LOCAL_ACTOR, {"op": "get", "kind": kind, "id": binder.profile_id})
+		var got: GSResult = wb.api.handle(GSGameWorkbench.LOCAL_ACTOR, {"op": "get", "kind": kind, "id": binder.profile_id})
 		if got.ok:
 			listed.append_array(PackedStringArray((got.value as Dictionary).get("values", {}).keys()))
 	var missing := PackedStringArray()
@@ -139,9 +139,9 @@ func _probe() -> void:
 	binder.strict = true
 	binder.roots = PackedStringArray([ProjectSettings.globalize_path(ROOT)])
 	var loaded := binder.load_layers()
-	var console := DotConsole.new()
+	var console := GSConsole.new()
 	add_child(console)
-	binder.bind_cvars(console.cvar, DotConVar.FLAG_ARCHIVE, console.has_name)
+	binder.bind_cvars(console.cvar, GSConVar.FLAG_ARCHIVE, console.has_name)
 	print("PROBE ok=%s grav=%s grav_src=%s score=%s score_src=%s cvar=%s delay=%s delay_src=%s" % [
 		loaded.ok, config.gravity, binder.source_of("gravity"), config.score_limit, binder.source_of("score_limit"),
 		console.find_cvar("airdrift_score_limit").get_string(), config.respawn_delay, binder.source_of("respawn_delay")])
@@ -189,7 +189,7 @@ func _layers() -> void:
 
 
 ## The shipped cfg files hold every key, in step with AirdriftConfig.
-func _templates(binder: DotGameConfigBinder) -> void:
+func _templates(binder: GSGameConfigBinder) -> void:
 	var files := binder.template_files()
 	_check(files.size() == 4, "four shipped cfg files: %d" % files.size())
 	var stale := PackedStringArray()

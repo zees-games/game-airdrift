@@ -1,4 +1,4 @@
-extends DotGameCheckSuite
+extends GSGameCheckSuite
 
 ## The shared state of [code]headless_client.gd[/code] (the client, the section counters and
 ## the preloads) and its solo-session sections: Leave, the course list and the map collection.
@@ -37,7 +37,7 @@ func _test_solo_in_the_shell() -> void:
 
 	var solo := FakeSolo.new()
 	add_child(solo)
-	DotRegistry.register(AirdriftSoloMaps.SERVICE, solo)
+	GSRegistry.register(AirdriftSoloMaps.SERVICE, solo)
 	_check(_client.menu_leave_label() == "Back to menu", "in a solo session Leave reads Back to menu",
 		_client.menu_leave_label())
 	_client._leave()
@@ -89,7 +89,7 @@ func _test_solo_in_the_shell() -> void:
 
 	_check_stock_course_list()
 
-	DotRegistry.unregister(AirdriftSoloMaps.SERVICE)
+	GSRegistry.unregister(AirdriftSoloMaps.SERVICE)
 	solo.queue_free()
 	_client.game.offered_maps = PackedStringArray()
 	_client.game.config.map_content_owner = ""
@@ -125,19 +125,19 @@ class FakeCloud extends Node:
 	func resolved_http_base_urls() -> PackedStringArray:
 		return PackedStringArray(["https://origin.test/content/"])
 
-	func ensure(_id: StringName, _version: String = "") -> DotResult:
-		return DotResult.fail(DotError.CODE_HTTP, "not in this suite")
+	func ensure(_id: StringName, _version: String = "") -> GSResult:
+		return GSResult.fail(GSError.CODE_HTTP, "not in this suite")
 
 
 ## The fake origin's answers by URL; anything else is a 404.
 var _origin: Dictionary = {}
 
 
-func _fake_get_json(url: String) -> DotResult:
+func _fake_get_json(url: String) -> GSResult:
 	await get_tree().process_frame
 	if _origin.has(url):
-		return DotResult.success(_origin[url])
-	var err := DotResult.fail(DotError.CODE_HTTP, "404 for %s" % url)
+		return GSResult.success(_origin[url])
+	var err := GSResult.fail(GSError.CODE_HTTP, "404 for %s" % url)
 	return err
 
 
@@ -156,13 +156,13 @@ func _test_the_collection_fills_m() -> void:
 		"%s/gamemann/zz_new_course/latest.json" % base: {"version": "1.2.10"},
 		"%s/gamemann/zz_stock_course/latest.json" % base: {"version": "1.2.6"},
 	}
-	var old_cloud: Object = DotRegistry.get_service(game.map_content_service)
+	var old_cloud: Object = GSRegistry.get_service(game.map_content_service)
 	var cloud := FakeCloud.new()
 	add_child(cloud)
-	DotRegistry.register(game.map_content_service, cloud)
+	GSRegistry.register(game.map_content_service, cloud)
 	game.json_fetch_fn = _fake_get_json
 
-	var res: DotResult = await game.offer_collection("gamemann/airdrift-maps",
+	var res: GSResult = await game.offer_collection("gamemann/airdrift-maps",
 		PackedStringArray(["zz_stock_course", "zz_new_course", held_id]))
 	_check(res.ok and game.offered_maps == PackedStringArray(["zz_new_course", "zz_stock_course"]),
 		"M offers each published course it lacks, stock ones too, once, and hides a pack the origin 404s",
@@ -175,7 +175,7 @@ func _test_the_collection_fills_m() -> void:
 			tagged.append(str(row["id"]))
 	_check(tagged == PackedStringArray(["zz_new_course", "zz_stock_course"]), "the menu says it downloads when chosen", str(tagged))
 
-	var picked: DotResult = await game.ensure_map_content(&"zz_new_course")
+	var picked: GSResult = await game.ensure_map_content(&"zz_new_course")
 	_check(not picked.ok and not game.offered_maps.has("zz_new_course"),
 		"a course the origin then refuses leaves M", str(game.offered_maps))
 
@@ -192,9 +192,9 @@ func _test_the_collection_fills_m() -> void:
 	game.json_fetch_fn = Callable()
 	game.offered_maps = PackedStringArray()
 	game._offered_versions.clear()
-	DotRegistry.unregister(game.map_content_service)
+	GSRegistry.unregister(game.map_content_service)
 	if old_cloud != null:
-		DotRegistry.register(game.map_content_service, old_cloud)
+		GSRegistry.register(game.map_content_service, old_cloud)
 	cloud.queue_free()
 	_done()
 

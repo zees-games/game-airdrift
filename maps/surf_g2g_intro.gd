@@ -301,21 +301,21 @@ func _build_fall_line() -> void:
 		Vector3(1024.0, 32.0, 1536.0), AirdriftGeometry.COLOUR_END)
 
 
-func timer_zones() -> DotTimerZoneSet:
+func timer_zones() -> GSTimerZoneSet:
 	return build_zones()
 
 
-static func build_zones() -> DotTimerZoneSet:
-	var zones := DotTimerZoneSet.new()
+static func build_zones() -> GSTimerZoneSet:
+	var zones := GSTimerZoneSet.new()
 	zones.map_id = &"surf_g2g_intro"
 	zones.meta["tier"] = 3
 	zones.meta["author"] = "g2gfast"
 
-	var main := DotTimerTrack.MAIN
+	var main := GSTimerTrack.MAIN
 
-	zones.add(zone_box(DotTimerZone.Kind.START, main,
+	zones.add(zone_box(GSTimerZone.Kind.START, main,
 		Vector3(-384.0, START_Y, START_Z), Vector3(384.0, START_Y + 256.0, START_Z + 512.0)))
-	zones.add(zone_box(DotTimerZone.Kind.END, main,
+	zones.add(zone_box(GSTimerZone.Kind.END, main,
 		Vector3(-384.0, END_Y, END_Z - 640.0), Vector3(384.0, END_Y + 512.0, END_Z - 128.0)))
 
 	# Each stage line carries where `!s<n>` puts a player: above the ramp mouth at
@@ -337,23 +337,23 @@ static func build_zones() -> DotTimerZoneSet:
 			0.0
 		))
 
-	zones.add(zone_box(DotTimerZone.Kind.RESPAWN, main,
+	zones.add(zone_box(GSTimerZone.Kind.RESPAWN, main,
 		Vector3(-16384.0, END_Y - 4096.0, END_Z - 16384.0),
 		Vector3(16384.0, END_Y - 1536.0, START_Z + 16384.0)))
 	zones.add(zone_spawn(main, Vector3(0.0, START_Y + 8.0, START_Z + 320.0), 0.0))
 
-	var bonus := DotTimerTrack.of_bonus(1)
-	zones.add(zone_box(DotTimerZone.Kind.START, bonus,
+	var bonus := GSTimerTrack.of_bonus(1)
+	zones.add(zone_box(GSTimerZone.Kind.START, bonus,
 		Vector3(1344.0, START_Y, START_Z + 64.0), Vector3(1728.0, START_Y + 256.0, START_Z + 448.0)))
-	zones.add(zone_box(DotTimerZone.Kind.END, bonus,
+	zones.add(zone_box(GSTimerZone.Kind.END, bonus,
 		Vector3(BONUS_X - BONUS_FINISH_SIZE * 0.5, START_Y - 1300.0, BONUS_FINISH_NEAR_Z - BONUS_FINISH_LENGTH),
 		Vector3(BONUS_X + BONUS_FINISH_SIZE * 0.5, START_Y - 900.0, BONUS_FINISH_NEAR_Z)))
 	zones.add(zone_spawn(bonus, Vector3(1536.0, START_Y + 8.0, START_Z + 300.0), 0.0))
 
-	var transfer := DotTimerTrack.of_bonus(2)
-	zones.add(zone_box(DotTimerZone.Kind.START, transfer,
+	var transfer := GSTimerTrack.of_bonus(2)
+	zones.add(zone_box(GSTimerZone.Kind.START, transfer,
 		Vector3(-1728.0, START_Y, START_Z + 64.0), Vector3(-1344.0, START_Y + 256.0, START_Z + 448.0)))
-	zones.add(zone_box(DotTimerZone.Kind.END, transfer,
+	zones.add(zone_box(GSTimerZone.Kind.END, transfer,
 		Vector3(-1884.0, START_Y - 1700.0, START_Z - 3620.0),
 		Vector3(-1116.0, START_Y - 1180.0, START_Z - 2980.0)))
 	zones.add(zone_spawn(transfer, Vector3(-1536.0, START_Y + 8.0, START_Z + 300.0), 0.0))
@@ -362,22 +362,22 @@ static func build_zones() -> DotTimerZoneSet:
 	# track has had one since the map was written and both bonuses had none, so a
 	# player who missed a bonus ramp did not get put back -- they fell, and kept
 	# falling, for as long as they were prepared to watch. It is the main track's own
-	# bug from before `DotTimer.effect_requested` was connected, still live on two
+	# bug from before `GSTimer.effect_requested` was connected, still live on two
 	# tracks, and it stayed invisible because nothing had ever driven a bonus.
 	# Bonus 3 — the fall line. Every bound below is read off `fall_point`, which is the
 	# crease itself, so changing the pitch moves the geometry, the splits, the finish
 	# and this zone set together. The map that this route was added to has four numbers
 	# for its own finish pad written out by hand and they are the reason `[track-zone-1]`
 	# exists.
-	var fall := DotTimerTrack.of_bonus(3)
+	var fall := GSTimerTrack.of_bonus(3)
 	var mouth := fall_point(0.0)
 	var foot := fall_point(1.0)
 
-	zones.add(zone_box(DotTimerZone.Kind.START, fall,
+	zones.add(zone_box(GSTimerZone.Kind.START, fall,
 		Vector3(FALL_X - 192.0, FALL_TOP_Y, START_Z + 64.0),
 		Vector3(FALL_X + 192.0, FALL_TOP_Y + 256.0, START_Z + 448.0)))
 	zones.add(zone_spawn(fall, Vector3(FALL_X, FALL_TOP_Y + 8.0, START_Z + 300.0), 0.0))
-	zones.add(zone_box(DotTimerZone.Kind.END, fall,
+	zones.add(zone_box(GSTimerZone.Kind.END, fall,
 		Vector3(FALL_X - 512.0, foot.y, foot.z - 1536.0),
 		Vector3(FALL_X + 512.0, foot.y + 512.0, foot.z)))
 
@@ -399,7 +399,7 @@ static func build_zones() -> DotTimerZoneSet:
 		))
 
 	for track in [bonus, transfer, fall]:
-		zones.add(zone_box(DotTimerZone.Kind.RESPAWN, track,
+		zones.add(zone_box(GSTimerZone.Kind.RESPAWN, track,
 			Vector3(-16384.0, END_Y - 4096.0, END_Z - 16384.0),
 			Vector3(16384.0, END_Y - 1536.0, START_Z + 16384.0)))
 

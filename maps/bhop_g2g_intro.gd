@@ -182,7 +182,7 @@ func _build() -> void:
 	# [b]A CHAIN, and the map's own sentence says why.[/b] From the ninth gap on (198
 	# units) nothing crosses without speed a standing jump does not have, so the whole
 	# line is sized for hops carried at course speed — see AirdriftReach.
-	add_course("main", DotTimerTrack.MAIN, AirdriftReach.Kind.CHAIN, main)
+	add_course("main", GSTimerTrack.MAIN, AirdriftReach.Kind.CHAIN, main)
 
 	# The bonus: off to the right of the start pad, three big platforms and a pad.
 	var warm_up: Array = []
@@ -201,7 +201,7 @@ func _build() -> void:
 
 	# A warm-up is a RUN course: every gap in it is a jump from the lip at run speed,
 	# which is what "a warm-up" has to mean for a player who cannot chain yet.
-	add_course("warm-up", DotTimerTrack.of_bonus(1), AirdriftReach.Kind.RUN, warm_up)
+	add_course("warm-up", GSTimerTrack.of_bonus(1), AirdriftReach.Kind.RUN, warm_up)
 
 	# Bonus 2, `the needle`. Its own start pad west of the main one, then ten blocks at a
 	# constant 96-unit gap whose width closes from 192 to 48, and a finish wide enough
@@ -227,7 +227,7 @@ func _build() -> void:
 
 	# RUN, and it is the whole design of the route: "no hop on it is ever about carrying
 	# speed", which is what makes it the one a scripted bot finishes.
-	add_course("the needle", DotTimerTrack.of_bonus(2), AirdriftReach.Kind.RUN, needle)
+	add_course("the needle", GSTimerTrack.of_bonus(2), AirdriftReach.Kind.RUN, needle)
 
 	_build_hairpin()
 	_build_stutter()
@@ -260,7 +260,7 @@ func _build_hairpin() -> void:
 	))
 
 	# RUN, for the reason in [constant HAIRPIN_LEGS]: every corner spends the speed.
-	add_course("the hairpin", DotTimerTrack.of_bonus(3), AirdriftReach.Kind.RUN, bodies)
+	add_course("the hairpin", GSTimerTrack.of_bonus(3), AirdriftReach.Kind.RUN, bodies)
 
 
 ## Bonus 4, `the stutter`. See [constant STUTTER_BLOCKS].
@@ -289,7 +289,7 @@ func _build_stutter() -> void:
 
 	# RUN: every gap is a jump from the lip, and the stones are sized so that is also
 	# the jump that lands on them. See [constant STUTTER_BLOCKS].
-	add_course("the stutter", DotTimerTrack.of_bonus(4), AirdriftReach.Kind.RUN, bodies)
+	add_course("the stutter", GSTimerTrack.of_bonus(4), AirdriftReach.Kind.RUN, bodies)
 
 
 ## Every block of the stutter in order, in the hairpin's shape (`centre`, `extent`,
@@ -437,22 +437,22 @@ static func block_z(index: int) -> float:
 	return z
 
 
-func timer_zones() -> DotTimerZoneSet:
+func timer_zones() -> GSTimerZoneSet:
 	return build_zones()
 
 
-static func build_zones() -> DotTimerZoneSet:
-	var zones := DotTimerZoneSet.new()
+static func build_zones() -> GSTimerZoneSet:
+	var zones := GSTimerZoneSet.new()
 	zones.map_id = &"bhop_g2g_intro"
 	zones.meta["tier"] = 2
 	zones.meta["author"] = "g2gfast"
 
-	var main := DotTimerTrack.MAIN
+	var main := GSTimerTrack.MAIN
 	var finish_z := end_z()
 
-	zones.add(zone_box(DotTimerZone.Kind.START, main,
+	zones.add(zone_box(GSTimerZone.Kind.START, main,
 		Vector3(-96.0, FLOOR_Y, START_Z), Vector3(96.0, FLOOR_Y + 128.0, START_Z + 512.0)))
-	zones.add(zone_box(DotTimerZone.Kind.END, main,
+	zones.add(zone_box(GSTimerZone.Kind.END, main,
 		Vector3(-96.0, FLOOR_Y, finish_z - 384.0), Vector3(96.0, FLOOR_Y + 128.0, finish_z - 64.0)))
 
 	# Stages on blocks 5, 10 and 14, spanning the block so a fast player cannot pass
@@ -481,7 +481,7 @@ static func build_zones() -> DotTimerZoneSet:
 			0.0
 		))
 
-	zones.add(zone_box(DotTimerZone.Kind.RESPAWN, main,
+	zones.add(zone_box(GSTimerZone.Kind.RESPAWN, main,
 		Vector3(-4096.0, FLOOR_Y - 1024.0, finish_z - 4096.0),
 		Vector3(4096.0, FLOOR_Y - 192.0, START_Z + 4096.0)))
 
@@ -496,17 +496,17 @@ static func build_zones() -> DotTimerZoneSet:
 
 
 ## Bonus 1.
-static func _zones_bonus(zones: DotTimerZoneSet, finish_z: float) -> void:
+static func _zones_bonus(zones: GSTimerZoneSet, finish_z: float) -> void:
 	# The bonus.
-	var bonus := DotTimerTrack.of_bonus(1)
-	zones.add(zone_box(DotTimerZone.Kind.START, bonus,
+	var bonus := GSTimerTrack.of_bonus(1)
+	zones.add(zone_box(GSTimerZone.Kind.START, bonus,
 		Vector3(544.0, FLOOR_Y, START_Z + 160.0), Vector3(736.0, FLOOR_Y + 128.0, START_Z + 352.0)))
-	zones.add(zone_box(DotTimerZone.Kind.END, bonus,
+	zones.add(zone_box(GSTimerZone.Kind.END, bonus,
 		Vector3(1472.0, FLOOR_Y, START_Z + 128.0), Vector3(1728.0, FLOOR_Y + 128.0, START_Z + 384.0)))
 	zones.add(zone_spawn(bonus, Vector3(640.0, FLOOR_Y + 8.0, START_Z + 256.0), -90.0))
 
 	# [b]The bonus tracks had no respawn zone, and the main track has had one since the
-	# map was written.[/b] A `DotTimerZone` carries a track, and a RESPAWN zone on track
+	# map was written.[/b] A `GSTimerZone` carries a track, and a RESPAWN zone on track
 	# 0 catches nobody who is running track 1 — so a player who missed a bonus platform
 	# here fell out of the world for ever with nothing in the log to say so, while the
 	# same mistake on the main route put them back on the pad. Found by driving a bot
@@ -516,35 +516,35 @@ static func _zones_bonus(zones: DotTimerZoneSet, finish_z: float) -> void:
 	# added, and a hand-written check for them was added to `headless_run` then — but it
 	# was asked on the surf map only, so this map was never the one being checked. The
 	# same one-map fix this tree has now missed in six places. That check is gone:
-	# dot-timer's `DotTimerZoneSet.route_problems()` asks every route on every map for a
+	# dot-timer's `GSTimerZoneSet.route_problems()` asks every route on every map for a
 	# start, a finish, a spawn and a pit (`[track-zone-1]`), and `tools/export_zones.gd`
 	# refuses to write a map that fails it.
 	var fall_low := Vector3(-4096.0, FLOOR_Y - 1024.0, finish_z - 4096.0)
 	var fall_high := Vector3(4096.0, FLOOR_Y - 192.0, START_Z + 4096.0)
 
-	zones.add(zone_box(DotTimerZone.Kind.RESPAWN, bonus, fall_low, fall_high))
+	zones.add(zone_box(GSTimerZone.Kind.RESPAWN, bonus, fall_low, fall_high))
 
 
 ## Bonus 2, the needle.
-static func _zones_needle(zones: DotTimerZoneSet, finish_z: float) -> void:
+static func _zones_needle(zones: GSTimerZoneSet, finish_z: float) -> void:
 	var fall_low := Vector3(-4096.0, FLOOR_Y - 1024.0, finish_z - 4096.0)
 	var fall_high := Vector3(4096.0, FLOOR_Y - 192.0, START_Z + 4096.0)
 
 	# Bonus 2, `the needle`, with two stage splits on it.
 	#
-	# [b]Stages on a bonus track, which nothing here had.[/b] `DotTimerZoneSet` keys a
+	# [b]Stages on a bonus track, which nothing here had.[/b] `GSTimerZoneSet` keys a
 	# stage by its track, and every stage zone in this repository was on the main one —
 	# so `stage_count(track)`, the per-stage splits and `!s<n>` on anything but the main
 	# route were code no map had ever asked to run. The two lines are on blocks 3 and 7:
 	# the first is where the blocks stop being generous and the second is where they get
 	# genuinely thin, which is where a player wants to know their time.
-	var needle := DotTimerTrack.of_bonus(2)
+	var needle := GSTimerTrack.of_bonus(2)
 	var needle_finish := needle_end_z()
 
-	zones.add(zone_box(DotTimerZone.Kind.START, needle,
+	zones.add(zone_box(GSTimerZone.Kind.START, needle,
 		Vector3(NEEDLE_X - 128.0, FLOOR_Y, START_Z),
 		Vector3(NEEDLE_X + 128.0, FLOOR_Y + 128.0, START_Z + 512.0)))
-	zones.add(zone_box(DotTimerZone.Kind.END, needle,
+	zones.add(zone_box(GSTimerZone.Kind.END, needle,
 		Vector3(NEEDLE_X - 128.0, FLOOR_Y, needle_finish - 384.0),
 		Vector3(NEEDLE_X + 128.0, FLOOR_Y + 128.0, needle_finish - 64.0)))
 
@@ -565,24 +565,24 @@ static func _zones_needle(zones: DotTimerZoneSet, finish_z: float) -> void:
 			0.0
 		))
 
-	zones.add(zone_box(DotTimerZone.Kind.RESPAWN, needle, fall_low, fall_high))
+	zones.add(zone_box(GSTimerZone.Kind.RESPAWN, needle, fall_low, fall_high))
 	zones.add(zone_spawn(needle, Vector3(NEEDLE_X, FLOOR_Y + 8.0, START_Z + 400.0), 0.0))
 
 
 ## Bonus 3, the hairpin.
-static func _zones_hairpin(zones: DotTimerZoneSet) -> void:
+static func _zones_hairpin(zones: GSTimerZoneSet) -> void:
 	# Bonus 3, the hairpin: a start, a split on each corner, a finish, a spawn and a pit,
 	# every one read off `hairpin_blocks()`.
-	var hairpin := DotTimerTrack.of_bonus(3)
+	var hairpin := GSTimerTrack.of_bonus(3)
 	var pad := hairpin_pad()
 	var pad_half := HAIRPIN_PAD_WIDTH * 0.5
 
-	zones.add(zone_box(DotTimerZone.Kind.START, hairpin,
+	zones.add(zone_box(GSTimerZone.Kind.START, hairpin,
 		Vector3(HAIRPIN_X - pad_half, FLOOR_Y, START_Z),
 		Vector3(HAIRPIN_X + pad_half, FLOOR_Y + 128.0, START_Z + HAIRPIN_PAD_LENGTH)))
 	# The pad's last 320 units, so a player has landed rather than grazed its lip when
 	# the clock stops. The route comes home along +Z, so "last" is the high-Z end.
-	zones.add(zone_box(DotTimerZone.Kind.END, hairpin,
+	zones.add(zone_box(GSTimerZone.Kind.END, hairpin,
 		Vector3(pad.x - pad_half, pad.y, pad.z - HAIRPIN_FINISH_LENGTH * 0.5 + 64.0),
 		Vector3(pad.x + pad_half, pad.y + 128.0, pad.z + HAIRPIN_FINISH_LENGTH * 0.5)))
 
@@ -603,24 +603,24 @@ static func _zones_hairpin(zones: DotTimerZoneSet) -> void:
 
 	zones.add(zone_spawn(hairpin,
 		Vector3(HAIRPIN_X, FLOOR_Y + 8.0, START_Z + HAIRPIN_PAD_LENGTH - 112.0), 0.0))
-	zones.add(zone_box(DotTimerZone.Kind.RESPAWN, hairpin,
+	zones.add(zone_box(GSTimerZone.Kind.RESPAWN, hairpin,
 		Vector3(-4096.0, FLOOR_Y - 1024.0, -4096.0),
 		Vector3(8192.0, pad.y - BLOCK_THICKNESS - 256.0, 4096.0)))
 
 
 ## Bonus 4, the stutter.
-static func _zones_stutter(zones: DotTimerZoneSet) -> void:
+static func _zones_stutter(zones: GSTimerZoneSet) -> void:
 	# Bonus 4, the stutter: a start, a split on each runway that ends a section, a
 	# finish, a spawn and a pit, every one read off `stutter_blocks()`.
-	var stutter := DotTimerTrack.of_bonus(4)
+	var stutter := GSTimerTrack.of_bonus(4)
 	var s_pad := stutter_pad()
 	var s_half := STUTTER_PAD_WIDTH * 0.5
 
-	zones.add(zone_box(DotTimerZone.Kind.START, stutter,
+	zones.add(zone_box(GSTimerZone.Kind.START, stutter,
 		Vector3(STUTTER_X - s_half, FLOOR_Y, START_Z),
 		Vector3(STUTTER_X + s_half, FLOOR_Y + 128.0, START_Z + STUTTER_PAD_LENGTH)))
 	# The pad's last 320 units: landed, not grazed.
-	zones.add(zone_box(DotTimerZone.Kind.END, stutter,
+	zones.add(zone_box(GSTimerZone.Kind.END, stutter,
 		Vector3(s_pad.x - s_half, s_pad.y, s_pad.z - STUTTER_FINISH_LENGTH * 0.5),
 		Vector3(s_pad.x + s_half, s_pad.y + 128.0, s_pad.z + STUTTER_FINISH_LENGTH * 0.5 - 64.0)))
 
@@ -639,6 +639,6 @@ static func _zones_stutter(zones: DotTimerZoneSet) -> void:
 
 	zones.add(zone_spawn(stutter,
 		Vector3(STUTTER_X, FLOOR_Y + 8.0, START_Z + STUTTER_PAD_LENGTH - 112.0), 0.0))
-	zones.add(zone_box(DotTimerZone.Kind.RESPAWN, stutter,
+	zones.add(zone_box(GSTimerZone.Kind.RESPAWN, stutter,
 		Vector3(-4096.0, FLOOR_Y - 1024.0, s_pad.z - 4096.0),
 		Vector3(4096.0, s_pad.y - BLOCK_THICKNESS - 256.0, START_Z + 4096.0)))

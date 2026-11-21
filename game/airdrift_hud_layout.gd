@@ -4,7 +4,7 @@ extends "airdrift_hud_state.gd"
 const KEYS_GAP := 12.0
 
 ## What the player chose to see: the four HUD switches in the menu's General page.
-## The speed and splits are `DotTimerHud`'s own fields, so off removes the line rather than
+## The speed and splits are `GSTimerHud`'s own fields, so off removes the line rather than
 ## leaving a gap; the key display and the crosshair are this HUD's.
 func apply_visibility(show_speed: bool, show_splits: bool, show_keys: bool, show_crosshair: bool) -> void:
 	if timer_hud != null:
@@ -19,7 +19,7 @@ func apply_visibility(show_speed: bool, show_splits: bool, show_keys: bool, show
 
 ## The timer's layout, from the `timer_*`, `show_status`, `show_spectators` and `hud_positions`
 ## settings. [param layout] is those keys without their prefix; a missing key keeps its value.
-## Every line is a `DotTimerHud` field, so a line switched off is gone, not blank.
+## Every line is a `GSTimerHud` field, so a line switched off is gone, not blank.
 func apply_layout(layout: Dictionary) -> void:
 	if timer_hud != null:
 		timer_hud.show_time = bool(layout.get("show_time", timer_hud.show_time))
@@ -32,11 +32,11 @@ func apply_layout(layout: Dictionary) -> void:
 		if layout.has("comparison"):
 			match StringName(str(layout["comparison"])):
 				&"wr":
-					timer_hud.comparison = DotTimerHud.Comparison.WORLD_RECORD
+					timer_hud.comparison = GSTimerHud.Comparison.WORLD_RECORD
 				&"none":
-					timer_hud.comparison = DotTimerHud.Comparison.NONE
+					timer_hud.comparison = GSTimerHud.Comparison.NONE
 				_:
-					timer_hud.comparison = DotTimerHud.Comparison.PERSONAL_BEST
+					timer_hud.comparison = GSTimerHud.Comparison.PERSONAL_BEST
 		timer_hud.queue_redraw()
 
 	var want_panel := bool(layout.get("show_stage_splits", _show_stage_splits))
@@ -92,8 +92,8 @@ static func positions_to_text(value: Dictionary) -> String:
 ## The theme's HUD colours onto everything this HUD draws. [param palette] is the menu's
 ## (dot-menu's `theme_changed`); null is the default theme, which is what a HUD built before
 ## any menu — a suite, a server's preview — draws in.
-func apply_theme(palette: DotMenuPalette = null) -> void:
-	var p := palette if palette != null else DotMenuPalette.new()
+func apply_theme(palette: GSMenuPalette = null) -> void:
+	var p := palette if palette != null else GSMenuPalette.new()
 	if timer_hud != null:
 		timer_hud.panel_colour = p.hud_plate
 		timer_hud.neutral_colour = p.hud_text
@@ -122,7 +122,7 @@ func apply_theme(palette: DotMenuPalette = null) -> void:
 
 	if _spectators != null:
 		_spectators.add_theme_stylebox_override(&"panel",
-			DotMenuKit.new(p).box(p.hud_plate, 6, Color(0, 0, 0, 0), 0, Vector4(12, 8, 12, 8)))
+			GSMenuKit.new(p).box(p.hud_plate, 6, Color(0, 0, 0, 0), 0, Vector4(12, 8, 12, 8)))
 		_spectators_label.add_theme_color_override(&"font_color", p.hud_text)
 		_spectators_label.add_theme_font_size_override(&"font_size", 15)
 
@@ -181,10 +181,10 @@ func place() -> void:
 	# The clock: a corner placement, or a dragged centre.
 	if positions.has(&"timer"):
 		var block := _timer_block()
-		timer_hud.corner = DotTimerHud.Placement.TOP_LEFT
+		timer_hud.corner = GSTimerHud.Placement.TOP_LEFT
 		timer_hud.margin = _clamp_into(_centre_of(&"timer", area) - block * 0.5, block, area)
 	else:
-		timer_hud.corner = PLACEMENTS.get(_timer_placement, DotTimerHud.Placement.BOTTOM_CENTRE)
+		timer_hud.corner = PLACEMENTS.get(_timer_placement, GSTimerHud.Placement.BOTTOM_CENTRE)
 		timer_hud.margin = TIMER_MARGIN_TOP if String(_timer_placement).begins_with("top") else TIMER_MARGIN
 
 	# The keys: under the clock wherever the clock is, and over it only when the clock sits
@@ -290,17 +290,17 @@ func _list_size() -> Vector2:
 
 
 func _timer_origin(block: Vector2) -> Vector2:
-	# DotTimerHud's own rule, asked rather than copied would need a method it does not
+	# GSTimerHud's own rule, asked rather than copied would need a method it does not
 	# have; this is `_plate_origin`, which is three lines and is checked against the
 	# drawn block by the presentation suite.
 	var out := timer_hud.margin
 	match timer_hud.corner:
-		DotTimerHud.Placement.TOP_CENTRE, DotTimerHud.Placement.BOTTOM_CENTRE:
+		GSTimerHud.Placement.TOP_CENTRE, GSTimerHud.Placement.BOTTOM_CENTRE:
 			out.x = (size.x - block.x) * 0.5
-		DotTimerHud.Placement.TOP_RIGHT, DotTimerHud.Placement.BOTTOM_RIGHT:
+		GSTimerHud.Placement.TOP_RIGHT, GSTimerHud.Placement.BOTTOM_RIGHT:
 			out.x = size.x - block.x - timer_hud.margin.x
 	match timer_hud.corner:
-		DotTimerHud.Placement.BOTTOM_LEFT, DotTimerHud.Placement.BOTTOM_CENTRE, DotTimerHud.Placement.BOTTOM_RIGHT:
+		GSTimerHud.Placement.BOTTOM_LEFT, GSTimerHud.Placement.BOTTOM_CENTRE, GSTimerHud.Placement.BOTTOM_RIGHT:
 			out.y = size.y - block.y - timer_hud.margin.y
 	return out
 
@@ -369,7 +369,7 @@ func apply_stage_reference(reference: Dictionary) -> void:
 ## Gives the splits panel its reference, at map, track, filed-run and setting moments, never per
 ## frame. Hidden while spectating: the reference is the owner's bests, and a watched run against
 ## them is a comparison with nobody.
-func _feed_panel(timer: DotTimer) -> void:
+func _feed_panel(timer: GSTimer) -> void:
 	if splits_panel == null:
 		return
 	var stages := game.timers.stage_count(timer.track) if timer != null else 0
@@ -396,7 +396,7 @@ func _feed_panel(timer: DotTimer) -> void:
 
 ## The comparison data for the owner's current track and style: the game's own store when
 ## authoritative, else only what the server sent for this map, track and style.
-func _reference_for(timer: DotTimer) -> Dictionary:
+func _reference_for(timer: GSTimer) -> Dictionary:
 	# Only an authoritative game's store is the player's truth. A client has a store too (a
 	# file store under user://), holding solo or other servers' bests, and letting it win
 	# over the server's STAGE_REF showed stale numbers online.

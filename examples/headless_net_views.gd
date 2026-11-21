@@ -8,7 +8,7 @@ extends "headless_net_maps.gd"
 ## panel and an edit that applies and replicates; a guest, a non-admin, a revoked admin and the cvar off are refused.
 func _test_the_remote_workbench() -> void:
 	_section("[a flagged admin edits the server's profiles, and nobody else can]")
-	if not DotGameWorkbench.available():
+	if not GSGameWorkbench.available():
 		print("  dot-workbench is not linked: skipped")
 		_passed += 16
 		_done()
@@ -16,20 +16,20 @@ func _test_the_remote_workbench() -> void:
 	var rig := _remote_workbench_rig()
 	var flags: Dictionary = rig["flags"]
 	var state: Dictionary = rig["state"]
-	var snet: DotNetManager = rig["snet"]
-	var cnet: DotNetManager = rig["cnet"]
+	var snet: GSNetManager = rig["snet"]
+	var cnet: GSNetManager = rig["cnet"]
 	var sconfig: AirdriftConfig = rig["sconfig"]
-	var sbinder: DotGameConfigBinder = rig["sbinder"]
-	var swb: DotGameWorkbench = rig["swb"]
-	var slink: DotNetProfileLink = rig["slink"]
-	var clink: DotNetProfileLink = rig["clink"]
-	var cremote: DotGameWorkbenchRemoteClient = rig["cremote"]
-	var crt: DotProfileRuntime = rig["crt"]
-	var remote: DotGameWorkbenchRemote = rig["remote"]
-	var cwb: DotGameWorkbench = rig["cwb"]
+	var sbinder: GSGameConfigBinder = rig["sbinder"]
+	var swb: GSGameWorkbench = rig["swb"]
+	var slink: GSNetProfileLink = rig["slink"]
+	var clink: GSNetProfileLink = rig["clink"]
+	var cremote: GSGameWorkbenchRemoteClient = rig["cremote"]
+	var crt: GSProfileRuntime = rig["crt"]
+	var remote: GSGameWorkbenchRemote = rig["remote"]
+	var cwb: GSGameWorkbench = rig["cwb"]
 	var kind: String = rig["kind"]
 	var edit: Dictionary = rig["edit"]
-	var srt: DotProfileRuntime = rig["srt"]
+	var srt: GSProfileRuntime = rig["srt"]
 	state["uid"] = "boss"
 	cremote.ask()
 	_check(not cremote.allowed and cwb.overlay == null, "with the cvar off even an admin is told no and gets no panel")
@@ -40,7 +40,7 @@ func _test_the_remote_workbench() -> void:
 	cremote.ask()
 	_check(cremote.allowed and cremote.flags.has("cvar"), "with the cvar on an admin is told the flags it holds")
 	_check(cwb.overlay != null, "and gets the panel")
-	var applied: DotResult = cwb.api.handle(DotGameWorkbenchRemoteClient.ACTOR, edit)
+	var applied: GSResult = cwb.api.handle(GSGameWorkbenchRemoteClient.ACTOR, edit)
 	_check(applied.ok and not sconfig.flashlight, "an edit from the panel reaches the server's live config", "" if applied.ok else applied.error.message)
 	_check(crt.revision(kind, sbinder.profile_id) > 0 and crt.revision(kind, sbinder.profile_id) == srt.revision(kind, sbinder.profile_id), "and its row replicated to the client")
 
@@ -93,26 +93,26 @@ func _remote_workbench_rig() -> Dictionary:
 	var cbinder := AirdriftConfig.make_binder(cconfig)
 	var _l1 := sbinder.load_layers()
 	var _l2 := cbinder.load_layers()
-	var set: DotProfileSet = null
-	for candidate: DotProfileSet in sbinder.profile_sets():
+	var set: GSProfileSet = null
+	for candidate: GSProfileSet in sbinder.profile_sets():
 		if candidate.rel_path.ends_with("movement"):
 			set = candidate
-	var cset: DotProfileSet = null
-	for candidate: DotProfileSet in cbinder.profile_sets():
+	var cset: GSProfileSet = null
+	for candidate: GSProfileSet in cbinder.profile_sets():
 		if candidate.rel_path.ends_with("movement"):
 			cset = candidate
-	var swb := DotGameWorkbench.new()
+	var swb := GSGameWorkbench.new()
 	swb.dedicated = true
 	swb.config = {"enabled": false}
 	swb.add_set(set, "Game settings")
 	add_child(swb)
 	var started := swb.start()
 	sbinder.attach(swb.api.runtime)
-	var made := DotGameWorkbenchRemote.serve(snet)
-	var slink := DotNetProfileLink.attach(snet, swb.api.runtime as DotProfileRuntime)
-	var cremote := DotGameWorkbenchRemoteClient.attach(cnet)
-	var crt := DotProfileRuntime.new()
-	var clink := DotNetProfileLink.attach(cnet, crt)
+	var made := GSGameWorkbenchRemote.serve(snet)
+	var slink := GSNetProfileLink.attach(snet, swb.api.runtime as GSProfileRuntime)
+	var cremote := GSGameWorkbenchRemoteClient.attach(cnet)
+	var crt := GSProfileRuntime.new()
+	var clink := GSNetProfileLink.attach(cnet, crt)
 	snet.messages.seal()
 	cnet.messages.seal()
 	var remote := swb.serve_remote(snet)
@@ -128,8 +128,8 @@ func _remote_workbench_rig() -> Dictionary:
 	remote.connected_fn = func(_p: int) -> bool: return true
 	remote.permit_uid_fn = func(uid: String, flag: String) -> bool: return (flags.get(uid, []) as Array).has(flag)
 	remote.now_fn = func() -> int: return state["now"]
-	remote.limiter = DotRateLimiter.new(1000.0, 1000.0)
-	var cwb := DotGameWorkbench.new()
+	remote.limiter = GSRateLimiter.new(1000.0, 1000.0)
+	var cwb := GSGameWorkbench.new()
 	cwb.panel_mode = 2
 	cwb.config = {"enabled": false}
 	cwb.remote_client = cremote
@@ -140,14 +140,14 @@ func _remote_workbench_rig() -> Dictionary:
 	_check(cstarted.ok and cwb.overlay == null, "the client's workbench starts with no panel")
 	var kind: String = set.rel_path
 	var edit := {"op": "set", "kind": kind, "id": sbinder.profile_id, "key": "flashlight", "value": false}
-	var srt := swb.api.runtime as DotProfileRuntime
+	var srt := swb.api.runtime as GSProfileRuntime
 	return {"flags": flags, "state": state, "snet": snet, "cnet": cnet, "sconfig": sconfig, "sbinder": sbinder, "swb": swb, "slink": slink, "clink": clink, "cremote": cremote, "crt": crt, "remote": remote, "cwb": cwb, "kind": kind, "edit": edit, "srt": srt}
 
 
 func _test_ghost() -> void:
 	_section("the record's ghost")
 	var map_id: StringName = _server_game.maps.current.id
-	var replay := DotTimerReplay.new()
+	var replay := GSTimerReplay.new()
 	replay.map_id = map_id
 	replay.tick_rate = _server_game.tick_rate
 	replay.time = 2.0
@@ -155,7 +155,7 @@ func _test_ghost() -> void:
 	for i in range(_server_game.tick_rate * 2):
 		var t := float(i) / float(_server_game.tick_rate * 2 - 1)
 		replay.append(Vector3(0.0, 1.0, 7.0 - 20.0 * t), 0.0, 0.0)
-	var record := DotTimerRecord.new()
+	var record := GSTimerRecord.new()
 	record.map_id = map_id
 	record.style_id = &"normal"
 	record.player_name = "Ghost"
@@ -243,8 +243,8 @@ func _test_blind_and_beacon() -> void:
 	_section("an admin's blind and beacon: who is told")
 
 	var handlers := AirdriftModTools.handlers(_server_game)
-	var blind: Callable = handlers[DotModTools.ACTION_BLIND]
-	var beacon: Callable = handlers[DotModTools.ACTION_BEACON]
+	var blind: Callable = handlers[GSModTools.ACTION_BLIND]
+	var beacon: Callable = handlers[GSModTools.ACTION_BEACON]
 
 	var bea := _server_bridge.add_player(3, 8, "Bea")
 	_check(bea.ok, "a second player joins, owned by another client", str(bea.error) if not bea.ok else "")
@@ -258,18 +258,18 @@ func _test_blind_and_beacon() -> void:
 		return
 
 	_check(
-		ada_here.find_var(&"net_blind").audience == DotNetVar.Audience.OWNER
-		and ada_here.find_var(&"net_beacon").audience == DotNetVar.Audience.EVERYONE,
+		ada_here.find_var(&"net_blind").audience == GSNetVar.Audience.OWNER
+		and ada_here.find_var(&"net_beacon").audience == GSNetVar.Audience.EVERYONE,
 		"the blind is declared owner-only and the beacon for everybody"
 	)
 
-	var results: Array[DotResult] = [
+	var results: Array[GSResult] = [
 		blind.call(&"7", {"on": true, "actor": "1"}),
 		blind.call(&"8", {"on": true, "actor": "1"}),
 		beacon.call(&"7", {"on": true, "actor": "1"}),
 		beacon.call(&"8", {"on": true, "actor": "1"}),
 	]
-	_check(results.all(func(r: DotResult) -> bool: return r.ok), "the server blinds and beacons both")
+	_check(results.all(func(r: GSResult) -> bool: return r.ok), "the server blinds and beacons both")
 
 	# Long enough for several snapshots through one-in-five loss.
 	_drop_every = 5
@@ -293,7 +293,7 @@ func _test_blind_and_beacon() -> void:
 
 	_check_weapon_in_hand()
 
-	var _off: Array[DotResult] = [
+	var _off: Array[GSResult] = [
 		blind.call(&"7", {"on": false, "actor": "1"}),
 		blind.call(&"8", {"on": false, "actor": "1"}),
 		beacon.call(&"7", {"on": false, "actor": "1"}),
@@ -439,9 +439,9 @@ func _check_restart_tracks() -> void:
 	_client_bridge.ask_restart(AirdriftEvents.RESTART_MAIN)
 	_exchange()
 	_steps(2)
-	_check(_server_game.timers.timer_for(ada).track == DotTimerTrack.MAIN,
+	_check(_server_game.timers.timer_for(ada).track == GSTimerTrack.MAIN,
 		"a double tap from a bonus goes back to the main track")
-	_check(_client_game.timers.timer_for(ada).track == DotTimerTrack.MAIN,
+	_check(_client_game.timers.timer_for(ada).track == GSTimerTrack.MAIN,
 		"and the client is told, as a track change from the menu is")
 
 	# A client from before the body existed sends RESTART with nothing in it, which must
@@ -449,7 +449,7 @@ func _check_restart_tracks() -> void:
 	var request := AirdriftRequest.new(AirdriftEvents.Ask.RESTART, PackedByteArray())
 	request.sender_peer_id = CLIENT_PEER
 	_server_bridge._on_request(request)
-	_check(_server_game.timers.timer_for(ada).track == DotTimerTrack.MAIN,
+	_check(_server_game.timers.timer_for(ada).track == GSTimerTrack.MAIN,
 		"an empty RESTART body still restarts, on the track the player is on")
 
 
@@ -490,12 +490,12 @@ func _test_hunters_reach_the_client() -> void:
 	_check(mirror != null and mirror.global_position.distance_to(hunter.position()) < 1.0,
 		"and draws it where the server has it",
 		"%.2f apart" % mirror.global_position.distance_to(hunter.position()) if mirror != null else "no mirror")
-	_check(mirror != null and absf(angle_difference(mirror.rotation.y, DotNpcNetSync.yaw_of(hunter))) < 0.3,
+	_check(mirror != null and absf(angle_difference(mirror.rotation.y, GSNpcNetSync.yaw_of(hunter))) < 0.3,
 		"facing the way the server's faces")
 
 	# Drawn as a person on the zombie gait: it moved 6 m, so it is mid-shuffle or sprint, and
 	# stood still it idles. The real clips come from dot-player-char's people_ual.res.
-	var person: DotHumanoidFigure = mirror.get("person") if mirror != null else null
+	var person: GSHumanoidFigure = mirror.get("person") if mirror != null else null
 	_check(person != null and person.zombie_gait, "the client draws it as a person on the zombie gait")
 	if person != null:
 		var seen := {}
@@ -510,9 +510,9 @@ func _test_hunters_reach_the_client() -> void:
 		_steps(40)
 		for i in 120:
 			person._process(1.0 / 60.0)
-		_check(person.clip == DotHumanoidClips.ZOMBIE_IDLE, "and stood still it plays the zombie idle", String(person.clip))
+		_check(person.clip == GSHumanoidClips.ZOMBIE_IDLE, "and stood still it plays the zombie idle", String(person.clip))
 
-	hunters.spawner.remove(hunter.instance_id, DotNpcSpawner.REASON_ADMIN)
+	hunters.spawner.remove(hunter.instance_id, GSNpcSpawner.REASON_ADMIN)
 	_exchange()
 	_steps(2)
 	_check(_client_bridge.hunter_count() == 0, "and lets it go when the server does")
@@ -547,13 +547,13 @@ func _test_leave() -> void:
 	_done()
 
 
-## A voice frame, client to server to another client, over this game's own link. [b]Deliberately not through [DotNetManager].[/b] dot-net decodes a bit-packed message against a sealed schema; a voice frame is an opaque blob from a codec, and putting it through would mean a message type per codec — or a schema that changes
+## A voice frame, client to server to another client, over this game's own link. [b]Deliberately not through [GSNetManager].[/b] dot-net decodes a bit-packed message against a sealed schema; a voice frame is an opaque blob from a codec, and putting it through would mean a message type per codec — or a schema that changes
 ## when the codec does, and the schema hash is what both ends check to agree they are speaking the same game. So it rides its own channel and its own two calls. The map vote's cue and countdown, server to client, and a client's RTV request back. Before this there was no message for either direction's vote traffic worth the name:
 ## the ballot went out as chat, a cue went nowhere, and an RTV request off the wire went to the map session's tally rather than to the ballot.
 func _test_vote_wire() -> void:
 	_section("the map vote over the link")
 
-	var round_trip := AirdriftEvents.read_vote(DotNetReader.new(AirdriftEvents.write_vote("vote_count", 7, true)))
+	var round_trip := AirdriftEvents.read_vote(GSNetReader.new(AirdriftEvents.write_vote("vote_count", 7, true)))
 	_check(
 		bool(round_trip["ok"]) and String(round_trip["cue"]) == "vote_count"
 			and int(round_trip["seconds_left"]) == 7 and bool(round_trip["runoff"]),
@@ -661,7 +661,7 @@ func _test_clock_wire() -> void:
 	_check_no_clock(vote, dt, arrived)
 
 	_client_bridge.clock_received.disconnect(on_clock)
-	_client_bridge.clock_view = DotVoteClockView.new()
+	_client_bridge.clock_view = GSVoteClockView.new()
 	remove_child(vote)
 	vote.free()
 	_done()
@@ -672,7 +672,7 @@ func _check_no_clock(vote: AirdriftVote, dt: float, arrived: Array[Dictionary]) 
 	# `trigger: rtv_only` with no limit: the server has no clock, and neither does the HUD
 	# — not even the client's local map session's, which is the number that was wrong.
 	vote.director.rules.duration_sec = 0.0
-	vote.director.rules.trigger = DotVoteRules.Trigger.RTV_ONLY
+	vote.director.rules.trigger = GSVoteRules.Trigger.RTV_ONLY
 	vote.director.begin(_server_game.maps.current.id)
 	vote.advance(dt)
 	_flush()
@@ -693,7 +693,7 @@ func _check_no_clock(vote: AirdriftVote, dt: float, arrived: Array[Dictionary]) 
 
 ## A CLOCK event survives its own encoding.
 func _check_clock_round_trip() -> void:
-	var round_trip := AirdriftEvents.read_clock(DotNetReader.new(
+	var round_trip := AirdriftEvents.read_clock(GSNetReader.new(
 		AirdriftEvents.write_clock({"has_clock": true, "seconds_left": 1234, "running": true})
 	))
 	_check(

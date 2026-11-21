@@ -1,4 +1,4 @@
-extends DotQueryProvider
+extends GSQueryProvider
 
 const AirdriftGame := preload("airdrift_game.gd")
 const AirdriftNetBridge := preload("net/airdrift_net_bridge.gd")
@@ -18,7 +18,7 @@ func _provider_name() -> String:
 	return "g2gfast"  # legacy id: the provider name
 
 
-func _contribute(snapshot: DotQuerySnapshot) -> void:
+func _contribute(snapshot: GSQuerySnapshot) -> void:
 	if game == null:
 		return
 
@@ -57,7 +57,7 @@ func _contribute(snapshot: DotQuerySnapshot) -> void:
 	if map != null:
 		out["map"] = String(map.id)
 		out["tracks"] = Array(game.timers.zones.playable_tracks()) if game.timers.zones != null else []
-		var wr := game.replays.best(map.id, DotTimerTrack.MAIN, &"normal")
+		var wr := game.replays.best(map.id, GSTimerTrack.MAIN, &"normal")
 		if wr != null:
 			out["wr"] = {"time": wr.time, "by": wr.player_name}
 
