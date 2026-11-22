@@ -12,8 +12,8 @@ extends "headless_presentation_chat.gd"
 ##
 ## Exits non-zero on any failure.
 
-const CHECKS := 232
-const SECTIONS := 26
+const CHECKS := 235
+const SECTIONS := 27
 
 
 func _ready() -> void:
@@ -54,6 +54,7 @@ func _run() -> void:
 	await _test_the_timer_is_the_players_layout()
 	await _test_a_confirmed_hit_is_drawn()
 	await _test_the_weapon_in_hand_is_named()
+	_test_texture_quality_reaches_the_map_art()
 
 	print("%d checks skipped" % _skipped)
 	_report_sections(_entered, _completed, SECTIONS, CHECKS - _skipped)
@@ -604,4 +605,23 @@ func _test_the_flashlight_reaches_unshaded_maps() -> void:
 	light.free()
 	_check(shader.get_default_texture_parameter(AirdriftFlashlight.SHADER_PARAMETER) == null,
 		"and a client that goes away takes its texture back off the shader")
+	_done()
+
+
+func _test_texture_quality_reaches_the_map_art() -> void:
+	_section("The video setting's texture quality caps the map art")
+	GSMapTextureTier.current_quality = -1
+	var p := _make()
+	p.settings.set_value(&"texture_quality", 3)
+	_check(GSMapTextureTier.current_quality == 3, "the presentation's settings drive the tier", str(GSMapTextureTier.current_quality))
+	p.settings.set_value(&"texture_quality", 0)
+	var s := GSMapSurfaces.new()
+	var applied: Dictionary = GSMapTextureTier.apply_current(s)
+	_check(GSMapTextureTier.current_quality == 0 and s.max_texture_size == 512 and not applied.is_empty(), "low texture quality caps the map's surfaces at 512", str(s.max_texture_size))
+	p.settings.set_value(&"texture_quality", 3)
+	var u := GSMapSurfaces.new()
+	GSMapTextureTier.apply_current(u)
+	_check(u.max_texture_size == 0, "ultra leaves them unlimited", str(u.max_texture_size))
+	GSMapTextureTier.current_quality = -1
+	p.queue_free()
 	_done()

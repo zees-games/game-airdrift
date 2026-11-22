@@ -122,6 +122,9 @@ func _build_settings() -> GSResult:
 	if not res.ok:
 		return res.wrap("Airdrift's settings")
 
+	# The video setting's texture quality caps the map art the next map loads (512 / 1024 / 2048 / unlimited).
+	GSMapTextureTier.follow(settings)
+
 	# gs-menu's applier pushes the stock settings and the keys; what is this game's —
 	# the body, the chat box and its two keys — is the handler below, on the same signal.
 	applier = GSMenuApplier.new()
