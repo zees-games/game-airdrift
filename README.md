@@ -301,6 +301,7 @@ airdrift_zone_save           // write them to disk
 
 | Asset | Author / source | License | Where |
 | --- | --- | --- | --- |
+| Godot Engine logo (boot splash) | Andrea Calabró, [godotengine.org](https://godotengine.org/press/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | `branding/splash.png` |
 | Prototype textures | Kenney, Prototype Textures | CC0 | `textures/prototype/` (its README says which file came from where) |
 | Players | Quaternius, [Zombie Apocalypse Kit](https://quaternius.com/packs/zombieapocalypsekit.html), coloured from Kenney's character kit skins | CC0 1.0 | gs-player-char |
 | Avatar parts and hats | Kenney | CC0 | gs-player-char |
