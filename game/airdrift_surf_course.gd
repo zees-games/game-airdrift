@@ -39,6 +39,15 @@ var pit_zones: Array[DotTimerZone] = []
 ## Score per metre a line is under the guide's height at its own place along it; 0 keeps the
 ## guide to plan only. For a stage whose way on is a climb the energy term cannot ask for.
 var height_weight := 0.0
+## Metres per cell of the XZ grid [method event_at] looks zones up in (a stage has hundreds of pit boxes; a point is near a few).
+const ZONE_CELL := 32.0
+## A zone spanning more cells than this on an axis is tested for every point instead of bucketed.
+const ZONE_MAX_SPAN := 64
+const WIDE := Vector2i(2147483647, 0)
+var _goal_grid := {}
+var _pit_grid := {}
+var _grid_goals := -1
+var _grid_pits := -1
 
 
 ## The course for stage [param number] of the main track of the map [param game] has loaded (0 is
@@ -191,6 +200,7 @@ func settle_zones() -> void:
 			goal_centre = goal.centre()
 		lowest = minf(lowest, minf(goal.from.y, goal.to.y))
 	floor_y = lowest - below_margin
+	_index_zones()
 	var _settled := settle()
 
 
@@ -205,13 +215,61 @@ func event_at(state: Variant) -> int:
 		return EVENT_PIT
 	if goal_fn.is_valid() and bool(goal_fn.call(state)):
 		return EVENT_GOAL
-	for goal: DotTimerZone in goal_zones:
-		if goal.contains(position):
-			return EVENT_GOAL
-	for pit: DotTimerZone in pit_zones:
-		if pit.contains(position):
-			return EVENT_PIT
+	if _grid_goals != goal_zones.size() or _grid_pits != pit_zones.size():
+		_index_zones()
+	var cell := Vector2i(floori(position.x / ZONE_CELL), floori(position.z / ZONE_CELL))
+	if _any_contains(_goal_grid, cell, position):
+		return EVENT_GOAL
+	if _any_contains(_pit_grid, cell, position):
+		return EVENT_PIT
 	return EVENT_NONE
+
+
+func _any_contains(grid: Dictionary, cell: Vector2i, position: Vector3) -> bool:
+	for zone: DotTimerZone in grid.get(cell, []):
+		if zone.contains(position):
+			return true
+	for zone: DotTimerZone in grid.get(WIDE, []):
+		if zone.contains(position):
+			return true
+	return false
+
+
+## Buckets the goal and pit zones by the XZ cells their bounds touch, so [method event_at] tests only the zones near a point.
+## Point-kind zones contain nothing and are left out; a sphere is bucketed by its bounding square.
+func _index_zones() -> void:
+	_goal_grid = _grid_of(goal_zones)
+	_pit_grid = _grid_of(pit_zones)
+	_grid_goals = goal_zones.size()
+	_grid_pits = pit_zones.size()
+
+
+static func _grid_of(zones: Array[DotTimerZone]) -> Dictionary:
+	var grid := {}
+	for zone: DotTimerZone in zones:
+		if zone.is_point_kind():
+			continue
+		var lo: Vector3 = zone.from
+		var hi: Vector3 = zone.to
+		if zone.shape == DotTimerZone.Shape.SPHERE:
+			lo = zone.from - Vector3.ONE * zone.number
+			hi = zone.from + Vector3.ONE * zone.number
+		var x0 := floori(lo.x / ZONE_CELL)
+		var x1 := floori(hi.x / ZONE_CELL)
+		var z0 := floori(lo.z / ZONE_CELL)
+		var z1 := floori(hi.z / ZONE_CELL)
+		if x1 - x0 > ZONE_MAX_SPAN or z1 - z0 > ZONE_MAX_SPAN:
+			if not grid.has(WIDE):
+				grid[WIDE] = []
+			(grid[WIDE] as Array).append(zone)
+			continue
+		for cx in range(x0, x1 + 1):
+			for cz in range(z0, z1 + 1):
+				var key := Vector2i(cx, cz)
+				if not grid.has(key):
+					grid[key] = []
+				(grid[key] as Array).append(zone)
+	return grid
 
 
 ## The simulator the planner and the pilot ride this course on: the player's own motor copied,
