@@ -35,7 +35,7 @@ func _run() -> void:
 	var was_verify := RouteBot.route_verify
 	if not GSSim.has(&"route"):
 		print("SKIP: gs-sim's route module is not loaded: the native half is skipped")
-		if (OS.get_environment("GS_SIM_REQUIRE_NATIVE") if OS.has_environment("GS_SIM_REQUIRE_NATIVE") else OS.get_environment("GS_SIM_REQUIRE_NATIVE")) == "1":
+		if OS.get_environment("GS_SIM_REQUIRE_NATIVE") == "1":
 			_check(false, "the library is loaded (GS_SIM_REQUIRE_NATIVE=1)")
 		_report_sections(0, 0, 0)
 		return
