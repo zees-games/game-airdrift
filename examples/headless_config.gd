@@ -41,7 +41,7 @@ func _run() -> void:
 	var config := AirdriftConfig.new()
 	var binder := AirdriftConfig.make_binder(config)
 	binder.strict = true
-	_check(GSAddonConfig.game_names("game-airdrift") == PackedStringArray(["game-airdrift", "game-airdrift"]), "the binder registers game-airdrift as game-airdrift's former id", str(GSAddonConfig.game_names("game-airdrift")))  # legacy id
+	_check(GSAddonConfig.game_names("game-airdrift") == PackedStringArray(["game-g2gfast", "game-airdrift"]), "the binder registers game-g2gfast as game-airdrift's former id", str(GSAddonConfig.game_names("game-airdrift")))  # legacy id
 	_check(binder.load_layers().ok, "defaults load")
 	_check(binder.diff().is_empty(), "no diff at the code defaults")
 	_check(binder.schema().size() >= 55, "every exported field is in the schema")

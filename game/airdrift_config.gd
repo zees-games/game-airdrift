@@ -396,7 +396,7 @@ const CFG_FILES := {
 ## The game's own id since the rename (Zee's Airdrift), and the ids it had before (oldest first).
 ## The cfg tree is `cfg/game/game-airdrift/`; a deployment tree under the former id still applies (registered below).
 const GAME_ID := "game-airdrift"
-const FORMER_IDS: PackedStringArray = ["game-airdrift"]  # legacy id: operator cfg/rotation keys written before the rename
+const FORMER_IDS: PackedStringArray = ["game-g2gfast"]  # legacy id: operator cfg/rotation keys written before the rename
 
 
 ## Declares the rename to gs-core (API 31), so whatever names the game by its new id (rotation

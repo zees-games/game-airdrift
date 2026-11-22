@@ -12,7 +12,7 @@
 # content_maps: []
 # Whose namespace a map is fetched from. `sv_map_content_owner`.
 # map_content_owner: ""
-# Draw an imported map from its gs-map world document (`worlds/<id>`, written by `bsp.py regen`) when one ex...
+# Draw an imported map from its gs-map world document (`worlds/<id>`, written by `bsp.py regen`) when one exi...
 # global_worlds: false
 # Seconds a map runs before the next is chosen. 0 disables it. [0.0..86400.0]
 # map_seconds: 2700.0
@@ -26,7 +26,7 @@
 # --- Records
 # Where records go. Empty keeps them in memory only.
 # records_directory: "user://airdrift/records"
-# A database for records instead of files: sqlite, or postgres / mysql through gs-sql's HTTP gateway. Empty ...
+# A database for records instead of files: sqlite, or postgres / mysql through gs-sql's HTTP gateway. Empty k...
 # records_database: ""
 # SQLite only: the database file.
 # records_database_path: "user://airdrift/records.db"
