@@ -563,6 +563,14 @@ func _test_map_owned() -> void:
 		"and a client follows it there, fetching the owned pack the announce names",
 		"%s" % outcome["reason"])
 	_server_game.config.map_content_owner = ""
+
+	# Map packs published before the dot_ to gs_ rename mount under res://dot_cloud/.
+	var legacy := GSMapDef.new()
+	legacy.id = &"legacy_root"
+	_server_game._mark_delivered(legacy, "res://dot_cloud/someone/legacy_root/1.0.0/")
+	_check(String(legacy.content_id) == "someone/legacy_root" and legacy.content_version == "1.0.0",
+		"and a pack mounted under the pre-rename root is still announced as delivered content",
+		"%s %s" % [legacy.content_id, legacy.content_version])
 	_done()
 
 

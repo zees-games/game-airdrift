@@ -203,11 +203,16 @@ func _get_json(url: String) -> GSResult:
 func _mark_delivered(map: GSMapDef, dir: String) -> void:
 	# Read off the path, not rebuilt from the owner cvar, so changing it mid-session
 	# does not re-announce the map under another owner.
-	var root := "res://gs_cloud/"
+	# A map pack published before the dot_ to gs_ rename still mounts under res://dot_cloud/
+	# (the root is baked into its manifest), so accept any `<x>_cloud` root.
 	var base := dir.rstrip("/")
-	if not base.begins_with(root):
+	if not base.begins_with("res://"):
 		return                            # a directory on disk, not a mount
-	var rest := base.substr(root.length())
+	var rest := base.substr("res://".length())
+	var slash := rest.find("/")
+	if slash <= 0 or not rest.substr(0, slash).ends_with("_cloud"):
+		return
+	rest = rest.substr(slash + 1)
 	var cut := rest.rfind("/")
 	if cut <= 0:
 		return
