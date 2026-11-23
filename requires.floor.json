@@ -1,7 +1,6 @@
 {
   "format": 1,
   "addons": {
-    "gs_camera": 1,
     "gs_map": 23,
     "gs_mobile": 1,
     "gs_player_controller": 27,
