@@ -144,8 +144,7 @@ func _build_vote() -> GSResult:
 	# An empty server hibernates (gs-server, 2026-10-07): the map clock waits instead of
 	# running out with nobody on, and restarts from the top on the first join.
 	vote.director.follow_hibernation(server)
-	if game.timers != null:
-		game.timers.rate_guard.follow_hibernation(server, game.timers)
+	_follow_timer_hibernation()
 
 	# The cues and the countdown, to every ready client. Chat carries what the ballot
 	# says; a sound and a number a HUD counts are what it cannot carry.
@@ -189,6 +188,12 @@ func _build_vote() -> GSResult:
 
 
 ## The commands that only exist once the optional halves loaded.
+## The timer's tick-rate guard waits out hibernation's 5 Hz instead of calling it a mismatch.
+func _follow_timer_hibernation() -> void:
+	if game.timers != null:
+		game.timers.rate_guard.follow_hibernation(server, game.timers)
+
+
 func _add_server_commands() -> void:
 	if vote != null:
 		# gs-vote's own: `rtv`, `nominate`, `vote`, `nextmap`, `timeleft` and the
