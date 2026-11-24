@@ -112,6 +112,16 @@ func _hairpin_piece(blocks: Array, current: int, at: Vector2) -> int:
 	return current
 
 
+## Spawn the bot with auto-bhop on and let the world settle: the map session yields a
+## frame after `changing`, so the open-loop bot needs a few physics frames before it starts.
+func _spawn_settled_bot() -> void:
+	game.config.auto_bhop = true
+	game.apply_movement()
+	game.spawn_player(&"bot")
+	for _settle in range(3):
+		await get_tree().physics_frame
+
+
 ## `the weave`, `bhop_g2g_stages` bonus 3: fourteen blocks, each off to the other side of
 ## the one before, run end to end by the hairpin's kind of bot.
 ##
@@ -136,10 +146,7 @@ func _test_weave_bonus() -> void:
 		str(zones.stage_count(weave)) if zones else "no zones")
 	_check(game.timers.set_player_track(&"bot", weave), "a player can switch to the weave")
 
-	game.config.auto_bhop = true
-	game.apply_movement()
-	game.spawn_player(&"bot")
-	await get_tree().physics_frame
+	await _spawn_settled_bot()
 
 	var blocks: Array = BhopStages.weave_blocks()
 	var pad := BhopStages.weave_pad()
