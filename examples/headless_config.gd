@@ -7,13 +7,14 @@ const AirdriftArsenal := preload("../game/airdrift_arsenal.gd")
 const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 const AirdriftMapMechanics := preload("../game/airdrift_map_mechanics.gd")
+const AirdriftUnits := preload("../game/airdrift_units.gd")
 const AirdriftZoneEditor := preload("../game/airdrift_zone_editor.gd")
 ## One directory per suite process (the probe child is handed its parent's): user:// is shared by
 ## every copy of this project on a box, and two suites at once wrote and deleted each other's cfg files.
 const ROOT_ARG := "--cfgroot="
 var ROOT := _root()
 const GAME := "game-airdrift"
-const CHECKS := 40
+const CHECKS := 41
 const SECTIONS := 4
 
 var _entered := 0
@@ -81,6 +82,8 @@ func _run() -> void:
 	_check(AirdriftZoneEditor.step_limited(2048.0, 16.0, 0.0, "zone height").value == 2064.0, "0 is unlimited: height past 2048")
 	_check(binder.schema()[0]["description"].length() > 5, "doc comments reach the schema")
 	_check(binder.write_schema(ROOT + "_schema_check.json").ok, "write_schema works")
+	var timer_config := AirdriftGame.make_timer_config(config, 64, true)
+	_check(is_equal_approx(timer_config.hull_extent, 0.6096) and is_equal_approx(timer_config.hull_extent, AirdriftUnits.to_metres(AirdriftUnits.PLAYER_WIDTH)), "the timer config carries the 32-unit hull (0.61 m) for the thin-zone warning", str(timer_config.hull_extent))
 	var fall := AirdriftGame.make_fall_rules()
 	var _made := fall.bind_cvars(console.cvar, GSConVar.FLAG_NOTIFY)
 	_check(console.get_int("sv_falldamage") == 0 and not fall.enabled, "fall damage is off in this game by default")

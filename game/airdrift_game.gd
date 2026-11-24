@@ -77,22 +77,30 @@ func _ready() -> void:
 		GSLog.result(CHANNEL, "loading the first map", started)
 
 
+## The timer's configuration for this game; static so a suite can read it without a world.
+static func make_timer_config(cfg: AirdriftConfig, p_tick_rate: int, p_authoritative: bool) -> GSTimerConfig:
+	var timer_config := GSTimerConfig.new()
+	timer_config.tick_rate = 0
+	timer_config.default_tick_rate = p_tick_rate
+	timer_config.authoritative = p_authoritative
+	timer_config.record_runs = true
+	timer_config.records_directory = cfg.records_directory
+	timer_config.record_replays = cfg.record_replays
+	timer_config.fastest_expected_speed = AirdriftUnits.to_metres(cfg.max_velocity)
+	timer_config.points_formula = cfg.points_formula
+	timer_config.points_weighting = cfg.points_weighting
+	timer_config.enforce_stages = cfg.enforce_stages
+	timer_config.resume_seconds = cfg.resume_seconds
+	# The thin-zone warning: respawn and teleport zones fire on hull overlap, so the hull counts toward their thickness.
+	timer_config.hull_extent = AirdriftUnits.to_metres(AirdriftUnits.PLAYER_WIDTH)
+	return timer_config
+
+
 func _build_timers() -> void:
 	timers = GSTimerManager.new()
 	timers.name = "Timers"
 
-	var timer_config := GSTimerConfig.new()
-	timer_config.tick_rate = 0
-	timer_config.default_tick_rate = tick_rate
-	timer_config.authoritative = authoritative
-	timer_config.record_runs = true
-	timer_config.records_directory = config.records_directory
-	timer_config.record_replays = config.record_replays
-	timer_config.fastest_expected_speed = AirdriftUnits.to_metres(config.max_velocity)
-	timer_config.points_formula = config.points_formula
-	timer_config.points_weighting = config.points_weighting
-	timer_config.enforce_stages = config.enforce_stages
-	timer_config.resume_seconds = config.resume_seconds
+	var timer_config := make_timer_config(config, tick_rate, authoritative)
 	timers.config = timer_config
 
 	# Assigned before the manager is in the tree, so its configuration keeps it rather

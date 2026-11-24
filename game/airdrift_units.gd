@@ -26,6 +26,9 @@ const UNITS_PER_METRE := 1.0 / METRES_PER_UNIT
 const PLAYER_HEIGHT := 72.0
 const PLAYER_CROUCH_HEIGHT := 54.0
 const PLAYER_HALF_WIDTH := 16.0
+
+## The hull's full width in units (32, 0.61 m): what gs-timer's thin-zone warning calls the hull extent.
+const PLAYER_WIDTH := PLAYER_HALF_WIDTH * 2.0
 const PLAYER_EYE_HEIGHT := 64.0
 const PLAYER_CROUCH_EYE_HEIGHT := 46.0
 
