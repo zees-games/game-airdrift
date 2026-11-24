@@ -38,6 +38,9 @@ func attach(p_game: AirdriftGame, p_net: GSNetManager, link_parent: Node) -> GSR
 	# would simulate the local player twice a tick.
 	game.external_tick = true
 
+	# Lag-compensated hulls (mp_solidplayers_unlag), one rule on both ends: see AirdriftHullView.
+	game.hull_view = AirdriftHullView.new(game, self, net.is_server)
+
 	if net.is_server:
 		_connect_server()
 

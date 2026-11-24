@@ -2,7 +2,7 @@ extends RefCounted
 
 ## Players solid to each other: the physics half of `mp_solidplayers`. [b]Both halves, or nothing changes.[/b] Each player gets a static hull on the layout's `player` layer that rides its node (feet at the origin), and each controller sweeps against that
 ## layer. [member GSPlayerBodyRules.pair_fn] (gs-team's block rules: `mp_teamblock`, `mp_enemyblock`, `!block`, `!noblock`) then decides pair by pair, by leaving the other's hull out of this player's sweep. The same call runs on both ends, so a client predicts against the
-## pairs the server decided. A hull is where its player's node is drawn, so a client meets a remote where it is interpolated, not where the server has it; that is the cost of the physics hull, and a pair that passes costs nothing.
+## pairs the server decided. A hull is where its player's node is drawn; with `mp_solidplayers_unlag` (1) each step is run inside `AirdriftHullView.around`, which moves every other hull to where the mover drew it (command's view lag and snapshot pair; server ring, client interpolator), so a bump is the same on both ends. A pair that passes costs nothing.
 
 const HULL_BODY := &"SolidHullBody"
 
@@ -18,6 +18,7 @@ static func apply(game: Object) -> void:
 	var layers := player_layers(stack)
 	var base: int = stack.player_collision_mask() if stack != null else 1
 	var bodies: Dictionary = {}
+	var hull_bodies: Dictionary = {}
 	for id: StringName in game.players:
 		var player: Node = game.players[id]
 		if player == null or not is_instance_valid(player) or id == GHOST_ID:
@@ -32,6 +33,7 @@ static func apply(game: Object) -> void:
 		ctl.set_collision_mask(mask)
 		ctl.set_pass_out_layers(layers if rules.solid else 0)
 		bodies[id] = {"body": hull, "controller": ctl}
+		hull_bodies[id] = hull
 	var any := false
 	for id: StringName in bodies:
 		var ctl: Object = (bodies[id] as Dictionary)["controller"]
@@ -45,6 +47,7 @@ static func apply(game: Object) -> void:
 				rids.append(((bodies[other] as Dictionary)["body"] as CollisionObject3D).get_rid())
 		ctl.set_extra_excludes(rids)
 	game.hulls_live = any
+	game.hull_bodies = hull_bodies
 
 
 static func player_layers(stack: Object) -> int:

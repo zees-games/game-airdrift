@@ -87,6 +87,12 @@ var block_rules: Object = null:
 ## Whether some pair of players currently stops at each other (set by `AirdriftPlayerBodies.apply`).
 var hulls_live: bool = false
 
+## `{player id: hull body}` for every player but the ghost ([AirdriftPlayerBodies.apply]): the bodies [member hull_view] moves.
+var hull_bodies: Dictionary = {}
+
+## Lag-compensated hulls (`mp_solidplayers_unlag`): `AirdriftHullView`, set by a netcode bridge on both ends; null in a game with no network, where nothing is lagged.
+var hull_view: RefCounted = null
+
 ## Whether nothing a player's body queries moves between ticks: no placed props (rigid bodies)
 ## and no player hulls. Lets the motor reuse a ground probe across ticks.
 func world_is_static() -> bool:

@@ -50,6 +50,12 @@ var last_move: GSFpsCommand = GSFpsCommand.new()
 ## dropped packet is a weapon that empties itself during a hiccup, and on a server with
 ## lag compensation it is a shot fired at a moment nobody chose.
 var last_attack: bool = false
+
+## The view the last command named ([AirdriftNetCommand.view_lag_q], `view_back`, `view_span`) and the tick it was for: what the hull rewind moves the other players' hulls by. Retained across a lost packet like the movement; -1 is no view.
+var last_view_q: int = -1
+var last_view_back: int = -1
+var last_view_span: int = 0
+var last_view_tick: int = -1
 var last_state_tick: int = -1
 
 
@@ -96,6 +102,10 @@ func _net_apply_input(input: GSNetInput, _tick: int) -> void:
 	if command != null:
 		last_move = command.move
 		last_attack = command.attack
+		last_view_q = command.view_lag_q
+		last_view_back = command.view_back
+		last_view_span = command.view_span
+		last_view_tick = command.tick
 
 		# The trigger reaches the combat layer here rather than in the bridge's tick,
 		# because this is the one place that runs on a REPLAY as well as on a fresh
@@ -120,7 +130,11 @@ func _net_simulate(tick: int, delta: float) -> void:
 	else:
 		player.controller.apply_command(last_move.duplicate_command())
 		player.predicted_tick = tick
-		player.controller.simulate_tick(tick, delta)
+		var hulls: Object = bridge.game.hull_view if bridge != null and bridge.game != null else null
+		if hulls != null:
+			hulls.around(player.player_id, tick, player.controller.simulate_tick.bind(tick, delta))
+		else:
+			player.controller.simulate_tick(tick, delta)
 		player.replay_teleport(tick)
 		if bridge != null:
 			bridge.timers_after_predicted_move(tick)

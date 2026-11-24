@@ -231,6 +231,20 @@ func ensure_game_ticked(tick: int) -> void:
 			behaviour.player.controller.apply_command(behaviour.last_move.duplicate_command())
 
 	game.tick_once(tick)
+	_record_feet(tick)
+
+
+## The server's per-tick ring of feet, for the hull rewind: what every player's position said at the end of [param tick], on the wire's grid. Kept while players are solid, so turning `mp_solidplayers_unlag` on finds history already there.
+func _record_feet(tick: int) -> void:
+	var hulls := game.hull_view
+	if hulls == null or not game.body_rules.solid:
+		return
+	hulls.capacity = ceili(net.config.max_rewind_sec * float(game.tick_rate)) + 4
+	var positions := {}
+	for id: StringName in game.players:
+		if id != AirdriftPlayerBodies.GHOST_ID:
+			positions[id] = (game.players[id] as AirdriftPlayer).controller.state.position
+	hulls.record(tick, positions)
 
 
 # --- The client tick -------------------------------------------------------
@@ -324,6 +338,9 @@ func client_tick(tick: int, command: GSFpsCommand) -> void:
 	packet.delta = net.clock.tick_duration()
 	packet.move = move
 	packet.attack = attack_wanted and not transit
+	# The view the hull rewind uses, from this tick's frame: the server and the replay both read it back off the packet.
+	if game.hull_view != null and game.body_rules.solid and game.body_rules.unlag:
+		game.hull_view.fill(packet, tick)
 
 	# [b]Neither recorded nor predicted while in transit.[/b] There is nothing to predict
 	# against, so the server's own state is shown as it arrives; and a command kept in
@@ -340,6 +357,10 @@ func client_tick(tick: int, command: GSFpsCommand) -> void:
 		if mine != null:
 			mine.last_move = packet.move
 			mine.last_attack = packet.attack
+			mine.last_view_q = packet.view_lag_q
+			mine.last_view_back = packet.view_back
+			mine.last_view_span = packet.view_span
+			mine.last_view_tick = packet.tick
 
 	if link != null:
 		var payload := net.encode_ack()

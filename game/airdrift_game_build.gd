@@ -449,7 +449,12 @@ func _simulate_tick(step: float) -> void:
 		bots.call("drive", step)
 
 	for id in players:
-		(players[id] as AirdriftPlayer).simulate(_tick, step)
+		var mover: AirdriftPlayer = players[id]
+		# A mover's step against the hulls where its own view had them, when the rules ask (mp_solidplayers_unlag).
+		if hull_view != null and hulls_live and body_rules.unlag:
+			hull_view.call(&"around", id, _tick, mover.simulate.bind(_tick, step))
+		else:
+			mover.simulate(_tick, step)
 
 	# After the moves and before the timers, which is where every per-tick measurement
 	# in this game belongs: the counters it reads are what the move just produced, and

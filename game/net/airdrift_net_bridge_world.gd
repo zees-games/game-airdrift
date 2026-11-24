@@ -322,6 +322,8 @@ func _on_map_ready(_map: GSMapDef) -> void:
 ## tree without being freed, whose host would otherwise still be announcing changes to
 ## peers it can no longer hear.
 func _exit_tree() -> void:
+	if game != null and is_instance_valid(game) and game.hull_view != null:
+		game.hull_view = null
 	if game != null and is_instance_valid(game) and game.map_sync == map_host:
 		game.map_sync = null
 
