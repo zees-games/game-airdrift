@@ -144,6 +144,8 @@ func _build_vote() -> GSResult:
 	# An empty server hibernates (gs-server, 2026-10-07): the map clock waits instead of
 	# running out with nobody on, and restarts from the top on the first join.
 	vote.director.follow_hibernation(server)
+	if game.timers != null:
+		game.timers.rate_guard.follow_hibernation(server, game.timers)
 
 	# The cues and the countdown, to every ready client. Chat carries what the ballot
 	# says; a sound and a number a HUD counts are what it cannot carry.
