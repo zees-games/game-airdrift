@@ -574,6 +574,37 @@ func _test_map_owned() -> void:
 	_done()
 
 
+func _test_map_disk_stamped() -> void:
+	_section("changing the map: an imported map loaded from disk is announced as content")
+	var id := &"airdrift_disk_fixture"
+	var dir := "user://zz_disk_stamp/%s" % id
+	DirAccess.make_dir_recursive_absolute(dir)
+	for ext in ["json", "bin"]:
+		var fh := FileAccess.open("%s/%s.%s" % [dir, id, ext], FileAccess.WRITE)
+		fh.store_string("{}" if ext == "json" else "x")
+		fh.close()
+	var map := AirdriftMapCatalogue.at_directory(id, dir)
+	_check(map != null and map.is_local(), "a map read from a plain directory starts local")
+	if map == null:
+		_done()
+		return
+	_server_game.config.map_content_owner = "someone"
+	_check(_server_game.maps.catalogue.add(map).ok, "and joins the server's catalogue")
+	var ensured: GSResult = await _server_game.ensure_map_content(id)
+	_check(ensured.ok and not map.is_local() and String(map.content_id) == "someone/%s" % id
+		and map.content_version == AirdriftMapCatalogue.pack_version(dir),
+		"ensuring it names the pack it publishes as: owner/id at the hash of its files",
+		"%s %s" % [map.content_id, map.content_version])
+	_server_game.config.map_content_owner = ""
+	var builtin := _server_game.maps.catalogue.get_map(&"bhop_g2g_intro")
+	_check(builtin != null and builtin.is_local(), "while a built-in map stays local, in every client's build")
+	for ext in ["json", "bin"]:
+		DirAccess.remove_absolute("%s/%s.%s" % [dir, id, ext])
+	DirAccess.remove_absolute(dir)
+	DirAccess.remove_absolute("user://zz_disk_stamp")
+	_done()
+
+
 func _test_map_straggler() -> void:
 	_section("changing the map: a client that is still downloading")
 

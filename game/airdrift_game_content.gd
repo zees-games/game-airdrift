@@ -52,6 +52,7 @@ func ensure_map_content(id: StringName) -> GSResult:
 		return GSResult.fail(GSError.CODE_INVALID, "No map id.")
 
 	if maps != null and maps.catalogue != null and maps.catalogue.has(id):
+		_stamp_disk_map(maps.catalogue.get_map(id))
 		return GSResult.success(null)
 
 	if _map_content_seen.has(id):
@@ -196,6 +197,21 @@ func _get_json(url: String) -> GSResult:
 	var res: GSResult = await http.get_json(url)
 	http.queue_free()
 	return res
+
+
+## A server names a map it loaded from disk by the pack it is published as, so a client that lacks it can fetch it.
+## An imported map's pack is `<owner>/<id>@<pack_version>` ([method AirdriftMapCatalogue.pack_version], a hash of the very
+## files on disk, so the version cannot disagree with the bytes this server plays). Without it gs-map calls the map local
+## and a client without the map refuses the announce. Servers only: on a client a stamp would change how gs-map judges
+## versions it already has. Built-in maps (no manifest) stay local; they are in every client's build.
+func _stamp_disk_map(map: GSMapDef) -> void:
+	if map == null or not config.authoritative or map.content_id != &"":
+		return
+	var manifest := str(map.meta.get("manifest", ""))
+	if manifest == "" or manifest.begins_with("res://gs_cloud"):
+		return
+	map.content_id = StringName(config.map_content_id(map.id))
+	map.content_version = AirdriftMapCatalogue.pack_version(manifest.get_base_dir())
 
 
 ## Names the content id and version of a map that came out of a gs-cloud mount, so a client can be sent it.

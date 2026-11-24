@@ -14,13 +14,13 @@ extends "headless_net_views.gd"
 ## server's. See the note in [method _build].
 const CLIENT_ENGINE_TICK_RATE := 60
 
-const CHECKS := 282
+const CHECKS := 286
 
 ## Sections entered against sections that ran to their last line, and against this. A
 ## runtime error inside a section aborts that function and nothing says so; a section that
 ## bailed out early after a failed guard is counted as not finished on purpose. The CHECKS
 ## total above is the other half — see docs/testing.md.
-const SECTIONS := 37
+const SECTIONS := 38
 
 
 func _ready() -> void:
@@ -54,6 +54,7 @@ func _run() -> void:
 		await _test_map_by_vote()
 		await _test_map_delivered()
 		await _test_map_owned()
+		await _test_map_disk_stamped()
 		await _test_map_republished()
 		await _test_map_straggler()
 		await _test_map_refused()
