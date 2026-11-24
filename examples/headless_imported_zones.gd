@@ -23,9 +23,7 @@ func _test_zones() -> void:
 
 	# Source sweeps its trigger tests; gs-timer samples a point per tick. A 16-unit plane pit, enough in Source,
 	# is stepped clean over by a player falling at genre speed, who then falls for ever.
-	var thin := zones.thin_zones(AirdriftUnits.to_metres(3500.0), game.tick_rate)
-	_check(thin.is_empty(), "and no zone a 3500 u/s player passes through between ticks",
-		"%d thin" % thin.size())
+	_check_no_tunnelling(zones)
 
 	# The two zones without which a map is scenery. Every one of these maps had them
 	# in its entity lump or in maps/zones/ before it was offered as a level; a map
@@ -454,3 +452,29 @@ const GATED_COURSES := ["bhop_eazy", "bhop_eazy_v2"]
 
 ## Pits sampled per map by [method _test_pits_land_at_their_destination].
 const PIT_SAMPLES := 12
+
+
+func _check_no_tunnelling(zones: GSTimerZoneSet) -> void:
+	# A teleport or respawn volume fires on the player's hull overlapping it, and the importer grows a thin one only by
+	# that hull; so for those the hull extent adds to the thickness a tick must clear. Every other kind stays strict.
+	var thin: Array[GSTimerZone] = []
+	for zone in zones.thin_zones(AirdriftUnits.to_metres(3500.0), game.tick_rate):
+		if not _hull_catches(zone):
+			thin.append(zone)
+	_check(thin.is_empty(), "and no zone a 3500 u/s player passes through between ticks",
+		"%d thin" % thin.size())
+
+
+const HULL_WIDTH_UNITS := 32.0
+
+
+## Whether a thin teleport or respawn zone is still caught every tick because the player's hull overlaps it: its
+## thickness plus the hull extent on that axis must reach the distance covered in one tick. False for every other kind.
+func _hull_catches(zone: GSTimerZone) -> bool:
+	if zone.kind != GSTimerZone.Kind.RESPAWN and zone.kind != GSTimerZone.Kind.TELEPORT:
+		return false
+	var per_tick := AirdriftUnits.to_metres(3500.0) / maxf(float(game.tick_rate), 1.0)
+	var wide := AirdriftUnits.to_metres(HULL_WIDTH_UNITS)
+	var tall := AirdriftUnits.to_metres(AirdriftUnits.PLAYER_HEIGHT)
+	var s := zone.size() + Vector3(wide, tall, wide)
+	return minf(s.x, s.z) >= per_tick and s.y >= per_tick
