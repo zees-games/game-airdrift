@@ -7,6 +7,9 @@ const RouteBot := preload("../game/airdrift_route_bot.gd")
 ## gs-sim's route bots (`GSSimRouteBots`) held to `AirdriftRouteBot.command` in script, to the bit: per map, one seeded lobby
 ## is ridden all script, native, and native under `route_verify`; positions and velocities must match every tick.
 ## No gs-sim `route`: skipped and passes; `GS_SIM_REQUIRE_NATIVE=1` fails instead.
+## A map's first ride on a machine plans its route from a fresh bake and fresh annotations; every later one reads them from the
+## nav cache (`user://g2g_nav`), and the two routes differ (same length, other points). So each map is ridden once first,
+## unrecorded, to leave the cache warm: the three recorded rides then plan the same way on a cold or a warm machine.
 
 const MAPS: Array[StringName] = [&"bhop_g2g_intro", &"surf_g2g_intro"]
 const BOTS := 12
@@ -45,6 +48,7 @@ func _map_runs(id: StringName) -> void:
 	_entered += 1
 	print("")
 	print("== %s" % id)
+	await _ride(id, false, false)
 	var a := await _ride(id, false, false)
 	if a.is_empty():
 		_check(false, "%s: the game booted on the map" % id)
