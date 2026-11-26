@@ -212,10 +212,8 @@ func _finish(player: AirdriftPlayer, rider: Dictionary, command: GSFpsCommand, s
 		rider["far"] = maxf(float(rider["far"]), away)
 
 
-## Drives the queued route bots in one native call, in the order they were queued (the script's,
-## so the rays are cast in the same order), then applies their commands. With
-## [member AirdriftRouteBot.route_verify] each is re-run in script beside it and compared; a
-## difference is an error and the script's answer wins.
+## Drives the queued route bots in one native call, in queue order (the script's, so rays are cast in the same order), then
+## applies their commands. With [member AirdriftRouteBot.route_verify] each is re-run in script and compared; the script wins.
 func _flush_routes(step: float) -> void:
 	if _batch.is_empty():
 		return

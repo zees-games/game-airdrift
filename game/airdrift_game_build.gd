@@ -400,12 +400,8 @@ func is_covered() -> bool:
 	return covered.is_valid() and bool(covered.call())
 
 
-## The tick this game is on.
-##
-## Read rather than reconstructed. `_tick` is advanced by three different callers —
-## the accumulator in `_physics_process`, `tick_once` from a netcode bridge, and
-## `tick_timers_only` on a client — and anything deriving its own would be a fourth
-## copy of a number that already exists.
+## The tick this game is on. Read rather than reconstructed: `_tick` is advanced by the accumulator in `_physics_process`,
+## `tick_once` from a netcode bridge and `tick_timers_only` on a client, and anything deriving its own would be a fourth copy.
 func current_tick() -> int:
 	return _tick
 
@@ -419,11 +415,8 @@ func tick_once(tick: int) -> void:
 		player_stack.tick(tick)
 
 
-## Feeds every timer from the players' current positions without moving anybody.
-##
-## The client's tick: prediction moved the local player through its behaviour and
-## snapshots moved everybody else, so the only thing left to do per tick is what the
-## server does after its moves — time them.
+## Feeds every timer from the players' current positions without moving anybody. The client's tick: prediction moved the
+## local player and snapshots moved everybody else, so only what the server does after its moves is left: time them.
 func tick_timers_only(tick: int) -> void:
 	_tick = tick
 	_feed_timers()
@@ -431,10 +424,9 @@ func tick_timers_only(tick: int) -> void:
 
 ## Move every player, then time the tick with the position the move produced.
 func _simulate_tick(step: float) -> void:
-	# [b]Under the client's load cover only the local body moves[/b], and only while the gate
-	# settles it onto the floor. The map clock, the bots, the hunters, combat, effects and
-	# above all the timers wait: a run that started (or a start zone that fired) behind the
-	# cover would be a time the player never played.
+	# [b]Under the client's load cover only the local body moves[/b], while the gate settles it on the floor. The map
+	# clock, bots, hunters, combat, effects and above all the timers wait: a run started behind the cover would be a
+	# time the player never played.
 	if is_covered():
 		for id in players:
 			var body: AirdriftPlayer = players[id]

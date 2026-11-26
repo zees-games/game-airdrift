@@ -251,10 +251,9 @@ func _offer_solo_maps() -> void:
 	game.offered_maps = offered
 
 
-## Solo only: a converted map folder or `.zip` dragged onto the window, dropped on the executable or named by
-## `--map-path=` is copied into `user://maps` and offered in M as "<title> (local)" ([method AirdriftGame.add_dropped_maps]);
-## the HUD says what was added, or why a path is not a map. Never online: a local map exists on this machine alone.
-## Needs gs-map 24 ([method AirdriftMapCatalogue.can_drop]); gs-map 26 adds the shared intake and the executable drop.
+## Solo only: a map folder or `.zip` dropped on the window or executable, or named by `--map-path=`, is copied into
+## `user://maps` and offered in M as "<title> (local)" ([method AirdriftGame.add_dropped_maps]); the HUD says what was added.
+## Needs gs-map 24 ([method AirdriftMapCatalogue.can_drop]), 26 for the intake and executable drop. Never online.
 func _watch_map_drops() -> void:
 	if not _offline or not is_inside_tree() or not AirdriftMapCatalogue.can_drop():
 		return

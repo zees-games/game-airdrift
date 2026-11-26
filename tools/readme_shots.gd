@@ -2,19 +2,9 @@ extends SceneTree
 
 const AirdriftClient := preload("../game/airdrift_client.gd")
 
-## Frames for the README, taken from the real offline client (see tools/readme_shots.sh).
-##
-## [codeblock]
-## tools/readme_shots.sh run   <map> [seconds]   drive a strafing auto-bhop run, a frame every half second
-## tools/readme_shots.sh surf  <map> [seconds]   the same from a point on a ramp, entry speed given
-## tools/readme_shots.sh start <map>             the start zone, seen from outside it
-## tools/readme_shots.sh style <map>             the Gameplay menu page (the style picker)
-## tools/readme_shots.sh maps  <map>             the map list
-## tools/readme_shots.sh board <map>             the scoreboard (sample rows in the server's shape)
-## [/codeblock]
-##
-## The driver holds jump and alternates A and D while turning the view the same way, so the
-## HUD's jumps, strafes and sync are measured from real movement, not staged.
+## Frames for the README from the real offline client: `tools/readme_shots.sh run|surf <map> [seconds]` (a strafing auto-bhop
+## run, from the start or a ramp), `start|style|maps|board <map>` (start zone, Gameplay page, map list, scoreboard).
+## The driver alternates A and D while turning the same way, so jumps, strafes and sync are measured from real movement.
 
 const OUT_DIR := "res://screenshots"
 const TURN_DEG_PER_SEC := 95.0

@@ -4,15 +4,9 @@ const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 const RouteBot := preload("../game/airdrift_route_bot.gd")
 
-## gs-sim's route bots (`GSSimRouteBots`, every route bot of a tick in one native call) held to
-## `AirdriftRouteBot.command` in script, to the bit. [codeblock] godot --headless --path . res://examples/headless_native_route.tscn [/codeblock]
-## Per map, the same seeded lobby of route bots is ridden three times from a fresh game: all script
-## (`native_route` off), native, and native under `route_verify` (each bot's tick re-run in script
-## on the same state, its command and its whole state compared). The script and native rides
-## must leave every bot at the same position and velocity on every tick, and verify must find no
-## difference. Only the bots' commands are produced here: the motor, hit registration and lag
-## compensation are the game's as before. With no gs-sim `route` it says the native half was
-## skipped and passes; `GS_SIM_REQUIRE_NATIVE=1` fails instead.
+## gs-sim's route bots (`GSSimRouteBots`) held to `AirdriftRouteBot.command` in script, to the bit: per map, one seeded lobby
+## is ridden all script, native, and native under `route_verify`; positions and velocities must match every tick.
+## No gs-sim `route`: skipped and passes; `GS_SIM_REQUIRE_NATIVE=1` fails instead.
 
 const MAPS: Array[StringName] = [&"bhop_g2g_intro", &"surf_g2g_intro"]
 const BOTS := 12

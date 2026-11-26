@@ -199,11 +199,9 @@ func _get_json(url: String) -> GSResult:
 	return res
 
 
-## A server names a map it loaded from disk by the pack it is published as, so a client that lacks it can fetch it.
-## An imported map's pack is `<owner>/<id>@<pack_version>` ([method AirdriftMapCatalogue.pack_version], a hash of the very
-## files on disk, so the version cannot disagree with the bytes this server plays). Without it gs-map calls the map local
-## and a client without the map refuses the announce. Servers only: on a client a stamp would change how gs-map judges
-## versions it already has. Built-in maps (no manifest) stay local; they are in every client's build.
+## A server names a disk-loaded map by the pack it is published as (`<owner>/<id>@<pack_version>`, a hash of the files,
+## [method AirdriftMapCatalogue.pack_version]), so a client lacking it can fetch it; otherwise gs-map calls it local and the
+## client refuses the announce. Servers only. Built-in maps (no manifest) stay local.
 func _stamp_disk_map(map: GSMapDef) -> void:
 	if map == null or not config.authoritative or map.content_id != &"":
 		return
@@ -217,10 +215,8 @@ func _stamp_disk_map(map: GSMapDef) -> void:
 ## Names the content id and version of a map that came out of a gs-cloud mount, so a client can be sent it.
 ## Both come off the mount path `res://gs_cloud/<content_id>/<version>`, not a second record that could disagree.
 func _mark_delivered(map: GSMapDef, dir: String) -> void:
-	# Read off the path, not rebuilt from the owner cvar, so changing it mid-session
-	# does not re-announce the map under another owner.
-	# A map pack published before the dot_ to gs_ rename still mounts under res://dot_cloud/
-	# (the root is baked into its manifest), so accept any `<x>_cloud` root.
+	# Read off the path, not the owner cvar, so changing it mid-session does not re-announce the map.
+	# A map pack from before the gs_ rename may mount under res://dot_cloud/: accept any `<x>_cloud` root.
 	var base := dir.rstrip("/")
 	if not base.begins_with("res://"):
 		return                            # a directory on disk, not a mount

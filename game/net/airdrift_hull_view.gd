@@ -3,10 +3,9 @@ extends RefCounted
 const AirdriftHullView := preload("airdrift_hull_view.gd")
 const AirdriftNetCommand := preload("airdrift_net_command.gd")
 
-## Where every other player stood on a mover's screen, for [GSPlayerHullRewind] (`mp_solidplayers_unlag`): the game side of lag-compensated hulls.
-## [b]One rule on both ends.[/b] A command names how far behind its tick the sender drew the others (`view_lag_q`) and the snapshot pair it drew between (`view_back`, `view_span`). The server answers from its own per-tick ring of feet,
-## the client from the interpolator's samples of the same two ticks, so the hull a bump meets is the same one on both and a bump is not a correction. The ring holds the wire's value of each position (`GSNetVar.wire_value`), as the client's samples are.
-## A null answer leaves that hull where it stands: no view sent (a bot), a tick the ring no longer holds, a teleport inside the pair. Misses are counted and logged, not silent.
+## Where every other player stood on a mover's screen, for [GSPlayerHullRewind] (`mp_solidplayers_unlag`). One rule on both ends:
+## a command names how far behind its tick the sender drew the others (`view_lag_q`) and the snapshot pair (`view_back`, `view_span`);
+## server (per-tick ring of wire-snapped feet) and client (interpolator samples) answer alike. A null answer leaves the hull; misses are logged.
 
 const CHANNEL := "airdrift.hullview"
 
@@ -48,7 +47,6 @@ func around(mover: Variant, tick: int, work: Callable) -> Variant:
 	return rewind.around(_game.body_rules, mover, _game.hull_bodies, tick, work)
 
 
-# --- The server's ring -------------------------------------------------------
 
 ## Records every player's feet (wire-snapped) at [param tick], after the tick's moves. Server only.
 func record(tick: int, positions: Dictionary) -> void:
@@ -102,7 +100,6 @@ func _teleported() -> Variant:
 	return null
 
 
-# --- The answer, both ends ---------------------------------------------------
 
 ## `(mover, other, tick) -> Vector3 or null` for [member rewind]: [param other]'s feet on [param mover]'s screen for its step at [param tick].
 func feet_for(mover: Variant, other: Variant, tick: int) -> Variant:

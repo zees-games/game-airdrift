@@ -1,10 +1,8 @@
 extends RefCounted
 
-## Maps handed to Airdrift outside the window: dropped on the executable (a path on the command line) or named by
-## `--map-path=<path>`, and every window drop too, through gs-map's GSMapDropIntake (API 30) with its converted-map
-## acceptor. The client answers each drop on the HUD ([method AirdriftGame.add_dropped_maps]); a path that holds no converted
-## map is refused out loud with what the game takes. Solo only, as the window drop always was.
-
+## Maps handed to Airdrift outside the window: dropped on the executable, named by `--map-path=<path>`, and every window drop,
+## through gs-map's GSMapDropIntake (API 30). The client answers each on the HUD ([method AirdriftGame.add_dropped_maps]);
+## a path with no converted map is refused out loud. Solo only.
 const CHANNEL := "g2g.map_drop"
 ## gs-map's API level with GSMapDropIntake. Older builds take no exe drop, nor config options out of the paths.
 const NEEDS_LEVEL := 30

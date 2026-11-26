@@ -64,10 +64,8 @@ func _module_load() -> GSResult:
 	game.maps.changed.connect(_report_map)
 	_report_map(game.maps.current)
 
-	# Everything below runs the server rather than the game, and each one logs and
-	# continues rather than refusing to load: a module that would not load because a
-	# punishment file was unreadable is a module that takes the game down over a
-	# permissions mistake, and the game is what the players came for.
+	# Everything below runs the server rather than the game; each logs and continues rather than refusing to load, because
+	# a module that would not load over an unreadable punishment file takes the game down over a permissions mistake.
 	var identified: GSResult = await _build_identity()
 	GSLog.result(CHANNEL, "the identity layer", identified)
 
@@ -113,10 +111,9 @@ func _module_unload() -> void:
 			game.maps.changed.disconnect(_report_map)
 	if net != null and is_instance_valid(net):
 		net.stop()
-	# [b]The platform module goes with the identity that loaded it[/b], as gs-game's does: it
-	# holds the hub AirdriftIdentity registered, which a game change frees. Left loaded, every game
-	# after this one found "platform" already there, loaded none of its own, and kept asking
-	# Airdrift's freed hub (gs-game's history: signal 11 on the next spawn).
+	# [b]The platform module goes with the identity that loaded it[/b], as gs-game's does: it holds the hub AirdriftIdentity
+	# registered, which a game change frees. Left loaded, the next game found "platform" already there and kept asking
+	# Airdrift's freed hub (signal 11 on the next spawn).
 	if _loaded_platform and server != null and server.modules != null \
 			and server.modules.has_module("platform"):
 		server.modules.unload_module("platform")
@@ -240,10 +237,8 @@ func _build_netcode() -> GSResult:
 				profile_link.peer_joined(peer)
 
 	net.messages.seal()
-	# [b]A client whose game messages cannot work with this server's is dropped, in words.[/b]
-	# gs-net compares the two schema tables and refuses a pair where either lacks a type
-	# the other REQUIRES, but it owns no socket and can only say so; this is the socket.
-	# The same line GSGameNetcode.refuse_peer is for games built on gs-game.
+## Re-files the points board for everybody whose total moved, not only the finisher: a new record re-scores every row on its
+## board, and a removal or wipe moves the totals of people who did nothing. Replaced, not "kept if better" (see `running_total`).
 	net.peer_schema_refused.connect(_refuse_peer)
 	return net.start()
 

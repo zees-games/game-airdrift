@@ -4,12 +4,9 @@ const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 const AirdriftCamera := preload("../game/airdrift_camera.gd")
 
-## Third-person spawn frame on every map, to `screenshots/spawns/<map>.png`.
-##
-##   xvfb-run -a godot --path . --resolution 1280x720 --script tools/spawn_shots.gd -- [map ...]
-##
-## No maps named: every map in `maps/zones/`. One process, `change_map` between them. Not `--headless`
-## (a null renderer saves empty frames). Run through `gpu.sh shot` for a real GPU.
+## Third-person spawn frame on every map, to `screenshots/spawns/<map>.png`. Names no maps: every map in `maps/zones/`.
+## `xvfb-run -a godot --path . --resolution 1280x720 --script tools/spawn_shots.gd -- [map ...]`; not `--headless`
+## (a null renderer saves empty frames); `gpu.sh shot` for a real GPU.
 
 const OUT_DIR := "res://screenshots/spawns"
 const SETTLE := 40

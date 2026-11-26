@@ -38,10 +38,8 @@ const KINDS := [
 	["stop", GSTimerZone.Kind.STOP], ["respawn", GSTimerZone.Kind.RESPAWN],
 ]
 
-## The grid an aim point snaps to, in genre units.
-## The chat form of the server's zone commands, under the old Airdrift name: the server registers
-## `airdrift_zone*` and keeps the old names as hidden copies, and a server older than this editor
-## knows only those. Switch to "/airdrift_" once no server older than the rename is left.
+## The chat form of the server's zone commands under the old Airdrift name: the server keeps `airdrift_zone*`'s old names as
+## hidden copies, and a server older than this editor knows only those. Switch to "/airdrift_" once none is left.
 const OLD_COMMAND_PREFIX := "/g2g_"
 const SNAP_UNITS := 16.0
 

@@ -180,11 +180,8 @@ func active() -> Camera3D:
 	return third if mode == Mode.THIRD_PERSON else first
 
 
-## Points both cameras. [param pitch] and [param yaw] are the player's view, in degrees.
-##
-## The rig pitches nothing; only cameras do. The third-person arm pitches about the
-## pivot so looking down swings the camera up and over, which is what every
-## third-person game does and what a spring arm gives for free.
+## Points both cameras. [param pitch] and [param yaw] are the player's view, in degrees. The rig pitches nothing; the
+## third-person arm pitches about the pivot so looking down swings the camera up and over, as a spring arm gives for free.
 func look(pitch: float, delta: float) -> void:
 	if first != null:
 		first.rotation = Vector3(deg_to_rad(pitch), 0.0, 0.0)

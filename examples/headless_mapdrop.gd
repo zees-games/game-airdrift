@@ -1,8 +1,7 @@
 extends GSGameCheckSuite
 
-## Maps handed to Airdrift through gs-map's GSMapDropIntake (AirdriftMapDrop, API 30): dragged onto the window, dropped on
-## the executable or named by `--map-path=`, all through the one intake and the one HUD line. A path that holds no
-## converted map is refused out loud with what the game takes. Folder/zip copying itself: headless_local_maps.
+## Maps handed to Airdrift through gs-map's GSMapDropIntake (API 30): dragged on, dropped on the executable or named by
+## `--map-path=`. A path with no converted map is refused out loud. Folder/zip copying: headless_local_maps.
 ## [codeblock] ./game.sh test headless_mapdrop [/codeblock]
 
 const AirdriftClient := preload("../game/airdrift_client.gd")

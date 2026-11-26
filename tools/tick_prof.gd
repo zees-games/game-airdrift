@@ -4,15 +4,9 @@ const AirdriftConfig := preload("../game/airdrift_config.gd")
 const AirdriftGame := preload("../game/airdrift_game.gd")
 const RouteBot := preload("../game/airdrift_route_bot.gd")
 
-## Server tick profile: the game on one map with N bots, driven tick by tick (external tick), each phase of
-## AirdriftGame._simulate_tick timed in microseconds, and with `--script-top N` (Godot started with -d) the N GDScript
-## functions with the most self time. `--phases 0` runs the plain tick_once instead (the A/B timing: `--ticks N`).
-## Run: godot --headless --path . res://tools/tick_prof.tscn -- --map bhop_g2g_intro --bots 16 --ticks 3000 [--script-top 30]
-## Prints TICKPROF lines (phase, mean and p99 us per tick) and one TICKTOTAL line (mean us per tick).
-## `--ab N` alternates the route bots between native (gs-sim `route`) and script every N ticks (the rides are the same
-## to the bit, so both halves time the same work) and prints a TICKAB line per round (native then script block: tick
-## and bots-phase means) and a TICKABSUM line (the mean and spread of the per-round differences).
-
+## Server tick profile on one map with N bots, tick by tick: each AirdriftGame._simulate_tick phase in microseconds; `--script-top N`
+## (Godot -d) adds the N GDScript functions with most self time, `--phases 0` runs plain tick_once (`--ticks N`), `--ab N` alternates
+## route bots native/script every N ticks. Run: godot --headless --path . res://tools/tick_prof.tscn -- --map bhop_g2g_intro --bots 16 --ticks 3000
 const TICK_RATE := 128
 
 var _game: AirdriftGame
